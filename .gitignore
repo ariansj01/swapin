@@ -1,0 +1,3 @@
+includes/ai_secrets.php
+uploads/*
+!uploads/.gitkeep

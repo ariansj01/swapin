@@ -1,0 +1,280 @@
+
+# 🧠 Roadmap نسخه اولیه (MVP AI + Marketplace + Pricing)
+
+این رو به عنوان “System Blueprint” استفاده کن.
+
+---
+
+# 🟢 PHASE 0 — Foundation (اجباری قبل AI)
+
+### هدف:
+
+ساخت ساختار داده و قوانین سیستم
+
+## 0.1 تعریف Core Entities
+
+باید دقیق این‌ها وجود داشته باشن:
+
+* User
+* Listing
+* Offer
+* Trade
+* Wallet
+* Transaction
+
+---
+
+## 0.2 ساختار Listing (خیلی مهم)
+
+```json
+{
+  "id": "",
+  "title": "",
+  "description": "",
+  "category": "",
+  "condition": "new|used|old",
+  "location": "",
+  "images": [],
+  "wanted_item": "",
+  "status": "active|sold|expired"
+}
+```
+
+---
+
+## 0.3 قوانین سیستم (Business Rules)
+
+* آگهی بدون wanted_item = invalid
+* آگهی بدون category = invalid
+* معامله فقط روی active listings
+* trade فقط بعد از validation
+
+---
+
+# 🟡 PHASE 1 — Chat AI (Assist Mode)
+
+### هدف:
+
+AI فقط “راهنما” باشد، نه تصمیم‌گیر مالی
+
+## وظایف AI:
+
+* راهنمای ثبت آگهی
+* توضیح قوانین پلتفرم
+* کمک به نوشتن description بهتر
+* پیشنهاد category مناسب
+* کمک به کاربر برای بهتر کردن آگهی
+
+---
+
+## ❌ کارهایی که AI نباید انجام دهد:
+
+* قیمت واقعی ندهد
+* معامله پیشنهاد ندهد
+* جای سیستم تصمیم نگیرد
+
+---
+
+## System Prompt (Phase 1)
+
+```text
+You are assistant for a barter marketplace platform.
+
+Your role:
+- Help users create better listings
+- Help users understand platform rules
+- Suggest categories and improvements
+- Improve listing descriptions
+
+You MUST NOT:
+- estimate real prices
+- decide trade value
+- create fake market pricing
+
+If user asks for price → respond:
+"Pricing is handled by system engine in next phase"
+```
+
+---
+
+# 🟠 PHASE 2 — Pricing Engine (AI + Rules Hybrid)
+
+### هدف:
+
+شروع ارزش‌گذاری واقعی (ولی کنترل‌شده)
+
+---
+
+## 2.1 ورودی AI:
+
+```json
+{
+  "listing": {
+    "title": "",
+    "description": "",
+    "category": "",
+    "condition": ""
+  },
+  "context": {
+    "similar_items": [],
+    "demand_level": "low|medium|high"
+  }
+}
+```
+
+---
+
+## 2.2 خروجی AI:
+
+```json
+{
+  "estimated_value_range": {
+    "min": 0,
+    "max": 0
+  },
+  "confidence": 0.0,
+  "reason": "",
+  "trade_suggestions": [
+    "item types"
+  ]
+}
+```
+
+---
+
+## 2.3 Rules مهم (خیلی مهم)
+
+* اگر confidence < 0.6 → خروجی فقط "uncertain"
+* AI نباید عدد قطعی بده
+* همیشه range بده نه قیمت دقیق
+
+---
+
+# 🔵 PHASE 3 — Matching Engine (هسته واقعی محصول)
+
+### هدف:
+
+AI فقط پیشنهاد بده، تصمیم نهایی سیستم بده
+
+---
+
+## 3.1 وظایف:
+
+* پیدا کردن match بین listings
+* پیشنهاد trade
+* پیشنهاد credit trade
+* rank کردن matches
+
+---
+
+## 3.2 Input:
+
+```json
+{
+  "user_listing": {},
+  "candidate_listings": []
+}
+```
+
+---
+
+## 3.3 Output:
+
+```json
+{
+  "matches": [
+    {
+      "listing_id": "",
+      "match_score": 0-100,
+      "trade_type": "direct|credit",
+      "reason": ""
+    }
+  ]
+}
+```
+
+---
+
+## 3.4 Logic ترکیبی (خیلی مهم)
+
+AI فقط این‌ها رو می‌بینه:
+
+* category match
+* wanted_item match
+* similarity description
+* condition similarity
+
+---
+
+# 🔴 PHASE 4 — Trust & Safety Layer
+
+### هدف:
+
+جلوگیری از خراب شدن اقتصاد سیستم
+
+---
+
+## بررسی‌ها:
+
+* user trust score
+* fraud detection
+* duplicate listings
+* spam detection
+
+---
+
+## AI role:
+
+فقط classify کند:
+
+```json
+{
+  "risk_level": "low|medium|high",
+  "reason": ""
+}
+```
+
+---
+
+# ⚙️ SYSTEM ARCHITECTURE (برای PHP تو)
+
+```
+Frontend
+  ↓
+Controller (PHP)
+  ↓
+Validation Layer (STRICT)
+  ↓
+AI Router
+   ├── Chat AI
+   ├── Pricing AI
+   ├── Matching AI
+  ↓
+Post Processing (Rule Engine)
+  ↓
+Response
+```
+
+---
+
+# 💣 مهم‌ترین قانون کل سیستم
+
+> AI هیچ‌وقت نباید owner تصمیم باشد
+> فقط باید assistant باشد
+
+اگر اینو رعایت نکنی:
+
+* قیمت‌ها hallucinate میشن
+* tradeها خراب میشن
+* اعتماد سیستم می‌ریزه
+
+---
+
+# 🚀 خروجی که الان داری
+
+با این roadmap:
+
+* AI قابل کنترل داری
+* سیستم اقتصادی واقعی داری
+* scaling ممکنه
+* بعداً میتونی ML واقعی اضافه کنی

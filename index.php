@@ -1,0 +1,291 @@
+<?php
+require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/layout.php';
+
+$user = auth_user();
+
+// ─── Filters ─────────────────────────────────────────────────────────────────
+$search   = clean($_GET['q']     ?? '');
+$catSlug  = clean($_GET['cat']   ?? '');
+$city     = clean($_GET['city']  ?? '');
+$wantType = clean($_GET['want']  ?? '');
+$sort     = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
+$page     = max(1, (int)($_GET['page'] ?? 1));
+
+// resolve category
+$category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [$catSlug]) : null;
+$catId    = $category['id'] ?? null;
+
+// ─── Count ───────────────────────────────────────────────────────────────────
+$whereClauses = ['l.status = "active"', 'l.listing_mode != "sell"'];
+$params       = [];
+
+if ($search) {
+    $whereClauses[] = '(l.title LIKE ? OR l.description LIKE ? OR l.want_in_return LIKE ?)';
+    $params[] = "%{$search}%";
+    $params[] = "%{$search}%";
+    $params[] = "%{$search}%";
+}
+if ($catId) {
+    $whereClauses[] = '(l.category_id = ? OR c.parent_id = ?)';
+    $params[] = $catId;
+    $params[] = $catId;
+}
+if ($city) {
+    $whereClauses[] = 'l.city LIKE ?';
+    $params[] = "%{$city}%";
+}
+if ($wantType) {
+    $whereClauses[] = 'l.want_type = ?';
+    $params[] = $wantType;
+}
+
+$where   = 'WHERE ' . implode(' AND ', $whereClauses);
+$orderBy = match($sort) {
+    'old'   => 'l.created_at ASC',
+    'value' => 'l.estimated_value DESC',
+    default => '(l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC',
+};
+
+$totalRow = DB::fetch(
+    "SELECT COUNT(*) AS c FROM listings l JOIN categories c ON c.id = l.category_id $where",
+    $params
+);
+$total = (int)($totalRow['c'] ?? 0);
+$pag   = paginate($total, LISTINGS_PER_PAGE, $page);
+
+$listings = DB::fetchAll(
+    "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
+            c.name AS cat_name, c.slug AS cat_slug,
+            (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+     FROM listings l
+     JOIN users u ON u.id = l.user_id
+     JOIN categories c ON c.id = l.category_id
+     {$where}
+     ORDER BY {$orderBy}
+     LIMIT ? OFFSET ?",
+    [...$params, LISTINGS_PER_PAGE, $pag['offset']]
+);
+
+$cities = DB::fetchAll("SELECT DISTINCT city FROM listings WHERE city IS NOT NULL AND city != '' ORDER BY city LIMIT 30");
+
+render_head('مرور آگهی‌ها', 'کالاهای قابل تهاتر را در بازار ' . APP_NAME . ' پیدا کنید');
+render_navbar($user);
+?>
+
+<?php if (!$search && !$catSlug && $page === 1): ?>
+<section class="hero">
+  <div class="container hero__inner">
+    <div class="hero__content">
+      <h1 class="hero__title">
+        <span class="hero__line">سواَپین؛ پلتفرم هوشمند</span>
+        <span class="hero__line">مبادله <span class="hero__gold">کالا با کالا</span></span>
+      </h1>
+      <p class="hero__subtitle">کمتر بخر، بیشتر <span class="hero__gold">مبادله</span> کن</p>
+      <div class="hero__actions">
+        <a href="<?= app_url('listings/create.php') ?>" class="btn btn-accent btn-lg">
+          <i class="bi bi-plus-circle"></i> ثبت آگهی
+        </a>
+        <a href="#listings" class="btn btn-hero-outline btn-lg">
+          <i class="bi bi-search"></i> مرور آگهی‌ها
+        </a>
+      </div>
+      <div class="hero__stats">
+        <div class="hero__stat">
+          <div class="hero__stat-value"><?= number_format($total) ?>+</div>
+          <div class="hero__stat-label">آگهی فعال</div>
+        </div>
+        <div class="hero__stat">
+          <div class="hero__stat-value"><?= number_format((int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE status="completed"')['c'] ?? 0)) ?>+</div>
+          <div class="hero__stat-label">تهاتر انجام‌شده</div>
+        </div>
+        <div class="hero__stat">
+          <div class="hero__stat-value"><?= number_format((int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1')['c'] ?? 0)) ?>+</div>
+          <div class="hero__stat-label">عضو</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<main id="listings" class="section-sm">
+  <div class="container">
+
+    <!-- Category strip -->
+    <div class="mb-5">
+      <?php render_categories_strip($catId); ?>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar mb-6">
+      <div style="flex:1;min-width:200px;position:relative">
+        <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
+        <input type="search" class="form-control" style="padding-left:40px;height:40px"
+               id="search-input" placeholder="جستجوی آگهی‌ها…"
+               value="<?= h($search) ?>">
+      </div>
+
+      <select class="form-control" id="city-filter" style="width:auto;min-width:140px;height:50px">
+        <option value="">همه شهرها</option>
+        <?php foreach ($cities as $c): ?>
+        <option value="<?= h($c['city']) ?>" <?= $city === $c['city'] ? 'selected' : '' ?>><?= h($c['city']) ?></option>
+        <?php endforeach; ?>
+      </select>
+
+      <select class="form-control" id="want-filter" style="width:auto;min-width:150px;height:50px">
+        <option value="">هر نوع تهاتر</option>
+        <option value="item"    <?= $wantType === 'item'    ? 'selected' : '' ?>>کالا در برابر کالا</option>
+        <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات می‌خواهد</option>
+        <option value="credit"  <?= $wantType === 'credit'  ? 'selected' : '' ?>>اعتبار می‌خواهد</option>
+      </select>
+
+      <select class="form-control" id="sort-filter" style="width:auto;min-width:130px;height:50px">
+        <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
+        <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
+        <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
+      </select>
+    </div>
+
+    <?php if ($category): ?>
+    <div class="d-flex align-center gap-3 mb-5">
+      <h2 style="font-size:1.25rem"><?= h(category_label($category['slug'], $category['name'])) ?></h2>
+      <span class="badge badge-primary"><?= $total ?> آگهی</span>
+      <a href="<?= APP_URL ?>/" style="margin-inline-start:auto;font-size:.875rem"><i class="bi bi-x"></i> پاک کردن</a>
+    </div>
+    <?php elseif ($search): ?>
+    <div class="d-flex align-center gap-3 mb-5">
+      <h2 style="font-size:1.25rem">نتایج برای «<?= h($search) ?>»</h2>
+      <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
+    </div>
+    <?php endif; ?>
+
+    <!-- Listings grid -->
+    <?php if (empty($listings)): ?>
+    <div class="empty-state">
+      <i class="bi bi-search"></i>
+      <h3>آگهی‌ای یافت نشد</h3>
+      <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
+      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">ثبت آگهی</a>
+    </div>
+    <?php else: ?>
+    <div class="listings-grid" id="listings-grid">
+      <?php foreach ($listings as $l): ?>
+      <?php include __DIR__ . '/includes/listing_card.php'; ?>
+      <?php endforeach; ?>
+    </div>
+
+    <!-- Pagination -->
+    <?php if ($pag['pages'] > 1): ?>
+    <div style="display:flex;justify-content:center;align-items:center;gap:var(--sp-2);margin-top:var(--sp-10)">
+      <?php if ($pag['has_prev']): ?>
+        <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page-1])) ?>" class="btn btn-outline btn-sm">
+          <i class="bi bi-chevron-right"></i> قبلی
+        </a>
+      <?php endif; ?>
+      <?php
+        $start = max(1, $page - 2);
+        $end   = min($pag['pages'], $page + 2);
+        for ($p = $start; $p <= $end; $p++):
+          $cls = $p === $page ? 'btn-primary' : 'btn-outline';
+      ?>
+        <a href="?<?= http_build_query(array_merge($_GET, ['page' => $p])) ?>" class="btn <?= $cls ?> btn-sm"><?= $p ?></a>
+      <?php endfor; ?>
+      <?php if ($pag['has_next']): ?>
+        <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page+1])) ?>" class="btn btn-outline btn-sm">
+          بعدی <i class="bi bi-chevron-left"></i>
+        </a>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
+    <?php endif; ?>
+
+  </div>
+</main>
+
+<?php if ($page === 1): ?>
+<section class="home-section home-ai">
+  <div class="container">
+    <div class="home-ai__inner">
+      <div class="home-ai__content">
+        <span class="home-ai__badge"><i class="bi bi-stars"></i>هوش مصنوعی</span>
+        <h2>ارزش‌گذاری و مشاوره معاوضه با AI</h2>
+        <p>بعد از ثبت کالا، هوش مصنوعی سواپین ارزش تقریبی را محاسبه می‌کند. با دستیار AI هم درباره بهترین گزینه‌های معاوضه مشورت کنید.</p>
+        <div class="home-ai__actions">
+          <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-accent btn-lg">
+            <i class="bi bi-stars"></i> ثبت کالا + قیمت AI
+          </a>
+          <a href="<?= APP_URL ?>/ai/chat.php" class="btn btn-hero-outline btn-lg">
+            <i class="bi bi-robot"></i> دستیار AI
+          </a>
+        </div>
+      </div>
+      <div class="home-ai__visual">
+        <div class="home-ai__card">
+          <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> تحلیل وضعیت و دسته‌بندی</div>
+          <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> مقایسه با بازار معاوضه</div>
+          <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> پیشنهاد ارزش SWP</div>
+          <div class="home-ai__card-value">~ ۱۲,۵۰۰,۰۰۰ SWP</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="home-section home-steps">
+  <div class="container">
+    <div class="home-section__header">
+      <h2>چطور کار می‌کند؟</h2>
+      <p>در چهار مرحله ساده، کالای خود را با آنچه نیاز دارید مبادله کنید</p>
+    </div>
+    <div class="steps-grid">
+      <?php
+      $steps = [
+          ['bi-plus-circle',    '۱. ثبت آگهی',     'کالا یا خدمت خود را ثبت کنید، ارزش تقریبی بگذارید و بگویید چه چیزی می‌خواهید.'],
+          ['bi-search',         '۲. جستجو و کشف',  'بین آگهی‌ها بگردید. با دسته‌بندی، شهر و نوع تهاتر فیلتر کنید.'],
+          ['bi-chat-dots',      '۳. پیشنهاد دهید', 'کالای خود را پیشنهاد دهید، پیام بفرستید و جزئیات را هماهنگ کنید.'],
+          ['bi-check2-all',     '۴. معامله کنید',  'هر دو طرف تأیید می‌کنند. امتیازدهی اعتماد را برای دفعات بعد می‌سازد.'],
+      ];
+      foreach ($steps as [$icon, $title, $desc]):
+      ?>
+      <article class="step-card">
+        <div class="step-card__icon"><i class="bi <?= $icon ?>"></i></div>
+        <h3><?= $title ?></h3>
+        <p><?= $desc ?></p>
+      </article>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+
+<section class="home-section home-trust">
+  <div class="container">
+    <div class="home-section__header">
+      <h2>اعتماد و اعتبار کاربران</h2>
+      <p>زیرساخت‌هایی که معامله امن و شفاف را ممکن می‌کنند</p>
+    </div>
+    <div class="trust-grid">
+      <?php
+      $trust = [
+          ['bi-star-fill',        'امتیاز و نظرات',    'بعد از هر تهاتر، طرفین به هم امتیاز می‌دهند و پروفایل اعتماد ساخته می‌شود.'],
+          ['bi-patch-check-fill', 'احراز هویت',        'سطح تأیید تلفن و هویت در پروفایل هر کاربر نمایش داده می‌شود.'],
+          ['bi-clock-history',    'تاریخچه معاملات',   'سوابق تهاترهای انجام‌شده برای شفافیت در پروفایل قابل مشاهده است.'],
+          ['bi-shield-lock',      'پیام‌رسانی امن',     'گفتگوی مستقیم داخل پلتفرم قبل از نهایی کردن معامله.'],
+      ];
+      foreach ($trust as [$icon, $title, $desc]):
+      ?>
+      <article class="trust-card">
+        <div class="trust-card__icon"><i class="bi <?= $icon ?>"></i></div>
+        <h3><?= $title ?></h3>
+        <p><?= $desc ?></p>
+      </article>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<?php render_footer(); ?>

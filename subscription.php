@@ -1,0 +1,101 @@
+<?php
+require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/layout.php';
+
+$user    = require_auth();
+$success = '';
+$error   = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $plan   = clean($_POST['plan'] ?? '');
+    $months = max(1, (int)($_POST['months'] ?? 1));
+    $result = subscribe_to_plan($user['id'], $plan, $months);
+    if (isset($result['error'])) {
+        $error = $result['error'];
+    } else {
+        $success = "اشتراک {$result['plan']} فعال شد تا " . persian_date($result['ends_at']);
+        $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$user['id']]);
+    }
+}
+
+$plans = DB::fetchAll('SELECT * FROM subscription_plans ORDER BY price_month ASC');
+$activeSub = get_active_subscription($user);
+$activeCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "active"', [$user['id']])['c'] ?? 0);
+
+render_head('پلن‌های اشتراک');
+render_navbar($user);
+?>
+
+<div class="section-sm">
+  <div class="container">
+
+    <div class="mb-6 text-center">
+      <h2>پلن‌های اشتراک</h2>
+      <p style="color:var(--text-muted);max-width:520px;margin:var(--sp-3) auto 0">
+        آگهی بیشتر، اعتبار بالا بردن، گزارش‌ها و ابزارهای کسب‌وکار را فعال کنید
+      </p>
+    </div>
+
+    <?php if ($success): ?><div class="alert alert-success mb-5"><i class="bi bi-check-circle"></i> <?= h($success) ?></div><?php endif; ?>
+    <?php if ($error): ?><div class="alert alert-danger mb-5"><i class="bi bi-exclamation-circle"></i> <?= h($error) ?></div><?php endif; ?>
+
+    <div class="alert alert-info mb-6">
+      <i class="bi bi-info-circle"></i>
+      <div>
+        پلن فعلی: <strong><?= $activeSub ? h($activeSub['name']) : 'رایگان' ?></strong>
+        — <?= $activeCount ?> / <?= get_listing_limit($user) ?> آگهی فعال
+        <?php if (!empty($user['subscription_until'])): ?>
+        — انقضا: <?= persian_date($user['subscription_until']) ?>
+        <?php endif; ?>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-5)">
+      <?php foreach ($plans as $plan):
+        $isCurrent = ($user['subscription_plan'] ?? 'none') === $plan['slug'] && $activeSub;
+        $features = [
+            $plan['listings_max'] . ' آگهی فعال',
+            $plan['bump_credits'] . ' اعتبار بالا بردن رایگان/ماه',
+        ];
+        if ($plan['has_reports']) $features[] = 'گزارش فروش';
+        if ($plan['has_panel'])   $features[] = 'پنل کسب‌وکار';
+        if ($plan['has_api'])     $features[] = 'دسترسی API';
+      ?>
+      <div class="card" style="<?= $plan['slug'] === 'gold' ? 'border:2px solid var(--accent-dark)' : '' ?>">
+        <div class="card-body" style="padding:var(--sp-6)">
+          <?php if ($plan['slug'] === 'gold'): ?>
+          <span class="badge badge-warning mb-3"><i class="bi bi-star-fill"></i> محبوب</span>
+          <?php endif; ?>
+          <h3><?= h($plan['name']) ?></h3>
+          <div style="font-size:2rem;font-weight:800;color:var(--primary);margin:var(--sp-3) 0">
+            <?= number_format((float)$plan['price_month'], 0) ?> <span class="fs-sm fw-600" style="color:var(--text-muted)"><?= CREDIT_UNIT ?>/ماه</span>
+          </div>
+          <ul style="margin:var(--sp-4) 0 var(--sp-6);padding:0">
+            <?php foreach ($features as $f): ?>
+            <li style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-2);font-size:.875rem;color:var(--text-secondary)">
+              <i class="bi bi-check-circle-fill" style="color:var(--success)"></i> <?= h($f) ?>
+            </li>
+            <?php endforeach; ?>
+          </ul>
+          <?php if ($isCurrent): ?>
+          <button class="btn btn-outline w-100" disabled>پلن فعلی</button>
+          <?php else: ?>
+          <form method="POST">
+            <input type="hidden" name="plan" value="<?= h($plan['slug']) ?>">
+            <select name="months" class="form-control mb-3">
+              <?php foreach ([1,3,6,12] as $m): ?>
+              <option value="<?= $m ?>"><?= $m ?> ماه<?= $m > 1 ? '' : '' ?> — <?= fmt_credit((float)$plan['price_month'] * $m) ?></option>
+              <?php endforeach; ?>
+            </select>
+            <button type="submit" class="btn btn-primary w-100">خرید اشتراک</button>
+          </form>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+
+  </div>
+</div>
+
+<?php render_footer(); ?>
