@@ -3,11 +3,14 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $user = auth_user();
-render_head('درباره ما', 'با ' . APP_NAME . ' — بازار هوشمند تهاتر — آشنا شوید.');
+render_head('درباره ما', 'با ' . APP_NAME . ' — بازار هوشمند تهاتر — آشنا شوید.', [
+    'canonical' => APP_URL . '/about.php',
+    'json_ld'   => seo_json_ld_organization(),
+]);
 render_navbar($user);
 ?>
 
-<div class="section-sm">
+<main id="main-content" class="section-sm">
   <div class="container-md">
 
     <div style="text-align:center;padding:var(--sp-10) 0 var(--sp-8)">
@@ -133,6 +136,6 @@ render_navbar($user);
     </div>
 
   </div>
-</div>
+</main>
 
 <?php render_footer(); ?>

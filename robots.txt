@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard.php
+Disallow: /messages.php
+Disallow: /wallet.php
+Disallow: /profile/edit.php
+Disallow: /listings/create.php
+Disallow: /listings/edit.php
+Disallow: /listings/my.php
+Disallow: /listings/offers.php
+Disallow: /listings/bump.php
+Disallow: /store/
+Disallow: /seed/
+Disallow: /run_migration.php
+
+Sitemap: http://localhost/swaapin/sitemap.php

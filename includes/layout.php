@@ -1,11 +1,38 @@
 <?php
 // includes/layout.php — shared header/footer helpers
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/seo.php';
 
-function render_head(string $title = '', string $desc = ''): void {
-    $t   = $title ? h($title) . ' — ' . APP_NAME : APP_NAME . ' — بازار تعویض هوشمند';
-    $d   = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواپین مبادله کنید — بازار تعویض هوشمند.';
-    $url = APP_URL;
+function render_head(string $title = '', string $desc = '', array $seo = []): void {
+    $t         = $title ? h($title) . ' — ' . APP_NAME : APP_NAME . ' — بازار تعویض هوشمند';
+    $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواپین مبادله کنید — بازار تعویض هوشمند.';
+    $url       = APP_URL;
+    $canonical = h($seo['canonical'] ?? seo_canonical());
+    $ogImage   = h($seo['og_image'] ?? LOGO_URL);
+    $ogType    = h($seo['og_type'] ?? 'website');
+    $robots    = h($seo['robots'] ?? 'index, follow');
+    $ogTitle   = h($seo['og_title'] ?? ($title ?: APP_NAME . ' — بازار تعویض هوشمند'));
+    $favicon   = $url . '/src/img/logo.png';
+    $appName   = h(APP_NAME);
+
+    $keywords = '';
+    if (!empty($seo['keywords'])) {
+        $keywords = '<meta name="keywords" content="' . h($seo['keywords']) . '">' . "\n";
+    }
+
+    $jsonLd = '';
+    if (!empty($seo['json_ld'])) {
+        $blocks = $seo['json_ld'];
+        if (isset($blocks['@context'])) {
+            $blocks = [$blocks];
+        }
+        foreach ($blocks as $block) {
+            $jsonLd .= '<script type="application/ld+json">'
+                . json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                . "</script>\n";
+        }
+    }
+
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -14,14 +41,31 @@ function render_head(string $title = '', string $desc = ''): void {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{$t}</title>
 <meta name="description" content="{$d}">
+<meta name="robots" content="{$robots}">
 <meta name="app-url" content="{$url}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="canonical" href="{$canonical}">
+<link rel="icon" href="{$favicon}" type="image/png">
+<link rel="apple-touch-icon" href="{$favicon}">
+<meta property="og:locale" content="fa_IR">
+<meta property="og:site_name" content="{$appName}">
+<meta property="og:title" content="{$ogTitle}">
+<meta property="og:description" content="{$d}">
+<meta property="og:url" content="{$canonical}">
+<meta property="og:type" content="{$ogType}">
+<meta property="og:image" content="{$ogImage}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{$ogTitle}">
+<meta name="twitter:description" content="{$d}">
+<meta name="twitter:image" content="{$ogImage}">
+<meta name="theme-color" content="#0a2540">
+{$keywords}{$jsonLd}<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
 </head>
 <body>
+<a href="#main-content" class="skip-link">رفتن به محتوای اصلی</a>
 HTML;
 }
 
@@ -51,11 +95,12 @@ function render_navbar(?array $user = null): void {
         ['/trades.php', 'پیشنهادها', 'bi-inbox', ''],
         ['/wallet.php', 'کیف پول', 'bi-wallet2', ''],
         ['/ai/chat.php', 'دستیار AI', 'bi-stars', 'navbar-nav__link--ai'],
-        ['/about.php', 'راهنما', 'bi-question-circle', ''],
+        ['/about.php', 'سوالات متداول', 'bi-question-circle', ''],
     ];
 
     echo <<<HTML
-<nav class="navbar">
+<header class="site-header" role="banner">
+<nav class="navbar" aria-label="ناوبری اصلی">
   <div class="navbar-inner">
     <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
       <i class="bi bi-list"></i>
@@ -135,6 +180,7 @@ HTML;
     </div>
   </div>
 </nav>
+</header>
 
 <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
 <aside class="mobile-drawer" id="mobile-drawer">
@@ -182,9 +228,11 @@ HTML;
 HTML;
     } else {
         echo <<<HTML
-      <div class="notif-loading" id="notif-loading">
-        <span class="spinner"></span>
-        <span>در حال بارگذاری…</span>
+      <div class="notif-loading" id="notif-loading" aria-live="polite" aria-busy="true">
+HTML;
+        require_once __DIR__ . '/skeleton.php';
+        echo skeleton_notif_items(4);
+        echo <<<HTML
       </div>
       <div id="notif-list" style="display:none"></div>
 HTML;
@@ -247,36 +295,36 @@ function render_footer(): void {
     echo <<<HTML
 <footer class="site-footer">
   <div class="container">
-    <div class="site-footer__stats">
+    <dl class="site-footer__stats">
       <div class="site-footer__stat">
         <i class="bi bi-emoji-smile site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <span class="site-footer__stat-value">۹۸٪</span>
-          <span class="site-footer__stat-label">رضایت کاربران</span>
+          <dt class="site-footer__stat-label">رضایت کاربران</dt>
+          <dd class="site-footer__stat-value">۹۸٪</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-arrow-left-right site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <span class="site-footer__stat-value">۴۵,۰۰۰+</span>
-          <span class="site-footer__stat-label">مبادله موفق</span>
+          <dt class="site-footer__stat-label">مبادله موفق</dt>
+          <dd class="site-footer__stat-value">۴۵,۰۰۰+</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-box-seam site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <span class="site-footer__stat-value">۱۲۰,۰۰۰+</span>
-          <span class="site-footer__stat-label">کالای ثبت‌شده</span>
+          <dt class="site-footer__stat-label">کالای ثبت‌شده</dt>
+          <dd class="site-footer__stat-value">۱۲۰,۰۰۰+</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-people site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <span class="site-footer__stat-value">۲۵۰,۰۰۰+</span>
-          <span class="site-footer__stat-label">کاربر فعال</span>
+          <dt class="site-footer__stat-label">کاربر فعال</dt>
+          <dd class="site-footer__stat-value">۲۵۰,۰۰۰+</dd>
         </div>
       </div>
-    </div>
+    </dl>
 
     <div class="site-footer__main">
       <div class="site-footer__col">
@@ -284,7 +332,7 @@ function render_footer(): void {
         <ul class="site-footer__contact-list">
           <li>
             <i class="bi bi-telephone" aria-hidden="true"></i>
-            <a href="tel:+982191012345">۰۲۱-۹۱۰۱۲۳۴۵</a>
+            <a href="tel:+989981534269">+98 998 153 4269</a>
           </li>
           <li>
             <i class="bi bi-envelope" aria-hidden="true"></i>
@@ -292,7 +340,7 @@ function render_footer(): void {
           </li>
           <li>
             <i class="bi bi-geo-alt" aria-hidden="true"></i>
-            <span>تهران، خیابان آزادی</span>
+            <span>مرکز نواوری اکباتان</span>
           </li>
         </ul>
       </div>
@@ -311,7 +359,6 @@ function render_footer(): void {
           <li><a href="{$url}/contact.php">تماس با ما</a></li>
           <li><a href="{$url}/about.php">قوانین و مقررات</a></li>
           <li><a href="{$url}/about.php">حریم خصوصی</a></li>
-          <li><a href="{$url}/about.php">سوالات متداول</a></li>
         </ul>
       </div>
 
@@ -319,7 +366,7 @@ function render_footer(): void {
         <a href="{$url}/" class="site-footer__brand">
           <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
         </a>
-        <p class="site-footer__tagline">سواپین: بزرگترین پلتفرم مبادله کالا به کالا در ایران. کمتر بخر، بیشتر مبادله کن.</p>
+        <p class="site-footer__tagline">بزرگترین پلتفرم مبادله کالا با کالا در ایران</p>
         <div class="site-footer__social">
           <a href="#" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
           <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>

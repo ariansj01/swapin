@@ -56,7 +56,9 @@ $userListingsMatch   = DB::fetchAll(
 );
 $triangularSwaps = find_triangular_swaps($uid, 3);
 
-render_head('داشبورد');
+render_head('داشبورد', 'خلاصه حساب، آگهی‌ها و پیشنهادهای معاوضه در ' . APP_NAME, [
+    'robots' => 'noindex, nofollow',
+]);
 render_navbar($user);
 ?>
 
@@ -79,12 +81,12 @@ render_navbar($user);
 </div>
 <?php endif; ?>
 
-<div class="section-sm">
+<main id="main-content" class="section-sm">
   <div class="container">
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-6);flex-wrap:wrap;gap:var(--sp-3)">
+    <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-6);flex-wrap:wrap;gap:var(--sp-3)">
       <div>
-        <h2>خوش آمدید، <?= h(explode(' ', $user['name'])[0]) ?>!</h2>
+        <h1 style="font-size:1.5rem;margin:0">خوش آمدید، <?= h(explode(' ', $user['name'])[0]) ?>!</h1>
         <p style="color:var(--text-muted)">خلاصه‌ای از وضعیت حساب شما ·
           <a href="#swap-matches" style="font-weight:600">پیشنهادهای معاوضه ↓</a>
         </p>
@@ -92,7 +94,7 @@ render_navbar($user);
       <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
-    </div>
+    </header>
 
     <!-- Stats Row -->
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-8)">
@@ -163,9 +165,8 @@ render_navbar($user);
             </h3>
           </div>
           <div class="card-body" style="display:flex;flex-direction:column;gap:var(--sp-3);min-height:160px">
-            <div id="ai-match-loading" class="ai-match-loading" hidden>
-              <span class="spinner"></span>
-              <span>AI در حال تحلیل تطابق‌ها…</span>
+            <div id="ai-match-loading" class="ai-match-loading" hidden aria-live="polite" aria-busy="true">
+<?php require_once __DIR__ . '/includes/skeleton.php'; echo skeleton_match_rows(3); ?>
             </div>
             <div id="ai-match-list" style="display:flex;flex-direction:column;gap:var(--sp-3)">
             <?php if ($swapMatches): ?>
@@ -424,6 +425,6 @@ render_navbar($user);
     </div>
 
   </div>
-</div>
+</main>
 
 <?php render_footer(); ?>

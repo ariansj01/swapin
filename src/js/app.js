@@ -24,6 +24,56 @@ function showToast(msg, type = 'info', duration = 3500) {
   }, duration);
 }
 
+/* ── Skeleton loading helpers ──────────────────────────────────────────── */
+function skeletonListingCardHtml() {
+  return `<article class="listing-card listing-card--skeleton" aria-hidden="true">
+    <div class="listing-card__header"><div class="skeleton skeleton-line skeleton-line--sm"></div></div>
+    <div class="listing-card__product">
+      <div class="listing-card__details">
+        <div class="skeleton skeleton-line skeleton-line--title"></div>
+        <div class="skeleton skeleton-line skeleton-line--md"></div>
+        <div class="skeleton skeleton-line skeleton-line--value"></div>
+      </div>
+      <div class="skeleton skeleton-block skeleton-block--img"></div>
+    </div>
+    <div class="skeleton skeleton-line skeleton-line--meta"></div>
+    <div class="skeleton skeleton-line skeleton-line--cta"></div>
+  </article>`;
+}
+
+function showListingsGridSkeleton(count = 6) {
+  const grid = document.getElementById('listings-grid');
+  if (!grid) return;
+  grid.classList.add('is-loading');
+  grid.setAttribute('aria-busy', 'true');
+  grid.innerHTML = Array.from({ length: count }, skeletonListingCardHtml).join('');
+}
+
+function skeletonMatchRowsHtml(count = 3) {
+  return Array.from({ length: count }, () =>
+    `<div class="match-row match-row--skeleton" aria-hidden="true">
+      <div class="skeleton skeleton-circle skeleton-circle--score"></div>
+      <div class="match-row__body" style="flex:1">
+        <div class="skeleton skeleton-line skeleton-line--sm"></div>
+        <div class="skeleton skeleton-line skeleton-line--md"></div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function skeletonNotifItemsHtml(count = 4) {
+  return Array.from({ length: count }, () =>
+    `<div class="notif-item notif-item--skeleton" aria-hidden="true">
+      <div class="skeleton skeleton-circle skeleton-circle--md"></div>
+      <div class="notif-item__body" style="flex:1">
+        <div class="skeleton skeleton-line skeleton-line--sm"></div>
+        <div class="skeleton skeleton-line skeleton-line--md"></div>
+      </div>
+      <div class="skeleton skeleton-line skeleton-line--xs"></div>
+    </div>`
+  ).join('');
+}
+
 /* ── Dropdown menus ────────────────────────────────────────────────────── */
 function initDropdowns() {
   document.querySelectorAll('.dropdown').forEach(dropdown => {
@@ -193,6 +243,7 @@ function initHomeFilters() {
     p.set('sort', sort);
     p.delete('page');
 
+    showListingsGridSkeleton(6);
     const qs = p.toString();
     window.location.href = qs ? `${appUrl}/?${qs}` : `${appUrl}/`;
   }
@@ -209,6 +260,10 @@ function initHomeFilters() {
   document.getElementById('city-filter')?.addEventListener('change', applyFilter);
   document.getElementById('want-filter')?.addEventListener('change', applyFilter);
   document.getElementById('sort-filter')?.addEventListener('change', applyFilter);
+
+  document.querySelectorAll('.cat-pill').forEach(pill => {
+    pill.addEventListener('click', () => showListingsGridSkeleton(6));
+  });
 }
 
 /* ── Save / unsave button feedback ─────────────────────────────────────── */
@@ -365,10 +420,24 @@ function initTradeTypePicker() {
 function initImageGallery() {
   const mainImg = document.getElementById('main-img');
   const thumbs  = document.querySelectorAll('.thumb-img');
+  const gallery = mainImg?.closest('.listing-gallery__main');
+
+  if (mainImg && gallery) {
+    const hideSkeleton = () => gallery.classList.remove('is-loading');
+    if (mainImg.complete && mainImg.naturalWidth > 0) {
+      hideSkeleton();
+    } else {
+      mainImg.addEventListener('load', hideSkeleton, { once: true });
+      mainImg.addEventListener('error', hideSkeleton, { once: true });
+    }
+  }
+
   if (!mainImg || !thumbs.length) return;
 
   thumbs.forEach(thumb => {
     thumb.addEventListener('click', function() {
+      if (gallery) gallery.classList.add('is-loading');
+      mainImg.addEventListener('load', () => gallery?.classList.remove('is-loading'), { once: true });
       mainImg.src = this.src;
       thumbs.forEach(t => t.style.outline = 'none');
       this.style.outline = '2.5px solid var(--primary)';
@@ -574,7 +643,9 @@ function initNotifModal() {
 
   async function loadNotifications() {
     if (!listEl || !loadEl) return;
-    loadEl.style.display = 'flex';
+    loadEl.innerHTML = skeletonNotifItemsHtml(4);
+    loadEl.style.display = 'block';
+    loadEl.setAttribute('aria-busy', 'true');
     listEl.style.display = 'none';
     listEl.innerHTML = '';
 
@@ -582,6 +653,7 @@ function initNotifModal() {
       const res  = await fetch(appUrl + '/api/notifications.php');
       const data = await res.json();
       loadEl.style.display = 'none';
+      loadEl.setAttribute('aria-busy', 'false');
       listEl.style.display = 'block';
 
       if (!data.ok || !data.items?.length) {
@@ -762,8 +834,14 @@ function initAiMatch() {
   }
 
   async function loadMatches(forceRefresh = false) {
-    if (loadEl) loadEl.hidden = false;
+    if (loadEl) {
+      loadEl.hidden = false;
+      loadEl.innerHTML = skeletonMatchRowsHtml(3);
+      loadEl.setAttribute('aria-busy', 'true');
+    }
     if (refresh) refresh.disabled = true;
+    listEl.style.visibility = 'hidden';
+    listEl.setAttribute('aria-busy', 'true');
 
     const params = new URLSearchParams();
     if (select?.value) params.set('listing_id', select.value);
@@ -780,7 +858,12 @@ function initAiMatch() {
     } catch {
       if (typeof showToast === 'function') showToast('خطا در بارگذاری تطابق‌های AI.', 'error');
     } finally {
-      if (loadEl) loadEl.hidden = true;
+      if (loadEl) {
+        loadEl.hidden = true;
+        loadEl.setAttribute('aria-busy', 'false');
+      }
+      listEl.style.visibility = '';
+      listEl.setAttribute('aria-busy', 'false');
       if (refresh) refresh.disabled = false;
     }
   }

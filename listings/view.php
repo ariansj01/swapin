@@ -18,9 +18,9 @@ $listing = DB::fetch(
 
 if (!$listing) {
     http_response_code(404);
-    render_head('آگهی یافت نشد');
+    render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
     render_navbar($user);
-    echo '<div class="section"><div class="container"><div class="empty-state"><i class="bi bi-exclamation-circle"></i><h3>آگهی یافت نشد</h3><p>این آگهی ممکن است حذف یا معامله شده باشد.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></div>';
+    echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-exclamation-circle"></i><h1>آگهی یافت نشد</h1><p>این آگهی ممکن است حذف یا معامله شده باشد.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
     render_footer();
     exit;
 }
@@ -180,7 +180,24 @@ $buyKbc  = 0;
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
 $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
-render_head($listing['title'], mb_strimwidth($listing['description'], 0, 160, '…'));
+$listingUrl = APP_URL . '/listings/view.php?id=' . $id;
+$ogImage    = $images ? UPLOAD_URL . $images[0]['filename'] : LOGO_URL;
+$metaDesc   = mb_strimwidth(strip_tags($listing['description']), 0, 160, '…');
+
+render_head($listing['title'], $metaDesc, [
+    'canonical' => $listingUrl,
+    'og_type'   => 'product',
+    'og_image'  => $ogImage,
+    'keywords'  => implode(', ', array_filter([$listing['cat_name'], $listing['city'], 'معاوضه', 'مبادله کالا'])),
+    'json_ld'   => [
+        seo_json_ld_product($listing, $ogImage, $listingUrl),
+        seo_json_ld_breadcrumbs([
+            ['name' => 'خانه', 'url' => APP_URL . '/'],
+            ['name' => $listing['cat_name'], 'url' => APP_URL . '/?cat=' . $listing['cat_slug']],
+            ['name' => $listing['title']],
+        ]),
+    ],
+]);
 render_navbar($user);
 ?>
 
@@ -190,31 +207,34 @@ render_navbar($user);
 </div>
 <?php endif; ?>
 
-<main class="section-sm">
+<main id="main-content" class="section-sm">
   <div class="container">
 
     <!-- Breadcrumb -->
-    <nav style="font-size:.875rem;color:var(--text-muted);margin-bottom:var(--sp-5)">
-      <a href="<?= APP_URL ?>/">خانه</a>
-      <i class="bi bi-chevron-left" style="font-size:.7rem;margin:0 var(--sp-2)"></i>
-      <a href="<?= APP_URL ?>/?cat=<?= h($listing['cat_slug']) ?>"><?= h($listing['cat_name']) ?></a>
-      <i class="bi bi-chevron-left" style="font-size:.7rem;margin:0 var(--sp-2)"></i>
-      <span><?= h(mb_strimwidth($listing['title'], 0, 40, '…')) ?></span>
+    <nav aria-label="مسیر صفحه" style="font-size:.875rem;color:var(--text-muted);margin-bottom:var(--sp-5)">
+      <ol style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);list-style:none;margin:0;padding:0">
+        <li><a href="<?= APP_URL ?>/">خانه</a></li>
+        <li aria-hidden="true"><i class="bi bi-chevron-left" style="font-size:.7rem"></i></li>
+        <li><a href="<?= APP_URL ?>/?cat=<?= h($listing['cat_slug']) ?>"><?= h($listing['cat_name']) ?></a></li>
+        <li aria-hidden="true"><i class="bi bi-chevron-left" style="font-size:.7rem"></i></li>
+        <li aria-current="page"><?= h(mb_strimwidth($listing['title'], 0, 40, '…')) ?></li>
+      </ol>
     </nav>
 
     <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--sp-8);align-items:start">
 
       <!-- ── Left: Listing Content ─────────────────────────────────── -->
-      <div>
+      <article>
         <!-- Image Gallery -->
         <?php if ($images): ?>
-        <div style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--sp-5)">
+        <figure class="listing-gallery__main is-loading" style="margin-bottom:var(--sp-5)">
+          <div class="skeleton skeleton-block skeleton-block--hero" aria-hidden="true"></div>
           <img id="main-img" src="<?= UPLOAD_URL . h($images[0]['filename']) ?>"
                alt="<?= h($listing['title']) ?>"
                style="width:100%;max-height:480px;object-fit:cover;display:block;border-radius:var(--radius-lg)">
-        </div>
+        </figure>
         <?php if (count($images) > 1): ?>
-        <div style="display:flex;gap:var(--sp-3);overflow-x:auto;margin-bottom:var(--sp-5)">
+        <nav aria-label="تصاویر آگهی" style="display:flex;gap:var(--sp-3);overflow-x:auto;margin-bottom:var(--sp-5)">
           <?php foreach ($images as $i => $img): ?>
           <img src="<?= UPLOAD_URL . h($img['filename']) ?>"
                alt="تصویر <?= $i+1 ?>"
@@ -222,12 +242,12 @@ render_navbar($user);
                class="thumb-img"
                style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-md);cursor:pointer;flex-shrink:0;<?= $i===0 ? 'outline:2.5px solid var(--primary)' : '' ?>">
           <?php endforeach; ?>
-        </div>
+        </nav>
         <?php endif; ?>
         <?php else: ?>
-        <div style="background:var(--bg);border-radius:var(--radius-lg);height:280px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:3rem;margin-bottom:var(--sp-5)">
-          <i class="bi bi-image"></i>
-        </div>
+        <figure style="background:var(--bg);border-radius:var(--radius-lg);height:280px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:3rem;margin-bottom:var(--sp-5)" aria-label="بدون تصویر">
+          <i class="bi bi-image" aria-hidden="true"></i>
+        </figure>
         <?php endif; ?>
 
         <!-- Listing Details -->
@@ -293,17 +313,19 @@ render_navbar($user);
 
         <!-- Related Listings -->
         <?php if ($related): ?>
+        <section aria-label="آگهی‌های مشابه">
         <h3 class="mb-4">آگهی‌های مشابه</h3>
         <div class="listings-grid">
           <?php foreach ($related as $l): ?>
           <?php include __DIR__ . '/../includes/listing_card.php'; ?>
           <?php endforeach; ?>
         </div>
+        </section>
         <?php endif; ?>
-      </div>
+      </article>
 
       <!-- ── Right: Sidebar ─────────────────────────────────────────── -->
-      <div style="position:sticky;top:80px">
+      <aside style="position:sticky;top:80px" aria-label="اطلاعات فروشنده و اقدامات">
 
         <!-- Seller Card -->
         <div class="card mb-4">
@@ -478,7 +500,7 @@ render_navbar($user);
           </div>
         </div>
 
-      </div>
+      </aside>
     </div>
 
   </div>

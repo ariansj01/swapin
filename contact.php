@@ -39,11 +39,14 @@ if (!$_POST && $user) {
     $vals['email'] = $user['email'];
 }
 
-render_head('تماس با ما', 'با تیم ' . APP_NAME . ' در ارتباط باشید.');
+render_head('تماس با ما', 'با تیم ' . APP_NAME . ' در ارتباط باشید.', [
+    'canonical' => APP_URL . '/contact.php',
+    'json_ld'   => seo_json_ld_organization(),
+]);
 render_navbar($user);
 ?>
 
-<div class="section-sm">
+<main id="main-content" class="section-sm">
   <div class="container-sm">
 
     <div style="text-align:center;padding:var(--sp-8) 0 var(--sp-6)">
@@ -132,6 +135,6 @@ render_navbar($user);
     </div>
 
   </div>
-</div>
+</main>
 
 <?php render_footer(); ?>

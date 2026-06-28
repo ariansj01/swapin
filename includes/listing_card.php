@@ -17,7 +17,7 @@ $isSwap   = empty($l['listing_mode']) || $l['listing_mode'] === 'swap' || $l['li
 $isSaved  = in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
 ?>
-<div class="listing-card <?= listing_is_featured($l) ? 'featured' : '' ?> <?= listing_is_bumped($l) ? 'bumped' : '' ?>">
+<article class="listing-card <?= listing_is_featured($l) ? 'featured' : '' ?> <?= listing_is_bumped($l) ? 'bumped' : '' ?>">
   <div class="listing-card__header">
     <div class="listing-card__header-start">
       <?php if (!empty($l['want_in_return'])): ?>
@@ -59,7 +59,7 @@ $cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
   <a href="<?= $cardHref ?>" class="listing-card__link">
     <div class="listing-card__product">
       <div class="listing-card__details">
-        <h4 class="listing-card__title"><?= h($l['title']) ?></h4>
+        <h3 class="listing-card__title"><?= h($l['title']) ?></h3>
         <?php if (!empty($l['cat_name'])): ?>
         <span class="listing-card__cat">دسته: <?= h(category_label($l['cat_slug'] ?? '', $l['cat_name'] ?? '')) ?></span>
         <?php endif; ?>
@@ -106,4 +106,4 @@ $cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
       </span>
     </div>
   </a>
-</div>
+</article>

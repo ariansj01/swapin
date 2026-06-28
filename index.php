@@ -69,7 +69,13 @@ $listings = DB::fetchAll(
 
 $cities = DB::fetchAll("SELECT DISTINCT city FROM listings WHERE city IS NOT NULL AND city != '' ORDER BY city LIMIT 30");
 
-render_head('مرور آگهی‌ها', 'کالاهای قابل تهاتر را در بازار ' . APP_NAME . ' پیدا کنید');
+render_head('مرور آگهی‌ها', 'کالاهای قابل تهاتر را در بازار ' . APP_NAME . ' پیدا کنید. مبادله هوشمند کالا با کالا در سراسر ایران.', [
+    'canonical' => APP_URL . '/',
+    'og_type'   => 'website',
+    'og_image'  => APP_URL . '/src/img/heropng.png',
+    'keywords'  => 'مبادله کالا, تعویض کالا, بازار تهاتر, سواپین, معاوضه',
+    'json_ld'   => [seo_json_ld_website(), seo_json_ld_organization()],
+]);
 render_navbar($user);
 ?>
 
@@ -112,58 +118,63 @@ render_navbar($user);
 </section>
 <?php endif; ?>
 
-<main id="listings" class="section-sm">
+<main id="main-content" class="section-sm">
   <div class="container">
 
     <!-- Category strip -->
-    <div class="mb-5">
+    <nav class="mb-5" aria-label="دسته‌بندی‌ها">
       <?php render_categories_strip($catId); ?>
-    </div>
+    </nav>
 
     <!-- Filter bar -->
-    <div class="filter-bar mb-6">
+    <form class="filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false">
       <div style="flex:1;min-width:200px;position:relative">
-        <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
+        <label for="search-input" class="visually-hidden">جستجوی آگهی‌ها</label>
+        <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)" aria-hidden="true"></i>
         <input type="search" class="form-control" style="padding-left:40px;height:40px"
-               id="search-input" placeholder="جستجوی آگهی‌ها…"
+               id="search-input" name="q" placeholder="جستجوی آگهی‌ها…"
                value="<?= h($search) ?>">
       </div>
 
-      <select class="form-control" id="city-filter" style="width:auto;min-width:140px;height:50px">
+      <label for="city-filter" class="visually-hidden">شهر</label>
+      <select class="form-control" id="city-filter" name="city" style="width:auto;min-width:140px;height:50px">
         <option value="">همه شهرها</option>
         <?php foreach ($cities as $c): ?>
         <option value="<?= h($c['city']) ?>" <?= $city === $c['city'] ? 'selected' : '' ?>><?= h($c['city']) ?></option>
         <?php endforeach; ?>
       </select>
 
-      <select class="form-control" id="want-filter" style="width:auto;min-width:150px;height:50px">
+      <label for="want-filter" class="visually-hidden">نوع تهاتر</label>
+      <select class="form-control" id="want-filter" name="want" style="width:auto;min-width:150px;height:50px">
         <option value="">هر نوع تهاتر</option>
         <option value="item"    <?= $wantType === 'item'    ? 'selected' : '' ?>>کالا در برابر کالا</option>
         <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات می‌خواهد</option>
         <option value="credit"  <?= $wantType === 'credit'  ? 'selected' : '' ?>>اعتبار می‌خواهد</option>
       </select>
 
-      <select class="form-control" id="sort-filter" style="width:auto;min-width:130px;height:50px">
+      <label for="sort-filter" class="visually-hidden">مرتب‌سازی</label>
+      <select class="form-control" id="sort-filter" name="sort" style="width:auto;min-width:130px;height:50px">
         <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
         <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
         <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
       </select>
-    </div>
+    </form>
 
     <?php if ($category): ?>
-    <div class="d-flex align-center gap-3 mb-5">
+    <header class="d-flex align-center gap-3 mb-5">
       <h2 style="font-size:1.25rem"><?= h(category_label($category['slug'], $category['name'])) ?></h2>
       <span class="badge badge-primary"><?= $total ?> آگهی</span>
       <a href="<?= APP_URL ?>/" style="margin-inline-start:auto;font-size:.875rem"><i class="bi bi-x"></i> پاک کردن</a>
-    </div>
+    </header>
     <?php elseif ($search): ?>
-    <div class="d-flex align-center gap-3 mb-5">
+    <header class="d-flex align-center gap-3 mb-5">
       <h2 style="font-size:1.25rem">نتایج برای «<?= h($search) ?>»</h2>
       <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
-    </div>
+    </header>
     <?php endif; ?>
 
     <!-- Listings grid -->
+    <section id="listings" aria-label="فهرست آگهی‌ها">
     <?php if (empty($listings)): ?>
     <div class="empty-state">
       <i class="bi bi-search"></i>
@@ -180,7 +191,7 @@ render_navbar($user);
 
     <!-- Pagination -->
     <?php if ($pag['pages'] > 1): ?>
-    <div style="display:flex;justify-content:center;align-items:center;gap:var(--sp-2);margin-top:var(--sp-10)">
+    <nav aria-label="صفحه‌بندی آگهی‌ها" style="display:flex;justify-content:center;align-items:center;gap:var(--sp-2);margin-top:var(--sp-10)">
       <?php if ($pag['has_prev']): ?>
         <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page-1])) ?>" class="btn btn-outline btn-sm">
           <i class="bi bi-chevron-right"></i> قبلی
@@ -199,9 +210,10 @@ render_navbar($user);
           بعدی <i class="bi bi-chevron-left"></i>
         </a>
       <?php endif; ?>
-    </div>
+    </nav>
     <?php endif; ?>
     <?php endif; ?>
+    </section>
 
   </div>
 </main>

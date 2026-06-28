@@ -5,7 +5,10 @@ require_once __DIR__ . '/../includes/layout.php';
 $user = auth_user();
 $url  = APP_URL;
 
-render_head('دستیار هوش مصنوعی', 'مشاوره معاوضه، ارزش‌گذاری و پیشنهاد هوشمند در سواپین');
+render_head('دستیار هوش مصنوعی', 'مشاوره معاوضه، ارزش‌گذاری و پیشنهاد هوشمند در سواپین', [
+    'canonical' => APP_URL . '/ai/chat.php',
+    'robots'    => 'noindex, nofollow',
+]);
 render_navbar($user);
 ?>
 

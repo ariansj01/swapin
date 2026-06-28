@@ -1561,6 +1561,93 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── 24b. Skeleton loading ─────────────────────────────────────────────── */
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-line { height: 14px; margin-bottom: var(--sp-2); }
+.skeleton-line--title { height: 20px; width: 85%; }
+.skeleton-line--md    { height: 12px; width: 65%; }
+.skeleton-line--sm    { height: 12px; width: 40%; }
+.skeleton-line--xs    { height: 10px; width: 48px; flex-shrink: 0; }
+.skeleton-line--value { height: 16px; width: 50%; margin-top: var(--sp-2); }
+.skeleton-line--meta  { height: 10px; width: 75%; margin-top: var(--sp-3); }
+.skeleton-line--cta   { height: 36px; width: 100%; margin-top: var(--sp-3); border-radius: var(--radius-md); }
+
+.skeleton-block--img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.skeleton-circle { border-radius: 50%; flex-shrink: 0; }
+.skeleton-circle--md    { width: 36px; height: 36px; }
+.skeleton-circle--score { width: 44px; height: 44px; }
+
+.listing-card--skeleton { pointer-events: none; }
+.listing-card--skeleton .listing-card__product { display: flex; gap: var(--sp-3); }
+
+.listings-grid.is-loading { opacity: .85; }
+
+.notif-item--skeleton,
+.match-row--skeleton { pointer-events: none; }
+
+.listing-gallery__main {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.listing-gallery__main .skeleton-block--hero {
+  width: 100%;
+  height: 480px;
+  max-height: 480px;
+  border-radius: var(--radius-lg);
+}
+
+.listing-gallery__main.is-loading .skeleton-block--hero { display: block; }
+.listing-gallery__main.is-loading #main-img { opacity: 0; position: absolute; inset: 0; }
+.listing-gallery__main:not(.is-loading) .skeleton-block--hero { display: none; }
+.listing-gallery__main:not(.is-loading) #main-img { opacity: 1; position: static; }
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--sp-4);
+  z-index: 9999;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--primary);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: top var(--duration);
+}
+
+.skip-link:focus {
+  top: var(--sp-4);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.site-footer__stats { margin: 0; }
+.site-footer__stat-body dd { margin: 0; }
+.site-footer__stat-body dt { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; background: var(--bg); }
+}
+
 /* ── 25. Messages page ─────────────────────────────────────────────────── */
 .message-thread-list { display: flex; flex-direction: column; }
 
@@ -1812,12 +1899,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .ai-match-loading {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   gap: var(--sp-3);
-  padding: var(--sp-4);
-  color: var(--text-muted);
-  font-size: .875rem;
+  padding: var(--sp-2) 0;
 }
 
 .ai-match-loading[hidden] { display: none !important; }
@@ -2374,11 +2458,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .notif-loading {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-3);
-  padding: var(--sp-8);
-  color: var(--text-muted);
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
 }
 
 .notif-empty {
@@ -2492,7 +2574,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .site-footer__stat-body {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 2px;
 }
 
@@ -2514,7 +2596,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: grid;
   grid-template-columns: 1.1fr 1fr 1fr 1.35fr;
   gap: 0;
-  padding: var(--sp-8) var(--sp-6);
+  padding: 15px var(--sp-6);
 }
 
 .site-footer__col {
@@ -2541,7 +2623,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .site-footer__contact-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  gap: 2px;
 }
 
 .site-footer__contact-list li {
@@ -2580,8 +2662,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .site-footer__links {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: start;
 }
 
 .site-footer__links a {
@@ -2603,7 +2686,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .site-footer__logo {
   height: 100px;
   width: auto;
-  transform: translateX(-35px);
+  margin-top: -32px;
 }
 
 .site-footer__tagline {
@@ -2612,12 +2695,14 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   color: rgba(255, 255, 255, .75);
   margin-bottom: var(--sp-5);
   max-width: 280px;
+  margin-top: -40px;
 }
 
 .site-footer__social {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  margin-top: -13px;
 }
 
 .site-footer__social-link {
@@ -2642,7 +2727,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   text-align: center;
   font-size: .8125rem;
   color: var(--text-muted);
-  margin-top: var(--sp-6);
+  margin: var(--sp-6) 0;
 }
 
 @media (max-width: 992px) {
@@ -2715,9 +2800,35 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     padding-top: var(--sp-5);
     border-top: 1px solid rgba(255, 255, 255, .12);
   }
+
+  .site-footer__logo{
+    margin-top: -42px;
+  }
+  .site-footer__tagline{
+    margin-top: 40px;
+  }
+  .site-footer__links{
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .site-footer__links li{
+    width: 40%;
+  }
 }
 
 /* ── 30. Utilities ─────────────────────────────────────────────────────── */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .overflow-hidden { overflow: hidden; }
 .text-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
