@@ -4,8 +4,6 @@
 
 > Swapin is a Persian (RTL) barter marketplace built with plain PHP and MySQL — no framework required.
 
-**Languages:** [English](README.en.md) · [فارسی](README.md)
-
 ---
 
 ## Table of Contents
