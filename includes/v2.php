@@ -65,6 +65,17 @@ function listing_is_bumped(array $l): bool {
     return !empty($l['bump_until']) && strtotime($l['bump_until']) > time();
 }
 
+function listing_promotion_badges_html(array $l): string {
+    $html = '';
+    if (listing_is_featured($l)) {
+        $html .= '<span class="listing-promo-badge listing-promo-badge--featured"><i class="bi bi-star-fill"></i> آگهی ویژه</span>';
+    }
+    if (listing_is_bumped($l)) {
+        $html .= '<span class="listing-promo-badge listing-promo-badge--bumped"><i class="bi bi-arrow-up-circle-fill"></i> بالا برده</span>';
+    }
+    return $html;
+}
+
 function get_active_subscription(array $user): ?array {
     $plan = $user['subscription_plan'] ?? 'none';
     if ($plan === 'none') return null;
@@ -550,7 +561,7 @@ function find_swap_matches(int $userId, int $limit = 6): array {
          FROM listings l
          JOIN users u ON u.id = l.user_id
          JOIN categories c ON c.id = l.category_id
-         WHERE l.status = "active" AND l.user_id != ? AND l.listing_mode IN ("swap","both")
+         WHERE l.status = "active" AND l.review_status = "approved" AND l.user_id != ? AND l.listing_mode IN ("swap","both")
          ORDER BY l.created_at DESC LIMIT 150',
         [$userId]
     );
@@ -609,7 +620,7 @@ function find_triangular_swaps(int $userId, int $limit = 4): array {
          FROM listings l
          JOIN users u ON u.id = l.user_id
          JOIN categories c ON c.id = l.category_id
-         WHERE l.status = "active" AND l.listing_mode IN ("swap","both")
+         WHERE l.status = "active" AND l.review_status = "approved" AND l.listing_mode IN ("swap","both")
          ORDER BY l.created_at DESC LIMIT 120'
     );
 

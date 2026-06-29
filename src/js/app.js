@@ -317,9 +317,13 @@ function initSaveButtons() {
   });
 }
 
-/* ── Number formatting for KBC amounts ─────────────────────────────────── */
+/* ── Number formatting for credit amounts ──────────────────────────────── */
+function getCreditUnit() {
+  return document.querySelector('meta[name="credit-unit"]')?.content || 'تومان';
+}
+
 function formatKBC(amount) {
-  return new Intl.NumberFormat('fa-IR').format(Math.round(amount)) + ' SWP';
+  return new Intl.NumberFormat('fa-IR').format(Math.round(amount)) + ' ' + getCreditUnit();
 }
 
 /* ── Offer form validation ──────────────────────────────────────────────── */
@@ -335,7 +339,7 @@ function initOfferForm() {
 
     if (!listingVal && creditVal <= 0) {
       e.preventDefault();
-      showToast('لطفاً یک کالا یا مقداری اعتبار SWP پیشنهاد دهید.', 'error');
+      showToast('لطفاً یک کالا یا مقداری اعتبار ' + getCreditUnit() + ' پیشنهاد دهید.', 'error');
     }
   });
 }
@@ -872,6 +876,29 @@ function initAiMatch() {
   select?.addEventListener('change', () => loadMatches(true));
 }
 
+/* ── Support floating widget ───────────────────────────────────────────── */
+function initSupportWidget() {
+  const toggle = document.getElementById('support-widget-toggle');
+  const menu   = document.getElementById('support-widget-menu');
+  if (!toggle || !menu) return;
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = !menu.hidden;
+    menu.hidden = open;
+    toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+    toggle.classList.toggle('is-open', !open);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('support-widget')?.contains(e.target)) {
+      menu.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.classList.remove('is-open');
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initDropdowns();
   initMobileNav();
@@ -895,6 +922,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initQuickAmounts();
   initPasswordStrength();
   initConfirmForms();
+  initSupportWidget();
 
   // Restore active tab from URL
   const tabParam = new URLSearchParams(window.location.search).get('tab');

@@ -136,7 +136,7 @@ render_navbar($user);
         <div class="card-body">
           <p class="fs-sm" style="color:var(--text-muted);line-height:1.7">
             هر خط = یک کالا. فرمت:
-            <code dir="ltr">عنوان | slug-دسته | ارزش-SWP | نیازمند</code>
+            <code dir="ltr">عنوان | slug-دسته | ارزش-تومان | نیازمند</code>
           </p>
           <form method="POST">
             <textarea class="form-control" name="bulk_listings" rows="10" <?= $isStore ? '' : 'disabled' ?>

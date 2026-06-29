@@ -13,7 +13,8 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     $robots    = h($seo['robots'] ?? 'index, follow');
     $ogTitle   = h($seo['og_title'] ?? ($title ?: APP_NAME . ' — بازار تعویض هوشمند'));
     $favicon   = $url . '/src/img/logo.png';
-    $appName   = h(APP_NAME);
+    $appName    = h(APP_NAME);
+    $creditUnit = h(CREDIT_UNIT);
 
     $keywords = '';
     if (!empty($seo['keywords'])) {
@@ -43,9 +44,8 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <meta name="description" content="{$d}">
 <meta name="robots" content="{$robots}">
 <meta name="app-url" content="{$url}">
+<meta name="credit-unit" content="{$creditUnit}">
 <link rel="canonical" href="{$canonical}">
-<link rel="icon" href="{$favicon}" type="image/png">
-<link rel="apple-touch-icon" href="{$favicon}">
 <meta property="og:locale" content="fa_IR">
 <meta property="og:site_name" content="{$appName}">
 <meta property="og:title" content="{$ogTitle}">
@@ -63,6 +63,10 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
+<link rel="icon" type="image/png" sizes="32x32" href="{$url}/src/img/fav_icon/android-chrome-512x512.png">
+<link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/android-chrome-192x192.png">
+<link rel="apple-touch-icon" href="{$url}/src/img/fav_icon/apple-touch-icon.png">
+<link rel="manifest" href="{$url}/src/img/fav_icon/site.webmanifest">
 </head>
 <body>
 <a href="#main-content" class="skip-link">رفتن به محتوای اصلی</a>
@@ -73,6 +77,7 @@ function render_navbar(?array $user = null): void {
     $url        = APP_URL;
     $logoUrl    = APP_URL . '/src/img/swapin-light-png.png';
     $appName    = APP_NAME;
+    $creditUnit = h(CREDIT_UNIT);
     $unread     = 0;
     $pendOffers = 0;
     if ($user) {
@@ -96,6 +101,7 @@ function render_navbar(?array $user = null): void {
         ['/wallet.php', 'کیف پول', 'bi-wallet2', ''],
         ['/ai/chat.php', 'دستیار AI', 'bi-stars', 'navbar-nav__link--ai'],
         ['/about.php', 'سوالات متداول', 'bi-question-circle', ''],
+        ['/fraud-prevention.php', 'راهنمای کلاهبرداری', 'bi-shield-exclamation', ''],
     ];
 
     echo <<<HTML
@@ -143,7 +149,7 @@ HTML;
       <div class="dropdown hide-mobile">
         <button class="btn btn-ghost d-flex align-center gap-2" id="user-menu-btn">
           <span class="avatar avatar-sm">{$initials}</span>
-          <span class="hide-mobile" style="font-size:.875rem;font-weight:600">{$credFmt} SWP</span>
+          <span class="hide-mobile" style="font-size:.875rem;font-weight:600">{$credFmt} {$creditUnit}</span>
           <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
         <div class="dropdown-menu" id="user-menu">
@@ -156,6 +162,8 @@ HTML;
         }
         echo <<<HTML
           <a href="{$url}/listings/my.php" class="dropdown-item"><i class="bi bi-grid"></i> آگهی‌های من</a>
+          <a href="{$url}/listings/saved.php" class="dropdown-item"><i class="bi bi-heart"></i> علاقه‌مندی‌ها</a>
+          <a href="{$url}/support/index.php" class="dropdown-item"><i class="bi bi-headset"></i> پشتیبانی</a>
           <a href="{$url}/trades.php" class="dropdown-item"><i class="bi bi-arrow-left-right"></i> معاملات من</a>
           <a href="{$url}/wallet.php" class="dropdown-item"><i class="bi bi-wallet2"></i> کیف پول</a>
           <a href="{$url}/subscription.php" class="dropdown-item"><i class="bi bi-gem"></i> اشتراک</a>
@@ -357,6 +365,8 @@ function render_footer(): void {
         <ul class="site-footer__links">
           <li><a href="{$url}/about.php">درباره ما</a></li>
           <li><a href="{$url}/contact.php">تماس با ما</a></li>
+          <li><a href="{$url}/support/index.php">پشتیبانی</a></li>
+          <li><a href="{$url}/fraud-prevention.php">راهنمای امنیت</a></li>
           <li><a href="{$url}/about.php">قوانین و مقررات</a></li>
           <li><a href="{$url}/about.php">حریم خصوصی</a></li>
         </ul>
@@ -379,9 +389,34 @@ function render_footer(): void {
     <p class="site-footer__copy">تمامی حقوق این وبسایت متعلق به سواپین می‌باشد.</p>
   </div>
 </footer>
+HTML;
+    render_support_widget($user);
+    echo <<<HTML
 <script src="{$url}/src/js/app.js"></script>
 </body>
 </html>
+HTML;
+}
+
+function render_support_widget(?array $user = null): void {
+    $url = APP_URL;
+    $loggedIn = $user !== null;
+    $supportHref = $loggedIn ? $url . '/support/index.php' : $url . '/auth/login.php?redirect=' . urlencode('/support/index.php');
+    $reportHref  = $url . '/support/report.php';
+    $fraudHref   = $url . '/fraud-prevention.php';
+
+    echo <<<HTML
+<div class="support-widget" id="support-widget">
+  <button type="button" class="support-widget__toggle" id="support-widget-toggle" aria-label="پشتیبانی" aria-expanded="false">
+    <i class="bi bi-headset"></i>
+  </button>
+  <div class="support-widget__menu" id="support-widget-menu" hidden>
+    <div class="support-widget__title"><i class="bi bi-headset"></i> پشتیبانی</div>
+    <a href="{$supportHref}" class="support-widget__link"><i class="bi bi-ticket-perforated"></i> ثبت تیکت</a>
+    <a href="{$reportHref}" class="support-widget__link"><i class="bi bi-bug"></i> گزارش خطا</a>
+    <!-- <a href="{$fraudHref}" class="support-widget__link"><i class="bi bi-shield-exclamation"></i> راهنمای کلاهبرداری</a> -->
+  </div>
+</div>
 HTML;
 }
 

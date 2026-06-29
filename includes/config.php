@@ -2,7 +2,9 @@
 // ─── Core Configuration ────────────────────────────────────────────────────
 define('APP_NAME',          'سواپین');
 define('APP_NAME_EN',       'Swapin');
-define('CREDIT_UNIT',       'SWP');
+define('CREDIT_UNIT',       'تومان');
+define('ADMIN_EMAIL',       'admin@kalabkala.com');
+define('ADMIN_DEFAULT_PASS', '1234');
 define('APP_URL',           'http://localhost/swaapin');
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
@@ -191,16 +193,21 @@ function upload_image(array $file, string $prefix = 'img'): ?string {
 }
 
 function timeago(string $datetime): string {
-    $diff = time() - strtotime($datetime);
-    if ($diff < 60)     return 'همین الان';
-    if ($diff < 3600)   return (int)($diff / 60) . ' دقیقه پیش';
-    if ($diff < 86400)  return (int)($diff / 3600) . ' ساعت پیش';
-    if ($diff < 604800) return (int)($diff / 86400) . ' روز پیش';
-    return persian_date($datetime);
+    $diff = max(0, time() - strtotime($datetime));
+    if ($diff < 60)       return 'چند لحظه پیش';
+    if ($diff < 3600)     return (int)($diff / 60) . ' دقیقه پیش';
+    if ($diff < 86400)    return (int)($diff / 3600) . ' ساعت پیش';
+    if ($diff < 604800)   return (int)($diff / 86400) . ' روز پیش';
+    if ($diff < 2592000)  return (int)($diff / 604800) . ' هفته پیش';
+    if ($diff < 31536000) return (int)($diff / 2592000) . ' ماه پیش';
+    return (int)($diff / 31536000) . ' سال پیش';
 }
 
 require_once __DIR__ . '/i18n.php';
+require_once __DIR__ . '/listing_validator.php';
 require_once __DIR__ . '/v2.php';
+require_once __DIR__ . '/admin.php';
+require_once __DIR__ . '/support.php';
 
 if (is_readable(__DIR__ . '/ai_secrets.php')) {
     require_once __DIR__ . '/ai_secrets.php';

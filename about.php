@@ -69,7 +69,7 @@ render_navbar($user);
       </div>
     </div>
 
-    <!-- SWP Credits -->
+    <!-- Wallet Credits -->
     <div class="card mb-6" style="border-left:4px solid var(--primary)">
       <div class="card-body" style="padding:var(--sp-8)">
         <h2 style="font-size:1.25rem;margin-bottom:var(--sp-4)">

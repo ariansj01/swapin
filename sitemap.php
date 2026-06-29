@@ -10,6 +10,8 @@ $urls = [
     ['loc' => $base . '/',              'priority' => '1.0', 'changefreq' => 'daily'],
     ['loc' => $base . '/about.php',     'priority' => '0.6', 'changefreq' => 'monthly'],
     ['loc' => $base . '/contact.php',   'priority' => '0.5', 'changefreq' => 'monthly'],
+    ['loc' => $base . '/fraud-prevention.php', 'priority' => '0.6', 'changefreq' => 'monthly'],
+    ['loc' => $base . '/support/index.php', 'priority' => '0.5', 'changefreq' => 'weekly'],
     ['loc' => $base . '/ai/chat.php',   'priority' => '0.5', 'changefreq' => 'weekly'],
 ];
 
@@ -23,7 +25,7 @@ foreach ($cats as $cat) {
 }
 
 $listings = DB::fetchAll(
-    'SELECT id, updated_at FROM listings WHERE status = "active" ORDER BY updated_at DESC LIMIT 5000'
+    'SELECT id, updated_at FROM listings WHERE status = "active" AND review_status = "approved" ORDER BY updated_at DESC LIMIT 5000'
 );
 foreach ($listings as $l) {
     $urls[] = [

@@ -143,7 +143,7 @@ function ai_chat_respond(string $userMessage, array $history = [], ?array $user 
 function ai_chat_fallback(string $userMessage): string {
     $t = mb_strtolower($userMessage);
     if (str_contains($t, 'قیمت') || str_contains($t, 'ارزش')) {
-        return 'برای ارزش‌گذاری، کالا را در «ثبت کالا» ثبت کنید — موتور قیمت‌گذاری AI ارزش SWP را به‌صورت محدوده پیشنهاد می‌دهد.';
+        return 'برای ارزش‌گذاری، کالا را در «ثبت کالا» ثبت کنید — موتور قیمت‌گذاری AI ارزش ' . CREDIT_UNIT . ' را به‌صورت محدوده پیشنهاد می‌دهد.';
     }
     if (str_contains($t, 'معاوضه') || str_contains($t, 'تعویض')) {
         return 'برای یافتن معاوضه مناسب، از فیلترهای صفحه اصلی و بخش پیشنهادهای داشبورد استفاده کنید.';
@@ -160,7 +160,7 @@ function ai_fetch_similar_listings(int $categoryId, int $limit = 6): array {
                 c.name AS category_name, c.slug AS category_slug
          FROM listings l
          JOIN categories c ON c.id = l.category_id
-         WHERE l.category_id = ? AND l.status = "active" AND l.estimated_value > 0
+         WHERE l.category_id = ? AND l.status = "active" AND l.review_status = "approved" AND l.estimated_value > 0
          ORDER BY l.created_at DESC
          LIMIT ?',
         [$categoryId, $limit]
@@ -170,7 +170,7 @@ function ai_fetch_similar_listings(int $categoryId, int $limit = 6): array {
 function ai_demand_level(int $categoryId): string {
     if ($categoryId <= 0) return 'medium';
     $count = (int)(DB::fetch(
-        'SELECT COUNT(*) AS c FROM listings WHERE category_id = ? AND status = "active" AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)',
+        'SELECT COUNT(*) AS c FROM listings WHERE category_id = ? AND status = "active" AND review_status = "approved" AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)',
         [$categoryId]
     )['c'] ?? 0);
     if ($count >= 20) return 'high';

@@ -69,6 +69,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($vals['listing_mode'] === 'sell' && mb_strlen($vals['want_in_return']) < 10)
         $vals['want_in_return'] = 'فروش مستقیم — نیازی به تعویض نیست';
 
+    $contentErrors = validate_listing_content([
+        'title'           => $vals['title'],
+        'description'     => $vals['description'],
+        'want_in_return'  => $vals['want_in_return'],
+    ]);
+    foreach ($contentErrors as $field => $msg) {
+        if (!isset($errors[$field])) $errors[$field] = $msg;
+    }
+
     if (empty($errors)) {
         $listingId = DB::insert('listings', [
             'user_id'          => $user['id'],
@@ -84,6 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'needs_inspection' => $vals['needs_inspection'],
             'city'             => $vals['city'] ?: null,
             'status'           => 'active',
+            'review_status'    => 'pending',
         ]);
 
         // Handle image uploads
@@ -116,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         ai_match_clear_cache((int) $user['id']);
 
-        header('Location: ' . APP_URL . '/listings/view.php?id=' . $listingId . '&created=1'); exit;
+        header('Location: ' . APP_URL . '/listings/view.php?id=' . $listingId . '&pending=1'); exit;
     }
 }
 
@@ -132,7 +142,7 @@ render_navbar($user);
         <i class="bi bi-arrow-right"></i> بازگشت به آگهی‌ها
       </a>
       <h2 class="mt-3">ثبت آگهی جدید</h2>
-      <p style="color:var(--text-muted)">کالا یا خدمت خود را ثبت کنید و بگویید چه چیزی می‌خواهید</p>
+      <p style="color:var(--text-muted)">کالا یا خدمت خود را ثبت کنید — پس از بررسی تیم، آگهی منتشر می‌شود</p>
     </div>
 
     <!-- Progress Steps -->
@@ -368,7 +378,7 @@ render_navbar($user);
       <ul class="ai-pricing-steps" id="ai-pricing-steps">
         <li class="is-active">بررسی مشخصات و وضعیت کالا</li>
         <li>مقایسه با بازار معاوضه</li>
-        <li>محاسبه ارزش تقریبی SWP</li>
+        <li>محاسبه ارزش تقریبی <?= CREDIT_UNIT ?></li>
       </ul>
     </div>
 

@@ -88,7 +88,7 @@ return [
     ],
     28 => [ // حمل
         ['title' => 'خدمات اسباب‌کشی', 'description' => 'وانت نیسان برای اسباب‌کشی درون شهری. یک بار.', 'condition' => 'new', 'estimated_value' => 2500000, 'want_in_return' => 'لوازم یا خدمات', 'want_type' => 'service'],
-        ['title' => 'حمل بار بین‌شهری', 'description' => 'حمل بار تا ۵۰۰ کیلو. تهران-اصفهان.', 'condition' => 'new', 'estimated_value' => 4000000, 'want_in_return' => 'اعتبار SWP یا کالا', 'want_type' => 'credit'],
+        ['title' => 'حمل بار بین‌شهری', 'description' => 'حمل بار تا ۵۰۰ کیلو. تهران-اصفهان.', 'condition' => 'new', 'estimated_value' => 4000000, 'want_in_return' => 'اعتبار تومان یا کالا', 'want_type' => 'credit'],
     ],
     5 => [ // ورزش
         ['title' => 'دوچرخه کوهستان', 'description' => 'دوچرخه ۲۱ دنده. ترمز دیسکی. مناسب کوه و شهر.', 'condition' => 'good', 'estimated_value' => 8500000, 'want_in_return' => 'اسکیت یا تجهیزات ورزشی', 'want_type' => 'item'],

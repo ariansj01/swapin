@@ -2836,3 +2836,137 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* ── Support widget ────────────────────────────────────────────────────── */
+.support-widget {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  left: var(--sp-4);
+  z-index: 900;
+}
+@media (min-width: 769px) {
+  .support-widget { bottom: var(--sp-6); }
+}
+.support-widget__toggle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 1.375rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(10, 37, 64, .25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s, box-shadow .2s;
+}
+.support-widget__toggle:hover,
+.support-widget__toggle.is-open {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(10, 37, 64, .35);
+}
+.support-widget__menu {
+  position: absolute;
+  bottom: calc(100% + var(--sp-3));
+  left: 0;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--sp-2);
+  animation: fadeInUp .2s ease;
+}
+.support-widget__title {
+  font-weight: 700;
+  font-size: .875rem;
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--sp-1);
+}
+.support-widget__link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  text-decoration: none;
+  font-size: .875rem;
+  font-weight: 500;
+  transition: background .15s;
+}
+.support-widget__link:hover { background: var(--bg); color: var(--primary); }
+.support-widget__link i { font-size: 1.125rem; color: var(--primary); }
+
+/* ── Support ticket thread ─────────────────────────────────────────────── */
+.support-thread { display: flex; flex-direction: column; gap: var(--sp-4); }
+.support-msg {
+  padding: var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+.support-msg--admin {
+  background: rgba(0, 174, 239, .06);
+  border-inline-start: 3px solid var(--primary);
+}
+.support-msg__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  font-size: .875rem;
+}
+.support-msg__body { line-height: 1.7; font-size: .9375rem; }
+
+/* ── Listing promotion badges ──────────────────────────────────────────── */
+.listing-promo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+.listing-promo-badge--featured {
+  background: var(--accent-light);
+  color: #8a6d00;
+}
+.listing-promo-badge--bumped {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+/* ── Fraud prevention page ─────────────────────────────────────────────── */
+.fraud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-5);
+}
+.fraud-item__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: rgba(245, 158, 11, .12);
+  color: #d97706;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-bottom: var(--sp-3);
+}
+.fraud-item h3 { font-size: 1rem; margin: 0 0 var(--sp-2); }
+.fraud-item p { font-size: .875rem; color: var(--text-muted); line-height: 1.7; margin: 0; }
+.fraud-steps {
+  margin: 0;
+  padding-inline-start: var(--sp-5);
+  display: grid;
+  gap: var(--sp-3);
+  line-height: 1.7;
+}
+.fraud-steps li { font-size: .9375rem; }

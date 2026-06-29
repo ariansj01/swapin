@@ -37,6 +37,7 @@ $cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
       <?php if (listing_is_featured($l)): ?>
       <span class="badge badge-gold"><i class="bi bi-star-fill"></i></span>
       <?php endif; ?>
+      <?= listing_promotion_badges_html($l) ?>
     </div>
     <?php if (!empty($user['id'])): ?>
     <button type="button"
@@ -93,6 +94,9 @@ $cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
     <?php endif; ?>
 
     <div class="listing-card__meta">
+      <?php if (!empty($l['created_at'])): ?>
+      <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
+      <?php endif; ?>
       <span><i class="bi bi-eye"></i> بازدید: <?= number_format((int)($l['views'] ?? 0)) ?></span>
       <span>وضعیت: <?= condition_label($l['condition'] ?? '') ?></span>
       <?php if (!empty($l['city'])): ?>

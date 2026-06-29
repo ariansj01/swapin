@@ -28,7 +28,7 @@ if (!$profile) {
 $isOwnProfile = $currentUser && $currentUser['id'] == $profileId;
 
 // Stats
-$listingCount  = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "active"', [$profileId])['c'] ?? 0);
+$listingCount  = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "active" AND review_status = "approved"', [$profileId])['c'] ?? 0);
 $tradeCount    = (int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE (user_a_id = ? OR user_b_id = ?) AND status = "completed"', [$profileId, $profileId])['c'] ?? 0);
 $reviewCount   = (int)(DB::fetch('SELECT COUNT(*) AS c FROM reviews WHERE to_user_id = ?', [$profileId])['c'] ?? 0);
 
@@ -39,7 +39,7 @@ $listings = DB::fetchAll(
      FROM listings l
      JOIN categories c ON c.id = l.category_id
      JOIN users u ON u.id = l.user_id
-     WHERE l.user_id = ? AND l.status = "active"
+     WHERE l.user_id = ? AND l.status = "active" AND l.review_status = "approved"
      ORDER BY l.created_at DESC LIMIT 8',
     [$profileId]
 );

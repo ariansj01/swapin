@@ -1,0 +1,80 @@
+<?php
+// Admin panel layout helpers
+
+function render_admin_head(string $title = ''): void {
+    $t   = $title ? h($title) . ' — پنل مدیریت' : 'پنل مدیریت — ' . APP_NAME;
+    $url = APP_URL;
+    echo <<<HTML
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{$t}</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{$url}/src/css/main.css">
+<link rel="stylesheet" href="{$url}/src/css/admin.css">
+</head>
+<body class="admin-body">
+HTML;
+}
+
+function render_admin_shell(array $admin, string $active, string $content): void {
+    $url    = APP_URL;
+    $counts = admin_pending_counts();
+    $name   = h($admin['name']);
+
+    $nav = [
+        'index'       => ['/', 'داشبورد', 'bi-speedometer2', 0],
+        'listings'    => ['/listings.php', 'آگهی‌ها', 'bi-grid', $counts['listings']],
+        'kyc'         => ['/kyc.php', 'احراز هویت', 'bi-person-badge', $counts['kyc']],
+        'inspections' => ['/inspections.php', 'بازرسی', 'bi-search', $counts['inspections']],
+        'disputes'    => ['/disputes.php', 'اختلافات', 'bi-exclamation-triangle', $counts['disputes']],
+        'tickets'     => ['/tickets.php', 'پشتیبانی', 'bi-headset', $counts['tickets']],
+        'users'       => ['/users.php', 'کاربران', 'bi-people', 0],
+    ];
+
+    echo '<div class="admin-layout">';
+    echo '<aside class="admin-sidebar">';
+    echo '<div class="admin-sidebar__brand"><i class="bi bi-shield-lock"></i> پنل مدیریت</div>';
+    echo '<nav class="admin-nav">';
+    foreach ($nav as $key => [$href, $label, $icon, $badge]) {
+        $cls = $active === $key ? ' admin-nav__link--active' : '';
+        $badgeHtml = $badge > 0 ? '<span class="admin-nav__badge">' . $badge . '</span>' : '';
+        echo "<a href=\"{$url}/admin{$href}\" class=\"admin-nav__link{$cls}\"><i class=\"bi {$icon}\"></i> {$label}{$badgeHtml}</a>";
+    }
+    echo '</nav>';
+    echo '<div class="admin-sidebar__foot">';
+    echo "<div class=\"admin-sidebar__user\"><i class=\"bi bi-person-circle\"></i> {$name}</div>";
+    echo "<a href=\"{$url}/\" class=\"admin-nav__link\"><i class=\"bi bi-house\"></i> سایت</a>";
+    echo "<a href=\"{$url}/admin/logout.php\" class=\"admin-nav__link\"><i class=\"bi bi-box-arrow-left\"></i> خروج</a>";
+    echo '</div></aside>';
+    echo '<main class="admin-main" id="main-content">' . $content . '</main>';
+    echo '</div>';
+}
+
+function render_admin_footer(): void {
+    $url = APP_URL;
+    echo "<script src=\"{$url}/src/js/app.js\"></script></body></html>";
+}
+
+function admin_flash(): array {
+    $msg = $_SESSION['admin_flash'] ?? '';
+    $type = $_SESSION['admin_flash_type'] ?? 'success';
+    unset($_SESSION['admin_flash'], $_SESSION['admin_flash_type']);
+    return [$msg, $type];
+}
+
+function admin_set_flash(string $msg, string $type = 'success'): void {
+    $_SESSION['admin_flash'] = $msg;
+    $_SESSION['admin_flash_type'] = $type;
+}
+
+function admin_alert_html(string $msg, string $type = 'success'): string {
+    if ($msg === '') return '';
+    $cls = $type === 'error' ? 'alert-danger' : 'alert-success';
+    return '<div class="alert ' . $cls . ' mb-5"><i class="bi bi-info-circle"></i> ' . h($msg) . '</div>';
+}

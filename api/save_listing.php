@@ -23,7 +23,7 @@ if ($listingId <= 0) {
     exit;
 }
 
-$listing = DB::fetch('SELECT id FROM listings WHERE id = ? AND status = "active"', [$listingId]);
+$listing = DB::fetch('SELECT id FROM listings WHERE id = ? AND status = "active" AND review_status = "approved"', [$listingId]);
 if (!$listing) {
     http_response_code(404);
     echo json_encode(['ok' => false, 'error' => 'not_found']);

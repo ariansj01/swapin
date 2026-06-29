@@ -25,6 +25,28 @@ if (!$listing) {
     exit;
 }
 
+$isOwner = $user && (int)$user['id'] === (int)$listing['user_id'];
+$isAdmin = $user && is_admin_user($user);
+$reviewStatus = $listing['review_status'] ?? 'approved';
+
+if ($listing['status'] !== 'active' && !$isOwner && !$isAdmin) {
+    http_response_code(404);
+    render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
+    render_navbar($user);
+    echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-exclamation-circle"></i><h1>آگهی یافت نشد</h1><p>این آگهی دیگر در دسترس نیست.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
+    render_footer();
+    exit;
+}
+
+if ($reviewStatus !== 'approved' && !$isOwner && !$isAdmin) {
+    http_response_code(404);
+    render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
+    render_navbar($user);
+    echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-hourglass-split"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی هنوز تأیید نشده یا رد شده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
+    render_footer();
+    exit;
+}
+
 // Increment views
 DB::query('UPDATE listings SET views = views + 1 WHERE id = ?', [$id]);
 
@@ -42,7 +64,7 @@ $myListings = $user ? DB::fetchAll(
     'SELECT l.id, l.title, i.filename AS thumb
      FROM listings l
      LEFT JOIN listing_images i ON i.listing_id = l.id AND i.is_primary = 1
-     WHERE l.user_id = ? AND l.status = "active" AND l.id != ?
+     WHERE l.user_id = ? AND l.status = "active" AND l.review_status = "approved" AND l.id != ?
      ORDER BY l.created_at DESC',
     [$user['id'], $id]
 ) : [];
@@ -60,7 +82,7 @@ $related = DB::fetchAll(
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
-     WHERE l.category_id = ? AND l.id != ? AND l.status = "active"
+     WHERE l.category_id = ? AND l.id != ? AND l.status = "active" AND l.review_status = "approved"
      ORDER BY l.created_at DESC LIMIT 4',
     [$listing['category_id'], $id]
 );
@@ -117,9 +139,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } elseif ((float)($listing['sell_price'] ?? 0) <= 0) {
             $offerError = 'قیمت فروش برای این آگهی تنظیم نشده است.';
         } else {
-            $kbc = max(1, (int)ceil((float)$listing['sell_price'] / 10000));
+            $kbc = max(1, (int)ceil((float)$listing['sell_price']));
             if ($kbc > $user['credit_balance']) {
-                $offerError = 'موجودی ' . CREDIT_UNIT . ' کافی نیست. نیاز: ' . fmt_credit($kbc) . ' (~' . number_format((float)$listing['sell_price'], 0) . ' تومان).';
+                $offerError = 'موجودی ' . CREDIT_UNIT . ' کافی نیست. نیاز: ' . fmt_credit($kbc);
             } else {
                 $offerId = DB::insert('trade_offers', [
                     'listing_id'       => $id,
@@ -174,7 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-$isOwner = $user && $user['id'] == $listing['user_id'];
 $canBuy  = false; // سواپین — فقط معاوضه، بدون خرید مستقیم
 $buyKbc  = 0;
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
@@ -201,9 +222,16 @@ render_head($listing['title'], $metaDesc, [
 render_navbar($user);
 ?>
 
-<?php if (isset($_GET['created'])): ?>
-<div class="alert alert-success" style="border-radius:0;border-inline-start:0;border-inline-end:0">
-  <div class="container"><i class="bi bi-check-circle-fill"></i> آگهی شما منتشر شد! برای دریافت پیشنهاد بیشتر آن را به اشتراک بگذارید.</div>
+<?php if (isset($_GET['pending']) || $reviewStatus === 'pending'): ?>
+<div class="alert alert-warning" style="border-radius:0;border-inline-start:0;border-inline-end:0">
+  <div class="container"><i class="bi bi-hourglass-split"></i> آگهی شما ثبت شد و در انتظار تأیید تیم <?= APP_NAME ?> است. پس از بررسی، در لیست آگهی‌ها نمایش داده می‌شود.</div>
+</div>
+<?php elseif ($reviewStatus === 'rejected'): ?>
+<div class="alert alert-danger" style="border-radius:0;border-inline-start:0;border-inline-end:0">
+  <div class="container"><i class="bi bi-x-circle"></i> این آگهی رد شده است.
+    <?php if (!empty($listing['review_note'])): ?> دلیل: <?= h($listing['review_note']) ?><?php endif; ?>
+    — <a href="<?= APP_URL ?>/listings/edit.php?id=<?= $id ?>">ویرایش و ارسال مجدد</a>
+  </div>
 </div>
 <?php endif; ?>
 
@@ -265,9 +293,11 @@ render_navbar($user);
                   <?php if (!empty($listing['inspection_status']) && $listing['inspection_status'] !== 'none'): ?>
                   <span class="badge badge-warning"><i class="bi bi-search"></i> <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?></span>
                   <?php endif; ?>
+                  <?= listing_promotion_badges_html($listing) ?>
                   <?php if ($listing['city']): ?>
                   <span style="font-size:.875rem;color:var(--text-muted)"><i class="bi bi-geo-alt"></i> <?= h($listing['city']) ?></span>
                   <?php endif; ?>
+                  <span style="font-size:.8125rem;color:var(--text-muted)"><i class="bi bi-clock"></i> <?= timeago($listing['created_at']) ?></span>
                   <span style="font-size:.8125rem;color:var(--text-muted)"><i class="bi bi-eye"></i> <?= number_format($listing['views']) ?> بازدید</span>
                 </div>
               </div>

@@ -208,11 +208,16 @@ render_navbar($user);
                 <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?></span>
                 <?php endif; ?>
                 <span><i class="bi bi-eye"></i> <?= number_format((int)$l['views']) ?> بازدید</span>
-                <span><i class="bi bi-clock"></i> <?= persian_date($l['created_at']) ?></span>
+                <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
               </div>
             </div>
             <?php $sc = ['active'=>'success','traded'=>'info','expired'=>'warning','deleted'=>'danger'][$l['status']] ?? 'info'; ?>
             <span class="badge badge-<?= $sc ?>" style="flex-shrink:0"><?= $statusLabels[$l['status']] ?? $l['status'] ?></span>
+            <?php if (($l['review_status'] ?? 'approved') === 'pending'): ?>
+            <span class="badge badge-warning" style="flex-shrink:0">در انتظار تأیید</span>
+            <?php elseif (($l['review_status'] ?? '') === 'rejected'): ?>
+            <span class="badge badge-danger" style="flex-shrink:0">رد شده</span>
+            <?php endif; ?>
           </div>
 
           <div style="display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;margin-top:var(--sp-3)">
@@ -231,6 +236,9 @@ render_navbar($user);
             </span>
             <?php if (listing_is_featured($l)): ?>
             <span class="badge badge-warning"><i class="bi bi-star-fill"></i> ویژه</span>
+            <?php endif; ?>
+            <?php if (listing_is_bumped($l)): ?>
+            <span class="badge badge-info"><i class="bi bi-arrow-up-circle-fill"></i> بالا برده</span>
             <?php endif; ?>
             <?php if ($l['total_offers'] > 0): ?>
             <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $l['id'] ?>"

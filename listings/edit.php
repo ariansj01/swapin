@@ -77,8 +77,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (in_array($vals['listing_mode'], ['sell','both'], true) && $vals['sell_price'] <= 0)
         $errors['sell_price'] = 'قیمت فروش الزامی است.';
 
+    $contentErrors = validate_listing_content([
+        'title'           => $vals['title'],
+        'description'     => $vals['description'],
+        'want_in_return'  => $vals['want_in_return'],
+    ]);
+    foreach ($contentErrors as $field => $msg) {
+        if (!isset($errors[$field])) $errors[$field] = $msg;
+    }
+
     if (empty($errors)) {
-        DB::update('listings', [
+        $reviewUpdate = ($listing['review_status'] ?? 'approved') === 'approved'
+            ? ['review_status' => 'pending', 'review_note' => null]
+            : [];
+
+        DB::update('listings', array_merge([
             'category_id'     => $vals['category_id'],
             'title'           => $vals['title'],
             'description'     => $vals['description'],
@@ -89,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'listing_mode'    => $vals['listing_mode'],
             'sell_price'      => in_array($vals['listing_mode'], ['sell','both'], true) ? $vals['sell_price'] : 0,
             'city'            => $vals['city'] ?: null,
-        ], 'id = ? AND user_id = ?', [$id, $uid]);
+        ], $reviewUpdate), 'id = ? AND user_id = ?', [$id, $uid]);
 
         // Handle image deletions
         $deleteIds = $_POST['delete_images'] ?? [];

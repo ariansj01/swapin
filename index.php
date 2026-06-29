@@ -17,7 +17,7 @@ $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is
 $catId    = $category['id'] ?? null;
 
 // ─── Count ───────────────────────────────────────────────────────────────────
-$whereClauses = ['l.status = "active"', 'l.listing_mode != "sell"'];
+$whereClauses = [listing_public_sql('l'), 'l.listing_mode != "sell"'];
 $params       = [];
 
 if ($search) {
@@ -239,8 +239,8 @@ render_navbar($user);
         <div class="home-ai__card">
           <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> تحلیل وضعیت و دسته‌بندی</div>
           <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> مقایسه با بازار معاوضه</div>
-          <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> پیشنهاد ارزش SWP</div>
-          <div class="home-ai__card-value">~ ۱۲,۵۰۰,۰۰۰ SWP</div>
+          <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> پیشنهاد ارزش <?= CREDIT_UNIT ?></div>
+          <div class="home-ai__card-value">~ ۱۲,۵۰۰,۰۰۰ <?= CREDIT_UNIT ?></div>
         </div>
       </div>
     </div>
