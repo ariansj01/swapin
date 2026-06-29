@@ -75,7 +75,7 @@
 | PHP | 8.1+ (with PDO MySQL) |
 | MySQL / MariaDB | 8.0+ / 10.6+ |
 | Apache | with `mod_rewrite` (optional) |
-| Composer | **Not required** — zero Composer dependencies |
+| Composer | **Required for email** — run `composer install` for PHPMailer |
 
 Recommended PHP extensions:
 
@@ -162,7 +162,23 @@ cp includes/ai_secrets.example.php includes/ai_secrets.php
 
 Add your [Groq API](https://console.groq.com/) key in `includes/ai_secrets.php`.
 
-### 7. Open in browser
+### 7. Email — PHPMailer + EmailJS (optional)
+
+```bash
+composer install
+cp includes/mail_secrets.example.php includes/mail_secrets.php
+```
+
+| Provider | Use case | Config |
+|----------|----------|--------|
+| **PHPMailer (SMTP)** | Server emails: support alerts, ticket replies, contact form fallback | `MAIL_ENABLED = true` + SMTP settings |
+| **EmailJS** | Client-side contact form (`contact.php`) | `EMAILJS_ENABLED = true` + public key, service ID, template ID |
+
+EmailJS template variables: `from_name`, `from_email`, `subject`, `message`, `reply_to`, `to_name`.
+
+When EmailJS is enabled, the contact form sends from the browser; a copy is logged via `api/contact.php`. When only PHPMailer is enabled, the form posts to PHP and sends via SMTP.
+
+### 8. Open in browser
 
 ```
 http://localhost/swaapin/

@@ -1,0 +1,11 @@
+{
+    "name": "swapin/swaapin",
+    "description": "Swapin barter marketplace",
+    "require": {
+        "php": ">=8.1",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

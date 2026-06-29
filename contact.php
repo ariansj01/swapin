@@ -2,42 +2,43 @@
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
-$user    = auth_user();
-$success = false;
-$errors  = [];
-$vals    = ['name' => '', 'email' => '', 'subject' => '', 'message' => ''];
+$user     = auth_user();
+$success  = false;
+$mailWarn = '';
+$errors   = [];
+$vals     = ['name' => '', 'email' => '', 'subject' => '', 'message' => ''];
+$mailMode = contact_mail_mode();
+$useEmailJs = $mailMode === 'emailjs';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $vals['name']    = clean($_POST['name']    ?? '');
-    $vals['email']   = trim($_POST['email']    ?? '');
-    $vals['subject'] = clean($_POST['subject'] ?? '');
-    $vals['message'] = clean($_POST['message'] ?? '');
-
-    if (strlen($vals['name']) < 2)                          $errors['name']    = 'لطفاً نام خود را وارد کنید.';
-    if (!filter_var($vals['email'], FILTER_VALIDATE_EMAIL)) $errors['email']   = 'لطفاً یک ایمیل معتبر وارد کنید.';
-    if (strlen($vals['subject']) < 3)                       $errors['subject'] = 'لطفاً موضوع را وارد کنید.';
-    if (strlen($vals['message']) < 10)                      $errors['message'] = 'پیام باید حداقل ۱۰ کاراکتر باشد.';
-
-    if (empty($errors)) {
-        // Store as notification to admin (user id=1) — replace with real email in production
-        $body = "From: {$vals['name']} <{$vals['email']}>\n\n{$vals['message']}";
-        DB::insert('notifications', [
-            'user_id'  => 1,
-            'type'     => 'contact',
-            'title'    => mb_strimwidth('تماس: ' . $vals['subject'], 0, 200),
-            'body'     => $body,
-            'is_read'  => 0,
-        ]);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$useEmailJs) {
+    $result = handle_contact_submission(
+        $_POST['name'] ?? '',
+        $_POST['email'] ?? '',
+        $_POST['subject'] ?? '',
+        $_POST['message'] ?? ''
+    );
+    if (isset($result['errors'])) {
+        $errors = $result['errors'];
+        $vals['name']    = clean($_POST['name'] ?? '');
+        $vals['email']   = trim($_POST['email'] ?? '');
+        $vals['subject'] = clean($_POST['subject'] ?? '');
+        $vals['message'] = clean($_POST['message'] ?? '');
+    } else {
         $success = true;
         $vals    = ['name' => '', 'email' => '', 'subject' => '', 'message' => ''];
+        if (empty($result['mail_sent'])) {
+            $mailWarn = $result['mail_error'] ?? 'ایمیل ارسال نشد.';
+        }
     }
 }
 
-// Pre-fill for logged-in users
 if (!$_POST && $user) {
     $vals['name']  = $user['name'];
     $vals['email'] = $user['email'];
 }
+
+$emailJsConfig = emailjs_public_config();
+$secretsMissing = !is_readable(__DIR__ . '/includes/mail_secrets.php');
 
 render_head('تماس با ما', 'با تیم ' . APP_NAME . ' در ارتباط باشید.', [
     'canonical' => APP_URL . '/contact.php',
@@ -57,16 +58,52 @@ render_navbar($user);
       <p style="color:var(--text-muted)">سؤال، پیشنهاد یا مشکلی دارید؟ خوشحال می‌شویم از شما بشنویم.</p>
     </div>
 
-    <?php if ($success): ?>
-    <div class="alert alert-success mb-6">
+    <?php if ($secretsMissing): ?>
+    <div class="alert alert-warning mb-6">
+      <i class="bi bi-exclamation-triangle"></i>
+      <div>
+        <strong>تنظیمات ایمیل وجود ندارد.</strong>
+        فایل <code>includes/mail_secrets.php</code> را از روی
+        <code>includes/mail_secrets.example.php</code> بسازید و SMTP یا EmailJS را فعال کنید.
+        برای تست SMTP: <a href="<?= APP_URL ?>/test_mail.php">test_mail.php</a>
+      </div>
+    </div>
+    <?php elseif ($mailMode === 'none'): ?>
+    <div class="alert alert-warning mb-6">
+      <i class="bi bi-exclamation-triangle"></i>
+      <div>
+        <strong>ارسال ایمیل غیرفعال است.</strong>
+        در <code>mail_secrets.php</code> مقدار <code>MAIL_ENABLED</code> یا <code>EMAILJS_ENABLED</code> را true کنید
+        و اطلاعات SMTP / EmailJS را وارد کنید.
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <div id="contact-alert" class="alert alert-success mb-6" style="display:none">
       <i class="bi bi-check-circle-fill"></i>
       <div><strong>پیام ارسال شد!</strong> در اسرع وقت پاسخ می‌دهیم.</div>
+    </div>
+
+    <?php if ($success && !$mailWarn): ?>
+    <div class="alert alert-success mb-6">
+      <i class="bi bi-check-circle-fill"></i>
+      <div><strong>پیام ارسال شد!</strong> ایمیل هم برای تیم ارسال شد.</div>
+    </div>
+    <?php elseif ($success && $mailWarn): ?>
+    <div class="alert alert-warning mb-6">
+      <i class="bi bi-exclamation-triangle"></i>
+      <div>
+        <strong>پیام در سیستم ثبت شد</strong> اما ایمیل ارسال نشد.<br>
+        <span class="fs-sm"><?= h($mailWarn) ?></span>
+      </div>
     </div>
     <?php endif; ?>
 
     <div class="card mb-6">
       <div class="card-body" style="padding:var(--sp-7)">
-        <form method="POST" novalidate>
+        <form method="POST" id="contact-form" novalidate
+              data-emailjs="<?= $useEmailJs ? '1' : '0' ?>"
+              data-api-url="<?= h(APP_URL . '/api/contact.php') ?>">
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
             <div class="form-group">
@@ -109,7 +146,9 @@ render_navbar($user);
             <?php endif; ?>
           </div>
 
-          <button type="submit" class="btn btn-primary w-100">
+          <div id="contact-form-error" class="alert alert-danger mb-4" style="display:none"></div>
+
+          <button type="submit" class="btn btn-primary w-100" id="contact-submit">
             <i class="bi bi-send"></i> ارسال پیام
           </button>
 
@@ -136,5 +175,11 @@ render_navbar($user);
 
   </div>
 </main>
+
+<?php if ($useEmailJs): ?>
+<script type="application/json" id="emailjs-config"><?= json_encode($emailJsConfig, JSON_UNESCAPED_UNICODE) ?></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="<?= APP_URL ?>/src/js/emailjs-contact.js"></script>
+<?php endif; ?>
 
 <?php render_footer(); ?>

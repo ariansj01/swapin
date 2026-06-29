@@ -209,6 +209,19 @@ require_once __DIR__ . '/v2.php';
 require_once __DIR__ . '/admin.php';
 require_once __DIR__ . '/support.php';
 
+$vendorAutoload = __DIR__ . '/../vendor/autoload.php';
+if (is_readable($vendorAutoload)) {
+    require_once $vendorAutoload;
+}
+
+if (is_readable(__DIR__ . '/mail_secrets.php')) {
+    require_once __DIR__ . '/mail_secrets.php';
+} else {
+    define('MAIL_ENABLED', false);
+    define('EMAILJS_ENABLED', false);
+}
+require_once __DIR__ . '/mail.php';
+
 if (is_readable(__DIR__ . '/ai_secrets.php')) {
     require_once __DIR__ . '/ai_secrets.php';
 } else {

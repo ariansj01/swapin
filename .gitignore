@@ -1,3 +1,7 @@
 includes/ai_secrets.php
+includes/mail_secrets.php
 uploads/*
 !uploads/.gitkeep
+/vendor/
+composer.phar
+composer-setup.php

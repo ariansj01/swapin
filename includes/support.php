@@ -43,6 +43,9 @@ function notify_admins(string $title, string $body, string $link = ''): void {
             'is_read' => 0,
         ]);
     }
+    if (function_exists('send_mail_to_admins') && mail_is_enabled()) {
+        send_mail_to_admins($title, nl2br(h($body)), $link);
+    }
 }
 
 function create_support_ticket(int $userId, string $subject, string $category, string $body): array {
@@ -109,6 +112,17 @@ function add_ticket_message(int $ticketId, string $senderType, int $senderId, st
             'link'    => APP_URL . '/support/view.php?id=' . $ticketId,
             'is_read' => 0,
         ]);
+        if (mail_is_enabled()) {
+            $user = DB::fetch('SELECT email, name FROM users WHERE id = ?', [(int)$ticket['user_id']]);
+            if ($user && !empty($user['email'])) {
+                send_mail_to_user(
+                    $user['email'],
+                    'پاسخ به تیکت: ' . $ticket['subject'],
+                    '<p>' . nl2br(h($body)) . '</p>',
+                    APP_URL . '/support/view.php?id=' . $ticketId
+                );
+            }
+        }
     } else {
         notify_admins(
             'پاسخ کاربر در تیکت #' . $ticketId,
