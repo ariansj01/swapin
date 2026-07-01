@@ -23,7 +23,8 @@ $cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
       <?php if (!empty($l['want_in_return'])): ?>
       <span class="listing-card__badge listing-card__swap-badge">
         <i class="bi bi-arrow-left-right"></i>
-        معاوضه با: <?= h(mb_strimwidth($l['want_in_return'], 0, 36, '…')) ?>
+        <!-- معاوضه با: <?= h(mb_strimwidth($l['want_in_return'], 0, 36, '…')) ?> -->
+        معاوضه
       </span>
       <?php elseif ($isSwap): ?>
       <span class="listing-card__badge">

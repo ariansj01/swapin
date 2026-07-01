@@ -918,7 +918,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .listing-card.bumped {
-  border-inline-start: 3px solid var(--accent);
+  border: 3px solid var(--accent);
 }
 
 .listing-card__header {
