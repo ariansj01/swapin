@@ -8,13 +8,14 @@ if (auth_user()) {
 
 $error  = '';
 $tab    = $_GET['tab'] ?? 'email';
-$redir  = clean($_GET['redirect'] ?? '');
-if ($redir && !str_starts_with($redir, '/')) $redir = '';
+$redir  = safe_redirect_path(clean($_GET['redirect'] ?? ''));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $method = clean($_POST['method'] ?? 'email');
 
     if ($method === 'email') {
+        rate_limit_ip_or_fail('login_email', 20, 900);
         $email = clean($_POST['email'] ?? '');
         $pass  = $_POST['password'] ?? '';
 
@@ -27,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'ایمیل یا رمز عبور نادرست است.';
 
     } elseif ($method === 'otp_request') {
+        rate_limit_ip_or_fail('otp_request', 5, 900);
         $phone = clean($_POST['phone'] ?? '');
         $user  = DB::fetch('SELECT id FROM users WHERE phone = ? AND is_active = 1', [$phone]);
         if (!$user) {
@@ -41,13 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             // In production: send SMS. For MVP we echo it.
             // send_sms($phone, "کد سواپین شما: $code");
-            error_log("OTP for $phone: $code"); // dev only
-            // Show OTP input step
             $_SESSION['otp_phone'] = $phone;
             header('Location: ?tab=otp_verify&phone=' . urlencode($phone)); exit;
         }
 
     } elseif ($method === 'otp_verify') {
+        rate_limit_ip_or_fail('otp_verify', 15, 900);
         $phone = clean($_POST['phone'] ?? '');
         $code  = clean($_POST['code']  ?? '');
         $row   = DB::fetch(
@@ -100,6 +101,7 @@ render_navbar(null);
         <!-- Email / Password Tab -->
         <div class="tab-panel <?= ($tab === 'email') ? 'active' : '' ?>" id="tab-email">
           <form method="POST">
+            <?= csrf_field() ?>
             <input type="hidden" name="method" value="email">
             <div class="form-group">
               <label class="form-label">آدرس ایمیل</label>
@@ -130,6 +132,7 @@ render_navbar(null);
           <?php if (isset($_GET['phone']) && $tab === 'otp_verify'): ?>
           <!-- OTP Code Entry -->
           <form method="POST">
+            <?= csrf_field() ?>
             <input type="hidden" name="method" value="otp_verify">
             <input type="hidden" name="phone" value="<?= h($_GET['phone'] ?? '') ?>">
             <p class="mb-5" style="color:var(--text-secondary)">
@@ -149,6 +152,7 @@ render_navbar(null);
           <?php else: ?>
           <!-- Phone Number Entry -->
           <form method="POST">
+            <?= csrf_field() ?>
             <input type="hidden" name="method" value="otp_request">
             <div class="form-group">
               <label class="form-label">شماره تلفن</label>

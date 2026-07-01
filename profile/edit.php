@@ -7,6 +7,7 @@ $errors = [];
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $action = clean($_POST['action'] ?? 'profile');
 
     if ($action === 'profile') {
@@ -29,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'kyc') {
         $idCard = $user['id_card_image'];
         if (!empty($_FILES['id_card_image']['name'])) {
-            $uploaded = upload_image($_FILES['id_card_image'], 'kyc');
+            $uploaded = upload_private_image($_FILES['id_card_image'], 'kyc');
             if ($uploaded) $idCard = $uploaded;
         }
 
@@ -99,6 +100,7 @@ render_navbar($user);
         <div class="card-header"><h3 style="margin:0;font-size:1rem">پروفایل پایه</h3></div>
         <div class="card-body">
           <form method="POST">
+          <?= csrf_field() ?>
             <input type="hidden" name="action" value="profile">
             <div class="form-group">
               <label class="form-label">نام کامل</label>
@@ -124,6 +126,7 @@ render_navbar($user);
         <div class="card-header"><h3 style="margin:0;font-size:1rem">احراز هویت (KYC)</h3></div>
         <div class="card-body">
           <form method="POST" enctype="multipart/form-data">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="kyc">
 
             <div class="form-group">

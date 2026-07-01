@@ -9,21 +9,11 @@ $listingId = (int)($_GET['id'] ?? 0);
 $success   = '';
 $error     = '';
 
-// Handle quick accept/reject from URL
-$acceptId = (int)($_GET['accept'] ?? 0);
-$rejectId = (int)($_GET['reject'] ?? 0);
-
-if ($acceptId) {
-    $_POST['action']   = 'accept';
-    $_POST['offer_id'] = $acceptId;
-}
-if ($rejectId) {
-    $_POST['action']   = 'reject';
-    $_POST['offer_id'] = $rejectId;
-}
+// Handle quick accept/reject removed — POST + CSRF only
 
 // Handle actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST' || $acceptId || $rejectId) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $offerId = (int)($_POST['offer_id'] ?? 0);
     $action  = clean($_POST['action'] ?? '');
 
@@ -232,6 +222,7 @@ render_navbar($user);
             <?php if ($offer['status'] === 'pending'): ?>
             <div style="display:flex;flex-direction:column;gap:var(--sp-3);min-width:140px">
               <form method="POST">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action"   value="accept">
                 <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
                 <?php if ($listingId): ?>
@@ -242,6 +233,7 @@ render_navbar($user);
                 </button>
               </form>
               <form method="POST">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action"   value="reject">
                 <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
                 <button type="submit" class="btn btn-ghost w-100" style="color:var(--danger)">

@@ -11,6 +11,7 @@ $error    = '';
 
 // ── Send message ──────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $toId     = (int)($_POST['to_user_id'] ?? 0);
     $body     = trim($_POST['body'] ?? '');
     $threadId = clean($_POST['thread_id'] ?? '');
@@ -208,6 +209,7 @@ render_navbar($user);
 
         <div style="padding:var(--sp-4);border-top:1px solid var(--border)">
           <form method="POST" style="display:flex;gap:var(--sp-3);align-items:flex-end">
+            <?= csrf_field() ?>
             <input type="hidden" name="to_user_id" value="<?= $chatUser['id'] ?>">
             <input type="hidden" name="thread_id"  value="<?= h($threadId) ?>">
             <textarea name="body" class="form-control" rows="2" placeholder="پیام خود را بنویسید…" required

@@ -41,11 +41,15 @@
 
   async function logToServer(payload) {
     if (!apiUrl) return;
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
     try {
       await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+        },
+        body: JSON.stringify({ ...payload, _csrf: csrf }),
       });
     } catch {
       /* notification log is best-effort */
@@ -90,10 +94,14 @@
       // Fallback to server SMTP if available
       if (apiUrl) {
         try {
+          const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
           const res = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            headers: {
+              'Content-Type': 'application/json',
+              ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+            },
+            body: JSON.stringify({ ...payload, _csrf: csrf }),
           });
           const data = await res.json();
           if (data.ok && data.mail_sent) {

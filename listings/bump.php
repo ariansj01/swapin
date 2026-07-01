@@ -19,6 +19,7 @@ if (!$listing) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $type   = clean($_POST['type'] ?? '');
     $result = promote_listing($listingId, $user['id'], $type);
     if (isset($result['error'])) {
@@ -55,6 +56,7 @@ render_navbar($user);
       foreach ($options as $type => [$label, $icon, $price, $hours, $desc]):
       ?>
       <form method="POST" class="card">
+        <?= csrf_field() ?>
         <div class="card-body text-center" style="padding:var(--sp-6)">
           <i class="bi <?= $icon ?>" style="font-size:2.5rem;color:var(--<?= $type === 'feature' ? 'accent-dark' : 'primary-light' ?>)"></i>
           <h3 class="mt-3"><?= $label ?></h3>

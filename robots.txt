@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /auth/
+Disallow: /admin/
 Disallow: /dashboard.php
 Disallow: /messages.php
 Disallow: /wallet.php
@@ -13,6 +14,12 @@ Disallow: /listings/offers.php
 Disallow: /listings/bump.php
 Disallow: /store/
 Disallow: /seed/
+Disallow: /database/
+Disallow: /storage/
+Disallow: /media/
 Disallow: /run_migration.php
+Disallow: /run_admin_migration.php
+Disallow: /run_support_migration.php
+Disallow: /run_categories_fa.php
 
 Sitemap: http://localhost/swaapin/sitemap.php

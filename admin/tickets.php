@@ -7,6 +7,7 @@ $tab   = in_array($_GET['tab'] ?? '', ['tickets', 'errors']) ? $_GET['tab'] : 't
 $id    = (int)($_GET['id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $action = clean($_POST['action'] ?? '');
 
     if ($action === 'reply_ticket') {
@@ -128,6 +129,7 @@ ob_start();
     <div class="card-body">
       <?php if ($ticketDetail['status'] !== 'closed'): ?>
       <form method="POST" class="mb-4">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="reply_ticket">
         <input type="hidden" name="ticket_id" value="<?= $id ?>">
         <div class="form-group">
@@ -136,6 +138,7 @@ ob_start();
         <button type="submit" class="btn btn-primary w-100"><i class="bi bi-send"></i> ارسال پاسخ</button>
       </form>
       <form method="POST" onsubmit="return confirm('تیکت بسته شود؟')">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="close_ticket">
         <input type="hidden" name="ticket_id" value="<?= $id ?>">
         <button type="submit" class="btn btn-outline w-100"><i class="bi bi-lock"></i> بستن تیکت</button>
@@ -201,6 +204,7 @@ ob_start();
     <div class="card-header"><h3 style="margin:0;font-size:1rem">مدیریت</h3></div>
     <div class="card-body">
       <form method="POST">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="resolve_error">
         <input type="hidden" name="report_id" value="<?= $id ?>">
         <div class="form-group">

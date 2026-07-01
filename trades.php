@@ -11,6 +11,7 @@ $error   = '';
 
 // Handle trade actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_id'])) {
+    csrf_verify_or_fail();
     $tradeId = (int)$_POST['trade_id'];
     $action  = clean($_POST['action'] ?? '');
 
@@ -48,8 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_id'])) {
         if (isset($result['error'])) {
             $error = $result['error'];
         } else {
-            approve_bnpl($result['id']);
-            $success = 'BNPL تأیید شد — ' . fmt_credit((float)$result['monthly_fee']) . '/ماه به مدت ' . $months . ' ماه.';
+            $success = 'درخواست BNPL ثبت شد — در انتظار تأیید.';
         }
     } elseif ($action === 'confirm') {
         if (!contract_fully_signed($tradeId)) {
@@ -241,6 +241,7 @@ render_navbar($user);
             </div>
             <?php if (!$mySigned): ?>
             <form method="POST">
+            <?= csrf_field() ?>
               <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
               <input type="hidden" name="action" value="sign_contract">
               <button type="submit" class="btn btn-primary"><i class="bi bi-pen"></i> امضای قرارداد</button>
@@ -254,6 +255,7 @@ render_navbar($user);
           <div class="card-header"><h4 style="margin:0;font-size:.9375rem"><i class="bi bi-truck"></i> ارسال و رهگیری</h4></div>
           <div class="card-body">
             <form method="POST" class="mb-4">
+            <?= csrf_field() ?>
               <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
               <input type="hidden" name="action" value="set_shipping">
               <div class="form-group">
@@ -267,6 +269,7 @@ render_navbar($user);
               <button type="submit" class="btn btn-outline btn-sm">ذخیره روش</button>
             </form>
             <form method="POST">
+            <?= csrf_field() ?>
               <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
               <input type="hidden" name="action" value="update_tracking">
               <div class="form-group">
@@ -296,6 +299,7 @@ render_navbar($user);
             </div>
             <?php elseif (!$isA): ?>
             <form method="POST" style="display:flex;gap:var(--sp-3);align-items:flex-end;flex-wrap:wrap">
+            <?= csrf_field() ?>
               <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
               <input type="hidden" name="action" value="request_bnpl">
               <div class="form-group" style="margin:0">
@@ -315,6 +319,7 @@ render_navbar($user);
         <?php if (in_array($dt['status'], ['in_progress','user_a_confirmed'], true)): ?>
         <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap">
           <form method="POST">
+            <?= csrf_field() ?>
             <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
             <input type="hidden" name="action" value="confirm">
             <button type="submit" class="btn btn-primary" <?= !contract_fully_signed($dt['id']) ? 'disabled title="ابتدا قرارداد را امضا کنید"' : '' ?>>
@@ -436,6 +441,7 @@ render_navbar($user);
           <div class="card-footer" style="display:flex;gap:var(--sp-3);flex-wrap:wrap">
             <?php if ($canConfirm): ?>
             <form method="POST">
+            <?= csrf_field() ?>
               <input type="hidden" name="trade_id" value="<?= $trade['id'] ?>">
               <input type="hidden" name="action" value="confirm">
               <button type="submit" class="btn btn-primary">
@@ -455,6 +461,7 @@ render_navbar($user);
             <?php endif; ?>
             <?php if ($trade['status'] !== 'disputed'): ?>
             <form method="POST" onsubmit="return confirm('اختلاف ثبت شود؟ تیم ظرف ۲۴ ساعت بررسی می‌کند.')">
+            <?= csrf_field() ?>
               <input type="hidden" name="trade_id" value="<?= $trade['id'] ?>">
               <input type="hidden" name="action"   value="dispute">
               <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger)">
@@ -577,6 +584,7 @@ render_navbar($user);
           <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('show')">&times;</button>
         </div>
         <form method="POST" action="<?= APP_URL ?>/api/review.php">
+        <?= csrf_field() ?>
           <div class="modal-body">
             <p class="mb-4">معامله با <strong><?= h($reviewFor['name'] ?? '') ?></strong> چطور بود؟</p>
             <input type="hidden" name="trade_id"  value="<?= $reviewTradeId ?>">

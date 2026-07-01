@@ -5,6 +5,8 @@
  */
 require_once __DIR__ . '/includes/config.php';
 
+require_cli();
+
 header('Content-Type: text/plain; charset=utf-8');
 
 $sqlFile = __DIR__ . '/migration_admin.sql';
@@ -50,7 +52,8 @@ admin_ensure_default_admin();
 $admin = DB::fetch('SELECT email, role FROM users WHERE email = ?', [ADMIN_EMAIL]);
 echo "\nDone. OK=$ok SKIP=$skip FAIL=$fail\n";
 if ($admin) {
-    echo "Admin login: {$admin['email']} / " . ADMIN_DEFAULT_PASS . " (role={$admin['role']})\n";
+    echo "Admin account ready: {$admin['email']} (role={$admin['role']})\n";
+    echo "Set ADMIN_DEFAULT_PASS in config and run admin_sync via CLI if needed.\n";
 } else {
     echo "WARNING: admin account was not created.\n";
 }

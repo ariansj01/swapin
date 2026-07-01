@@ -91,6 +91,7 @@ $related = DB::fetchAll(
 $offerError   = '';
 $offerSuccess = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    csrf_verify_or_fail();
     if (!$user) {
         header('Location: ' . APP_URL . '/auth/login.php?redirect=/listings/view.php%3Fid=' . $id); exit;
     }
@@ -106,6 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             if (!$offerListingId && $offerCredit <= 0) {
                 $offerError = 'لطفاً یک کالا از آگهی‌های خود یا مقداری اعتبار ' . CREDIT_UNIT . ' پیشنهاد دهید.';
+            } elseif ($offerListingId && !DB::fetch(
+                'SELECT id FROM listings WHERE id = ? AND user_id = ? AND status = "active" AND review_status = "approved"',
+                [$offerListingId, $user['id']]
+            )) {
+                $offerError = 'آگهی انتخاب‌شده برای پیشنهاد معتبر نیست یا متعلق به شما نیست.';
             } elseif ($offerCredit > 0 && $offerCredit > $user['credit_balance']) {
                 $offerError = 'موجودی ' . CREDIT_UNIT . ' کافی نیست. موجودی شما: ' . fmt_credit((float)$user['credit_balance']);
             } else {
@@ -398,6 +404,7 @@ render_navbar($user);
             </a>
             <?php if (($listing['inspection_status'] ?? 'none') === 'none'): ?>
             <form method="POST" class="mb-3" onsubmit="return confirm('بازرسی کارشناس با هزینه <?= fmt_credit(INSPECTION_KBC) ?> درخواست شود؟')">
+            <?= csrf_field() ?>
               <input type="hidden" name="action" value="request_inspection">
               <button type="submit" class="btn btn-outline w-100">
                 <i class="bi bi-search"></i> درخواست بازرسی کارشناس
@@ -434,6 +441,7 @@ render_navbar($user);
             </div>
             <div class="fs-xs mb-4" style="color:var(--text-muted)">≈ <?= fmt_credit($buyKbc) ?> (در سپرده نگهداری می‌شود)</div>
             <form method="POST" onsubmit="return confirm('خرید با ~<?= $buyKbc ?> <?= CREDIT_UNIT ?>؟')">
+            <?= csrf_field() ?>
               <input type="hidden" name="action" value="buy_now">
               <button type="submit" class="btn btn-accent w-100 btn-lg">
                 <i class="bi bi-cart-check"></i> خرید فوری
@@ -474,6 +482,7 @@ render_navbar($user);
             <?php endif; ?>
 
             <form method="POST" id="offer-form">
+            <?= csrf_field() ?>
               <input type="hidden" name="action" value="make_offer">
 
               <?php if ($myListings): ?>
@@ -517,6 +526,7 @@ render_navbar($user);
         <div class="card">
           <div class="card-body" style="display:flex;gap:var(--sp-3)">
             <form method="POST" style="flex:1">
+            <?= csrf_field() ?>
               <input type="hidden" name="action" value="save_listing">
               <button type="submit" class="btn <?= $isSaved ? 'btn-danger' : 'btn-outline' ?> w-100 btn-sm">
                 <i class="bi bi-<?= $isSaved ? 'heart-fill' : 'heart' ?>"></i>

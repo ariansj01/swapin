@@ -10,6 +10,8 @@ if (!$user) {
     exit;
 }
 
+rate_limit_ip_or_fail('ai_match', 80, 3600, true);
+
 $uid       = (int) $user['id'];
 $listingId = (int) ($_GET['listing_id'] ?? $_POST['listing_id'] ?? 0) ?: null;
 $refresh   = !empty($_GET['refresh']) || !empty($_POST['refresh']);

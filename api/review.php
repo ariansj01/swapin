@@ -9,6 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+csrf_verify_or_fail();
+
 $tradeId   = (int)($_POST['trade_id'] ?? 0);
 $toUserId  = (int)($_POST['to_user_id'] ?? 0);
 $rating    = max(1, min(5, (int)($_POST['rating'] ?? 0)));

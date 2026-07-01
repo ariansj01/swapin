@@ -15,6 +15,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     $favicon   = $url . '/src/img/logo.png';
     $appName    = h(APP_NAME);
     $creditUnit = h(CREDIT_UNIT);
+    $csrf       = h(csrf_token());
 
     $keywords = '';
     if (!empty($seo['keywords'])) {
@@ -40,6 +41,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{$csrf}">
 <title>{$t}</title>
 <meta name="description" content="{$d}">
 <meta name="robots" content="{$robots}">

@@ -11,6 +11,9 @@ $errors = [];
 $vals   = ['name' => '', 'email' => '', 'phone' => '', 'city' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
+    rate_limit_ip_or_fail('register', 5, 3600);
+
     $vals['name']  = clean($_POST['name']  ?? '');
     $vals['email'] = clean($_POST['email'] ?? '');
     $vals['phone'] = clean($_POST['phone'] ?? '');
@@ -88,6 +91,7 @@ render_navbar(null);
         <?php endif; ?>
 
         <form method="POST" novalidate id="register-form">
+          <?= csrf_field() ?>
           <div class="form-group">
             <label class="form-label" for="name">نام کامل <span class="required">*</span></label>
             <input type="text" class="form-control <?= isset($errors['name']) ? 'is-invalid' : '' ?>"

@@ -15,6 +15,10 @@
   const confirmBtn= document.getElementById('ai-pricing-confirm');
   let aiConfirmed = false;
 
+  function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+  }
+
   function getAppUrl() {
     return document.querySelector('meta[name="app-url"]')?.content || '';
   }
@@ -71,13 +75,20 @@
     fd.append('description', document.getElementById('description').value);
     fd.append('condition', document.getElementById('condition').value);
     fd.append('category_id', document.getElementById('category_id').value);
+    const csrf = getCsrfToken();
+    if (csrf) fd.append('_csrf', csrf);
 
     const minDelay = new Promise(r => setTimeout(r, 2800));
 
     try {
       const [_, res] = await Promise.all([
         minDelay,
-        fetch(getAppUrl() + '/api/ai_valuate.php', { method: 'POST', body: fd }),
+        fetch(getAppUrl() + '/api/ai_valuate.php', {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: csrf ? { 'X-CSRF-Token': csrf } : {},
+        }),
       ]);
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'خطا');

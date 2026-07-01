@@ -8,6 +8,7 @@ $errors  = [];
 $vals    = ['message' => '', 'steps' => '', 'page_url' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $vals['message']  = $_POST['message'] ?? '';
     $vals['steps']    = $_POST['steps'] ?? '';
     $vals['page_url'] = $_POST['page_url'] ?? '';
@@ -58,6 +59,7 @@ render_navbar($user);
     <div class="card mb-6">
       <div class="card-body" style="padding:var(--sp-6)">
         <form method="POST" novalidate>
+          <?= csrf_field() ?>
           <div class="form-group">
             <label class="form-label" for="page_url">آدرس صفحه (اختیاری)</label>
             <input type="url" id="page_url" name="page_url" class="form-control"

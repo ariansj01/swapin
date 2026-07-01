@@ -2,6 +2,10 @@ includes/ai_secrets.php
 includes/mail_secrets.php
 uploads/*
 !uploads/.gitkeep
+storage/rate_limit/*
+storage/private/*
+!storage/.gitkeep
+!storage/private/.gitkeep
 /vendor/
 composer.phar
 composer-setup.php

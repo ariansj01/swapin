@@ -6,6 +6,7 @@ $admin = require_admin();
 $id    = (int)($_GET['id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $userId = (int)($_POST['user_id'] ?? 0);
     $action = clean($_POST['action'] ?? '');
     $note   = clean($_POST['note'] ?? '');
@@ -62,8 +63,8 @@ ob_start();
       <?php if ($kycUser['id_card_image']): ?>
       <div style="margin-top:var(--sp-3)">
         <strong>تصویر کارت ملی:</strong><br>
-        <a href="<?= UPLOAD_URL . h($kycUser['id_card_image']) ?>" target="_blank">
-          <img src="<?= UPLOAD_URL . h($kycUser['id_card_image']) ?>" alt="کارت ملی" style="max-width:100%;max-height:320px;margin-top:var(--sp-2);border-radius:var(--radius-md);border:1px solid var(--border)">
+        <a href="<?= private_media_url($kycUser['id']) ?>" target="_blank">
+          <img src="<?= private_media_url($kycUser['id']) ?>" alt="کارت ملی" style="max-width:100%;max-height:320px;margin-top:var(--sp-2);border-radius:var(--radius-md);border:1px solid var(--border)">
         </a>
       </div>
       <?php endif; ?>
@@ -75,11 +76,13 @@ ob_start();
     <div class="card-body">
       <?php if ($kycUser['kyc_status'] === 'pending'): ?>
       <form method="POST" class="mb-4">
+        <?= csrf_field() ?>
         <input type="hidden" name="user_id" value="<?= $id ?>">
         <input type="hidden" name="action" value="approve">
         <button type="submit" class="btn btn-success w-100"><i class="bi bi-check-lg"></i> تأیید هویت</button>
       </form>
       <form method="POST">
+        <?= csrf_field() ?>
         <input type="hidden" name="user_id" value="<?= $id ?>">
         <input type="hidden" name="action" value="reject">
         <div class="form-group">

@@ -9,6 +9,7 @@ $success = '';
 $error   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_listings'])) {
+    csrf_verify_or_fail();
     if (!$isStore) {
         $error = 'برای ثبت گروهی، نوع حساب خود را در پروفایل به «فروشگاه» تغییر دهید.';
     } else {
@@ -139,6 +140,7 @@ render_navbar($user);
             <code dir="ltr">عنوان | slug-دسته | ارزش-تومان | نیازمند</code>
           </p>
           <form method="POST">
+            <?= csrf_field() ?>
             <textarea class="form-control" name="bulk_listings" rows="10" <?= $isStore ? '' : 'disabled' ?>
                       placeholder="لپ‌تاپ Dell | laptops | 4500000 | موبایل / طلا&#10;مبل راحتی | furniture | 2000000 | لوازم آشپزخانه"></textarea>
             <button type="submit" class="btn btn-accent w-100 mt-4" <?= $isStore ? '' : 'disabled' ?>>

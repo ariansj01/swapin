@@ -9,8 +9,12 @@ $action  = clean($_GET['action'] ?? '');
 $success = '';
 $error   = '';
 
-// Handle deposit (mock IPG for MVP)
+// Handle deposit (mock IPG — development only)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deposit_amount'])) {
+    csrf_verify_or_fail();
+    if (!WALLET_DEMO_DEPOSIT) {
+        $error = 'واریز آزمایشی در محیط production غیرفعال است.';
+    } else {
     $amount = (float)($_POST['deposit_amount'] ?? 0);
     if ($amount < 10 || $amount > 10000) {
         $error = 'مبلغ واریز باید بین ۱۰ تا ۱۰٬۰۰۰ ' . CREDIT_UNIT . ' باشد.';
@@ -19,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deposit_amount'])) {
         // Reload user
         $user    = DB::fetch('SELECT * FROM users WHERE id = ?', [$uid]);
         $success = 'با موفقیت ' . fmt_credit($amount) . ' به کیف پول شما اضافه شد!';
+    }
     }
 }
 
@@ -157,13 +162,15 @@ render_navbar($user);
       <!-- ── Deposit Sidebar ───────────────────────────────────── -->
       <div style="position:sticky;top:80px">
 
-        <!-- Deposit Card -->
+        <?php if (WALLET_DEMO_DEPOSIT): ?>
+        <!-- Deposit Card (development / demo only) -->
         <div class="card mb-4" id="deposit-form-card">
           <div class="card-header">
             <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-plus-circle" style="color:var(--primary)"></i> افزودن اعتبار</h3>
           </div>
           <div class="card-body">
             <form method="POST">
+            <?= csrf_field() ?>
               <div class="form-group">
                 <label class="form-label">مبلغ (<?= CREDIT_UNIT ?>)</label>
                 <input type="number" class="form-control" name="deposit_amount"
@@ -193,6 +200,16 @@ render_navbar($user);
             </form>
           </div>
         </div>
+        <?php else: ?>
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="alert alert-info" style="margin:0">
+              <i class="bi bi-info-circle"></i>
+              واریز آنلاین از طریق درگاه پرداخت به‌زودی فعال می‌شود.
+            </div>
+          </div>
+        </div>
+        <?php endif; ?>
 
         <!-- How Credits Work -->
         <div class="card">

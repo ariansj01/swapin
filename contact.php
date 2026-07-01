@@ -11,6 +11,8 @@ $mailMode = contact_mail_mode();
 $useEmailJs = $mailMode === 'emailjs';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$useEmailJs) {
+    csrf_verify_or_fail();
+    rate_limit_ip_or_fail('contact_form', 10, 3600);
     $result = handle_contact_submission(
         $_POST['name'] ?? '',
         $_POST['email'] ?? '',
@@ -104,7 +106,7 @@ render_navbar($user);
         <form method="POST" id="contact-form" novalidate
               data-emailjs="<?= $useEmailJs ? '1' : '0' ?>"
               data-api-url="<?= h(APP_URL . '/api/contact.php') ?>">
-
+          <?= csrf_field() ?>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
             <div class="form-group">
               <label class="form-label" for="name">نام شما <span class="required">*</span></label>

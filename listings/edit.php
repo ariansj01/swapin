@@ -44,6 +44,7 @@ $vals   = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $vals['title']           = clean($_POST['title']           ?? '');
     $vals['category_id']     = (int)($_POST['category_id']     ?? 0);
     $vals['description']     = clean($_POST['description']     ?? '');
@@ -190,6 +191,7 @@ render_navbar($user);
     <?php endif; ?>
 
     <form method="POST" enctype="multipart/form-data" id="edit-form" novalidate>
+    <?= csrf_field() ?>
 
       <!-- ── Step 1: Listing Details ── -->
       <div class="card mb-5">

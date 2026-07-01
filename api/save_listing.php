@@ -9,6 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+csrf_verify_or_fail(true);
+
 $user = auth_user();
 if (!$user) {
     http_response_code(401);

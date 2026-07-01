@@ -1,0 +1,9 @@
+# Block CLI migration scripts from web access (defense in depth)
+<FilesMatch "^run_.*\.php$">
+  Require all denied
+</FilesMatch>
+
+# Block database dumps if accidentally copied here
+<FilesMatch "\.sql$">
+  Require all denied
+</FilesMatch>

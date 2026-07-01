@@ -10,6 +10,7 @@ $error   = '';
 
 // ─── POST actions: delete / mark-traded / reactivate ─────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $action    = clean($_POST['action']     ?? '');
     $listingId = (int)($_POST['listing_id'] ?? 0);
 
@@ -280,7 +281,8 @@ render_navbar($user);
           </a>
           <?php endif; ?>
 
-          <form method="POST" style="display:contents"
+          <form method="POST" style="display:contents">
+            <?= csrf_field() ?>
                 onsubmit="return confirm('«<?= addslashes($l['title']) ?>» به‌عنوان معامله‌شده علامت بخورد؟')">
             <input type="hidden" name="action"     value="mark_traded">
             <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
@@ -289,7 +291,8 @@ render_navbar($user);
             </button>
           </form>
 
-          <form method="POST" style="display:contents"
+          <form method="POST" style="display:contents">
+            <?= csrf_field() ?>
                 onsubmit="return confirm('«<?= addslashes($l['title']) ?>» حذف شود؟ دیگر در نتایج جستجو نمایش داده نمی‌شود.')">
             <input type="hidden" name="action"     value="delete">
             <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
@@ -300,7 +303,8 @@ render_navbar($user);
 
           <?php elseif (in_array($l['status'], ['traded', 'expired'])): ?>
 
-          <form method="POST" style="display:contents"
+          <form method="POST" style="display:contents">
+            <?= csrf_field() ?>
                 onsubmit="return confirm('«<?= addslashes($l['title']) ?>» دوباره فعال شود؟ در بازار دوباره نمایش داده می‌شود.')">
             <input type="hidden" name="action"     value="reactivate">
             <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">

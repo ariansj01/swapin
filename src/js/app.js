@@ -3,6 +3,26 @@
  * Vanilla JS — no dependencies
  */
 
+function getCsrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+function withCsrfHeaders(headers = {}) {
+  const token = getCsrfToken();
+  if (token) {
+    headers['X-CSRF-Token'] = token;
+  }
+  return headers;
+}
+
+function appendCsrf(formData) {
+  const token = getCsrfToken();
+  if (token && formData instanceof FormData) {
+    formData.append('_csrf', token);
+  }
+  return formData;
+}
+
 /* ── Toast notification system ─────────────────────────────────────────── */
 function showToast(msg, type = 'info', duration = 3500) {
   const container = document.getElementById('toast-container');
@@ -285,10 +305,12 @@ function initSaveButtons() {
       try {
         const fd = new FormData();
         fd.append('listing_id', listingId);
+        appendCsrf(fd);
         const res = await fetch(`${appUrl}/api/save_listing.php`, {
           method: 'POST',
           body: fd,
           credentials: 'same-origin',
+          headers: withCsrfHeaders(),
         });
         const data = await res.json();
 
@@ -747,8 +769,14 @@ function initAiChat() {
       const fd = new FormData();
       fd.append('message', msg);
       fd.append('history', JSON.stringify(history.slice(0, -1)));
+      appendCsrf(fd);
 
-      const res  = await fetch(appUrl + '/api/ai_chat.php', { method: 'POST', body: fd });
+      const res  = await fetch(appUrl + '/api/ai_chat.php', {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+        headers: withCsrfHeaders(),
+      });
       const data = await res.json();
       removeTyping();
 

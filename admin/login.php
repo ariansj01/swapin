@@ -9,6 +9,7 @@ if (auth_admin()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $email = clean($_POST['email'] ?? '');
     $pass  = $_POST['password'] ?? '';
 
@@ -37,6 +38,7 @@ render_head('ورود مدیر', '', ['robots' => 'noindex, nofollow']);
       <?php endif; ?>
 
       <form method="POST">
+        <?= csrf_field() ?>
         <div class="form-group">
           <label class="form-label">ایمیل مدیر</label>
           <input type="email" class="form-control" name="email" value="<?= h($_POST['email'] ?? ADMIN_EMAIL) ?>" required autofocus>

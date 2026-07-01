@@ -6,6 +6,7 @@ $admin = require_admin();
 $search = clean($_GET['q'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $userId = (int)($_POST['user_id'] ?? 0);
     $action = clean($_POST['action'] ?? '');
 
@@ -81,6 +82,7 @@ ob_start();
         <td>
           <?php if (($u['role'] ?? 'user') !== 'admin'): ?>
           <form method="POST" style="display:inline">
+            <?= csrf_field() ?>
             <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
             <input type="hidden" name="action" value="toggle_active">
             <button type="submit" class="btn btn-sm btn-outline"><?= $u['is_active'] ? 'غیرفعال' : 'فعال' ?></button>

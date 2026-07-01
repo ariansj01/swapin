@@ -9,9 +9,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+rate_limit_ip_or_fail('contact_api', 10, 3600, true);
+
 $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
     $input = $_POST;
+}
+
+$csrfToken = csrf_token_from_request();
+if ($csrfToken === '' && isset($input['_csrf'])) {
+    $csrfToken = (string)$input['_csrf'];
+}
+if ($csrfToken === '' || !hash_equals(csrf_token(), $csrfToken)) {
+    http_response_code(403);
+    echo json_encode(['ok' => false, 'error' => 'csrf_invalid']);
+    exit;
 }
 
 $result = handle_contact_submission(

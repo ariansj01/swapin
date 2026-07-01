@@ -6,6 +6,7 @@ $admin = require_admin();
 $id    = (int)($_GET['id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $reqId  = (int)($_POST['request_id'] ?? 0);
     $action = clean($_POST['action'] ?? '');
     $report = clean($_POST['report'] ?? '');
@@ -77,12 +78,14 @@ ob_start();
       <?php if ($detail['status'] !== 'done'): ?>
       <?php if ($detail['status'] === 'pending'): ?>
       <form method="POST" class="mb-4">
+        <?= csrf_field() ?>
         <input type="hidden" name="request_id" value="<?= $id ?>">
         <input type="hidden" name="action" value="schedule">
         <button type="submit" class="btn btn-outline w-100">زمان‌بندی بازرسی</button>
       </form>
       <?php endif; ?>
       <form method="POST">
+        <?= csrf_field() ?>
         <input type="hidden" name="request_id" value="<?= $id ?>">
         <input type="hidden" name="action" value="resolve">
         <div class="form-group">

@@ -9,6 +9,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+csrf_verify_or_fail(true);
+rate_limit_ip_or_fail('ai_chat', 60, 3600, true);
+
 $user = auth_user();
 if (!$user) {
     http_response_code(401);

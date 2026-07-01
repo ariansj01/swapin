@@ -21,6 +21,7 @@ if (!$ticket) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $ticket['status'] !== 'closed') {
+    csrf_verify_or_fail();
     $result = add_ticket_message($id, 'user', (int)$user['id'], $_POST['body'] ?? '');
     if (isset($result['error'])) {
         $error = $result['error'];
@@ -85,6 +86,7 @@ render_navbar($user);
       <div class="card-body">
         <?php if ($error): ?><div class="alert alert-danger mb-4"><?= h($error) ?></div><?php endif; ?>
         <form method="POST">
+          <?= csrf_field() ?>
           <div class="form-group">
             <label class="form-label" for="body">پاسخ شما</label>
             <textarea id="body" name="body" rows="4" class="form-control" placeholder="پیام خود را بنویسید…" required></textarea>

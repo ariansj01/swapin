@@ -10,6 +10,8 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
+require_cli();
+
 header('Content-Type: text/plain; charset=utf-8');
 
 define('DEMO_EMAIL_DOMAIN', '@swapin.local');

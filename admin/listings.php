@@ -7,6 +7,7 @@ $id    = (int)($_GET['id'] ?? 0);
 $filter = clean($_GET['filter'] ?? 'pending');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $listingId = (int)($_POST['listing_id'] ?? 0);
     $action    = clean($_POST['action'] ?? '');
     $note      = clean($_POST['note'] ?? '');
@@ -111,6 +112,7 @@ ob_start();
     <div class="card-body">
       <?php if ($listing['review_status'] === 'pending'): ?>
       <form method="POST" class="mb-4">
+        <?= csrf_field() ?>
         <input type="hidden" name="listing_id" value="<?= $id ?>">
         <input type="hidden" name="action" value="approve">
         <div class="form-group">
@@ -120,6 +122,7 @@ ob_start();
         <button type="submit" class="btn btn-success w-100"><i class="bi bi-check-lg"></i> تأیید و انتشار</button>
       </form>
       <form method="POST">
+        <?= csrf_field() ?>
         <input type="hidden" name="listing_id" value="<?= $id ?>">
         <input type="hidden" name="action" value="reject">
         <div class="form-group">
@@ -132,6 +135,7 @@ ob_start();
       <p class="fs-sm" style="color:var(--text-muted)">این آگهی قبلاً بررسی شده است.</p>
       <?php if ($listing['review_status'] === 'rejected'): ?>
       <form method="POST" class="mt-4">
+        <?= csrf_field() ?>
         <input type="hidden" name="listing_id" value="<?= $id ?>">
         <input type="hidden" name="action" value="approve">
         <button type="submit" class="btn btn-outline w-100">تأیید مجدد</button>

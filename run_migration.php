@@ -5,6 +5,8 @@
  */
 require_once __DIR__ . '/includes/config.php';
 
+require_cli();
+
 header('Content-Type: text/plain; charset=utf-8');
 
 $sqlFile = __DIR__ . '/migration_v2.sql';

@@ -7,6 +7,7 @@ $success = '';
 $error   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $plan   = clean($_POST['plan'] ?? '');
     $months = max(1, (int)($_POST['months'] ?? 1));
     $result = subscribe_to_plan($user['id'], $plan, $months);
@@ -81,6 +82,7 @@ render_navbar($user);
           <button class="btn btn-outline w-100" disabled>پلن فعلی</button>
           <?php else: ?>
           <form method="POST">
+            <?= csrf_field() ?>
             <input type="hidden" name="plan" value="<?= h($plan['slug']) ?>">
             <select name="months" class="form-control mb-3">
               <?php foreach ([1,3,6,12] as $m): ?>

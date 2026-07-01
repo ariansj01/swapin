@@ -9,7 +9,11 @@ define('APP_URL',           'http://localhost/swaapin');
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads/');
+define('STORAGE_DIR',       __DIR__ . '/../storage/');
+define('PRIVATE_UPLOAD_DIR', STORAGE_DIR . 'private/');
 define('MAX_IMAGES',        8);
+// Environment: 'auto' | 'development' | 'production' (or SWAPIN_ENV env var)
+define('APP_ENV',           getenv('SWAPIN_ENV') ?: 'auto');
 define('OTP_EXPIRE',        600);
 define('LISTINGS_PER_PAGE', 12);
 define('WELCOME_BONUS',     10000000);
@@ -23,16 +27,31 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_CHAR', 'utf8mb4');
 
+require_once __DIR__ . '/security.php';
+
 // ─── Session ───────────────────────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
-    ini_set('session.cookie_httponly', 1);
-    ini_set('session.use_strict_mode', 1);
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443;
+    if (app_is_production() && $https) {
+        ini_set('session.cookie_secure', '1');
+    }
     session_start();
 }
 
-// ─── Error handling (dev mode) ─────────────────────────────────────────────
-ini_set('display_errors', 1);
+// ─── Error handling ────────────────────────────────────────────────────────
 error_reporting(E_ALL);
+if (app_is_production()) {
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
+} else {
+    ini_set('display_errors', '1');
+}
+
+define('WALLET_DEMO_DEPOSIT', !app_is_production());
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DB — lightweight PDO wrapper
@@ -173,23 +192,54 @@ function paginate(int $total, int $perPage, int $page): array {
     ];
 }
 
-function upload_image(array $file, string $prefix = 'img'): ?string {
-    if ($file['error'] !== UPLOAD_ERR_OK) return null;
+function validate_uploaded_image(array $file): ?array {
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return null;
+    }
     $maxSize = 5 * 1024 * 1024;
-    if ($file['size'] > $maxSize) return null;
+    if ($file['size'] > $maxSize) {
+        return null;
+    }
 
     $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
     $mime    = mime_content_type($file['tmp_name']);
-    if (!isset($allowed[$mime])) return null;
+    if (!isset($allowed[$mime])) {
+        return null;
+    }
 
-    $ext      = $allowed[$mime];
-    $filename = $prefix . '_' . uniqid() . '_' . time() . '.' . $ext;
-    $dest     = UPLOAD_DIR . $filename;
+    $info = @getimagesize($file['tmp_name']);
+    if ($info === false) {
+        return null;
+    }
 
-    if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
-    if (!move_uploaded_file($file['tmp_name'], $dest)) return null;
+    return ['ext' => $allowed[$mime], 'mime' => $mime];
+}
+
+function store_uploaded_image(array $file, string $prefix, string $destDir): ?string {
+    $valid = validate_uploaded_image($file);
+    if (!$valid) {
+        return null;
+    }
+
+    $filename = $prefix . '_' . uniqid('', true) . '_' . time() . '.' . $valid['ext'];
+    $destDir  = rtrim($destDir, '/\\') . DIRECTORY_SEPARATOR;
+    if (!is_dir($destDir)) {
+        mkdir($destDir, 0755, true);
+    }
+    $dest = $destDir . $filename;
+    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        return null;
+    }
 
     return $filename;
+}
+
+function upload_image(array $file, string $prefix = 'img'): ?string {
+    return store_uploaded_image($file, $prefix, UPLOAD_DIR);
+}
+
+function upload_private_image(array $file, string $prefix = 'kyc'): ?string {
+    return store_uploaded_image($file, $prefix, PRIVATE_UPLOAD_DIR);
 }
 
 function timeago(string $datetime): string {

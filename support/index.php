@@ -7,6 +7,7 @@ $errors = [];
 $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $result = create_support_ticket(
         (int)$user['id'],
         $_POST['subject'] ?? '',
@@ -68,6 +69,7 @@ render_navbar($user);
       <div class="card-header"><h2 style="margin:0;font-size:1.125rem"><i class="bi bi-plus-circle"></i> ثبت تیکت جدید</h2></div>
       <div class="card-body">
         <form method="POST" novalidate>
+          <?= csrf_field() ?>
           <div class="form-group">
             <label class="form-label" for="category">دسته‌بندی</label>
             <select id="category" name="category" class="form-control">

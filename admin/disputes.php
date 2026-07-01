@@ -6,6 +6,7 @@ $admin = require_admin();
 $id    = (int)($_GET['id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify_or_fail();
     $disputeId = (int)($_POST['dispute_id'] ?? 0);
     $action    = clean($_POST['action'] ?? '');
     $note      = clean($_POST['note'] ?? '');
@@ -79,6 +80,7 @@ ob_start();
     <div class="card-body">
       <?php if (in_array($detail['status'], ['open', 'reviewing'], true)): ?>
       <form method="POST">
+        <?= csrf_field() ?>
         <input type="hidden" name="dispute_id" value="<?= $id ?>">
         <div class="form-group">
           <label class="form-label">یادداشت مدیر</label>
