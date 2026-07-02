@@ -50,6 +50,10 @@
     });
   }
 
+  function escHtml(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   function showResult(data) {
     loadingEl.hidden = true;
     resultEl.hidden = false;
@@ -61,7 +65,7 @@
       (data.uncertain ? '⚠ ' : '') + 'اطمینان AI: ' + data.confidence + '٪';
 
     const reasonsEl = document.getElementById('ai-pricing-reasons');
-    reasonsEl.innerHTML = data.reasons.map(r => `<li><i class="bi bi-check2"></i>${r}</li>`).join('');
+    reasonsEl.innerHTML = data.reasons.map(r => `<li><i class="bi bi-check2"></i>${escHtml(r)}</li>`).join('');
     document.getElementById('ai-pricing-note').textContent = data.note;
     valueEl.value = data.value;
   }

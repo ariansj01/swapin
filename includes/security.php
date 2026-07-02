@@ -137,6 +137,23 @@ function rate_limit_ip_or_fail(string $action, int $maxAttempts, int $windowSeco
     exit('Too many requests.');
 }
 
+function send_security_headers(): void {
+    if (headers_sent()) {
+        return;
+    }
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+    if (app_is_production()) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+}
+
+function message_thread_id(int $userId, int $partnerId): string {
+    return 'chat_' . min($userId, $partnerId) . '_' . max($userId, $partnerId);
+}
+
 function safe_redirect_path(string $path): string {
     $path = trim($path);
     if ($path === '' || !str_starts_with($path, '/') || str_starts_with($path, '//')) {

@@ -36,11 +36,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_listings'])) {
                 continue;
             }
 
+            $description = clean($title) . ' — ثبت‌شده از پنل فروشگاه.';
+            $contentErrors = validate_listing_content([
+                'title'           => $title,
+                'description'     => $description,
+                'want_in_return'  => $want,
+            ]);
+            if (!empty($contentErrors)) {
+                $skipped++;
+                continue;
+            }
+
             DB::insert('listings', [
                 'user_id'         => $uid,
                 'category_id'     => (int)$cat['id'],
                 'title'           => clean($title),
-                'description'     => clean($title) . ' — ثبت‌شده از پنل فروشگاه.',
+                'description'     => $description,
                 'condition'       => 'good',
                 'estimated_value' => max(0, (float)$value),
                 'want_in_return'  => clean($want),
@@ -49,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_listings'])) {
                 'sell_price'      => 0,
                 'city'            => $user['city'] ?? null,
                 'status'          => 'active',
+                'review_status'   => 'pending',
             ]);
             $created++;
         }

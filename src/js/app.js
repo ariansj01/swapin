@@ -33,7 +33,13 @@ function showToast(msg, type = 'info', duration = 3500) {
 
   const toast = document.createElement('div');
   toast.className = `toast toast-${type === 'error' ? 'error' : type}`;
-  toast.innerHTML = `<i class="bi ${icons[type] || icons.info}" style="color:${colors[type]};font-size:1rem;flex-shrink:0"></i><span>${msg}</span>`;
+  const icon = document.createElement('i');
+  icon.className = `bi ${icons[type] || icons.info}`;
+  icon.style.cssText = `color:${colors[type]};font-size:1rem;flex-shrink:0`;
+  const span = document.createElement('span');
+  span.textContent = String(msg ?? '');
+  toast.appendChild(icon);
+  toast.appendChild(span);
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -960,5 +966,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Show success toast if URL has ?toast param
   const toastMsg = new URLSearchParams(window.location.search).get('toast');
-  if (toastMsg) showToast(decodeURIComponent(toastMsg), 'success');
+  if (toastMsg) {
+    const safe = decodeURIComponent(toastMsg).replace(/<[^>]*>/g, '').slice(0, 200);
+    if (safe) showToast(safe, 'success');
+  }
 });

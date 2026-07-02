@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 csrf_verify_or_fail(true);
+rate_limit_ip_or_fail('save_listing', 60, 3600, true);
 
 $user = auth_user();
 if (!$user) {

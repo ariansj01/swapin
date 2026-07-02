@@ -92,6 +92,7 @@ $offerError   = '';
 $offerSuccess = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     csrf_verify_or_fail();
+    rate_limit_ip_or_fail('listing_action', 40, 900);
     if (!$user) {
         header('Location: ' . APP_URL . '/auth/login.php?redirect=/listings/view.php%3Fid=' . $id); exit;
     }
@@ -137,42 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
     } elseif ($_POST['action'] === 'buy_now') {
-        $mode = $listing['listing_mode'] ?? 'swap';
-        if (!in_array($mode, ['sell', 'both'], true)) {
-            $offerError = 'این آگهی برای خرید مستقیم در دسترس نیست.';
-        } elseif ($listing['user_id'] == $user['id']) {
-            $offerError = 'نمی‌توانید آگهی خودتان را بخرید.';
-        } elseif ((float)($listing['sell_price'] ?? 0) <= 0) {
-            $offerError = 'قیمت فروش برای این آگهی تنظیم نشده است.';
-        } else {
-            $kbc = max(1, (int)ceil((float)$listing['sell_price']));
-            if ($kbc > $user['credit_balance']) {
-                $offerError = 'موجودی ' . CREDIT_UNIT . ' کافی نیست. نیاز: ' . fmt_credit($kbc);
-            } else {
-                $offerId = DB::insert('trade_offers', [
-                    'listing_id'       => $id,
-                    'from_user_id'     => $user['id'],
-                    'offer_listing_id' => null,
-                    'offer_credit'     => $kbc,
-                    'message'          => 'خرید مستقیم (خرید فوری)',
-                    'status'           => 'accepted',
-                ]);
-                $tradeId = DB::insert('trades', [
-                    'offer_id'     => $offerId,
-                    'user_a_id'    => $listing['user_id'],
-                    'user_b_id'    => $user['id'],
-                    'listing_a_id' => $id,
-                    'listing_b_id' => null,
-                    'credit_diff'  => $kbc,
-                    'status'       => 'in_progress',
-                ]);
-                escrow_hold($tradeId, (int)$user['id'], $kbc, 'سپرده خرید فوری معامله #' . $tradeId);
-                create_trade_contract($tradeId);
-                DB::query('UPDATE listings SET status = "traded" WHERE id = ?', [$id]);
-                header('Location: ' . APP_URL . '/trades.php?trade=' . $tradeId . '&accepted=1');
-                exit;
-            }
-        }
+        $offerError = 'خرید مستقیم در سواپین غیرفعال است؛ فقط معاوضه مجاز است.';
     } elseif ($_POST['action'] === 'request_inspection') {
         if (!$user || (int)$listing['user_id'] !== (int)$user['id']) {
             $offerError = 'فقط صاحب آگهی می‌تواند بازرسی درخواست کند.';
@@ -533,7 +499,7 @@ render_navbar($user);
                 <?= $isSaved ? 'ذخیره شد' : 'ذخیره' ?>
               </button>
             </form>
-            <button onclick="navigator.share ? navigator.share({title:'<?= h($listing['title']) ?>',url:location.href}) : navigator.clipboard.writeText(location.href).then(()=>showToast('لینک کپی شد!','success'))"
+            <button type="button" id="share-listing-btn" data-title="<?= h($listing['title']) ?>"
                     class="btn btn-ghost btn-sm" style="flex:1">
               <i class="bi bi-share"></i> اشتراک
             </button>
@@ -554,6 +520,14 @@ document.getElementById('offer-form')?.addEventListener('submit', function(e) {
   if (!listing && (!credit || credit <= 0)) {
     e.preventDefault();
     showToast('لطفاً یک کالا یا مقداری اعتبار ' + '<?= CREDIT_UNIT ?>' + ' پیشنهاد دهید', 'error');
+  }
+});
+document.getElementById('share-listing-btn')?.addEventListener('click', function () {
+  const title = this.dataset.title || '';
+  if (navigator.share) {
+    navigator.share({ title, url: location.href }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(location.href).then(() => showToast('لینک کپی شد!', 'success'));
   }
 });
 </script>

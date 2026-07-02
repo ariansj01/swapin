@@ -12,6 +12,7 @@ $error   = '';
 // Handle trade actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_id'])) {
     csrf_verify_or_fail();
+    rate_limit_ip_or_fail('trade_action', 30, 900);
     $tradeId = (int)$_POST['trade_id'];
     $action  = clean($_POST['action'] ?? '');
 
@@ -76,9 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_id'])) {
         }
     } elseif ($action === 'dispute') {
         DB::query('UPDATE trades SET status = "disputed" WHERE id = ?', [$tradeId]);
-        if ($trade['escrow_status'] === 'held') {
-            escrow_refund($tradeId);
-        }
         $reason = clean($_POST['dispute_reason'] ?? 'other');
         $desc   = clean($_POST['dispute_desc'] ?? 'اختلاف از صفحه معاملات ثبت شد');
         if (in_array($reason, ['wrong_item','damaged','missing','fraud','other'], true)) {
@@ -91,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_id'])) {
                 'description' => $desc,
             ]);
         }
-        $success = 'اختلاف ثبت شد. در صورت وجود، سپرده بازگردانده می‌شود. تیم ظرف ۲۴ ساعت بررسی می‌کند.';
+        $success = 'اختلاف ثبت شد. سپرده تا پایان بررسی نگه‌داری می‌شود. تیم ظرف ۲۴ ساعت رسیدگی می‌کند.';
     }
 }
 

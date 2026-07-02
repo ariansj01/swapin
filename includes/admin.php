@@ -13,12 +13,20 @@ function auth_admin(): ?array {
 }
 
 function require_admin(): array {
-    $admin = auth_admin();
-    if (!$admin) {
+    if (empty($_SESSION['user_id'])) {
         header('Location: ' . APP_URL . '/admin/login.php');
         exit;
     }
-    return $admin;
+
+    $user = auth_user();
+    if (!$user || !is_admin_user($user)) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "Forbidden\n";
+        exit;
+    }
+
+    return $user;
 }
 
 function admin_pending_counts(): array {
@@ -121,22 +129,29 @@ function admin_toggle_user_active(int $userId, bool $active): void {
 }
 
 function admin_ensure_default_admin(): void {
-    admin_sync_credentials();
+    admin_sync_credentials(false);
 }
 
-/** Set admin role + password for the configured admin email */
-function admin_sync_credentials(): void {
+/** Ensure admin role exists; password set only when explicitly requested (CLI + SWAPIN_ADMIN_PASS). */
+function admin_sync_credentials(bool $resetPassword = false): void {
     $email = defined('ADMIN_EMAIL') ? ADMIN_EMAIL : 'admin@kalabkala.com';
-    $pass  = defined('ADMIN_DEFAULT_PASS') ? ADMIN_DEFAULT_PASS : '1234';
-    $hash  = password_hash($pass, PASSWORD_BCRYPT);
+    $user  = DB::fetch('SELECT id FROM users WHERE email = ?', [$email]);
 
-    $user = DB::fetch('SELECT id FROM users WHERE email = ?', [$email]);
     if ($user) {
-        DB::update('users', [
-            'role'          => 'admin',
-            'password_hash' => $hash,
-            'is_active'     => 1,
-        ], 'id = ?', [(int)$user['id']]);
+        $update = ['role' => 'admin', 'is_active' => 1];
+        if ($resetPassword) {
+            $pass = getenv('SWAPIN_ADMIN_PASS') ?: '';
+            if ($pass === '') {
+                return;
+            }
+            $update['password_hash'] = password_hash($pass, PASSWORD_BCRYPT);
+        }
+        DB::update('users', $update, 'id = ?', [(int)$user['id']]);
+        return;
+    }
+
+    $pass = getenv('SWAPIN_ADMIN_PASS') ?: '';
+    if ($pass === '') {
         return;
     }
 
@@ -144,7 +159,7 @@ function admin_sync_credentials(): void {
         'name'               => 'مدیر سیستم',
         'email'              => $email,
         'phone'              => '+989000000001',
-        'password_hash'      => $hash,
+        'password_hash'      => password_hash($pass, PASSWORD_BCRYPT),
         'role'               => 'admin',
         'credit_balance'     => 0,
         'verification_level' => 3,

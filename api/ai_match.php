@@ -12,9 +12,13 @@ if (!$user) {
 
 rate_limit_ip_or_fail('ai_match', 80, 3600, true);
 
+$refresh = !empty($_GET['refresh']) || !empty($_POST['refresh']);
+if ($refresh) {
+    csrf_verify_or_fail(true);
+}
+
 $uid       = (int) $user['id'];
 $listingId = (int) ($_GET['listing_id'] ?? $_POST['listing_id'] ?? 0) ?: null;
-$refresh   = !empty($_GET['refresh']) || !empty($_POST['refresh']);
 $limit     = min(12, max(1, (int) ($_GET['limit'] ?? $_POST['limit'] ?? 8)));
 
 $result = ai_match_listings_cached($uid, $listingId, $refresh, $limit);

@@ -8,6 +8,7 @@ $error   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
+    rate_limit_ip_or_fail('subscription', 10, 3600);
     $plan   = clean($_POST['plan'] ?? '');
     $months = max(1, (int)($_POST['months'] ?? 1));
     $result = subscribe_to_plan($user['id'], $plan, $months);

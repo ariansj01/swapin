@@ -12,17 +12,24 @@ $error    = '';
 // ── Send message ──────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
-    $toId     = (int)($_POST['to_user_id'] ?? 0);
-    $body     = trim($_POST['body'] ?? '');
-    $threadId = clean($_POST['thread_id'] ?? '');
+    rate_limit_ip_or_fail('send_message', 40, 900);
+    $toId = (int)($_POST['to_user_id'] ?? 0);
+    $body = trim($_POST['body'] ?? '');
 
-    if (!$body || !$toId || !$threadId) {
+    if (!$body || !$toId) {
         $error = 'پیام نمی‌تواند خالی باشد.';
     } else {
         $recipient = DB::fetch('SELECT id FROM users WHERE id = ? AND is_active = 1', [$toId]);
         if (!$recipient) {
             $error = 'کاربر یافت نشد.';
         } else {
+            $existing = DB::fetch(
+                'SELECT thread_id FROM messages
+                 WHERE (from_user_id = ? AND to_user_id = ?) OR (from_user_id = ? AND to_user_id = ?)
+                 ORDER BY id ASC LIMIT 1',
+                [$uid, $toId, $toId, $uid]
+            );
+            $threadId = $existing['thread_id'] ?? message_thread_id($uid, $toId);
             DB::insert('messages', [
                 'thread_id'    => $threadId,
                 'from_user_id' => $uid,
@@ -90,7 +97,7 @@ if ($toUserId) {
         if ($chatMessages) {
             $threadId = $chatMessages[0]['thread_id'];
         } else {
-            $threadId = 'chat_' . min($uid, $toUserId) . '_' . max($uid, $toUserId);
+            $threadId = message_thread_id($uid, $toUserId);
         }
     }
 }
@@ -211,7 +218,6 @@ render_navbar($user);
           <form method="POST" style="display:flex;gap:var(--sp-3);align-items:flex-end">
             <?= csrf_field() ?>
             <input type="hidden" name="to_user_id" value="<?= $chatUser['id'] ?>">
-            <input type="hidden" name="thread_id"  value="<?= h($threadId) ?>">
             <textarea name="body" class="form-control" rows="2" placeholder="پیام خود را بنویسید…" required
                       style="flex:1;resize:none;min-height:50px"
                       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.closest('form').submit()}"></textarea>

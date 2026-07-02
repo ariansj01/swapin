@@ -3,9 +3,8 @@
 define('APP_NAME',          'سواپین');
 define('APP_NAME_EN',       'Swapin');
 define('CREDIT_UNIT',       'تومان');
-define('ADMIN_EMAIL',       'admin@kalabkala.com');
-define('ADMIN_DEFAULT_PASS', '1234');
-define('APP_URL',           'http://localhost/swaapin');
+define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'admin@kalabkala.com');
+define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'http://localhost/swaapin');
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads/');
@@ -21,13 +20,14 @@ define('PLATFORM_FEE_RATE', 0.02); // ۲٪ کارمزد روی معاملات م
 define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه‌ها
 
 // ─── Database ──────────────────────────────────────────────────────────────
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'kala_b_kala');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'kala_b_kala');
+define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'root');
+define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : '');
 define('DB_CHAR', 'utf8mb4');
 
 require_once __DIR__ . '/security.php';
+send_security_headers();
 
 // ─── Session ───────────────────────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {

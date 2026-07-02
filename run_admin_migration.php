@@ -53,8 +53,8 @@ $admin = DB::fetch('SELECT email, role FROM users WHERE email = ?', [ADMIN_EMAIL
 echo "\nDone. OK=$ok SKIP=$skip FAIL=$fail\n";
 if ($admin) {
     echo "Admin account ready: {$admin['email']} (role={$admin['role']})\n";
-    echo "Set ADMIN_DEFAULT_PASS in config and run admin_sync via CLI if needed.\n";
+    echo "To set/reset password: SWAPIN_ADMIN_PASS='your-pass' php -r \"require 'includes/config.php'; admin_sync_credentials(true);\"\n";
 } else {
-    echo "WARNING: admin account was not created.\n";
+    echo "WARNING: admin account was not created. Set SWAPIN_ADMIN_PASS env and re-run.\n";
 }
 exit($fail > 0 ? 1 : 0);

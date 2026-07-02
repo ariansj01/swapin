@@ -160,7 +160,7 @@ render_navbar($user);
               <label class="form-label">تصویر کارت ملی <span class="required">*</span></label>
               <?php if (!empty($user['id_card_image'])): ?>
               <div class="mb-2">
-                <img src="<?= UPLOAD_URL . h($user['id_card_image']) ?>" alt="کارت ملی" style="max-height:80px;border-radius:var(--radius-sm);border:1px solid var(--border)">
+                <img src="<?= private_media_url((int)$user['id']) ?>" alt="کارت ملی" style="max-height:80px;border-radius:var(--radius-sm);border:1px solid var(--border)">
               </div>
               <?php endif; ?>
               <input type="file" name="id_card_image" class="form-control" accept="image/*" <?= empty($user['id_card_image']) ? 'required' : '' ?>>

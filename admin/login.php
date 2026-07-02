@@ -10,6 +10,7 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
+    rate_limit_ip_or_fail('admin_login', 5, 900);
     $email = clean($_POST['email'] ?? '');
     $pass  = $_POST['password'] ?? '';
 
@@ -41,7 +42,7 @@ render_head('ورود مدیر', '', ['robots' => 'noindex, nofollow']);
         <?= csrf_field() ?>
         <div class="form-group">
           <label class="form-label">ایمیل مدیر</label>
-          <input type="email" class="form-control" name="email" value="<?= h($_POST['email'] ?? ADMIN_EMAIL) ?>" required autofocus>
+          <input type="email" class="form-control" name="email" value="<?= h($_POST['email'] ?? '') ?>" required autofocus>
         </div>
         <div class="form-group">
           <label class="form-label">رمز عبور</label>

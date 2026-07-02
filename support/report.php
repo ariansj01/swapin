@@ -9,6 +9,7 @@ $vals    = ['message' => '', 'steps' => '', 'page_url' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
+    rate_limit_ip_or_fail('error_report', 10, 3600);
     $vals['message']  = $_POST['message'] ?? '';
     $vals['steps']    = $_POST['steps'] ?? '';
     $vals['page_url'] = $_POST['page_url'] ?? '';

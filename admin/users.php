@@ -16,9 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             admin_toggle_user_active($userId, !(bool)$target['is_active']);
             admin_set_flash($target['is_active'] ? 'کاربر غیرفعال شد.' : 'کاربر فعال شد.');
         }
-    } elseif ($userId && $action === 'make_admin') {
-        DB::update('users', ['role' => 'admin'], 'id = ? AND role != "admin"', [$userId]);
-        admin_set_flash('نقش مدیر اضافه شد.');
     }
     header('Location: ' . APP_URL . '/admin/users.php?q=' . urlencode($search));
     exit;

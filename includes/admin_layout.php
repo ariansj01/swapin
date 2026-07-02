@@ -52,7 +52,10 @@ function render_admin_shell(array $admin, string $active, string $content): void
     echo '<div class="admin-sidebar__foot">';
     echo "<div class=\"admin-sidebar__user\"><i class=\"bi bi-person-circle\"></i> {$name}</div>";
     echo "<a href=\"{$url}/\" class=\"admin-nav__link\"><i class=\"bi bi-house\"></i> سایت</a>";
-    echo "<a href=\"{$url}/admin/logout.php\" class=\"admin-nav__link\"><i class=\"bi bi-box-arrow-left\"></i> خروج</a>";
+    $logoutCsrf = csrf_field();
+    echo "<form method=\"POST\" action=\"{$url}/admin/logout.php\" style=\"margin:0\">{$logoutCsrf}";
+    echo "<button type=\"submit\" class=\"admin-nav__link\" style=\"width:100%;border:0;background:none;cursor:pointer;font:inherit;text-align:inherit\">";
+    echo "<i class=\"bi bi-box-arrow-left\"></i> خروج</button></form>";
     echo '</div></aside>';
     echo '<main class="admin-main" id="main-content">' . $content . '</main>';
     echo '</div>';

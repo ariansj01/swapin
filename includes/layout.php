@@ -172,7 +172,15 @@ HTML;
           <a href="{$url}/profile/edit.php" class="dropdown-item"><i class="bi bi-shield-check"></i> احراز هویت</a>
           <div class="dropdown-divider"></div>
           <a href="{$url}/profile.php" class="dropdown-item"><i class="bi bi-person"></i> پروفایل</a>
-          <a href="{$url}/auth/logout.php" class="dropdown-item" style="color:var(--danger)"><i class="bi bi-box-arrow-right"></i> خروج</a>
+HTML;
+        $logoutCsrf = csrf_field();
+        echo <<<HTML
+          <form method="POST" action="{$url}/auth/logout.php" style="margin:0">
+            {$logoutCsrf}
+            <button type="submit" class="dropdown-item" style="color:var(--danger);width:100%;border:0;background:none;text-align:inherit;cursor:pointer;font:inherit">
+              <i class="bi bi-box-arrow-right"></i> خروج
+            </button>
+          </form>
         </div>
       </div>
 HTML;

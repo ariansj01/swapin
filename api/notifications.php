@@ -10,6 +10,8 @@ if (!$user) {
     exit;
 }
 
+rate_limit_ip_or_fail('notifications', 120, 3600, true);
+
 $uid = (int)$user['id'];
 
 $unreadMessages = DB::fetchAll(
