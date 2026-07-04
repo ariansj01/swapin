@@ -1,0 +1,39 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute deployment over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /var/www/swapin
+
+            git fetch origin
+            git reset --hard origin/main
+
+            if [ -f composer.json ]; then
+              composer install --no-dev --optimize-autoloader --no-interaction
+            fi
+
+            chown -R www-data:www-data /var/www/swapin
+
+            find storage -type d -exec chmod 775 {} \; 2>/dev/null || true
+            find storage -type f -exec chmod 664 {} \; 2>/dev/null || true
+
+            find uploads -type d -exec chmod 775 {} \; 2>/dev/null || true
+            find uploads -type f -exec chmod 664 {} \; 2>/dev/null || true
+
+            systemctl reload php8.4-fpm
+            systemctl reload nginx
