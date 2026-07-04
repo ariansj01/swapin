@@ -10,6 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug SSH Key
+        run: |
+          echo "HOST: ${{ secrets.HOST }}"
+          echo "USERNAME: ${{ secrets.USERNAME }}"
+          echo "PORT: ${{ secrets.PORT }}"
+
+          echo "${{ secrets.SSH_KEY }}" > key
+
+          echo "========== KEY CONTENT =========="
+          cat key
+          echo "================================"
+
+          echo "File size:"
+          wc -c key
+
       - name: Execute deployment over SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
