@@ -1,0 +1,8 @@
+[04-Jul-2026 10:11:38 Europe/Berlin] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\swaapin\includes\config.php:44) in C:\xampp\htdocs\swaapin\run_all_migrations.php on line 10
+[04-Jul-2026 10:11:38 Europe/Berlin] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\swaapin\includes\config.php:44) in C:\xampp\htdocs\swaapin\run_migration.php on line 10
+[04-Jul-2026 10:12:01 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\swaapin\includes\config.php:71
+Stack trace:
+#0 C:\xampp\htdocs\swaapin\includes\config.php(71): PDO->__construct('mysql:host=loca...', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\swaapin\run_migration.php(22): DB::pdo()
+#2 {main}
+  thrown in C:\xampp\htdocs\swaapin\includes\config.php on line 71
