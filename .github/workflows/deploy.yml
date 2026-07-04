@@ -22,12 +22,10 @@ jobs:
 
             cd /var/www/swapin
 
-            echo "Updating source..."
             git fetch origin
             git reset --hard origin/main
 
             if [ -f composer.json ]; then
-              echo "Installing Composer dependencies..."
               composer install \
                 --no-dev \
                 --no-interaction \
@@ -35,14 +33,10 @@ jobs:
                 --optimize-autoloader
             fi
 
-            echo "Fixing permissions..."
-            chown -R www-data:www-data /var/www/swapin
-
             [ -d storage ] && chmod -R 775 storage
             [ -d uploads ] && chmod -R 775 uploads
 
-            echo "Reloading services..."
-            systemctl reload php8.4-fpm
-            systemctl reload nginx
+            sudo systemctl reload php8.4-fpm
+            sudo systemctl reload nginx
 
-            echo "Deployment completed successfully."
+            echo "Deploy completed successfully."
