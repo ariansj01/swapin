@@ -10,22 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Debug SSH Key
-        run: |
-          echo "HOST: ${{ secrets.HOST }}"
-          echo "USERNAME: ${{ secrets.USERNAME }}"
-          echo "PORT: ${{ secrets.PORT }}"
-
-          echo "${{ secrets.SSH_KEY }}" > key
-
-          echo "========== KEY CONTENT =========="
-          cat key
-          echo "================================"
-
-          echo "File size:"
-          wc -c key
-
-      - name: Execute deployment over SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.HOST }}
@@ -33,22 +18,31 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
           script: |
+            set -e
+
             cd /var/www/swapin
 
+            echo "Updating source..."
             git fetch origin
             git reset --hard origin/main
 
             if [ -f composer.json ]; then
-              composer install --no-dev --optimize-autoloader --no-interaction
+              echo "Installing Composer dependencies..."
+              composer install \
+                --no-dev \
+                --no-interaction \
+                --prefer-dist \
+                --optimize-autoloader
             fi
 
+            echo "Fixing permissions..."
             chown -R www-data:www-data /var/www/swapin
 
-            find storage -type d -exec chmod 775 {} \; 2>/dev/null || true
-            find storage -type f -exec chmod 664 {} \; 2>/dev/null || true
+            [ -d storage ] && chmod -R 775 storage
+            [ -d uploads ] && chmod -R 775 uploads
 
-            find uploads -type d -exec chmod 775 {} \; 2>/dev/null || true
-            find uploads -type f -exec chmod 664 {} \; 2>/dev/null || true
-
+            echo "Reloading services..."
             systemctl reload php8.4-fpm
             systemctl reload nginx
+
+            echo "Deployment completed successfully."
