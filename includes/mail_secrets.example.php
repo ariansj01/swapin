@@ -15,7 +15,7 @@ define('MAIL_SMTP_PASS', 'your-app-password-here');
 define('MAIL_FROM_EMAIL', 'your-email@example.com');
 
 define('MAIL_FROM_NAME', 'Swapin');
-define('MAIL_REPLY_TO', 'support@swapin.ir');
+define('MAIL_REPLY_TO', 'info@swaapin.ir');
 define('MAIL_ADMIN_TO', 'admin@example.com');
 
 // ─── EmailJS (غیر فعاله فعلا) ───────────────────────

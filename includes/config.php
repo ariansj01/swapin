@@ -2,7 +2,9 @@
 // ─── Core Configuration ────────────────────────────────────────────────────
 define('APP_NAME',          'سواپین');
 define('APP_NAME_EN',       'Swapin');
-define('CREDIT_UNIT',       'تومان');
+define('CREDIT_UNIT',             'تومان');
+define('DEFAULT_CURRENCY_CODE',   'IRR');
+define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
 define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'admin@kalabkala.com');
 define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'http://localhost/swaapin');
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
@@ -44,11 +46,15 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // ─── Error handling ────────────────────────────────────────────────────────
 error_reporting(E_ALL);
+ini_set('log_errors', '1');
+ini_set('error_log', STORAGE_DIR . 'logs/error.log');
+
 if (app_is_production()) {
     ini_set('display_errors', '0');
-    ini_set('log_errors', '1');
+    ini_set('display_startup_errors', '0');
 } else {
     ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
 }
 
 define('WALLET_DEMO_DEPOSIT', !app_is_production());
@@ -103,6 +109,31 @@ class DB {
     }
 }
 
+function db_table_columns(string $table): array {
+    static $cache = [];
+    $table = preg_replace('/[^a-z0-9_]/', '', $table);
+    if (!isset($cache[$table])) {
+        try {
+            $cache[$table] = array_column(DB::fetchAll("SHOW COLUMNS FROM `$table`"), 'Field');
+        } catch (Throwable) {
+            $cache[$table] = [];
+        }
+    }
+    return $cache[$table];
+}
+
+function db_has_column(string $table, string $column): bool {
+    return in_array($column, db_table_columns($table), true);
+}
+
+function db_has_table(string $table): bool {
+    return (bool) DB::fetch('SHOW TABLES LIKE ?', [$table]);
+}
+
+function db_filter_row(string $table, array $data): array {
+    return array_intersect_key($data, array_flip(db_table_columns($table)));
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Auth helpers
 // ══════════════════════════════════════════════════════════════════════════════
@@ -131,9 +162,15 @@ function login_user(int $uid): void {
 }
 
 function logout_user(): void {
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $p = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+    }
     session_destroy();
     session_start();
     session_regenerate_id(true);
+    unset($_SESSION['_csrf']);
 }
 
 function app_url(string $path = ''): string {
@@ -143,8 +180,42 @@ function app_url(string $path = ''): string {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Wallet / Credit helpers
+//
+// ref_type + ref_id semantics:
+//   none                — welcome bonus, demo deposit (ref_id NULL)
+//   trade               — ref_id + trade_id = trades.id; listing_id = user's listing in trade
+//   trade_offer         — ref_id = trade_offers.id
+//   listing             — ref_id + listing_id = listings.id (generic listing fee)
+//   listing_bump        — ref_id = listing_bumps.id; listing_id = listings.id
+//   subscription_order  — ref_id = subscription_orders.id
+//   inspection_request  — ref_id = inspection_requests.id; listing_id = listings.id
+//   external            — ref_id = payment gateway / bank reference number
 // ══════════════════════════════════════════════════════════════════════════════
-function credit_transact(int $userId, string $type, float $amount, string $note = '', int $refId = 0): void {
+function wallet_listing_for_trade_user(array $trade, int $userId): ?int {
+    if ((int)$userId === (int)$trade['user_a_id']) {
+        return (int)$trade['listing_a_id'];
+    }
+    if ((int)$userId === (int)$trade['user_b_id'] && !empty($trade['listing_b_id'])) {
+        return (int)$trade['listing_b_id'];
+    }
+    return null;
+}
+
+function credit_transact(int $userId, string $type, float $amount, string $note = '', array $ctx = []): void {
+    $refType      = $ctx['ref_type'] ?? 'none';
+    $refId        = isset($ctx['ref_id']) ? (int)$ctx['ref_id'] : null;
+    $tradeId      = isset($ctx['trade_id']) ? (int)$ctx['trade_id'] : null;
+    $listingId    = isset($ctx['listing_id']) ? (int)$ctx['listing_id'] : null;
+    $currencyCode = $ctx['currency_code'] ?? DEFAULT_CURRENCY_CODE;
+    $currency     = $ctx['currency'] ?? DEFAULT_CURRENCY_LABEL;
+
+    if ($tradeId && $refType === 'none') {
+        $refType = 'trade';
+    }
+    if ($tradeId && !$refId) {
+        $refId = $tradeId;
+    }
+
     DB::pdo()->beginTransaction();
     try {
         DB::query(
@@ -152,14 +223,26 @@ function credit_transact(int $userId, string $type, float $amount, string $note 
             [$amount, $userId]
         );
         $user = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$userId]);
-        DB::insert('wallet_transactions', [
+        $row  = [
             'user_id'       => $userId,
             'type'          => $type,
+            'ref_type'      => $refType,
             'amount'        => $amount,
             'balance_after' => $user['credit_balance'],
+            'currency_code' => $currencyCode,
+            'currency'      => $currency,
             'note'          => $note,
             'ref_id'        => $refId ?: null,
-        ]);
+            'trade_id'      => $tradeId ?: null,
+            'listing_id'    => $listingId ?: null,
+        ];
+        // Omit columns not yet migrated (older DB before migration_wallet.sql)
+        static $walletCols = null;
+        if ($walletCols === null) {
+            $walletCols = array_column(DB::fetchAll('SHOW COLUMNS FROM wallet_transactions'), 'Field');
+        }
+        $row = array_intersect_key($row, array_flip($walletCols));
+        DB::insert('wallet_transactions', $row);
         DB::pdo()->commit();
     } catch (Throwable $e) {
         DB::pdo()->rollBack();
@@ -277,5 +360,7 @@ if (is_readable(__DIR__ . '/ai_secrets.php')) {
 } else {
     define('GROQ_API_KEY', getenv('GROQ_API_KEY') ?: '');
     define('GROQ_MODEL', getenv('GROQ_MODEL') ?: 'llama-3.3-70b-versatile');
+    define('OPENROUTER_API_KEY', getenv('OPENROUTER_API_KEY') ?: '');
+    define('OPENROUTER_MODEL', getenv('OPENROUTER_MODEL') ?: 'meta-llama/llama-3.3-70b-instruct');
 }
 require_once __DIR__ . '/ai.php';

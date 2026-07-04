@@ -40,8 +40,9 @@ if (isset($result['errors'])) {
 }
 
 echo json_encode([
-    'ok'         => true,
-    'mail_sent'  => !empty($result['mail_sent']),
-    'mail_error' => $result['mail_error'] ?? null,
-    'via'        => $result['via'] ?? contact_mail_mode(),
+    'ok'        => true,
+    'mail_sent' => !empty($result['mail_sent']),
+    'message'   => !empty($result['mail_sent'])
+        ? null
+        : safe_mail_error($result['mail_error'] ?? null),
 ]);

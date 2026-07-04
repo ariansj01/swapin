@@ -90,8 +90,6 @@
       await logToServer(payload);
       showSuccess();
     } catch (err) {
-      console.error('EmailJS error:', err);
-      // Fallback to server SMTP if available
       if (apiUrl) {
         try {
           const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -109,15 +107,14 @@
             return;
           }
           if (data.ok && !data.mail_sent) {
-            showError('EmailJS خطا داد و SMTP هم ارسال نکرد: ' + (data.mail_error || 'تنظیمات را بررسی کنید.'));
+            showError(data.message || 'ارسال ایمیل ناموفق بود. لطفاً بعداً دوباره تلاش کنید یا به info@swaapin.ir بنویسید.');
             return;
           }
         } catch {
           /* fall through */
         }
       }
-      const detail = err?.text || err?.message || 'خطای ناشناخته';
-      showError('ارسال ایمیل ناموفق بود: ' + detail + ' — یا به support@swapin.ir بنویسید.');
+      showError('ارسال ایمیل ناموفق بود. لطفاً بعداً دوباره تلاش کنید یا به info@swaapin.ir بنویسید.');
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = origHtml;

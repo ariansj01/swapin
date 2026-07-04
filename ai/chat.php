@@ -80,7 +80,7 @@ render_navbar($user);
         <div class="ai-chat-window__head">
           <span class="ai-dot ai-dot--green"></span>
           <strong>دستیار سواپین</strong>
-          <span class="ai-chat-window__status">آنلاین · Groq AI</span>
+          <span class="ai-chat-window__status">آنلاین · دستیار هوشمند</span>
         </div>
         <div class="ai-chat-window__body" id="ai-chat-messages">
           <div class="ai-msg ai-msg--bot">
@@ -110,7 +110,7 @@ render_navbar($user);
           <div class="card-body">
             <h3 style="font-size:1rem;margin-bottom:var(--sp-3)"><i class="bi bi-lightbulb" style="color:var(--accent-dark)"></i> نکته</h3>
             <p class="fs-sm" style="color:var(--text-muted);line-height:1.7;margin:0">
-              پاسخ‌ها از Groq AI با قوانین کنترل‌شده پلتفرم تولید می‌شوند — AI تصمیم مالی نهایی نمی‌گیرد.
+              پاسخ‌ها توسط دستیار هوشمند سواپین با قوانین کنترل‌شده پلتفرم تولید می‌شوند — تصمیم مالی نهایی با شماست.
             </p>
           </div>
         </div>

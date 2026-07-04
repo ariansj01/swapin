@@ -312,7 +312,7 @@ function handle_contact_submission(string $name, string $email, string $subject,
         return [
             'ok'         => true,
             'mail_sent'  => false,
-            'mail_error' => $lastErr ?: 'ارسال ایمیل ناموفق بود.',
+            'mail_error' => safe_mail_error($lastErr ?: 'ارسال ایمیل ناموفق بود.'),
         ];
     }
 

@@ -74,14 +74,14 @@ for ($i = 0; $i < $usersToAdd; $i++) {
     $daysAgo     = rand(1, 90);
     $createdAt   = date('Y-m-d H:i:s', strtotime("-{$daysAgo} days -" . rand(0, 86400) . ' seconds'));
 
-    $uid = DB::insert('users', [
+    $uid = DB::insert('users', db_filter_row('users', [
         'name'               => $profile['name'],
         'email'              => $email,
         'phone'              => $phone,
         'city'               => $profile['city'],
         'bio'                => $profile['bio'],
         'password_hash'      => $passwordHash,
-        'credit_balance'     => WELCOME_BONUS,
+        'credit_balance'     => 0,
         'rating'             => $rating,
         'rating_count'       => $ratingCount,
         'verification_level' => $profile['verification_level'],
@@ -90,16 +90,9 @@ for ($i = 0; $i < $usersToAdd; $i++) {
         'store_name'         => $profile['store_name'] ?? null,
         'last_seen'          => rand(0, 3) === 0 ? null : date('Y-m-d H:i:s', strtotime('-' . rand(1, 72) . ' hours')),
         'created_at'         => $createdAt,
-    ]);
+    ]));
 
-    DB::insert('wallet_transactions', [
-        'user_id'       => $uid,
-        'type'          => 'deposit',
-        'amount'        => WELCOME_BONUS,
-        'balance_after' => WELCOME_BONUS,
-        'note'          => 'پاداش خوش‌آمدگویی (داده نمونه)',
-        'created_at'    => $createdAt,
-    ]);
+    credit_transact($uid, 'deposit', WELCOME_BONUS, 'پاداش خوش‌آمدگویی (داده نمونه)', ['ref_type' => 'none']);
 
     $userIds[] = $uid;
     $addedUsers++;
@@ -160,7 +153,7 @@ while ($addedListings < $listingsToAdd && $attempts < $maxAttempts) {
     $daysAgo  = rand(0, 60);
     $created  = date('Y-m-d H:i:s', strtotime("-{$daysAgo} days -" . rand(0, 86400) . ' seconds'));
 
-    DB::insert('listings', [
+    DB::insert('listings', db_filter_row('listings', [
         'user_id'         => $user['id'],
         'category_id'     => $catId,
         'title'           => $title,
@@ -170,11 +163,12 @@ while ($addedListings < $listingsToAdd && $attempts < $maxAttempts) {
         'want_in_return'  => $item['want_in_return'],
         'want_type'       => $item['want_type'],
         'listing_mode'    => 'swap',
+        'review_status'   => 'approved',
         'city'            => $user['city'],
         'status'          => 'active',
         'views'           => rand(5, 800),
         'created_at'      => $created,
-    ]);
+    ]));
 
     $userListingCount[$user['id']]++;
     $addedListings++;

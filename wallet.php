@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deposit_amount'])) {
     if ($amount < 10 || $amount > 10000) {
         $error = 'مبلغ واریز باید بین ۱۰ تا ۱۰٬۰۰۰ ' . CREDIT_UNIT . ' باشد.';
     } else {
-        credit_transact($uid, 'deposit', $amount, 'واریز دستی (درگاه آزمایشی)');
+        credit_transact($uid, 'deposit', $amount, 'واریز دستی (درگاه آزمایشی)', ['ref_type' => 'external']);
         // Reload user
         $user    = DB::fetch('SELECT * FROM users WHERE id = ?', [$uid]);
         $success = 'با موفقیت ' . fmt_credit($amount) . ' به کیف پول شما اضافه شد!';

@@ -270,10 +270,15 @@ CREATE TABLE `wallet_transactions` (
   `id` int UNSIGNED NOT NULL,
   `user_id` int UNSIGNED NOT NULL,
   `type` enum('deposit','withdraw','trade_credit','trade_debit','fee','refund') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ref_type` enum('none','trade','trade_offer','listing','subscription_order','listing_bump','inspection_request','external') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none' COMMENT 'Entity type that ref_id points to',
   `amount` decimal(12,2) NOT NULL,
   `balance_after` decimal(12,2) NOT NULL,
+  `currency_code` char(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'IRR' COMMENT 'ISO 4217 (ledger in Toman)',
+  `currency` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'تومان' COMMENT 'Display unit label',
   `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `ref_id` int UNSIGNED DEFAULT NULL COMMENT 'trade_id or offer_id',
+  `ref_id` int UNSIGNED DEFAULT NULL COMMENT 'ID within ref_type table (see ref_type column)',
+  `trade_id` int UNSIGNED DEFAULT NULL COMMENT 'FK trades.id when trade-related',
+  `listing_id` int UNSIGNED DEFAULT NULL COMMENT 'FK listings.id when listing-related',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -281,8 +286,8 @@ CREATE TABLE `wallet_transactions` (
 -- Dumping data for table `wallet_transactions`
 --
 
-INSERT INTO `wallet_transactions` (`id`, `user_id`, `type`, `amount`, `balance_after`, `note`, `ref_id`, `created_at`) VALUES
-(1, 4, 'deposit', 50.00, 50.00, 'Welcome bonus', NULL, '2026-06-15 01:07:53');
+INSERT INTO `wallet_transactions` (`id`, `user_id`, `type`, `ref_type`, `amount`, `balance_after`, `currency_code`, `currency`, `note`, `ref_id`, `trade_id`, `listing_id`, `created_at`) VALUES
+(1, 4, 'deposit', 'none', 50.00, 50.00, 'IRR', 'تومان', 'Welcome bonus', NULL, NULL, NULL, '2026-06-15 01:07:53');
 
 --
 -- Indexes for dumped tables
@@ -396,7 +401,10 @@ ALTER TABLE `wallet_transactions`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_user` (`user_id`),
   ADD KEY `idx_type` (`type`),
-  ADD KEY `idx_created` (`created_at`);
+  ADD KEY `idx_created` (`created_at`),
+  ADD KEY `idx_wallet_trade` (`trade_id`),
+  ADD KEY `idx_wallet_listing` (`listing_id`),
+  ADD KEY `idx_wallet_ref` (`ref_type`, `ref_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables

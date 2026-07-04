@@ -137,15 +137,17 @@ chmod 755 uploads   # Linux/macOS
 Execute in order:
 
 ```bash
-# Windows (XAMPP)
+# Windows (XAMPP) — all migrations in one command:
+c:\xampp\php\php.exe run_all_migrations.php
+
+# Or step by step:
 c:\xampp\php\php.exe run_migration.php
 c:\xampp\php\php.exe run_admin_migration.php
 c:\xampp\php\php.exe run_support_migration.php
+c:\xampp\php\php.exe run_wallet_migration.php
 
 # Linux / macOS
-php run_migration.php
-php run_admin_migration.php
-php run_support_migration.php
+php run_all_migrations.php
 ```
 
 Persian category labels (optional):
@@ -208,13 +210,40 @@ Main settings in `includes/config.php`:
 
 | File | Script | Contents |
 |------|--------|----------|
-| `laasztzg_kala_b_kala.sql` | manual import | Base tables: users, listings, trades, messages, … |
-| `migration_v2.sql` | `run_migration.php` | KYC, Escrow, BNPL, subscriptions, bump, disputes |
-| `migration_admin.sql` | `run_admin_migration.php` | Admin role, listing moderation |
-| `migration_support.sql` | `run_support_migration.php` | Support tickets, bug reports |
+| `laasztzg_kala_b_kala.sql` | manual import | Base tables: users, listings, trades, trade_offers, messages, … |
+| `migration_v2.sql` | `run_migration.php` | KYC columns, escrow, BNPL, subscriptions, bump, **`disputes`**, **`inspection_requests`** |
+| `migration_admin.sql` | `run_admin_migration.php` | **`users.role`**, **`listings.review_status`**, listing moderation (requires v2 first) |
+| `migration_support.sql` | `run_support_migration.php` | **`support_tickets`**, **`support_messages`**, **`error_reports`** |
+| `migration_wallet.sql` | `run_wallet_migration.php` | Wallet **`ref_type`**, **`listing_id`**, **`trade_id`**, **`currency_code`**, **`currency`** |
 | `categories_fa.sql` | `run_categories_fa.php` | Persian category labels |
 
 Migration scripts ignore "column/table already exists" errors and are safe to re-run.
+
+**Admin panel pages and their tables**
+
+| Admin page | Required tables / columns |
+|------------|----------------------------|
+| `admin/disputes.php` | `disputes` (from v2 migration) |
+| `admin/tickets.php` | `support_tickets`, `support_messages`, `error_reports` (support migration) |
+| `admin/inspections.php` | `inspection_requests` (v2 migration) |
+| `admin/kyc.php` | `users.kyc_status`, `national_id`, `bank_account`, … (v2 migration) |
+| `admin/listings.php` | `listings.review_status`, `review_note` (admin migration) |
+| `admin/users.php` | `users.role` (admin migration) |
+
+If `disputes.php` or `tickets.php` show SQL errors, run `php run_all_migrations.php`.
+
+### Wallet transaction references
+
+| Column | Meaning |
+|--------|---------|
+| `ref_type` | Which table `ref_id` belongs to (`trade`, `listing`, `subscription_order`, …) |
+| `ref_id` | Primary key inside that table (not ambiguous anymore) |
+| `trade_id` | Direct FK to `trades.id` for trade-related rows |
+| `listing_id` | Direct FK to `listings.id` — query without joining through offers |
+| `currency_code` | ISO code (`IRR` — ledger amounts are in Toman) |
+| `currency` | Display label (`تومان`) |
+
+`trade_offers` links (`listing_id`, `from_user_id`, `offer_listing_id`) exist in the **base** schema; wallet rows link to listings/trades explicitly after the wallet migration.
 
 ---
 
@@ -428,7 +457,7 @@ http://localhost/swaapin/test_db.php
 ### Migration errors
 
 - Ensure `laasztzg_kala_b_kala.sql` is imported first
-- Run migrations **in order**: v2 → admin → support
+- Run migrations **in order**: v2 → admin → support → wallet (or `php run_all_migrations.php`)
 
 ### Images not showing
 
@@ -473,7 +502,6 @@ No license specified yet. Define ownership and terms before commercial use.
 
 - **Web:** [swapin.ir](https://swapin.ir) *(if live)*
 - **Email:** info@swapin.ir
-- **Support:** support@swapin.ir
 
 ---
 

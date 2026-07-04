@@ -19,6 +19,14 @@ if (!$user) {
     exit;
 }
 
+rate_limit_user_or_fail(
+    'ai_chat',
+    (int) $user['id'],
+    ai_limit('CHAT_USER', 30),
+    ai_window('CHAT_USER', 3600),
+    true
+);
+
 $message = trim(clean($_POST['message'] ?? ''));
 if (mb_strlen($message) < 1) {
     http_response_code(400);
@@ -43,5 +51,4 @@ echo json_encode([
     'ok'      => true,
     'type'    => 'chat',
     'message' => $result['message'],
-    'source'  => groq_is_configured() ? 'groq' : 'fallback',
 ], JSON_UNESCAPED_UNICODE);

@@ -3,13 +3,21 @@
   Require all denied
 </FilesMatch>
 
-# Block database dumps if accidentally copied here
-<FilesMatch "\.sql$">
+# Block database dumps and SQL files everywhere under web root
+<FilesMatch "\.(sql|sql\.gz|dump)$">
   Require all denied
 </FilesMatch>
 
-# Block direct web access to PHP includes
+# Block direct web access to sensitive directories
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteRule ^includes/ - [F,L]
+  RewriteRule ^seed/ - [F,L]
+  RewriteRule ^database/ - [F,L]
+  RewriteRule ^storage/ - [F,L]
+  RewriteRule ^tools/ - [F,L]
+  RewriteRule ^vendor/ - [F,L]
+  RewriteRule ^logs/ - [F,L]
+  RewriteRule ^backups/ - [F,L]
+  RewriteRule ^sql/ - [F,L]
 </IfModule>

@@ -95,11 +95,18 @@
         }),
       ]);
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'خطا');
+      if (!data.ok) {
+        if (data.error === 'rate_limited') {
+          throw new Error(data.message || 'حداکثر ۳ بار در ۱۵ دقیقه می‌توانید ارزش‌گذاری AI بگیرید.');
+        }
+        throw new Error(data.error || 'خطا');
+      }
       showResult(data);
     } catch (err) {
       hideOverlay();
-      if (typeof showToast === 'function') showToast('خطا در ارزش‌گذاری AI. دوباره تلاش کنید.', 'error');
+      if (typeof showToast === 'function') {
+        showToast(err.message || 'خطا در ارزش‌گذاری AI. دوباره تلاش کنید.', 'error');
+      }
     }
   }
 

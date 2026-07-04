@@ -15,6 +15,13 @@ rate_limit_ip_or_fail('ai_match', 80, 3600, true);
 $refresh = !empty($_GET['refresh']) || !empty($_POST['refresh']);
 if ($refresh) {
     csrf_verify_or_fail(true);
+    rate_limit_user_or_fail(
+        'ai_match_refresh',
+        (int) $user['id'],
+        ai_limit('MATCH_REFRESH', 6),
+        ai_window('MATCH_REFRESH', 3600),
+        true
+    );
 }
 
 $uid       = (int) $user['id'];
@@ -24,6 +31,7 @@ $limit     = min(12, max(1, (int) ($_GET['limit'] ?? $_POST['limit'] ?? 8)));
 $result = ai_match_listings_cached($uid, $listingId, $refresh, $limit);
 
 $matches = array_map(static function ($m) {
+    $m = ai_sanitize_match_row_for_client($m);
     $m['value_fmt'] = !empty($m['estimated_value'])
         ? fmt_credit((float) $m['estimated_value'])
         : '';
@@ -35,6 +43,6 @@ echo json_encode([
     'ok'           => true,
     'matches'      => $matches,
     'user_listing' => $result['user_listing'],
-    'source'       => $result['source'],
+    'source'       => ai_public_mode($result['source']),
     'cached'       => !$refresh,
 ], JSON_UNESCAPED_UNICODE);

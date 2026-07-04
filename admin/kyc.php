@@ -53,8 +53,8 @@ ob_start();
     <div class="card-body fs-sm" style="display:grid;gap:var(--sp-2)">
       <div><strong>ایمیل:</strong> <?= h($kycUser['email']) ?></div>
       <div><strong>تلفن:</strong> <?= h($kycUser['phone']) ?></div>
-      <div><strong>کد ملی:</strong> <?= h($kycUser['national_id'] ?: '—') ?></div>
-      <div><strong>شبا/حساب:</strong> <?= h($kycUser['bank_account'] ?: '—') ?></div>
+      <div><strong>کد ملی:</strong> <?= h(mask_national_id($kycUser['national_id'] ?: '')) ?></div>
+      <div><strong>شبا/حساب:</strong> <?= h(mask_bank_account($kycUser['bank_account'] ?: '')) ?></div>
       <div><strong>نوع:</strong> <?= ($kycUser['seller_type'] ?? '') === 'store' ? 'فروشگاه — ' . h($kycUser['store_name'] ?? '') : 'شخصی' ?></div>
       <div><strong>وضعیت:</strong> <?= $kycLabels[$kycUser['kyc_status']] ?? $kycUser['kyc_status'] ?></div>
       <?php if ($kycUser['kyc_note']): ?>

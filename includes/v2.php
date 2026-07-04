@@ -108,7 +108,13 @@ function can_create_listing_count(array $user): int {
 
 function escrow_hold(int $tradeId, int $userId, float $amount, string $note = ''): void {
     if ($amount <= 0) return;
-    credit_transact($userId, 'trade_debit', -$amount, $note ?: "نگهداری امانی معامله #$tradeId", $tradeId);
+    $trade = DB::fetch('SELECT listing_a_id, listing_b_id, user_a_id, user_b_id FROM trades WHERE id = ?', [$tradeId]);
+    credit_transact($userId, 'trade_debit', -$amount, $note ?: "نگهداری امانی معامله #$tradeId", [
+        'ref_type'   => 'trade',
+        'ref_id'     => $tradeId,
+        'trade_id'   => $tradeId,
+        'listing_id' => $trade ? wallet_listing_for_trade_user($trade, $userId) : null,
+    ]);
     DB::insert('escrow_transactions', [
         'trade_id' => $tradeId,
         'user_id'  => $userId,
@@ -129,7 +135,12 @@ function escrow_release(int $tradeId): void {
     $amount = (float)$trade['escrow_amount'];
     if ($amount > 0) {
         credit_transact((int)$trade['user_a_id'], 'trade_credit', $amount,
-            "آزادسازی امانی معامله #$tradeId", $tradeId);
+            "آزادسازی امانی معامله #$tradeId", [
+                'ref_type'   => 'trade',
+                'ref_id'     => $tradeId,
+                'trade_id'   => $tradeId,
+                'listing_id' => wallet_listing_for_trade_user($trade, (int)$trade['user_a_id']),
+            ]);
         DB::insert('escrow_transactions', [
             'trade_id' => $tradeId,
             'user_id'  => $trade['user_a_id'],
@@ -148,7 +159,12 @@ function escrow_refund(int $tradeId): void {
     $amount = (float)$trade['escrow_amount'];
     if ($amount > 0) {
         credit_transact((int)$trade['user_b_id'], 'trade_credit', $amount,
-            "بازگشت امانی معامله #$tradeId", $tradeId);
+            "بازگشت امانی معامله #$tradeId", [
+                'ref_type'   => 'trade',
+                'ref_id'     => $tradeId,
+                'trade_id'   => $tradeId,
+                'listing_id' => wallet_listing_for_trade_user($trade, (int)$trade['user_b_id']),
+            ]);
         DB::insert('escrow_transactions', [
             'trade_id' => $tradeId,
             'user_id'  => $trade['user_b_id'],
@@ -278,12 +294,10 @@ function subscribe_to_plan(int $userId, string $planSlug, int $months = 1): arra
         return ['error' => 'موجودی ' . CREDIT_UNIT . ' کافی نیست — نیاز: ' . fmt_credit($cost)];
     }
 
-    credit_transact($userId, 'fee', -$cost, "اشتراک {$plan['name']} ({$months} ماه)");
-
     $starts = date('Y-m-d H:i:s');
     $ends   = date('Y-m-d H:i:s', strtotime("+{$months} months"));
 
-    DB::insert('subscription_orders', [
+    $orderId = DB::insert('subscription_orders', [
         'user_id'     => $userId,
         'plan'        => $planSlug,
         'months'      => $months,
@@ -291,6 +305,11 @@ function subscribe_to_plan(int $userId, string $planSlug, int $months = 1): arra
         'starts_at'   => $starts,
         'ends_at'     => $ends,
         'status'      => 'active',
+    ]);
+
+    credit_transact($userId, 'fee', -$cost, "اشتراک {$plan['name']} ({$months} ماه)", [
+        'ref_type' => 'subscription_order',
+        'ref_id'   => $orderId,
     ]);
 
     DB::update('users', [
@@ -317,12 +336,9 @@ function promote_listing(int $listingId, int $userId, string $type): array {
     if ($price > 0 && (float)$user['credit_balance'] < $price) {
         return ['error' => 'موجودی ' . CREDIT_UNIT . ' کافی نیست — نیاز: ' . fmt_credit($price)];
     }
-    if ($price > 0) {
-        credit_transact($userId, 'fee', -$price, ucfirst($type) . " listing #$listingId");
-    }
 
     $ends = date('Y-m-d H:i:s', strtotime("+{$hours} hours"));
-    DB::insert('listing_bumps', [
+    $bumpId = DB::insert('listing_bumps', [
         'listing_id'  => $listingId,
         'user_id'     => $userId,
         'type'        => $type,
@@ -331,6 +347,14 @@ function promote_listing(int $listingId, int $userId, string $type): array {
         'starts_at'   => date('Y-m-d H:i:s'),
         'ends_at'     => $ends,
     ]);
+
+    if ($price > 0) {
+        credit_transact($userId, 'fee', -$price, ucfirst($type) . " listing #$listingId", [
+            'ref_type'   => 'listing_bump',
+            'ref_id'     => $bumpId,
+            'listing_id' => $listingId,
+        ]);
+    }
 
     DB::update('listings',
         $type === 'feature' ? ['featured_until' => $ends] : ['bump_until' => $ends],
@@ -350,8 +374,6 @@ function request_expert_inspection(int $listingId, int $userId, ?int $tradeId = 
         return ['error' => 'موجودی ' . CREDIT_UNIT . ' کافی نیست — هزینه بازرسی: ' . fmt_credit(INSPECTION_KBC)];
     }
 
-    credit_transact($userId, 'fee', -INSPECTION_KBC, "بازرسی کارشناس آگهی #$listingId");
-
     $id = DB::insert('inspection_requests', [
         'listing_id' => $listingId,
         'user_id'    => $userId,
@@ -359,6 +381,12 @@ function request_expert_inspection(int $listingId, int $userId, ?int $tradeId = 
         'type'       => $type,
         'status'     => 'pending',
         'price'      => INSPECTION_KBC * 1000,
+    ]);
+
+    credit_transact($userId, 'fee', -INSPECTION_KBC, "بازرسی کارشناس آگهی #$listingId", [
+        'ref_type'   => 'inspection_request',
+        'ref_id'     => $id,
+        'listing_id' => $listingId,
     ]);
 
     DB::update('listings', [
@@ -399,8 +427,18 @@ function complete_trade(int $tradeId): array {
         $fee = escrow_release_with_fee($tradeId);
     }
 
-    credit_transact((int)$trade['user_a_id'], 'trade_credit', 10, 'پاداش تکمیل معامله #' . $tradeId, $tradeId);
-    credit_transact((int)$trade['user_b_id'], 'trade_credit', 10, 'پاداش تکمیل معامله #' . $tradeId, $tradeId);
+    credit_transact((int)$trade['user_a_id'], 'trade_credit', 10, 'پاداش تکمیل معامله #' . $tradeId, [
+        'ref_type'   => 'trade',
+        'ref_id'     => $tradeId,
+        'trade_id'   => $tradeId,
+        'listing_id' => wallet_listing_for_trade_user($trade, (int)$trade['user_a_id']),
+    ]);
+    credit_transact((int)$trade['user_b_id'], 'trade_credit', 10, 'پاداش تکمیل معامله #' . $tradeId, [
+        'ref_type'   => 'trade',
+        'ref_id'     => $tradeId,
+        'trade_id'   => $tradeId,
+        'listing_id' => wallet_listing_for_trade_user($trade, (int)$trade['user_b_id']),
+    ]);
 
     return ['success' => true, 'fee' => $fee];
 }
@@ -419,7 +457,12 @@ function escrow_release_with_fee(int $tradeId): float {
             'trade_credit',
             $net,
             'دریافت معامله #' . $tradeId . ' (پس از کارمزد ' . (int)(PLATFORM_FEE_RATE * 100) . '٪)',
-            $tradeId
+            [
+                'ref_type'   => 'trade',
+                'ref_id'     => $tradeId,
+                'trade_id'   => $tradeId,
+                'listing_id' => wallet_listing_for_trade_user($trade, (int)$trade['user_a_id']),
+            ]
         );
         DB::insert('escrow_transactions', [
             'trade_id' => $tradeId,

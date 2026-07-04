@@ -53,15 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'city'               => $vals['city'] ?: null,
             'password_hash'      => password_hash($pass, PASSWORD_BCRYPT),
             'verification_level' => 1, // email registered
-            'credit_balance'     => WELCOME_BONUS,
+            'credit_balance'     => 0,
         ]);
-        DB::insert('wallet_transactions', [
-            'user_id'       => $uid,
-            'type'          => 'deposit',
-            'amount'        => WELCOME_BONUS,
-            'balance_after' => WELCOME_BONUS,
-            'note'          => 'پاداش خوش‌آمدگویی',
-        ]);
+        credit_transact($uid, 'deposit', WELCOME_BONUS, 'پاداش خوش‌آمدگویی', ['ref_type' => 'none']);
         login_user($uid);
         header('Location: ' . APP_URL . '/dashboard.php?welcome=1'); exit;
     }

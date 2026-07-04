@@ -19,6 +19,14 @@ if (!$user) {
     exit;
 }
 
+rate_limit_user_or_fail(
+    'ai_valuate',
+    (int) $user['id'],
+    ai_limit('VALUATE_USER', 3),
+    ai_window('VALUATE_USER', 900),
+    true
+);
+
 $title       = clean($_POST['title'] ?? '');
 $description = clean($_POST['description'] ?? '');
 $condition   = clean($_POST['condition'] ?? 'good');
@@ -49,4 +57,4 @@ if (!$result) {
     $result = ai_price_listing_fallback($listing);
 }
 
-echo json_encode(array_merge(['ok' => true], $result), JSON_UNESCAPED_UNICODE);
+echo json_encode(array_merge(['ok' => true], ai_sanitize_pricing_for_client($result)), JSON_UNESCAPED_UNICODE);

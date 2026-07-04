@@ -60,15 +60,19 @@ render_navbar($user);
       <p style="color:var(--text-muted)">سؤال، پیشنهاد یا مشکلی دارید؟ خوشحال می‌شویم از شما بشنویم.</p>
     </div>
 
-    <?php if ($secretsMissing): ?>
+    <?php if ($secretsMissing && !app_is_production()): ?>
     <div class="alert alert-warning mb-6">
       <i class="bi bi-exclamation-triangle"></i>
       <div>
         <strong>تنظیمات ایمیل وجود ندارد.</strong>
         فایل <code>includes/mail_secrets.php</code> را از روی
         <code>includes/mail_secrets.example.php</code> بسازید و SMTP یا EmailJS را فعال کنید.
-        برای تست SMTP: <a href="<?= APP_URL ?>/test_mail.php">test_mail.php</a>
       </div>
+    </div>
+    <?php elseif ($secretsMissing && app_is_production()): ?>
+    <div class="alert alert-warning mb-6">
+      <i class="bi bi-exclamation-triangle"></i>
+      <div><strong>ارسال ایمیل موقتاً غیرفعال است.</strong> پیام شما در سیستم ثبت می‌شود.</div>
     </div>
     <?php elseif ($mailMode === 'none'): ?>
     <div class="alert alert-warning mb-6">
@@ -96,7 +100,7 @@ render_navbar($user);
       <i class="bi bi-exclamation-triangle"></i>
       <div>
         <strong>پیام در سیستم ثبت شد</strong> اما ایمیل ارسال نشد.<br>
-        <span class="fs-sm"><?= h($mailWarn) ?></span>
+        <span class="fs-sm"><?= h(safe_mail_error($mailWarn)) ?></span>
       </div>
     </div>
     <?php endif; ?>
@@ -163,7 +167,7 @@ render_navbar($user);
         <div class="card-body" style="text-align:center;padding:var(--sp-5)">
           <i class="bi bi-envelope" style="font-size:1.5rem;color:var(--primary);display:block;margin-bottom:var(--sp-3)"></i>
           <div style="font-weight:600;margin-bottom:4px">ایمیل</div>
-          <a href="mailto:support@swapin.ir" class="fs-sm" style="color:var(--text-secondary)">support@swapin.ir</a>
+          <a href="mailto:info@swaapin.ir" class="fs-sm" style="color:var(--text-secondary)">info@swaapin.ir</a>
         </div>
       </div>
       <div class="card">

@@ -67,7 +67,7 @@ ob_start();
       <div><strong>وضعیت:</strong> <?= $statusLabels[$detail['status']] ?? $detail['status'] ?></div>
       <div style="margin-top:var(--sp-2)"><strong>توضیحات:</strong><br><?= nl2br(h($detail['description'])) ?></div>
       <?php if ($detail['evidence']): ?>
-      <div><a href="<?= UPLOAD_URL . h($detail['evidence']) ?>" target="_blank">مشاهده مدرک</a></div>
+      <div><a href="<?= dispute_evidence_url((int)$detail['id']) ?>" target="_blank" rel="noopener">مشاهده مدرک</a></div>
       <?php endif; ?>
       <?php if ($detail['admin_note']): ?>
       <div><strong>یادداشت مدیر:</strong> <?= h($detail['admin_note']) ?></div>

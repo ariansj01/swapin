@@ -718,7 +718,7 @@ function initNotifModal() {
   closeBtn?.addEventListener('click', () => closeModal('notif-modal'));
 }
 
-/* ── AI Chat (Groq) ─────────────────────────────────────────────────────── */
+/* ── AI Chat ─────────────────────────────────────────────────────────────── */
 function initAiChat() {
   const app     = document.getElementById('ai-chat-app');
   const form    = document.getElementById('ai-chat-form');
@@ -787,15 +787,18 @@ function initAiChat() {
       removeTyping();
 
       if (!data.ok || !data.message) {
+        if (data.error === 'rate_limited') {
+          throw new Error(data.message || 'سقف پیام‌های AI پر شده. کمی بعد دوباره تلاش کنید.');
+        }
         throw new Error(data.error || 'خطا');
       }
 
       appendMsg(data.message, 'bot');
       history.push({ role: 'assistant', content: data.message });
       if (history.length > 20) history.splice(0, history.length - 20);
-    } catch {
+    } catch (err) {
       removeTyping();
-      appendMsg('متأسفانه پاسخ AI دریافت نشد. لطفاً دوباره تلاش کنید.', 'bot');
+      appendMsg(err.message || 'متأسفانه پاسخ AI دریافت نشد. لطفاً دوباره تلاش کنید.', 'bot');
     }
 
     sending = false;
@@ -842,7 +845,7 @@ function initAiMatch() {
 
     listEl.innerHTML = matches.map(m => {
       const badges = [
-        m.ai_source === 'groq' ? '<span class="badge badge-gold fs-xs">AI</span>' : '',
+        (source === 'assistant') ? '<span class="badge badge-gold fs-xs">هوشمند</span>' : '',
         m.mutual ? '<span class="badge badge-gold fs-xs">دوطرفه</span>' : '',
         m.trade_type === 'credit' ? '<span class="badge badge-primary fs-xs">اعتباری</span>' : '',
       ].filter(Boolean).join(' ');
@@ -865,9 +868,9 @@ function initAiMatch() {
     }).join('');
 
     const badge = hub.querySelector('.match-hub__title .badge-gold');
-    if (source === 'groq' && !badge) {
+    if (source === 'assistant' && !badge) {
       const h2 = hub.querySelector('.match-hub__title h2');
-      if (h2) h2.insertAdjacentHTML('beforeend', ' <span class="badge badge-gold fs-xs">AI</span>');
+      if (h2) h2.insertAdjacentHTML('beforeend', ' <span class="badge badge-gold fs-xs">هوشمند</span>');
     }
   }
 
@@ -886,15 +889,25 @@ function initAiMatch() {
     if (forceRefresh) params.set('refresh', '1');
 
     try {
-      const res  = await fetch(`${appUrl}/api/ai_match.php?${params}`);
+      const res  = await fetch(`${appUrl}/api/ai_match.php?${params}`, {
+        credentials: 'same-origin',
+        headers: forceRefresh ? withCsrfHeaders() : {},
+      });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'خطا');
+      if (!data.ok) {
+        if (data.error === 'rate_limited') {
+          throw new Error(data.message || 'سقف بروزرسانی AI پر شده. کمی بعد دوباره تلاش کنید.');
+        }
+        throw new Error(data.error || 'خطا');
+      }
       renderMatches(data.matches || [], data.source || 'rules');
       if (forceRefresh && typeof showToast === 'function') {
         showToast('پیشنهادهای معاوضه با AI بروزرسانی شد.', 'success');
       }
-    } catch {
-      if (typeof showToast === 'function') showToast('خطا در بارگذاری تطابق‌های AI.', 'error');
+    } catch (err) {
+      if (typeof showToast === 'function') {
+        showToast(err.message || 'خطا در بارگذاری تطابق‌های AI.', 'error');
+      }
     } finally {
       if (loadEl) {
         loadEl.hidden = true;
@@ -907,7 +920,7 @@ function initAiMatch() {
   }
 
   refresh?.addEventListener('click', () => loadMatches(true));
-  select?.addEventListener('change', () => loadMatches(true));
+  select?.addEventListener('change', () => loadMatches(false));
 }
 
 /* ── Support floating widget ───────────────────────────────────────────── */

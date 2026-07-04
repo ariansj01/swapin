@@ -137,6 +137,89 @@ function rate_limit_ip_or_fail(string $action, int $maxAttempts, int $windowSeco
     exit('Too many requests.');
 }
 
+function rate_limit_user_key(string $action, int $userId): string {
+    return hash('sha256', 'user|' . $action . '|' . $userId);
+}
+
+/** @return array{count:int,start:int,allowed:bool,retry_after:int} */
+function rate_limit_user_status(string $action, int $userId, int $maxAttempts, int $windowSeconds): array {
+    $file = rate_limit_storage_dir() . '/' . rate_limit_user_key($action, $userId) . '.json';
+    $now  = time();
+    $data = ['count' => 0, 'start' => $now];
+
+    if (is_readable($file)) {
+        $decoded = json_decode((string) file_get_contents($file), true);
+        if (is_array($decoded)) {
+            $data = $decoded;
+        }
+    }
+
+    if ($now - (int) ($data['start'] ?? 0) > $windowSeconds) {
+        $data = ['count' => 0, 'start' => $now];
+    }
+
+    $count      = (int) ($data['count'] ?? 0);
+    $retryAfter = max(0, (int) ($data['start'] ?? $now) + $windowSeconds - $now);
+
+    return [
+        'count'       => $count,
+        'start'       => (int) ($data['start'] ?? $now),
+        'allowed'     => $count < $maxAttempts,
+        'retry_after' => $retryAfter,
+    ];
+}
+
+/** @return true if allowed, false if rate limited */
+function rate_limit_user(string $action, int $userId, int $maxAttempts, int $windowSeconds): bool {
+    if ($userId <= 0) {
+        return true;
+    }
+
+    $file = rate_limit_storage_dir() . '/' . rate_limit_user_key($action, $userId) . '.json';
+    $now  = time();
+    $data = ['count' => 0, 'start' => $now];
+
+    if (is_readable($file)) {
+        $decoded = json_decode((string) file_get_contents($file), true);
+        if (is_array($decoded)) {
+            $data = $decoded;
+        }
+    }
+
+    if ($now - (int) ($data['start'] ?? 0) > $windowSeconds) {
+        $data = ['count' => 0, 'start' => $now];
+    }
+
+    $data['count'] = (int) ($data['count'] ?? 0) + 1;
+    file_put_contents($file, json_encode($data), LOCK_EX);
+
+    return $data['count'] <= $maxAttempts;
+}
+
+function rate_limit_user_or_fail(string $action, int $userId, int $maxAttempts, int $windowSeconds, bool $json = false): void {
+    if (rate_limit_user($action, $userId, $maxAttempts, $windowSeconds)) {
+        return;
+    }
+
+    $status = rate_limit_user_status($action, $userId, $maxAttempts, $windowSeconds);
+    $retry  = max(1, (int) ceil($status['retry_after'] / 60));
+
+    if ($json) {
+        http_response_code(429);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'ok'          => false,
+            'error'       => 'rate_limited',
+            'retry_after' => $status['retry_after'],
+            'message'     => 'سقف استفاده شما پر شده. حدود ' . $retry . ' دقیقه دیگر دوباره تلاش کنید.',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    http_response_code(429);
+    exit('Too many requests.');
+}
+
 function send_security_headers(): void {
     if (headers_sent()) {
         return;
@@ -194,6 +277,36 @@ function resolve_private_upload_path(string $filename): ?string {
     }
 
     return null;
+}
+
+function safe_mail_error(?string $detail): string {
+    if (!app_is_production()) {
+        return $detail ?: 'ارسال ایمیل ناموفق بود.';
+    }
+    return 'ارسال ایمیل ناموفق بود. لطفاً بعداً دوباره تلاش کنید یا از ایمیل مستقیم استفاده کنید.';
+}
+
+function mask_national_id(?string $id): string {
+    $id = preg_replace('/\D/', '', (string) $id);
+    if (strlen($id) < 4) {
+        return '—';
+    }
+    return str_repeat('•', max(0, strlen($id) - 4)) . substr($id, -4);
+}
+
+function mask_bank_account(?string $account): string {
+    $account = trim((string) $account);
+    if ($account === '') {
+        return '—';
+    }
+    if (mb_strlen($account) <= 6) {
+        return str_repeat('•', mb_strlen($account));
+    }
+    return mb_substr($account, 0, 4) . str_repeat('•', mb_strlen($account) - 8) . mb_substr($account, -4);
+}
+
+function dispute_evidence_url(int $disputeId): string {
+    return APP_URL . '/media/dispute_evidence.php?id=' . $disputeId;
 }
 
 function serve_private_file(string $path, string $downloadName = ''): void {

@@ -133,7 +133,7 @@ render_navbar($user);
           <h2 style="margin:0;font-size:1.25rem">
             <i class="bi bi-stars" style="color:var(--accent-dark)"></i>
             پیشنهادهای معاوضه
-            <?php if ($aiMatchSource === 'groq'): ?>
+            <?php if (ai_source_is_ai($aiMatchSource)): ?>
             <span class="badge badge-gold fs-xs">AI</span>
             <?php endif; ?>
           </h2>
@@ -176,7 +176,7 @@ render_navbar($user);
                 <div class="match-row__body">
                   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                     <span style="font-weight:700"><?= h($m['title']) ?></span>
-                    <?php if (($m['ai_source'] ?? '') === 'groq'): ?>
+                    <?php if (ai_source_is_ai($m['ai_source'] ?? '')): ?>
                     <span class="badge badge-gold fs-xs">AI</span>
                     <?php endif; ?>
                     <?php if (!empty($m['mutual'])): ?>
