@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -84,6 +85,15 @@ render_head('مرور آگهی‌ها', 'کالاهای قابل تهاتر را
 ]);
 render_navbar($user);
 ?>
+
+<?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+echo "STEP 2";
+exit;
 
 <?php if (!$search && !$catSlug && $page === 1): ?>
 <section class="hero">
@@ -178,6 +188,15 @@ render_navbar($user);
       <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
     </header>
     <?php endif; ?>
+
+    <?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+echo "STEP 3";
+exit;
 
     <!-- Listings grid -->
     <section id="listings" aria-label="فهرست آگهی‌ها">
@@ -307,3 +326,12 @@ render_navbar($user);
 <?php endif; ?>
 
 <?php render_footer(); ?>
+
+<?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+echo "STEP 4";
+exit;
