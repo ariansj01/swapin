@@ -1,4 +1,5 @@
 <?php
+
 // ─── Core Configuration ────────────────────────────────────────────────────
 define('APP_NAME',          'سواپین');
 define('APP_NAME_EN',       'Swapin');
@@ -6,7 +7,7 @@ define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE',   'IRR');
 define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
 define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
-define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'https://swaapin.ir');
+define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'http://localhost/swaapin/');
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads/');
@@ -23,9 +24,9 @@ define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه
 
 // ─── Database ──────────────────────────────────────────────────────────────
 define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'swapin');
-define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'ltze_swapin_kP%user');
-define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : 'kP%B!-)+*75p');
+define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'kala_b_kala');
+define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'root');
+define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : '');
 define('DB_CHAR', 'utf8mb4');
 
 require_once __DIR__ . '/security.php';
@@ -397,18 +398,29 @@ if (is_readable($vendorAutoload)) {
 
 if (is_readable(__DIR__ . '/mail_secrets.php')) {
     require_once __DIR__ . '/mail_secrets.php';
-} else {
+}
+// Only define defaults if not already defined in mail_secrets.php
+if (!defined('MAIL_ENABLED')) {
     define('MAIL_ENABLED', false);
+}
+if (!defined('EMAILJS_ENABLED')) {
     define('EMAILJS_ENABLED', false);
 }
 require_once __DIR__ . '/mail.php';
 
 if (is_readable(__DIR__ . '/ai_secrets.php')) {
     require_once __DIR__ . '/ai_secrets.php';
-} else {
+}
+// Only define defaults if not already defined in ai_secrets.php
+if (!defined('GROQ_API_KEY')) {
     define('GROQ_API_KEY', getenv('GROQ_API_KEY') ?: '');
+}
+if (!defined('GROQ_MODEL')) {
     define('GROQ_MODEL', getenv('GROQ_MODEL') ?: 'llama-3.3-70b-versatile');
+}
+if (!defined('OPENROUTER_API_KEY')) {
     define('OPENROUTER_API_KEY', getenv('OPENROUTER_API_KEY') ?: '');
+}
+if (!defined('OPENROUTER_MODEL')) {
     define('OPENROUTER_MODEL', getenv('OPENROUTER_MODEL') ?: 'meta-llama/llama-3.3-70b-instruct');
 }
-require_once __DIR__ . '/ai.php';

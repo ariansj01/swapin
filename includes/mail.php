@@ -147,6 +147,14 @@ function send_mail(string $to, string $subject, string $bodyHtml, array $opts = 
         } elseif ($secure === 'tls') {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         }
+        // Disable strict certificate verification for self-signed or misconfigured certs
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ];
         if (defined('MAIL_SMTP_DEBUG') && MAIL_SMTP_DEBUG) {
             $mail->SMTPDebug = 2;
             $mail->Debugoutput = static function (string $str, int $level) {
