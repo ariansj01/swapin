@@ -49,6 +49,54 @@ error_reporting(E_ALL);
 ini_set('log_errors', '1');
 ini_set('error_log', STORAGE_DIR . 'logs/error.log');
 
+// #region debug-point homepage-500-bootstrap
+if (!defined('SWAPIN_REQUEST_ID')) {
+    define('SWAPIN_REQUEST_ID', bin2hex(random_bytes(6)));
+}
+
+function swapin_debug_log(string $message, array $context = []): void {
+    $parts = ['[swapin-debug]', '[req:' . SWAPIN_REQUEST_ID . ']', $message];
+    if (!empty($context)) {
+        $json = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json !== false) {
+            $parts[] = $json;
+        }
+    }
+    error_log(implode(' ', $parts));
+}
+
+set_exception_handler(function (Throwable $e): void {
+    swapin_debug_log('uncaught-exception', [
+        'type' => get_class($e),
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'uri' => $_SERVER['REQUEST_URI'] ?? '',
+        'method' => $_SERVER['REQUEST_METHOD'] ?? '',
+    ]);
+    http_response_code(500);
+});
+
+register_shutdown_function(function (): void {
+    $error = error_get_last();
+    if ($error === null) {
+        return;
+    }
+    $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+    if (!in_array($error['type'] ?? 0, $fatalTypes, true)) {
+        return;
+    }
+    swapin_debug_log('fatal-shutdown', [
+        'type' => $error['type'] ?? null,
+        'message' => $error['message'] ?? '',
+        'file' => $error['file'] ?? '',
+        'line' => $error['line'] ?? 0,
+        'uri' => $_SERVER['REQUEST_URI'] ?? '',
+        'method' => $_SERVER['REQUEST_METHOD'] ?? '',
+    ]);
+});
+// #endregion
+
 if (app_is_production()) {
     ini_set('display_errors', '0');
     ini_set('display_startup_errors', '0');

@@ -2,12 +2,14 @@
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-echo "STEP 1";
-exit;
+// #region debug-point homepage-500-index-start
+if (function_exists('swapin_debug_log')) {
+    swapin_debug_log('index-start', [
+        'uri' => $_SERVER['REQUEST_URI'] ?? '/',
+        'query' => $_GET,
+    ]);
+}
+// #endregion
 
 $user = auth_user();
 
@@ -54,6 +56,19 @@ $orderBy = match($sort) {
     default => '(l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC',
 };
 
+// #region debug-point homepage-500-before-queries
+if (function_exists('swapin_debug_log')) {
+    swapin_debug_log('index-before-queries', [
+        'search' => $search,
+        'cat' => $catSlug,
+        'city' => $city,
+        'want' => $wantType,
+        'sort' => $sort,
+        'page' => $page,
+    ]);
+}
+// #endregion
+
 $totalRow = DB::fetch(
     "SELECT COUNT(*) AS c FROM listings l JOIN categories c ON c.id = l.category_id $where",
     $params
@@ -85,15 +100,6 @@ render_head('مرور آگهی‌ها', 'کالاهای قابل تهاتر را
 ]);
 render_navbar($user);
 ?>
-
-<?php
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-echo "STEP 2";
-exit;
 
 <?php if (!$search && !$catSlug && $page === 1): ?>
 <section class="hero">
@@ -188,15 +194,6 @@ exit;
       <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
     </header>
     <?php endif; ?>
-
-    <?php
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-echo "STEP 3";
-exit;
 
     <!-- Listings grid -->
     <section id="listings" aria-label="فهرست آگهی‌ها">
@@ -326,12 +323,3 @@ exit;
 <?php endif; ?>
 
 <?php render_footer(); ?>
-
-<?php
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-echo "STEP 4";
-exit;

@@ -67,3 +67,5 @@ error:0A000086:SSL routines::certificate verify failed
 [05-Jul-2026 13:08:08 Europe/Berlin] send_mail failed: SMTP Error: data not accepted.
 [05-Jul-2026 13:08:42 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
 [05-Jul-2026 13:08:54 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[05-Jul-2026 14:51:04 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[05-Jul-2026 14:51:07 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
