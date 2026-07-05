@@ -222,6 +222,32 @@ HTML;
 <div id="toast-container"></div>
 HTML;
     render_notifications_modal($user);
+    render_search_modal();
+}
+
+function render_search_modal() {
+    $url = APP_URL;
+    $searchValue = isset($_GET['q']) ? h($_GET['q']) : '';
+    echo <<<HTML
+<div class="modal-overlay" id="search-modal">
+  <div class="modal-box search-modal-box">
+    <div class="modal-header">
+      <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-search"></i> جستجوی آگهی‌ها</h3>
+      <button type="button" class="modal-close" id="search-modal-close" aria-label="بستن">&times;</button>
+    </div>
+    <div class="modal-body search-modal-body">
+      <form id="search-modal-form" action="{$url}/" method="get">
+        <div style="position:relative">
+          <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)" aria-hidden="true"></i>
+          <input type="search" class="form-control" style="padding-left:40px;height:48px;font-size:1rem"
+                 id="search-modal-input" name="q" placeholder="جستجوی آگهی‌ها…"
+                 value="{$searchValue}" autocomplete="off" autofocus>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+HTML;
 }
 
 function render_notifications_modal(?array $user = null): void {

@@ -41,10 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'code'       => password_hash($code, PASSWORD_BCRYPT),
                 'expires_at' => date('Y-m-d H:i:s', time() + OTP_EXPIRE),
             ]);
-            // In production: send SMS. For MVP we echo it.
-            // send_sms($phone, "کد سواپین شما: $code");
-            $_SESSION['otp_phone'] = $phone;
-            header('Location: ?tab=otp_verify&phone=' . urlencode($phone)); exit;
+            if (send_otp_sms($phone, $code)) {
+                $_SESSION['otp_phone'] = $phone;
+                header('Location: ?tab=otp_verify&phone=' . urlencode($phone)); exit;
+            }
+
+            DB::query('DELETE FROM otp_codes WHERE phone = ?', [$phone]);
+            swapin_debug_log('otp-send-failed', [
+                'phone' => sms_mask_phone($phone),
+                'reason' => last_sms_error(),
+            ]);
+            $error = safe_sms_error(last_sms_error());
         }
 
     } elseif ($method === 'otp_verify') {

@@ -7,7 +7,7 @@ define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE',   'IRR');
 define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
 define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
-define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'http://localhost/swaapin/');
+define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'https://swaapin.ir'); // http://localhost/swaapin - https://swaapin.ir
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads/');
@@ -24,9 +24,9 @@ define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه
 
 // ─── Database ──────────────────────────────────────────────────────────────
 define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'kala_b_kala');
-define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'root');
-define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : '');
+define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'swapin'); // kala_b_kala
+define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'ltze_swapin_kP%user'); // ltze_swapin_kP%user
+define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : 'kP%B!-)+*75p'); // kP%B!-)+*75p
 define('DB_CHAR', 'utf8mb4');
 
 require_once __DIR__ . '/security.php';
@@ -407,6 +407,33 @@ if (!defined('EMAILJS_ENABLED')) {
     define('EMAILJS_ENABLED', false);
 }
 require_once __DIR__ . '/mail.php';
+
+if (is_readable(__DIR__ . '/sms_secrets.php')) {
+    require_once __DIR__ . '/sms_secrets.php';
+}
+// Only define defaults if not already defined in sms_secrets.php
+if (!defined('SMS_ENABLED')) {
+    define('SMS_ENABLED', false);
+}
+if (!defined('SMS_IRANPAYAMAK_API_KEY')) {
+    define('SMS_IRANPAYAMAK_API_KEY', getenv('SMS_IRANPAYAMAK_API_KEY') ?: '');
+}
+if (!defined('SMS_IRANPAYAMAK_PATTERN_CODE')) {
+    define('SMS_IRANPAYAMAK_PATTERN_CODE', getenv('SMS_IRANPAYAMAK_PATTERN_CODE') ?: '');
+}
+if (!defined('SMS_IRANPAYAMAK_LINE_NUMBER')) {
+    define('SMS_IRANPAYAMAK_LINE_NUMBER', getenv('SMS_IRANPAYAMAK_LINE_NUMBER') ?: '');
+}
+if (!defined('SMS_NUMBER_FORMAT')) {
+    define('SMS_NUMBER_FORMAT', getenv('SMS_NUMBER_FORMAT') ?: 'english');
+}
+if (!defined('SMS_OTP_ATTRIBUTE_MAP')) {
+    define('SMS_OTP_ATTRIBUTE_MAP', [
+        'var1' => '{code}',
+        'var2' => '{minutes}',
+    ]);
+}
+require_once __DIR__ . '/sms.php';
 
 if (is_readable(__DIR__ . '/ai_secrets.php')) {
     require_once __DIR__ . '/ai_secrets.php';

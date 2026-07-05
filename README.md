@@ -180,7 +180,21 @@ EmailJS template variables: `from_name`, `from_email`, `subject`, `message`, `re
 
 When EmailJS is enabled, the contact form sends from the browser; a copy is logged via `api/contact.php`. When only PHPMailer is enabled, the form posts to PHP and sends via SMTP.
 
-### 8. Open in browser
+### 8. OTP SMS via IranPayamak (optional)
+
+```bash
+cp includes/sms_secrets.example.php includes/sms_secrets.php
+```
+
+Then set these values in `includes/sms_secrets.php`:
+
+- `SMS_ENABLED = true`
+- `SMS_IRANPAYAMAK_API_KEY`
+- `SMS_IRANPAYAMAK_PATTERN_CODE`
+- `SMS_IRANPAYAMAK_LINE_NUMBER`
+- `SMS_OTP_ATTRIBUTE_MAP` مطابق متغیرهای پترن OTP شما
+
+### 9. Open in browser
 
 ```
 http://localhost/swaapin/

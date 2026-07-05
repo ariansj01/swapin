@@ -645,12 +645,11 @@ function initMobileNav() {
   const searchLink = document.getElementById('mobile-search-link');
   if (searchLink) {
     searchLink.addEventListener('click', e => {
-      const listings = document.getElementById('listings');
-      if (listings) {
-        e.preventDefault();
-        listings.scrollIntoView({ behavior: 'smooth' });
-        const filterInput = document.getElementById('filter-q') || document.getElementById('global-search');
-        if (filterInput) setTimeout(() => filterInput.focus(), 400);
+      e.preventDefault();
+      openModal('search-modal');
+      const searchModalInput = document.getElementById('search-modal-input');
+      if (searchModalInput) {
+        searchModalInput.focus();
       }
     });
   }
@@ -716,6 +715,20 @@ function initNotifModal() {
   });
 
   closeBtn?.addEventListener('click', () => closeModal('notif-modal'));
+}
+
+/* ── Search modal ─────────────────────────────────────────────────── */
+function initSearchModal() {
+  const searchModalClose = document.getElementById('search-modal-close');
+  const searchModalForm = document.getElementById('search-modal-form');
+  
+  searchModalClose?.addEventListener('click', () => closeModal('search-modal'));
+  
+  if (searchModalForm) {
+    searchModalForm.addEventListener('submit', (e) => {
+      // Let the form submit normally
+    });
+  }
 }
 
 /* ── AI Chat ─────────────────────────────────────────────────────────────── */
@@ -950,6 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDropdowns();
   initMobileNav();
   initNotifModal();
+  initSearchModal();
   initAiChat();
   initAiMatch();
   initCharCounters();
