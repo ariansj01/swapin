@@ -6,3 +6,64 @@ Stack trace:
 #1 C:\xampp\htdocs\swaapin\run_migration.php(22): DB::pdo()
 #2 {main}
   thrown in C:\xampp\htdocs\swaapin\includes\config.php on line 71
+[04-Jul-2026 16:26:48 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 16:26:50 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 18:39:21 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 18:39:22 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 18:39:56 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 18:39:57 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 18:40:05 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 18:40:07 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 18:42:06 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[04-Jul-2026 18:42:08 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[05-Jul-2026 12:25:37 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[05-Jul-2026 12:25:37 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[05-Jul-2026 12:27:32 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[05-Jul-2026 12:27:33 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed
+[05-Jul-2026 12:33:41 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:33:41 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:36:52 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:36:52 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:50:29 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:50:29 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:50:54 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:50:54 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:51:30 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:51:30 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:51:41 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:51:41 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:54:53 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:54:53 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_ENABLED already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 11
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_HOST already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 13
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_PORT already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 14
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_SECURE already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 15
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_DEBUG already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 16
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_USER already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 18
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_PASS already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 19
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_FROM_EMAIL already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 20
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_FROM_NAME already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 22
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_REPLY_TO already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 23
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_ADMIN_TO already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 24
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant EMAILJS_ENABLED already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 26
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant EMAILJS_PUBLIC_KEY already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 27
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant EMAILJS_SERVICE_ID already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 28
+[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant EMAILJS_CONTACT_TEMPLATE_ID already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 29
+[05-Jul-2026 13:05:55 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[05-Jul-2026 13:06:15 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[05-Jul-2026 13:07:29 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[05-Jul-2026 13:08:08 Europe/Berlin] send_mail failed: SMTP Error: data not accepted.
+[05-Jul-2026 13:08:42 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[05-Jul-2026 13:08:54 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
