@@ -69,3 +69,15 @@ error:0A000086:SSL routines::certificate verify failed
 [05-Jul-2026 13:08:54 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
 [05-Jul-2026 14:51:04 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
 [05-Jul-2026 14:51:07 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[06-Jul-2026 16:43:10 Europe/Berlin] [swapin-debug] [req:a3ac747db701] index-start {"uri":"/swaapin/","query":[]}
+[06-Jul-2026 16:43:10 Europe/Berlin] [swapin-debug] [req:a3ac747db701] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[06-Jul-2026 16:43:31 Europe/Berlin] [swapin-debug] [req:a3ac747db701] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
+[06-Jul-2026 16:44:01 Europe/Berlin] [swapin-debug] [req:fc3a69c6eac1] index-start {"uri":"/swaapin/","query":[]}
+[06-Jul-2026 16:44:01 Europe/Berlin] [swapin-debug] [req:fc3a69c6eac1] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[06-Jul-2026 16:44:22 Europe/Berlin] [swapin-debug] [req:fc3a69c6eac1] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'rooy'@'localhost' (using password: NO)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
+[06-Jul-2026 16:44:45 Europe/Berlin] [swapin-debug] [req:4f201c0fe68b] index-start {"uri":"/swaapin/","query":[]}
+[06-Jul-2026 16:44:45 Europe/Berlin] [swapin-debug] [req:4f201c0fe68b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[06-Jul-2026 16:46:20 Europe/Berlin] [swapin-debug] [req:1ff6d1913b67] sms-http-failed {"phone":"••••••••3289","status":404,"response":"{\"status\":\"error\",\"message\":\"\\u062f\\u0627\\u062f\\u0647 \\u062f\\u0631\\u062e\\u0648\\u0627\\u0633\\u062a\\u06cc \\u06cc\\u0627\\u0641\\u062a \\u0646\\u0634\\u062f\",\"data\":null}"}
+[06-Jul-2026 16:46:20 Europe/Berlin] [swapin-debug] [req:1ff6d1913b67] otp-send-failed {"phone":"••••••••3289","reason":"ارسال پیامک رد شد: داده درخواستی یافت نشد"}
+[06-Jul-2026 16:55:39 Europe/Berlin] [swapin-debug] [req:1b103f0e3c75] sms-http-failed {"phone":"••••••••3289","status":404,"response":"{\"status\":\"error\",\"message\":\"\\u062f\\u0627\\u062f\\u0647 \\u062f\\u0631\\u062e\\u0648\\u0627\\u0633\\u062a\\u06cc \\u06cc\\u0627\\u0641\\u062a \\u0646\\u0634\\u062f\",\"data\":null}"}
+[06-Jul-2026 16:55:39 Europe/Berlin] [swapin-debug] [req:1b103f0e3c75] otp-send-failed {"phone":"••••••••3289","reason":"ارسال پیامک رد شد: داده درخواستی یافت نشد"}

@@ -61,7 +61,7 @@ function seo_json_ld_product(array $listing, ?string $imageUrl, string $pageUrl)
         'itemCondition' => 'https://schema.org/UsedCondition',
         'offers' => [
             '@type'         => 'Offer',
-            'priceCurrency' => 'IRR',
+            'priceCurrency' => 'IRT',
             'availability'  => 'https://schema.org/InStock',
             'url'           => $pageUrl,
             'price'         => max(0, (int)($listing['estimated_value'] ?? 0)),

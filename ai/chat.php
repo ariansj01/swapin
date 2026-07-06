@@ -49,9 +49,8 @@ render_navbar($user);
           <p>این قابلیت فقط برای اعضای سواپین فعال است.</p>
           <div class="ai-chat-guest__actions">
             <a href="<?= $url ?>/auth/login.php?redirect=<?= urlencode('/ai/chat.php') ?>" class="btn btn-accent btn-lg">
-              <i class="bi bi-box-arrow-in-right"></i> ورود
+              <i class="bi bi-box-arrow-in-right"></i> ورود / ثبت‌نام
             </a>
-            <a href="<?= $url ?>/auth/register.php" class="btn btn-outline btn-lg">ثبت‌نام رایگان</a>
           </div>
         </div>
       </div>

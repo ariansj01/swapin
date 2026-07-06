@@ -129,7 +129,7 @@ render_navbar($user);
         <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-lg"><i class="bi bi-plus-lg"></i> ثبت آگهی</a>
         <a href="<?= APP_URL ?>/" class="btn btn-outline btn-lg">مرور آگهی‌ها</a>
         <?php else: ?>
-        <a href="<?= APP_URL ?>/auth/register.php" class="btn btn-primary btn-lg"><i class="bi bi-person-plus"></i> عضویت رایگان</a>
+        <a href="<?= APP_URL ?>/auth/login.php" class="btn btn-primary btn-lg"><i class="bi bi-person-plus"></i> ورود / ثبت‌نام</a>
         <a href="<?= APP_URL ?>/" class="btn btn-outline btn-lg">مرور آگهی‌ها</a>
         <?php endif; ?>
       </div>

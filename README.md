@@ -254,7 +254,7 @@ If `disputes.php` or `tickets.php` show SQL errors, run `php run_all_migrations.
 | `ref_id` | Primary key inside that table (not ambiguous anymore) |
 | `trade_id` | Direct FK to `trades.id` for trade-related rows |
 | `listing_id` | Direct FK to `listings.id` — query without joining through offers |
-| `currency_code` | ISO code (`IRR` — ledger amounts are in Toman) |
+| `currency_code` | ISO code (`IRT` — ledger amounts are in Toman) |
 | `currency` | Display label (`تومان`) |
 
 `trade_offers` links (`listing_id`, `from_user_id`, `offer_listing_id`) exist in the **base** schema; wallet rows link to listings/trades explicitly after the wallet migration.

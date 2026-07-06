@@ -189,9 +189,7 @@ HTML;
       <button type="button" class="btn btn-ghost btn-icon {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
         <i class="bi bi-bell"></i>
       </button>
-      <a href="{$url}/auth/login.php" class="btn btn-outline hide-mobile">ورود</a>
-      <a href="{$url}/auth/register.php" class="btn btn-accent hide-mobile">ثبت‌نام</a>
-      <a href="{$url}/auth/login.php" class="btn btn-accent hide-desktop btn-sm">ورود</a>
+      <a href="{$url}/auth/login.php" class="btn btn-accent">ورود / ثبت‌نام</a>
 HTML;
     }
     echo <<<HTML

@@ -19,7 +19,7 @@ ALTER TABLE `wallet_transactions`
   ADD COLUMN `listing_id` INT UNSIGNED NULL COMMENT 'FK listings.id when listing-related' AFTER `trade_id`;
 
 ALTER TABLE `wallet_transactions`
-  ADD COLUMN `currency_code` CHAR(3) NOT NULL DEFAULT 'IRR' COMMENT 'ISO 4217 (IRR = ledger in Toman)' AFTER `balance_after`;
+  ADD COLUMN `currency_code` CHAR(3) NOT NULL DEFAULT 'IRT' COMMENT 'ISO 4217 (IRT = ledger in Toman)' AFTER `balance_after`;
 
 ALTER TABLE `wallet_transactions`
   ADD COLUMN `currency` VARCHAR(20) NOT NULL DEFAULT 'تومان' COMMENT 'Display unit label' AFTER `currency_code`;
@@ -63,5 +63,5 @@ WHERE `type` = 'fee'
   AND `listing_id` IS NULL;
 
 UPDATE `wallet_transactions`
-SET `currency_code` = 'IRR', `currency` = 'تومان'
+SET `currency_code` = 'IRT', `currency` = 'تومان'
 WHERE `currency_code` = 'IRR';

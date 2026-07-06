@@ -428,7 +428,7 @@ CREATE TABLE `wallet_transactions` (
   `ref_type` enum('none','trade','trade_offer','listing','subscription_order','listing_bump','inspection_request','external') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none' COMMENT 'Entity type that ref_id points to',
   `amount` decimal(12,2) NOT NULL,
   `balance_after` decimal(12,2) NOT NULL,
-  `currency_code` char(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'IRR' COMMENT 'ISO 4217 (ledger in Toman)',
+  `currency_code` char(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'IRT' COMMENT 'ISO 4217 (ledger in Toman)',
   `currency` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'تومان' COMMENT 'Display unit label',
   `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `ref_id` int UNSIGNED DEFAULT NULL COMMENT 'ID within ref_type table (see ref_type column)',
@@ -442,7 +442,7 @@ CREATE TABLE `wallet_transactions` (
 --
 
 INSERT INTO `wallet_transactions` (`id`, `user_id`, `type`, `ref_type`, `amount`, `balance_after`, `currency_code`, `currency`, `note`, `ref_id`, `trade_id`, `listing_id`, `created_at`) VALUES
-(1, 4, 'deposit', 'none', 50.00, 50.00, 'IRR', 'تومان', 'Welcome bonus', NULL, NULL, NULL, '2026-06-15 01:07:53');
+(1, 4, 'deposit', 'none', 50.00, 50.00, 'IRT', 'تومان', 'Welcome bonus', NULL, NULL, NULL, '2026-06-15 01:07:53');
 
 -- --------------------------------------------------------
 
