@@ -261,16 +261,8 @@ function resolve_private_upload_path(string $filename): ?string {
         return null;
     }
 
-    $dirs = [];
     if (defined('PRIVATE_UPLOAD_DIR')) {
-        $dirs[] = PRIVATE_UPLOAD_DIR;
-    }
-    if (defined('UPLOAD_DIR')) {
-        $dirs[] = UPLOAD_DIR;
-    }
-
-    foreach ($dirs as $dir) {
-        $path = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $filename;
+        $path = rtrim(PRIVATE_UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . $filename;
         if (is_readable($path)) {
             return $path;
         }

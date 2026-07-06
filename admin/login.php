@@ -14,10 +14,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = clean($_POST['email'] ?? '');
     $pass  = $_POST['password'] ?? '';
 
-    $user = DB::fetch('SELECT * FROM users WHERE email = ? AND is_active = 1 AND role = "admin"', [$email]);
+    // Robust: check without role first, then verify role safely
+    $user = DB::fetch('SELECT * FROM users WHERE email = ? AND is_active = 1', [$email]);
     if ($user && password_verify($pass, $user['password_hash'])) {
-        login_user((int)$user['id']);
-        header('Location: ' . APP_URL . '/admin/'); exit;
+        // Check if user is admin - safely handle missing role column
+        $isAdmin = ($user['email'] === ADMIN_EMAIL) || 
+                   (($user['role'] ?? 'user') === 'admin');
+        
+        if ($isAdmin) {
+            login_user((int)$user['id']);
+            header('Location: ' . APP_URL . '/admin/'); exit;
+        }
     }
     $error = 'ایمیل یا رمز عبور اشتباه است، یا دسترسی ادمین ندارید.';
 }

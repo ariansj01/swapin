@@ -6,17 +6,27 @@ $admin = require_admin();
 [$flash, $flashType] = admin_flash();
 $counts = admin_pending_counts();
 
-$recentListings = DB::fetchAll(
-    'SELECT l.id, l.title, l.created_at, u.name AS seller_name
-     FROM listings l JOIN users u ON u.id = l.user_id
-     WHERE l.review_status = "pending" AND l.status = "active"
-     ORDER BY l.created_at ASC LIMIT 8'
-);
+$recentListings = [];
+try {
+    if (db_has_column('listings', 'review_status')) {
+        $recentListings = DB::fetchAll(
+            'SELECT l.id, l.title, l.created_at, u.name AS seller_name
+             FROM listings l JOIN users u ON u.id = l.user_id
+             WHERE l.review_status = "pending" AND l.status = "active"
+             ORDER BY l.created_at ASC LIMIT 8'
+        );
+    }
+} catch (Throwable) {}
 
-$recentKyc = DB::fetchAll(
-    'SELECT id, name, email, kyc_status, created_at FROM users
-     WHERE kyc_status = "pending" ORDER BY updated_at ASC LIMIT 8'
-);
+$recentKyc = [];
+try {
+    if (db_has_column('users', 'kyc_status')) {
+        $recentKyc = DB::fetchAll(
+            'SELECT id, name, email, kyc_status, created_at FROM users
+             WHERE kyc_status = "pending" ORDER BY updated_at ASC LIMIT 8'
+        );
+    }
+} catch (Throwable) {}
 
 ob_start();
 ?>

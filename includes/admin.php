@@ -37,13 +37,47 @@ function admin_pending_counts(): array {
         $errors  = support_new_error_count();
     } catch (Throwable) {}
 
+    $listings = 0;
+    $kyc = 0;
+    $inspections = 0;
+    $disputes = 0;
+    $users = 0;
+
+    try {
+        $users = (int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active = 1')['c'] ?? 0);
+    } catch (Throwable) {}
+
+    try {
+        if (db_has_column('listings', 'review_status')) {
+            $listings = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE review_status = "pending" AND status = "active"')['c'] ?? 0);
+        }
+    } catch (Throwable) {}
+
+    try {
+        if (db_has_column('users', 'kyc_status')) {
+            $kyc = (int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE kyc_status = "pending"')['c'] ?? 0);
+        }
+    } catch (Throwable) {}
+
+    try {
+        if (db_has_table('inspection_requests')) {
+            $inspections = (int)(DB::fetch('SELECT COUNT(*) AS c FROM inspection_requests WHERE status IN ("pending","scheduled")')['c'] ?? 0);
+        }
+    } catch (Throwable) {}
+
+    try {
+        if (db_has_table('disputes')) {
+            $disputes = (int)(DB::fetch('SELECT COUNT(*) AS c FROM disputes WHERE status IN ("open","reviewing")')['c'] ?? 0);
+        }
+    } catch (Throwable) {}
+
     return [
-        'listings'    => (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE review_status = "pending" AND status = "active"')['c'] ?? 0),
-        'kyc'         => (int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE kyc_status = "pending"')['c'] ?? 0),
-        'inspections' => (int)(DB::fetch('SELECT COUNT(*) AS c FROM inspection_requests WHERE status IN ("pending","scheduled")')['c'] ?? 0),
-        'disputes'    => (int)(DB::fetch('SELECT COUNT(*) AS c FROM disputes WHERE status IN ("open","reviewing")')['c'] ?? 0),
+        'listings'    => $listings,
+        'kyc'         => $kyc,
+        'inspections' => $inspections,
+        'disputes'    => $disputes,
         'tickets'     => $tickets + $errors,
-        'users'       => (int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active = 1')['c'] ?? 0),
+        'users'       => $users,
     ];
 }
 

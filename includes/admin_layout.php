@@ -24,10 +24,42 @@ function render_admin_head(string $title = ''): void {
 HTML;
 }
 
+function admin_check_migration_needed(): bool {
+    $needsMigration = false;
+    
+    // Check for v2 migration
+    if (!db_has_column('users', 'kyc_status')) $needsMigration = true;
+    if (!db_has_column('listings', 'listing_mode')) $needsMigration = true;
+    if (!db_has_table('disputes')) $needsMigration = true;
+    if (!db_has_table('inspection_requests')) $needsMigration = true;
+    
+    // Check for admin migration
+    if (!db_has_column('users', 'role')) $needsMigration = true;
+    if (!db_has_column('listings', 'review_status')) $needsMigration = true;
+    
+    // Check for support migration
+    if (!db_has_table('support_tickets')) $needsMigration = true;
+    
+    return $needsMigration;
+}
+
 function render_admin_shell(array $admin, string $active, string $content): void {
     $url    = APP_URL;
     $counts = admin_pending_counts();
     $name   = h($admin['name']);
+    
+    $migrationWarning = '';
+    if (admin_check_migration_needed()) {
+        $migrateUrl = $url . '/migrate.php';
+        $migrationWarning = <<<HTML
+        <div class="alert alert-warning mb-5" style="margin: var(--sp-4) var(--sp-6) 0">
+            <i class="bi bi-exclamation-triangle"></i>
+            Migrationها اجرا نشده‌اند! لطفاً
+            <a href="{$migrateUrl}" target="_blank" style="font-weight: bold">این صفحه</a>
+            را باز کنید تا جداول و ستون‌های لازم ایجاد شوند.
+        </div>
+        HTML;
+    }
 
     $nav = [
         'index'       => ['/', 'داشبورد', 'bi-speedometer2', 0],
@@ -57,7 +89,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
     echo "<button type=\"submit\" class=\"admin-nav__link\" style=\"width:100%;border:0;background:none;cursor:pointer;font:inherit;text-align:inherit\">";
     echo "<i class=\"bi bi-box-arrow-left\"></i> خروج</button></form>";
     echo '</div></aside>';
-    echo '<main class="admin-main" id="main-content">' . $content . '</main>';
+    echo '<main class="admin-main" id="main-content">' . $migrationWarning . $content . '</main>';
     echo '</div>';
 }
 

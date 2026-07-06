@@ -32,10 +32,84 @@ if ($reset) {
     );
     if ($demoUserIds) {
         $ph = implode(',', array_fill(0, count($demoUserIds), '?'));
-        DB::query("DELETE FROM listings WHERE user_id IN ($ph)", $demoUserIds);
+        
+        // First get demo listing IDs for related tables
+        $demoListingIds = array_column(
+            DB::fetchAll("SELECT id FROM listings WHERE user_id IN ($ph)", $demoUserIds),
+            'id'
+        );
+        $listPh = $demoListingIds ? implode(',', array_fill(0, count($demoListingIds), '?')) : '';
+        
+        // First get demo trade IDs from related listings/users
+        $demoTradeIds = [];
+        if ($demoListingIds) {
+            $demoTradeIds = array_column(
+                DB::fetchAll("SELECT id FROM trades WHERE listing_a_id IN ($listPh) OR listing_b_id IN ($listPh)", array_merge($demoListingIds, $demoListingIds)),
+                'id'
+            );
+        }
+        // Also check trades by user IDs
+        $demoTradeIdsByUser = array_column(
+            DB::fetchAll("SELECT id FROM trades WHERE user_a_id IN ($ph) OR user_b_id IN ($ph)", array_merge($demoUserIds, $demoUserIds)),
+            'id'
+        );
+        $demoTradeIds = array_unique(array_merge($demoTradeIds, $demoTradeIdsByUser));
+        $tradePh = $demoTradeIds ? implode(',', array_fill(0, count($demoTradeIds), '?')) : '';
+        
+        // Delete in reverse foreign key order
+        if ($tradePh) {
+            // Delete child tables first
+            if (db_has_table('disputes')) {
+                DB::query("DELETE FROM disputes WHERE trade_id IN ($tradePh)", $demoTradeIds);
+            }
+            if (db_has_table('trade_contracts')) {
+                DB::query("DELETE FROM trade_contracts WHERE trade_id IN ($tradePh)", $demoTradeIds);
+            }
+            if (db_has_table('escrow_transactions')) {
+                DB::query("DELETE FROM escrow_transactions WHERE trade_id IN ($tradePh)", $demoTradeIds);
+            }
+            if (db_has_table('bnpl_requests')) {
+                DB::query("DELETE FROM bnpl_requests WHERE trade_id IN ($tradePh)", $demoTradeIds);
+            }
+            if (db_has_table('inspection_requests')) {
+                DB::query("DELETE FROM inspection_requests WHERE trade_id IN ($tradePh)", $demoTradeIds);
+            }
+            DB::query("DELETE FROM reviews WHERE trade_id IN ($tradePh)", $demoTradeIds);
+            DB::query("DELETE FROM messages WHERE offer_id IN (SELECT id FROM trade_offers WHERE listing_id IN ($listPh))", $demoListingIds);
+            DB::query("DELETE FROM trade_offers WHERE listing_id IN ($listPh) OR offer_listing_id IN ($listPh)", array_merge($demoListingIds, $demoListingIds));
+            DB::query("DELETE FROM trades WHERE id IN ($tradePh)", $demoTradeIds);
+        }
+        
+        // Delete listing-related tables
+        if ($listPh) {
+            DB::query("DELETE FROM listing_images WHERE listing_id IN ($listPh)", $demoListingIds);
+            if (db_has_table('listing_bumps')) {
+                DB::query("DELETE FROM listing_bumps WHERE listing_id IN ($listPh)", $demoListingIds);
+            }
+            if (db_has_table('inspection_requests')) {
+                DB::query("DELETE FROM inspection_requests WHERE listing_id IN ($listPh)", $demoListingIds);
+            }
+            DB::query("DELETE FROM saved_listings WHERE listing_id IN ($listPh)", $demoListingIds);
+            DB::query("DELETE FROM listings WHERE id IN ($listPh)", $demoListingIds);
+        }
+        
+        // Delete user-related tables
         DB::query("DELETE FROM wallet_transactions WHERE user_id IN ($ph)", $demoUserIds);
+        if (db_has_table('support_tickets')) {
+            DB::query("DELETE FROM support_messages WHERE ticket_id IN (SELECT id FROM support_tickets WHERE user_id IN ($ph))", $demoUserIds);
+            DB::query("DELETE FROM support_tickets WHERE user_id IN ($ph)", $demoUserIds);
+        }
+        if (db_has_table('error_reports')) {
+            DB::query("DELETE FROM error_reports WHERE user_id IN ($ph)", $demoUserIds);
+        }
+        DB::query("DELETE FROM messages WHERE from_user_id IN ($ph) OR to_user_id IN ($ph)", array_merge($demoUserIds, $demoUserIds));
+        DB::query("DELETE FROM notifications WHERE user_id IN ($ph)", $demoUserIds);
+        DB::query("DELETE FROM saved_listings WHERE user_id IN ($ph)", $demoUserIds);
+        DB::query("DELETE FROM reviews WHERE from_user_id IN ($ph) OR to_user_id IN ($ph)", array_merge($demoUserIds, $demoUserIds));
+        
+        // Finally delete users
         DB::query("DELETE FROM users WHERE id IN ($ph)", $demoUserIds);
-        echo "  Removed " . count($demoUserIds) . " demo users and their listings.\n";
+        echo "  Removed " . count($demoUserIds) . " demo users and all related data.\n";
     } else {
         echo "  No demo users found.\n";
     }
