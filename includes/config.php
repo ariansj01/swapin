@@ -176,7 +176,12 @@ function db_has_column(string $table, string $column): bool {
 }
 
 function db_has_table(string $table): bool {
-    return (bool) DB::fetch('SHOW TABLES LIKE ?', [$table]);
+    $table = preg_replace('/[^a-z0-9_]/', '', $table);
+    try {
+        return (bool) DB::fetch("SHOW TABLES LIKE '$table'");
+    } catch (Throwable) {
+        return false;
+    }
 }
 
 function db_filter_row(string $table, array $data): array {

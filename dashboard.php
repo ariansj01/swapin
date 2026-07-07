@@ -17,9 +17,16 @@ $user = require_auth();
 swapin_debug_log('dashboard-auth-ok', ['step' => 'auth', 'user_id' => $user['id'] ?? null]);
 $uid  = $user['id'];
 
-$dashboardNeedsMigration = !db_has_table('wallet_transactions')
-    || !db_has_column('listings', 'listing_mode')
-    || !db_has_column('listings', 'review_status');
+$dashboardNeedsMigration = true;
+try {
+    $dashboardNeedsMigration = !db_has_table('wallet_transactions')
+        || !db_has_column('listings', 'listing_mode')
+        || !db_has_column('listings', 'review_status');
+    swapin_debug_log('dashboard-migration-check-ok', ['needs_migration' => var_export($dashboardNeedsMigration, true)]);
+} catch (Throwable $e) {
+    swapin_debug_log('dashboard-migration-check-failed', ['message' => $e->getMessage()]);
+    $dashboardNeedsMigration = true;
+}
 
 // Stats
 $myListingsCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status="active"', [$uid])['c'] ?? 0);
