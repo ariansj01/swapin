@@ -5,6 +5,10 @@ require_once __DIR__ . '/includes/layout.php';
 $user = require_auth();
 $uid  = $user['id'];
 
+$dashboardNeedsMigration = !db_has_table('wallet_transactions')
+    || !db_has_column('listings', 'listing_mode')
+    || !db_has_column('listings', 'review_status');
+
 // Stats
 $myListingsCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status="active"', [$uid])['c'] ?? 0);
 $pendingOffers   = (int)(DB::fetch(
@@ -21,9 +25,12 @@ $sentOffers = (int)(DB::fetch(
 $unreadMsgs = (int)(DB::fetch('SELECT COUNT(*) AS c FROM messages WHERE to_user_id = ? AND is_read = 0', [$uid])['c'] ?? 0);
 
 // Recent wallet transactions
-$recentTx = DB::fetchAll(
-    'SELECT * FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5', [$uid]
-);
+$recentTx = $dashboardNeedsMigration
+    ? []
+    : DB::fetchAll(
+        'SELECT * FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5',
+        [$uid]
+    );
 
 // Recent listings
 $recentListings = DB::fetchAll(
@@ -47,14 +54,29 @@ $incomingOffers = DB::fetchAll(
 );
 
 // Match engine — AI + rule-based swap suggestions
-$aiMatchData         = ai_match_listings_cached($uid, null, false, 8);
-$swapMatches         = $aiMatchData['matches'];
-$aiMatchSource       = $aiMatchData['source'];
-$userListingsMatch   = DB::fetchAll(
-    'SELECT id, title FROM listings WHERE user_id = ? AND status = "active" AND listing_mode IN ("swap","both") ORDER BY created_at DESC',
-    [$uid]
-);
-$triangularSwaps = find_triangular_swaps($uid, 3);
+$swapMatches       = [];
+$aiMatchSource     = 'system';
+$userListingsMatch = [];
+$triangularSwaps   = [];
+
+if (!$dashboardNeedsMigration) {
+    try {
+        $aiMatchData       = ai_match_listings_cached($uid, null, false, 8);
+        $swapMatches       = $aiMatchData['matches'];
+        $aiMatchSource     = $aiMatchData['source'];
+        $userListingsMatch = DB::fetchAll(
+            'SELECT id, title FROM listings WHERE user_id = ? AND status = "active" AND listing_mode IN ("swap","both") ORDER BY created_at DESC',
+            [$uid]
+        );
+        $triangularSwaps = find_triangular_swaps($uid, 3);
+    } catch (Throwable $e) {
+        $dashboardNeedsMigration = true;
+        swapin_debug_log('dashboard-match-init-failed', [
+            'user_id' => $uid,
+            'message' => $e->getMessage(),
+        ]);
+    }
+}
 
 render_head('داشبورد', 'خلاصه حساب، آگهی‌ها و پیشنهادهای معاوضه در ' . APP_NAME, [
     'robots' => 'noindex, nofollow',
@@ -77,6 +99,16 @@ render_navbar($user);
     <i class="bi bi-shield-exclamation"></i>
     <span>برای فعال‌سازی فروش و پرداخت، <strong>احراز هویت (KYC)</strong> را تکمیل کنید.</span>
     <a href="<?= APP_URL ?>/profile/edit.php" class="btn btn-accent btn-sm ms-auto">تأیید الآن</a>
+  </div>
+</div>
+<?php endif; ?>
+
+<?php if ($dashboardNeedsMigration): ?>
+<div class="alert alert-warning" style="border-radius:0;border-left:0;border-right:0">
+  <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
+    <i class="bi bi-exclamation-triangle"></i>
+    <span>بخشی از جدول‌ها یا ستون‌های لازم برای داشبورد هنوز روی سرور ساخته نشده‌اند. Migration دیتابیس را اجرا کنید.</span>
+    <a href="<?= APP_URL ?>/migrate.php" class="btn btn-accent btn-sm ms-auto">اجرای Migration</a>
   </div>
 </div>
 <?php endif; ?>

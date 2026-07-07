@@ -110,7 +110,7 @@ render_navbar(null);
             <label class="form-label">شماره تلفن</label>
             <input type="tel" class="form-control" name="phone" placeholder="09123456789"
                    autocomplete="tel" maxlength="11" pattern="09[0-9]{9}" required autofocus>
-            <div class="form-hint">یک کد یکبار مصرف به این شماره ارسال می‌شود</div>
+            <!-- <div class="form-hint">یک کد یکبار مصرف به این شماره ارسال می‌شود</div> -->
           </div>
           <button type="submit" class="btn btn-primary w-100 btn-lg">ارسال کد</button>
         </form>

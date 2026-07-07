@@ -451,3 +451,4 @@ if (!defined('OPENROUTER_API_KEY')) {
 if (!defined('OPENROUTER_MODEL')) {
     define('OPENROUTER_MODEL', getenv('OPENROUTER_MODEL') ?: 'meta-llama/llama-3.3-70b-instruct');
 }
+require_once __DIR__ . '/ai.php';
