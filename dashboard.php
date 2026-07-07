@@ -1,6 +1,15 @@
 <?php
+// FIRST DEBUG LOG: Did we even get here?
+if (!defined('SWAPIN_REQUEST_ID')) {
+    define('SWAPIN_REQUEST_ID', bin2hex(random_bytes(6)));
+}
+error_log('[swapin-dashboard] BOOTSTRAP STARTED - Request ID: ' . SWAPIN_REQUEST_ID . ' - URI: ' . ($_SERVER['REQUEST_URI'] ?? 'unknown'));
+
 require_once __DIR__ . '/includes/config.php';
+error_log('[swapin-dashboard] config.php loaded successfully');
+
 require_once __DIR__ . '/includes/layout.php';
+error_log('[swapin-dashboard] layout.php loaded successfully');
 
 swapin_debug_log('dashboard-started', ['step' => 'init', 'uri' => $_SERVER['REQUEST_URI'] ?? '']);
 
