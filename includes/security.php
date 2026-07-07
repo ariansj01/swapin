@@ -96,6 +96,35 @@ function rate_limit_storage_dir(): string {
     return $dir;
 }
 
+/** @return array{count:int,start:int,allowed:bool,retry_after:int} */
+function rate_limit_ip_status(string $action, int $maxAttempts, int $windowSeconds): array {
+    $ip   = preg_replace('/[^a-fA-F0-9\.:]/', '', client_ip()) ?: '0';
+    $file = rate_limit_storage_dir() . '/' . hash('sha256', $action . '|' . $ip) . '.json';
+    $now  = time();
+    $data = ['count' => 0, 'start' => $now];
+
+    if (is_readable($file)) {
+        $decoded = json_decode((string) file_get_contents($file), true);
+        if (is_array($decoded)) {
+            $data = $decoded;
+        }
+    }
+
+    if ($now - (int) ($data['start'] ?? 0) > $windowSeconds) {
+        $data = ['count' => 0, 'start' => $now];
+    }
+
+    $count      = (int) ($data['count'] ?? 0);
+    $retryAfter = max(0, (int) ($data['start'] ?? $now) + $windowSeconds - $now);
+
+    return [
+        'count'       => $count,
+        'start'       => (int) ($data['start'] ?? $now),
+        'allowed'     => $count < $maxAttempts,
+        'retry_after' => $retryAfter,
+    ];
+}
+
 /** @return true if allowed, false if rate limited */
 function rate_limit_ip(string $action, int $maxAttempts, int $windowSeconds): bool {
     $ip   = preg_replace('/[^a-fA-F0-9\.:]/', '', client_ip()) ?: '0';
