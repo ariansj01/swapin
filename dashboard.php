@@ -2,7 +2,10 @@
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
+swapin_debug_log('dashboard-started', ['step' => 'init', 'uri' => $_SERVER['REQUEST_URI'] ?? '']);
+
 $user = require_auth();
+swapin_debug_log('dashboard-auth-ok', ['step' => 'auth', 'user_id' => $user['id'] ?? null]);
 $uid  = $user['id'];
 
 $dashboardNeedsMigration = !db_has_table('wallet_transactions')
@@ -41,17 +44,23 @@ $recentListings = DB::fetchAll(
 );
 
 // Incoming offers (on my listings)
-$incomingOffers = DB::fetchAll(
-    'SELECT o.*, l.title AS listing_title, u.name AS from_name,
-            ol.title AS offer_listing_title
-     FROM trade_offers o
-     JOIN listings l ON l.id = o.listing_id
-     JOIN users u ON u.id = o.from_user_id
-     LEFT JOIN listings ol ON ol.id = o.offer_listing_id
-     WHERE l.user_id = ? AND o.status = "pending"
-     ORDER BY o.created_at DESC LIMIT 5',
-    [$uid]
-);
+$incomingOffers = [];
+try {
+    $incomingOffers = DB::fetchAll(
+        'SELECT o.*, l.title AS listing_title, u.name AS from_name,
+                ol.title AS offer_listing_title
+         FROM trade_offers o
+         JOIN listings l ON l.id = o.listing_id
+         JOIN users u ON u.id = o.from_user_id
+         LEFT JOIN listings ol ON ol.id = o.offer_listing_id
+         WHERE l.user_id = ? AND o.status = "pending"
+         ORDER BY o.created_at DESC LIMIT 5',
+        [$uid]
+    );
+    swapin_debug_log('dashboard-incoming-offers-ok', ['count' => count($incomingOffers)]);
+} catch (Throwable $e) {
+    swapin_debug_log('dashboard-incoming-offers-failed', ['message' => $e->getMessage(), 'line' => $e->getLine()]);
+}
 
 // Match engine — AI + rule-based swap suggestions
 $swapMatches       = [];
@@ -77,6 +86,8 @@ if (!$dashboardNeedsMigration) {
         ]);
     }
 }
+
+swapin_debug_log('dashboard-before-render', ['step' => 'before-render', 'my_listings_count' => $myListingsCount ?? 0]);
 
 render_head('داشبورد', 'خلاصه حساب، آگهی‌ها و پیشنهادهای معاوضه در ' . APP_NAME, [
     'robots' => 'noindex, nofollow',

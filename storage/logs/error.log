@@ -94,3 +94,4 @@ error:0A000086:SSL routines::certificate verify failed
 [07-Jul-2026 10:42:24 Europe/Berlin] [swapin-debug] [req:30790d6d21af] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
 [07-Jul-2026 17:22:16 Europe/Berlin] [swapin-debug] [req:2a333fdc0145] index-start {"uri":"/swaapin/","query":[]}
 [07-Jul-2026 17:22:16 Europe/Berlin] [swapin-debug] [req:2a333fdc0145] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[07-Jul-2026 17:52:03 Europe/Berlin] [swapin-debug] [req:0336e38cca7a] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/auth/login.php","method":"POST"}
