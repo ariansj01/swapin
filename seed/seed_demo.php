@@ -8,6 +8,8 @@
  *
  * Demo login: demo.user1@swapin.local / Demo1234!
  */
+// Skip session for CLI
+define('SKIP_SESSION', true);
 require_once __DIR__ . '/../includes/config.php';
 
 require_cli();
@@ -227,7 +229,7 @@ while ($addedListings < $listingsToAdd && $attempts < $maxAttempts) {
     $daysAgo  = rand(0, 60);
     $created  = date('Y-m-d H:i:s', strtotime("-{$daysAgo} days -" . rand(0, 86400) . ' seconds'));
 
-    DB::insert('listings', db_filter_row('listings', [
+    $listingId = DB::insert('listings', db_filter_row('listings', [
         'user_id'         => $user['id'],
         'category_id'     => $catId,
         'title'           => $title,
@@ -243,6 +245,37 @@ while ($addedListings < $listingsToAdd && $attempts < $maxAttempts) {
         'views'           => rand(5, 800),
         'created_at'      => $created,
     ]));
+
+    // Insert listing images
+    if (!empty($item['images'])) {
+        foreach ($item['images'] as $index => $filename) {
+            // Create placeholder image if it doesn't exist
+            $imagePath = UPLOAD_DIR . $filename;
+            if (!file_exists($imagePath)) {
+                // Create a simple placeholder image with GD
+                $img = imagecreatetruecolor(800, 600);
+                $bgColor = imagecolorallocate($img, rand(100, 200), rand(100, 200), rand(100, 200));
+                imagefill($img, 0, 0, $bgColor);
+                $textColor = imagecolorallocate($img, 255, 255, 255);
+                // Add some text
+                $text = $item['title'];
+                $fontSize = 5;
+                $textWidth = imagefontwidth($fontSize) * strlen($text);
+                $x = (800 - $textWidth) / 2;
+                $y = 300 - imagefontheight($fontSize) / 2;
+                imagestring($img, $fontSize, $x, $y, $text, $textColor);
+                // Save the image
+                imagejpeg($img, $imagePath, 85);
+                imagedestroy($img);
+            }
+            DB::insert('listing_images', [
+                'listing_id' => $listingId,
+                'filename'   => $filename,
+                'is_primary' => $index === 0 ? 1 : 0,
+                'sort_order' => $index,
+            ]);
+        }
+    }
 
     $userListingCount[$user['id']]++;
     $addedListings++;

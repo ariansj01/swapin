@@ -33,7 +33,7 @@ require_once __DIR__ . '/security.php';
 send_security_headers();
 
 // ─── Session ───────────────────────────────────────────────────────────────
-if (session_status() === PHP_SESSION_NONE) {
+if (!defined('SKIP_SESSION') && session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', '1');
     ini_set('session.use_strict_mode', '1');
     ini_set('session.cookie_samesite', 'Lax');

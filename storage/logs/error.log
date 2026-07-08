@@ -95,3 +95,78 @@ error:0A000086:SSL routines::certificate verify failed
 [07-Jul-2026 17:22:16 Europe/Berlin] [swapin-debug] [req:2a333fdc0145] index-start {"uri":"/swaapin/","query":[]}
 [07-Jul-2026 17:22:16 Europe/Berlin] [swapin-debug] [req:2a333fdc0145] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
 [07-Jul-2026 17:52:03 Europe/Berlin] [swapin-debug] [req:0336e38cca7a] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/auth/login.php","method":"POST"}
+[08-Jul-2026 10:33:04 Europe/Berlin] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\swaapin\includes\config.php:45) in C:\xampp\htdocs\swaapin\seed\seed_demo.php on line 15
+[08-Jul-2026 10:33:27 Europe/Berlin] [swapin-debug] [req:d21e83b2d5df] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 10:34:11 Europe/Berlin] [swapin-debug] [req:06a445779411] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 10:35:18 Europe/Berlin] [swapin-debug] [req:1d1b6e5b8999] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 10:38:33 Europe/Berlin] [swapin-debug] [req:be2db7c51051] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 10:39:35 Europe/Berlin] [swapin-debug] [req:bc282aa5741e] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 10:39:35 Europe/Berlin] [swapin-debug] [req:bc282aa5741e] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 10:39:56 Europe/Berlin] [swapin-debug] [req:bc282aa5741e] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
+[08-Jul-2026 10:39:56 Europe/Berlin] [swapin-debug] [req:914f2691d1c5] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 10:39:56 Europe/Berlin] [swapin-debug] [req:914f2691d1c5] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 10:40:17 Europe/Berlin] [swapin-debug] [req:914f2691d1c5] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
+[08-Jul-2026 10:40:56 Europe/Berlin] [swapin-debug] [req:9b3f7bf0c4d5] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 10:41:46 Europe/Berlin] [swapin-debug] [req:0f68f934518b] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 10:41:46 Europe/Berlin] [swapin-debug] [req:0f68f934518b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 10:41:52 Europe/Berlin] [swapin-debug] [req:e412131dca00] uncaught-exception {"type":"Error","message":"Call to undefined function imagecreatetruecolor()","file":"C:\\xampp\\htdocs\\swaapin\\seed\\seed_demo.php","line":256,"uri":"","method":""}
+[08-Jul-2026 10:42:07 Europe/Berlin] [swapin-debug] [req:f940348ed552] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 10:42:07 Europe/Berlin] [swapin-debug] [req:f940348ed552] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 11:10:08 Europe/Berlin] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\swaapin\includes\config.php:45) in C:\xampp\htdocs\swaapin\seed\seed_demo.php on line 17
+[08-Jul-2026 11:10:29 Europe/Berlin] [swapin-debug] [req:7bc5053f8053] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 11:10:39 Europe/Berlin] PHP Fatal error:  Cannot redeclare condition_label() (previously declared in C:\xampp\htdocs\swaapin\seed\seed_from_images.php:163) in C:\xampp\htdocs\swaapin\includes\i18n.php on line 16
+[08-Jul-2026 11:10:39 Europe/Berlin] [swapin-debug] [req:30058daa5904] fatal-shutdown {"type":64,"message":"Cannot redeclare condition_label() (previously declared in C:\\xampp\\htdocs\\swaapin\\seed\\seed_from_images.php:163)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\i18n.php","line":16,"uri":"","method":""}
+[08-Jul-2026 11:11:25 Europe/Berlin] [swapin-debug] [req:4b9d02011d36] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 11:22:43 Europe/Berlin] [swapin-debug] [req:cae32927abbf] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 11:23:11 Europe/Berlin] [swapin-debug] [req:cdc12c88844e] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 11:23:18 Europe/Berlin] [swapin-debug] [req:def986be76ba] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 11:23:18 Europe/Berlin] [swapin-debug] [req:def986be76ba] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 11:23:39 Europe/Berlin] [swapin-debug] [req:def986be76ba] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
+[08-Jul-2026 11:24:14 Europe/Berlin] [swapin-debug] [req:e7a791ed8e9c] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 11:24:14 Europe/Berlin] [swapin-debug] [req:e7a791ed8e9c] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 11:24:35 Europe/Berlin] [swapin-debug] [req:e7a791ed8e9c] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
+[08-Jul-2026 11:24:42 Europe/Berlin] [swapin-debug] [req:9b014dae05b8] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 11:24:42 Europe/Berlin] [swapin-debug] [req:9b014dae05b8] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 11:25:03 Europe/Berlin] [swapin-debug] [req:9b014dae05b8] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
+[08-Jul-2026 11:25:03 Europe/Berlin] [swapin-debug] [req:861f55cab020] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 11:25:03 Europe/Berlin] [swapin-debug] [req:861f55cab020] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
+[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 104
+[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 104
+[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
+[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
+[08-Jul-2026 11:29:37 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 104
+[08-Jul-2026 11:31:38 Europe/Berlin] [swapin-debug] [req:093c1b6f503c] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 11:31:38 Europe/Berlin] [swapin-debug] [req:093c1b6f503c] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 12:21:59 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 112
+[08-Jul-2026 12:22:00 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
+[08-Jul-2026 12:22:43 Europe/Berlin] [swapin-debug] [req:fab812a034b8] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 12:22:43 Europe/Berlin] [swapin-debug] [req:fab812a034b8] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 12:23:04 Europe/Berlin] [swapin-debug] [req:d1fe47dcc148] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 12:23:04 Europe/Berlin] [swapin-debug] [req:d1fe47dcc148] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 12:23:07 Europe/Berlin] [swapin-debug] [req:2a3a51fda1f2] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 12:23:07 Europe/Berlin] [swapin-debug] [req:2a3a51fda1f2] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 12:41:38 Europe/Berlin] [swapin-debug] [req:198b9e0409c0] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 12:42:23 Europe/Berlin] [swapin-debug] [req:8081bdfd2553] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 12:43:12 Europe/Berlin] [swapin-debug] [req:23d2a2761607] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 12:44:04 Europe/Berlin] [swapin-debug] [req:9d4d1d3308f9] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
+[08-Jul-2026 12:44:48 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 112
+[08-Jul-2026 12:44:48 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
+[08-Jul-2026 12:50:17 Europe/Berlin] [swapin-debug] [req:b5ff999ccf49] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 12:50:17 Europe/Berlin] [swapin-debug] [req:b5ff999ccf49] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 12:50:31 Europe/Berlin] [swapin-debug] [req:93e55d1250da] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 12:50:31 Europe/Berlin] [swapin-debug] [req:93e55d1250da] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 12:50:38 Europe/Berlin] [swapin-debug] [req:b719ffd57602] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 12:50:38 Europe/Berlin] [swapin-debug] [req:b719ffd57602] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 12:51:19 Europe/Berlin] [swapin-debug] [req:8e2d8fdbde9f] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 12:51:19 Europe/Berlin] [swapin-debug] [req:8e2d8fdbde9f] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 12:51:54 Europe/Berlin] [swapin-debug] [req:67305c60139b] index-start {"uri":"/swaapin/?page=2","query":{"page":"2"}}
+[08-Jul-2026 12:51:54 Europe/Berlin] [swapin-debug] [req:67305c60139b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":2}
+[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 97
+[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 92
+[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 102
+[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 107
+[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 92
+[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 92
+[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 97
+[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 97
