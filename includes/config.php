@@ -1,5 +1,9 @@
 <?php
 
+// Load environment variables
+require_once __DIR__ . '/load_env.php';
+load_env(__DIR__ . '/../.env');
+
 // ─── Core Configuration ────────────────────────────────────────────────────
 define('APP_NAME',          'سواپین');
 define('APP_NAME_EN',       'Swapin');
@@ -401,24 +405,54 @@ if (is_readable($vendorAutoload)) {
     require_once $vendorAutoload;
 }
 
-if (is_readable(__DIR__ . '/mail_secrets.php')) {
-    require_once __DIR__ . '/mail_secrets.php';
-}
-// Only define defaults if not already defined in mail_secrets.php
+// Mail configuration from .env
 if (!defined('MAIL_ENABLED')) {
-    define('MAIL_ENABLED', false);
+    define('MAIL_ENABLED', getenv('MAIL_ENABLED') === 'true');
+}
+if (!defined('MAIL_SMTP_HOST')) {
+    define('MAIL_SMTP_HOST', getenv('MAIL_SMTP_HOST') ?: 'smtp.example.com');
+}
+if (!defined('MAIL_SMTP_PORT')) {
+    define('MAIL_SMTP_PORT', (int)(getenv('MAIL_SMTP_PORT') ?: 587));
+}
+if (!defined('MAIL_SMTP_SECURE')) {
+    define('MAIL_SMTP_SECURE', getenv('MAIL_SMTP_SECURE') ?: 'tls');
+}
+if (!defined('MAIL_SMTP_USER')) {
+    define('MAIL_SMTP_USER', getenv('MAIL_SMTP_USER') ?: '');
+}
+if (!defined('MAIL_SMTP_PASS')) {
+    define('MAIL_SMTP_PASS', getenv('MAIL_SMTP_PASS') ?: '');
+}
+if (!defined('MAIL_FROM_EMAIL')) {
+    define('MAIL_FROM_EMAIL', getenv('MAIL_FROM_EMAIL') ?: '');
+}
+if (!defined('MAIL_FROM_NAME')) {
+    define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Swapin');
+}
+if (!defined('MAIL_REPLY_TO')) {
+    define('MAIL_REPLY_TO', getenv('MAIL_REPLY_TO') ?: 'info@swaapin.ir');
+}
+if (!defined('MAIL_ADMIN_TO')) {
+    define('MAIL_ADMIN_TO', getenv('MAIL_ADMIN_TO') ?: '');
 }
 if (!defined('EMAILJS_ENABLED')) {
-    define('EMAILJS_ENABLED', false);
+    define('EMAILJS_ENABLED', getenv('EMAILJS_ENABLED') === 'true');
+}
+if (!defined('EMAILJS_PUBLIC_KEY')) {
+    define('EMAILJS_PUBLIC_KEY', getenv('EMAILJS_PUBLIC_KEY') ?: '');
+}
+if (!defined('EMAILJS_SERVICE_ID')) {
+    define('EMAILJS_SERVICE_ID', getenv('EMAILJS_SERVICE_ID') ?: '');
+}
+if (!defined('EMAILJS_CONTEMPLATE_ID')) {
+    define('EMAILJS_CONTEMPLATE_ID', getenv('EMAILJS_CONTEMPLATE_ID') ?: '');
 }
 require_once __DIR__ . '/mail.php';
 
-if (is_readable(__DIR__ . '/sms_secrets.php')) {
-    require_once __DIR__ . '/sms_secrets.php';
-}
-// Only define defaults if not already defined in sms_secrets.php
+// SMS configuration from .env
 if (!defined('SMS_ENABLED')) {
-    define('SMS_ENABLED', false);
+    define('SMS_ENABLED', getenv('SMS_ENABLED') === 'true');
 }
 if (!defined('SMS_IRANPAYAMAK_API_KEY')) {
     define('SMS_IRANPAYAMAK_API_KEY', getenv('SMS_IRANPAYAMAK_API_KEY') ?: '');
@@ -440,10 +474,7 @@ if (!defined('SMS_OTP_ATTRIBUTE_MAP')) {
 }
 require_once __DIR__ . '/sms.php';
 
-if (is_readable(__DIR__ . '/ai_secrets.php')) {
-    require_once __DIR__ . '/ai_secrets.php';
-}
-// Only define defaults if not already defined in ai_secrets.php
+// AI configuration from .env
 if (!defined('GROQ_API_KEY')) {
     define('GROQ_API_KEY', getenv('GROQ_API_KEY') ?: '');
 }
@@ -455,5 +486,23 @@ if (!defined('OPENROUTER_API_KEY')) {
 }
 if (!defined('OPENROUTER_MODEL')) {
     define('OPENROUTER_MODEL', getenv('OPENROUTER_MODEL') ?: 'meta-llama/llama-3.3-70b-instruct');
+}
+if (!defined('AI_CHAT_USER_LIMIT')) {
+    define('AI_CHAT_USER_LIMIT', (int)(getenv('AI_CHAT_USER_LIMIT') ?: 30));
+}
+if (!defined('AI_CHAT_USER_WINDOW')) {
+    define('AI_CHAT_USER_WINDOW', (int)(getenv('AI_CHAT_USER_WINDOW') ?: 3600));
+}
+if (!defined('AI_MATCH_REFRESH_LIMIT')) {
+    define('AI_MATCH_REFRESH_LIMIT', (int)(getenv('AI_MATCH_REFRESH_LIMIT') ?: 6));
+}
+if (!defined('AI_MATCH_REFRESH_WINDOW')) {
+    define('AI_MATCH_REFRESH_WINDOW', (int)(getenv('AI_MATCH_REFRESH_WINDOW') ?: 3600));
+}
+if (!defined('AI_VALUATE_USER_LIMIT')) {
+    define('AI_VALUATE_USER_LIMIT', (int)(getenv('AI_VALUATE_USER_LIMIT') ?: 3));
+}
+if (!defined('AI_VALUATE_USER_WINDOW')) {
+    define('AI_VALUATE_USER_WINDOW', (int)(getenv('AI_VALUATE_USER_WINDOW') ?: 900));
 }
 require_once __DIR__ . '/ai.php';

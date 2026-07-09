@@ -170,3 +170,8 @@ error:0A000086:SSL routines::certificate verify failed
 [08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 92
 [08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 97
 [08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 97
+[08-Jul-2026 13:45:42 Europe/Berlin] [swapin-debug] [req:5d17aa40fee5] index-start {"uri":"/swaapin/","query":[]}
+[08-Jul-2026 13:45:42 Europe/Berlin] [swapin-debug] [req:5d17aa40fee5] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[08-Jul-2026 13:45:42 Europe/Berlin] [swapin-debug] [req:5d17aa40fee5] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
+[09-Jul-2026 10:15:00 Europe/Berlin] [swapin-debug] [req:74a4beac4491] index-start {"uri":"/swaapin/","query":[]}
+[09-Jul-2026 10:15:00 Europe/Berlin] [swapin-debug] [req:74a4beac4491] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
