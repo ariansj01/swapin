@@ -24,8 +24,9 @@ function load_env(string $path): void {
             $value = substr($value, 1, -1);
         }
         
-        if (!getenv($key)) {
-            putenv("$key=$value");
-        }
+        // if (!getenv($key)) {
+        //     putenv("$key=$value");
+        // }
+        putenv("$key=$value");
     }
 }
