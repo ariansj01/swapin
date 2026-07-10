@@ -11,7 +11,7 @@ define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE', 'IRT');
 define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
 define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
-define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'http://localhost/swaapin'); // http://localhost/swaapin - https://swaapin.ir
+define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'https://swaapin.ir'); // http://localhost/swaapin - https://swaapin.ir
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads/');
@@ -28,9 +28,9 @@ define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه
 
 // ─── Database ──────────────────────────────────────────────────────────────
 define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'kala_b_kala'); // kala_b_kala
-define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'root'); // ltze_swapin_kP%user
-define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : ''); // kP%B!-)+*75p
+define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'swapin'); // kala_b_kala
+define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'ltze_swapin_kP%user'); // ltze_swapin_kP%user
+define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : 'kP%B!-)+*75p'); // kP%B!-)+*75p
 define('DB_CHAR', 'utf8mb4');
 
 require_once __DIR__ . '/security.php';
