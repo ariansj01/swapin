@@ -1,177 +1,46 @@
-[04-Jul-2026 10:11:38 Europe/Berlin] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\swaapin\includes\config.php:44) in C:\xampp\htdocs\swaapin\run_all_migrations.php on line 10
-[04-Jul-2026 10:11:38 Europe/Berlin] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\swaapin\includes\config.php:44) in C:\xampp\htdocs\swaapin\run_migration.php on line 10
-[04-Jul-2026 10:12:01 Europe/Berlin] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\swaapin\includes\config.php:71
-Stack trace:
-#0 C:\xampp\htdocs\swaapin\includes\config.php(71): PDO->__construct('mysql:host=loca...', 'root', Object(SensitiveParameterValue), Array)
-#1 C:\xampp\htdocs\swaapin\run_migration.php(22): DB::pdo()
-#2 {main}
-  thrown in C:\xampp\htdocs\swaapin\includes\config.php on line 71
-[04-Jul-2026 16:26:48 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 16:26:50 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 18:39:21 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 18:39:22 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 18:39:56 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 18:39:57 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 18:40:05 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 18:40:07 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 18:42:06 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[04-Jul-2026 18:42:08 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[05-Jul-2026 12:25:37 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[05-Jul-2026 12:25:37 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[05-Jul-2026 12:27:32 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[05-Jul-2026 12:27:33 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Connection failed. stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
-error:0A000086:SSL routines::certificate verify failed
-[05-Jul-2026 12:33:41 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:33:41 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:36:52 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:36:52 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:50:29 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:50:29 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:50:54 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:50:54 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:51:30 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:51:30 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:51:41 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:51:41 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:54:53 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:54:53 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host.
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_ENABLED already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 11
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_HOST already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 13
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_PORT already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 14
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_SECURE already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 15
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_DEBUG already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 16
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_USER already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 18
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_SMTP_PASS already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 19
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_FROM_EMAIL already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 20
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_FROM_NAME already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 22
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_REPLY_TO already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 23
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant MAIL_ADMIN_TO already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 24
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant EMAILJS_ENABLED already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 26
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant EMAILJS_PUBLIC_KEY already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 27
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant EMAILJS_SERVICE_ID already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 28
-[05-Jul-2026 12:59:09 Europe/Berlin] PHP Warning:  Constant EMAILJS_CONTACT_TEMPLATE_ID already defined in C:\xampp\htdocs\swaapin\includes\mail_secrets.php on line 29
-[05-Jul-2026 13:05:55 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[05-Jul-2026 13:06:15 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[05-Jul-2026 13:07:29 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[05-Jul-2026 13:08:08 Europe/Berlin] send_mail failed: SMTP Error: data not accepted.
-[05-Jul-2026 13:08:42 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[05-Jul-2026 13:08:54 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[05-Jul-2026 14:51:04 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[05-Jul-2026 14:51:07 Europe/Berlin] send_mail failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
-[06-Jul-2026 16:43:10 Europe/Berlin] [swapin-debug] [req:a3ac747db701] index-start {"uri":"/swaapin/","query":[]}
-[06-Jul-2026 16:43:10 Europe/Berlin] [swapin-debug] [req:a3ac747db701] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[06-Jul-2026 16:43:31 Europe/Berlin] [swapin-debug] [req:a3ac747db701] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
-[06-Jul-2026 16:44:01 Europe/Berlin] [swapin-debug] [req:fc3a69c6eac1] index-start {"uri":"/swaapin/","query":[]}
-[06-Jul-2026 16:44:01 Europe/Berlin] [swapin-debug] [req:fc3a69c6eac1] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[06-Jul-2026 16:44:22 Europe/Berlin] [swapin-debug] [req:fc3a69c6eac1] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'rooy'@'localhost' (using password: NO)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
-[06-Jul-2026 16:44:45 Europe/Berlin] [swapin-debug] [req:4f201c0fe68b] index-start {"uri":"/swaapin/","query":[]}
-[06-Jul-2026 16:44:45 Europe/Berlin] [swapin-debug] [req:4f201c0fe68b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[06-Jul-2026 16:46:20 Europe/Berlin] [swapin-debug] [req:1ff6d1913b67] sms-http-failed {"phone":"••••••••3289","status":404,"response":"{\"status\":\"error\",\"message\":\"\\u062f\\u0627\\u062f\\u0647 \\u062f\\u0631\\u062e\\u0648\\u0627\\u0633\\u062a\\u06cc \\u06cc\\u0627\\u0641\\u062a \\u0646\\u0634\\u062f\",\"data\":null}"}
-[06-Jul-2026 16:46:20 Europe/Berlin] [swapin-debug] [req:1ff6d1913b67] otp-send-failed {"phone":"••••••••3289","reason":"ارسال پیامک رد شد: داده درخواستی یافت نشد"}
-[06-Jul-2026 16:55:39 Europe/Berlin] [swapin-debug] [req:1b103f0e3c75] sms-http-failed {"phone":"••••••••3289","status":404,"response":"{\"status\":\"error\",\"message\":\"\\u062f\\u0627\\u062f\\u0647 \\u062f\\u0631\\u062e\\u0648\\u0627\\u0633\\u062a\\u06cc \\u06cc\\u0627\\u0641\\u062a \\u0646\\u0634\\u062f\",\"data\":null}"}
-[06-Jul-2026 16:55:39 Europe/Berlin] [swapin-debug] [req:1b103f0e3c75] otp-send-failed {"phone":"••••••••3289","reason":"ارسال پیامک رد شد: داده درخواستی یافت نشد"}
-[06-Jul-2026 22:04:31 Europe/Berlin] [swapin-debug] [req:2be2295b6ac6] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/auth/login.php","method":"POST"}
-[06-Jul-2026 22:05:55 Europe/Berlin] [swapin-debug] [req:7be19eddd0c1] sms-http-failed {"phone":"••••••••3289","status":404,"response":"{\"status\":\"error\",\"message\":\"\\u062f\\u0627\\u062f\\u0647 \\u062f\\u0631\\u062e\\u0648\\u0627\\u0633\\u062a\\u06cc \\u06cc\\u0627\\u0641\\u062a \\u0646\\u0634\\u062f\",\"data\":null}"}
-[06-Jul-2026 22:05:55 Europe/Berlin] [swapin-debug] [req:7be19eddd0c1] otp-send-failed {"phone":"••••••••3289","reason":"ارسال پیامک رد شد: داده درخواستی یافت نشد"}
-[06-Jul-2026 22:09:13 Europe/Berlin] [swapin-debug] [req:70bd4158c3bb] sms-http-failed {"phone":"••••••••3289","status":404,"response":"{\"status\":\"error\",\"message\":\"\\u062f\\u0627\\u062f\\u0647 \\u062f\\u0631\\u062e\\u0648\\u0627\\u0633\\u062a\\u06cc \\u06cc\\u0627\\u0641\\u062a \\u0646\\u0634\\u062f\",\"data\":null}"}
-[06-Jul-2026 22:09:13 Europe/Berlin] [swapin-debug] [req:70bd4158c3bb] otp-send-failed {"phone":"••••••••3289","reason":"ارسال پیامک رد شد: داده درخواستی یافت نشد"}
-[06-Jul-2026 22:16:29 Europe/Berlin] [swapin-debug] [req:e7d9856fb01e] sms-http-failed {"phone":"••••••••3289","status":404,"response":"{\"status\":\"error\",\"message\":\"\\u062f\\u0627\\u062f\\u0647 \\u062f\\u0631\\u062e\\u0648\\u0627\\u0633\\u062a\\u06cc \\u06cc\\u0627\\u0641\\u062a \\u0646\\u0634\\u062f\",\"data\":null}"}
-[06-Jul-2026 22:16:29 Europe/Berlin] [swapin-debug] [req:e7d9856fb01e] otp-send-failed {"phone":"••••••••3289","reason":"ارسال پیامک رد شد: داده درخواستی یافت نشد"}
-[07-Jul-2026 10:42:23 Europe/Berlin] [swapin-debug] [req:f70a5bc91d4b] index-start {"uri":"/swaapin/","query":[]}
-[07-Jul-2026 10:42:23 Europe/Berlin] [swapin-debug] [req:f70a5bc91d4b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[07-Jul-2026 10:42:24 Europe/Berlin] [swapin-debug] [req:30790d6d21af] index-start {"uri":"/swaapin/","query":[]}
-[07-Jul-2026 10:42:24 Europe/Berlin] [swapin-debug] [req:30790d6d21af] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[07-Jul-2026 17:22:16 Europe/Berlin] [swapin-debug] [req:2a333fdc0145] index-start {"uri":"/swaapin/","query":[]}
-[07-Jul-2026 17:22:16 Europe/Berlin] [swapin-debug] [req:2a333fdc0145] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[07-Jul-2026 17:52:03 Europe/Berlin] [swapin-debug] [req:0336e38cca7a] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/auth/login.php","method":"POST"}
-[08-Jul-2026 10:33:04 Europe/Berlin] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\swaapin\includes\config.php:45) in C:\xampp\htdocs\swaapin\seed\seed_demo.php on line 15
-[08-Jul-2026 10:33:27 Europe/Berlin] [swapin-debug] [req:d21e83b2d5df] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 10:34:11 Europe/Berlin] [swapin-debug] [req:06a445779411] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 10:35:18 Europe/Berlin] [swapin-debug] [req:1d1b6e5b8999] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 10:38:33 Europe/Berlin] [swapin-debug] [req:be2db7c51051] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 10:39:35 Europe/Berlin] [swapin-debug] [req:bc282aa5741e] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 10:39:35 Europe/Berlin] [swapin-debug] [req:bc282aa5741e] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 10:39:56 Europe/Berlin] [swapin-debug] [req:bc282aa5741e] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
-[08-Jul-2026 10:39:56 Europe/Berlin] [swapin-debug] [req:914f2691d1c5] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 10:39:56 Europe/Berlin] [swapin-debug] [req:914f2691d1c5] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 10:40:17 Europe/Berlin] [swapin-debug] [req:914f2691d1c5] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
-[08-Jul-2026 10:40:56 Europe/Berlin] [swapin-debug] [req:9b3f7bf0c4d5] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 10:41:46 Europe/Berlin] [swapin-debug] [req:0f68f934518b] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 10:41:46 Europe/Berlin] [swapin-debug] [req:0f68f934518b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 10:41:52 Europe/Berlin] [swapin-debug] [req:e412131dca00] uncaught-exception {"type":"Error","message":"Call to undefined function imagecreatetruecolor()","file":"C:\\xampp\\htdocs\\swaapin\\seed\\seed_demo.php","line":256,"uri":"","method":""}
-[08-Jul-2026 10:42:07 Europe/Berlin] [swapin-debug] [req:f940348ed552] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 10:42:07 Europe/Berlin] [swapin-debug] [req:f940348ed552] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 11:10:08 Europe/Berlin] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\swaapin\includes\config.php:45) in C:\xampp\htdocs\swaapin\seed\seed_demo.php on line 17
-[08-Jul-2026 11:10:29 Europe/Berlin] [swapin-debug] [req:7bc5053f8053] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 11:10:39 Europe/Berlin] PHP Fatal error:  Cannot redeclare condition_label() (previously declared in C:\xampp\htdocs\swaapin\seed\seed_from_images.php:163) in C:\xampp\htdocs\swaapin\includes\i18n.php on line 16
-[08-Jul-2026 11:10:39 Europe/Berlin] [swapin-debug] [req:30058daa5904] fatal-shutdown {"type":64,"message":"Cannot redeclare condition_label() (previously declared in C:\\xampp\\htdocs\\swaapin\\seed\\seed_from_images.php:163)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\i18n.php","line":16,"uri":"","method":""}
-[08-Jul-2026 11:11:25 Europe/Berlin] [swapin-debug] [req:4b9d02011d36] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 11:22:43 Europe/Berlin] [swapin-debug] [req:cae32927abbf] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 11:23:11 Europe/Berlin] [swapin-debug] [req:cdc12c88844e] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 11:23:18 Europe/Berlin] [swapin-debug] [req:def986be76ba] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 11:23:18 Europe/Berlin] [swapin-debug] [req:def986be76ba] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 11:23:39 Europe/Berlin] [swapin-debug] [req:def986be76ba] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
-[08-Jul-2026 11:24:14 Europe/Berlin] [swapin-debug] [req:e7a791ed8e9c] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 11:24:14 Europe/Berlin] [swapin-debug] [req:e7a791ed8e9c] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 11:24:35 Europe/Berlin] [swapin-debug] [req:e7a791ed8e9c] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
-[08-Jul-2026 11:24:42 Europe/Berlin] [swapin-debug] [req:9b014dae05b8] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 11:24:42 Europe/Berlin] [swapin-debug] [req:9b014dae05b8] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 11:25:03 Europe/Berlin] [swapin-debug] [req:9b014dae05b8] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
-[08-Jul-2026 11:25:03 Europe/Berlin] [swapin-debug] [req:861f55cab020] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 11:25:03 Europe/Berlin] [swapin-debug] [req:861f55cab020] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
-[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 104
-[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 104
-[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
-[08-Jul-2026 11:29:36 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
-[08-Jul-2026 11:29:37 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 104
-[08-Jul-2026 11:31:38 Europe/Berlin] [swapin-debug] [req:093c1b6f503c] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 11:31:38 Europe/Berlin] [swapin-debug] [req:093c1b6f503c] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 12:21:59 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 112
-[08-Jul-2026 12:22:00 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
-[08-Jul-2026 12:22:43 Europe/Berlin] [swapin-debug] [req:fab812a034b8] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 12:22:43 Europe/Berlin] [swapin-debug] [req:fab812a034b8] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 12:23:04 Europe/Berlin] [swapin-debug] [req:d1fe47dcc148] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 12:23:04 Europe/Berlin] [swapin-debug] [req:d1fe47dcc148] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 12:23:07 Europe/Berlin] [swapin-debug] [req:2a3a51fda1f2] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 12:23:07 Europe/Berlin] [swapin-debug] [req:2a3a51fda1f2] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 12:41:38 Europe/Berlin] [swapin-debug] [req:198b9e0409c0] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 12:42:23 Europe/Berlin] [swapin-debug] [req:8081bdfd2553] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 12:43:12 Europe/Berlin] [swapin-debug] [req:23d2a2761607] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 12:44:04 Europe/Berlin] [swapin-debug] [req:9d4d1d3308f9] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"","method":""}
-[08-Jul-2026 12:44:48 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 112
-[08-Jul-2026 12:44:48 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\seed_from_images.php on line 96
-[08-Jul-2026 12:50:17 Europe/Berlin] [swapin-debug] [req:b5ff999ccf49] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 12:50:17 Europe/Berlin] [swapin-debug] [req:b5ff999ccf49] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 12:50:31 Europe/Berlin] [swapin-debug] [req:93e55d1250da] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 12:50:31 Europe/Berlin] [swapin-debug] [req:93e55d1250da] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 12:50:38 Europe/Berlin] [swapin-debug] [req:b719ffd57602] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 12:50:38 Europe/Berlin] [swapin-debug] [req:b719ffd57602] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 12:51:19 Europe/Berlin] [swapin-debug] [req:8e2d8fdbde9f] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 12:51:19 Europe/Berlin] [swapin-debug] [req:8e2d8fdbde9f] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 12:51:54 Europe/Berlin] [swapin-debug] [req:67305c60139b] index-start {"uri":"/swaapin/?page=2","query":{"page":"2"}}
-[08-Jul-2026 12:51:54 Europe/Berlin] [swapin-debug] [req:67305c60139b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":2}
-[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 97
-[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 92
-[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 102
-[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 107
-[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 92
-[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 92
-[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 97
-[08-Jul-2026 12:54:52 Europe/Berlin] PHP Warning:  Undefined variable $title، in C:\xampp\htdocs\swaapin\seed\deploy_demo.php on line 97
-[08-Jul-2026 13:45:42 Europe/Berlin] [swapin-debug] [req:5d17aa40fee5] index-start {"uri":"/swaapin/","query":[]}
-[08-Jul-2026 13:45:42 Europe/Berlin] [swapin-debug] [req:5d17aa40fee5] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[08-Jul-2026 13:45:42 Europe/Berlin] [swapin-debug] [req:5d17aa40fee5] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":120,"uri":"/swaapin/","method":"GET"}
-[09-Jul-2026 10:15:00 Europe/Berlin] [swapin-debug] [req:74a4beac4491] index-start {"uri":"/swaapin/","query":[]}
-[09-Jul-2026 10:15:00 Europe/Berlin] [swapin-debug] [req:74a4beac4491] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Jul-2026 16:59:20 Europe/Berlin] [swapin-debug] [req:7664c9d8f36b] otp-code-generated {"phone":"••••••••3289","code":"810696"}
+[10-Jul-2026 16:59:20 Europe/Berlin] [swapin-debug] [req:7664c9d8f36b] sms_is_enabled_check {"defined_SMS_ENABLED":true,"SMS_ENABLED_value":true,"defined_SMS_IRANPAYAMAK_API_KEY":true,"SMS_IRANPAYAMAK_API_KEY_value_masked":"XmuNK...","defined_SMS_IRANPAYAMAK_PATTERN_CODE":true,"SMS_IRANPAYAMAK_PATTERN_CODE_value":"mMR4lJx2Jq","defined_SMS_IRANPAYAMAK_LINE_NUMBER":true,"SMS_IRANPAYAMAK_LINE_NUMBER_value":"50002178584000","app_is_production_status":false}
+[10-Jul-2026 16:59:20 Europe/Berlin] [swapin-debug] [req:7664c9d8f36b] sms_is_enabled_success {"reason":"All SMS checks passed"}
+[10-Jul-2026 16:59:44 Europe/Berlin] [swapin-debug] [req:53239dde0636] otp-verify-all-rows {"phone_from_session":"+989150583289","masked_phone":"••••••••3289","all_rows_count":1,"all_rows":[{"id":33,"phone_db":"+989150583289","used":0,"expires_at":"2026-07-10 17:09:20","expired":false,"created_at":"2026-07-10 18:29:20"}]}
+[10-Jul-2026 16:59:44 Europe/Berlin] [swapin-debug] [req:53239dde0636] otp-verify-failed {"phone":"••••••••3289","has_active_row":false,"code_length":6,"code_entered":"810696"}
+
+[10-Jul-2026 17:02:14 Europe/Berlin] [swapin-debug] [req:cbc1eeb5b7e7] otp-verify-all-rows {"phone_from_session":"+989150583289","masked_phone":"••••••••3289","all_rows_count":1,"all_rows":[{"id":33,"phone_db":"+989150583289","used":0,"expires_at":"2026-07-10 17:09:20","expired":false,"created_at":"2026-07-10 18:29:20"}]}
+[10-Jul-2026 17:02:14 Europe/Berlin] [swapin-debug] [req:cbc1eeb5b7e7] otp-verify-failed {"phone":"••••••••3289","has_active_row":false,"code_length":6,"code_entered":"810696"}
+[10-Jul-2026 17:09:39 Europe/Berlin] [swapin-debug] [req:e6fd6a375733] otp-verify-all-rows {"phone_from_session":"+989150583289","masked_phone":"••••••••3289","all_rows_count":1,"all_rows":[{"id":33,"phone_db":"+989150583289","used":0,"expires_at":"2026-07-10 17:09:20","expired":true,"created_at":"2026-07-10 18:29:20"}]}
+[10-Jul-2026 17:09:39 Europe/Berlin] [swapin-debug] [req:e6fd6a375733] otp-verify-failed {"phone":"••••••••3289","has_active_row":false,"code_length":6,"code_entered":"810696"}
+[10-Jul-2026 17:09:40 Europe/Berlin] [swapin-debug] [req:3dda027fd336] index-start {"uri":"/swaapin/","query":[]}
+[10-Jul-2026 17:09:40 Europe/Berlin] [swapin-debug] [req:3dda027fd336] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Jul-2026 17:10:05 Europe/Berlin] [swapin-debug] [req:d5469795a90e] otp-code-generated {"phone":"••••••••3576","code":"153474"}
+[10-Jul-2026 17:10:05 Europe/Berlin] [swapin-debug] [req:d5469795a90e] sms_is_enabled_check {"defined_SMS_ENABLED":true,"SMS_ENABLED_value":true,"defined_SMS_IRANPAYAMAK_API_KEY":true,"SMS_IRANPAYAMAK_API_KEY_value_masked":"XmuNK...","defined_SMS_IRANPAYAMAK_PATTERN_CODE":true,"SMS_IRANPAYAMAK_PATTERN_CODE_value":"mMR4lJx2Jq","defined_SMS_IRANPAYAMAK_LINE_NUMBER":true,"SMS_IRANPAYAMAK_LINE_NUMBER_value":"50002178584000","app_is_production_status":false}
+[10-Jul-2026 17:10:05 Europe/Berlin] [swapin-debug] [req:d5469795a90e] sms_is_enabled_success {"reason":"All SMS checks passed"}
+
+
+
+
+[10-Jul-2026 17:10:26 Europe/Berlin] [swapin-debug] [req:e7c06f1cf57f] otp-verify-all-rows {"phone_from_session":"+989221923576","masked_phone":"••••••••3576","all_rows_count":1,"all_rows":[{"id":34,"phone_db":"+989221923576","used":0,"expires_at":"2026-07-10 18:50:05","expired":false,"created_at":"2026-07-10 18:40:05"}]}
+[10-Jul-2026 17:10:26 Europe/Berlin] [swapin-debug] [req:e7c06f1cf57f] otp-verify-success {"phone":"••••••••3576"}
+[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-dashboard] config.php loaded successfully
+[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-dashboard] layout.php loaded successfully
+[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-started {"step":"init","uri":"/swaapin/dashboard.php?welcome=1"}
+[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-auth-ok {"step":"auth","user_id":201}
+[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-migration-check-ok {"needs_migration":"false"}
+[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-incoming-offers-ok {"count":0}
+[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-before-render {"step":"before-render","my_listings_count":0}
+
+
+
+[10-Jul-2026 17:18:38 Europe/Berlin] [swapin-dashboard] config.php loaded successfully
+[10-Jul-2026 17:18:38 Europe/Berlin] [swapin-dashboard] layout.php loaded successfully
+[10-Jul-2026 17:18:38 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-started {"step":"init","uri":"/swaapin/dashboard.php"}
+[10-Jul-2026 17:18:59 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-auth-ok {"step":"auth","user_id":201}
+[10-Jul-2026 17:18:59 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-migration-check-ok {"needs_migration":"false"}
+[10-Jul-2026 17:18:59 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-incoming-offers-ok {"count":0}
+[10-Jul-2026 17:18:59 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-before-render {"step":"before-render","my_listings_count":0}
+[10-Jul-2026 18:08:12 Europe/Berlin] [swapin-debug] [req:2aa3af82300e] index-start {"uri":"/swaapin/","query":[]}
+[10-Jul-2026 18:08:12 Europe/Berlin] [swapin-debug] [req:2aa3af82300e] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Jul-2026 18:08:33 Europe/Berlin] [swapin-debug] [req:8ef3376c3693] index-start {"uri":"/swaapin/","query":[]}
+[10-Jul-2026 18:08:33 Europe/Berlin] [swapin-debug] [req:8ef3376c3693] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Jul-2026 18:08:55 Europe/Berlin] [swapin-debug] [req:29c4aaf5ad69] index-start {"uri":"/swaapin/","query":[]}
+[10-Jul-2026 18:08:55 Europe/Berlin] [swapin-debug] [req:29c4aaf5ad69] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Jul-2026 18:09:16 Europe/Berlin] [swapin-debug] [req:f860eab35e4b] index-start {"uri":"/swaapin/","query":[]}
+[10-Jul-2026 18:09:16 Europe/Berlin] [swapin-debug] [req:f860eab35e4b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}

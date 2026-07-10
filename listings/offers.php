@@ -188,7 +188,7 @@ render_navbar($user);
                 <?php if ($offer['offer_listing_title']): ?>
                 <div style="display:flex;align-items:center;gap:var(--sp-2)">
                   <?php if ($offer['offer_listing_thumb'] ?? false): ?>
-                  <img src="<?= UPLOAD_URL . h($offer['offer_listing_thumb']) ?>" alt=""
+                  <img src="<?= UPLOAD_URL . h($offer['offer_listing_thumb']) ?>" alt="<?= h($offer['offer_listing_title']) ?>"
                        style="width:36px;height:36px;border-radius:var(--radius-sm);object-fit:cover">
                   <?php endif; ?>
                   <div>

@@ -4,7 +4,9 @@ require_once __DIR__ . '/includes/layout.php';
 
 $user = auth_user();
 
-render_head('راهنمای امنیت و پیشگیری از کلاهبرداری', 'نکات امنیتی معاملات در ' . APP_NAME . ' — کلاهبرداری را بشناسید.');
+render_head('راهنمای امنیت سواَپین | پیشگیری از کلاهبرداری', 'نکات امنیتی معاملات در سواَپین - کلاهبرداری را بشناسید و معاملات امن انجام دهید.', [
+    'canonical' => APP_URL . '/fraud-prevention',
+]);
 render_navbar($user);
 ?>
 
@@ -71,8 +73,8 @@ render_navbar($user);
         <ol class="fraud-steps">
           <li><strong>فقط داخل <?= APP_NAME ?>:</strong> پیشنهاد، مذاکره و پرداخت را از بخش معاملات انجام دهید.</li>
           <li><strong>سپرده امانی (Escrow):</strong> مبلغ تا تأیید دریافت کالا نزد پلتفرم نگه داشته می‌شود.</li>
-          <li><strong>احراز هویت:</strong> با فروشندگان دارای نشان KYC معامله کنید — <a href="<?= APP_URL ?>/profile/edit.php">احراز هویت خودتان</a> هم اعتماد می‌سازد.</li>
-          <li><strong>بازرسی کارشناس:</strong> برای کالاهای گران‌قیمت، از <a href="<?= APP_URL ?>/about.php">بازرسی <?= APP_NAME ?></a> استفاده کنید.</li>
+          <li><strong>احراز هویت:</strong> با فروشندگان دارای نشان KYC معامله کنید — <a href="<?= APP_URL ?>/profile/edit">احراز هویت خودتان</a> هم اعتماد می‌سازد.</li>
+          <li><strong>بازرسی کارشناس:</strong> برای کالاهای گران‌قیمت، از <a href="<?= APP_URL ?>/about">بازرسی <?= APP_NAME ?></a> استفاده کنید.</li>
           <li><strong>بررسی پروفایل:</strong> امتیاز، تعداد معاملات موفق و نظرات دیگران را ببینید.</li>
           <li><strong>مستندسازی:</strong> عکس بسته‌بندی، رسید پست و وضعیت کالا را نگه دارید.</li>
         </ol>
@@ -90,11 +92,11 @@ render_navbar($user);
           </div>
           <div style="display:flex;gap:var(--sp-3);align-items:flex-start">
             <span class="badge badge-warning" style="font-size:1rem;padding:var(--sp-2) var(--sp-3)">۲</span>
-            <div><strong>آگهی را گزارش دهید</strong> — از صفحه آگهی یا <a href="<?= APP_URL ?>/support/index.php">تیکت پشتیبانی</a> با دسته «آگهی» ثبت کنید.</div>
+            <div><strong>آگهی را گزارش دهید</strong> — از صفحه آگهی یا <a href="<?= APP_URL ?>/support">تیکت پشتیبانی</a> با دسته «آگهی» ثبت کنید.</div>
           </div>
           <div style="display:flex;gap:var(--sp-3);align-items:flex-start">
             <span class="badge badge-info" style="font-size:1rem;padding:var(--sp-2) var(--sp-3)">۳</span>
-            <div><strong>در معامله جاری:</strong> از بخش <a href="<?= APP_URL ?>/trades.php">معاملات</a> «ثبت اختلاف» کنید — تیم بررسی می‌کند.</div>
+            <div><strong>در معامله جاری:</strong> از بخش <a href="<?= APP_URL ?>/trades">معاملات</a> «ثبت اختلاف» کنید — تیم بررسی می‌کند.</div>
           </div>
           <div style="display:flex;gap:var(--sp-3);align-items:flex-start">
             <span class="badge badge-primary" style="font-size:1rem;padding:var(--sp-2) var(--sp-3)">۴</span>
@@ -108,9 +110,9 @@ render_navbar($user);
     <div style="text-align:center;padding:var(--sp-6) 0">
       <p style="color:var(--text-muted);margin-bottom:var(--sp-4)">سؤال دارید یا آگهی مشکوک دیدید؟</p>
       <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap">
-        <a href="<?= APP_URL ?>/support/index.php" class="btn btn-primary"><i class="bi bi-headset"></i> تماس با پشتیبانی</a>
+        <a href="<?= APP_URL ?>/support" class="btn btn-primary"><i class="bi bi-headset"></i> تماس با پشتیبانی</a>
         <?php if ($user): ?>
-        <a href="<?= APP_URL ?>/trades.php" class="btn btn-outline"><i class="bi bi-exclamation-triangle"></i> ثبت اختلاف معامله</a>
+        <a href="<?= APP_URL ?>/trades" class="btn btn-outline"><i class="bi bi-exclamation-triangle"></i> ثبت اختلاف معامله</a>
         <?php endif; ?>
       </div>
     </div>

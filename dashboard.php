@@ -125,7 +125,7 @@ render_navbar($user);
   <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
     <i class="bi bi-shield-exclamation"></i>
     <span>برای فعال‌سازی فروش و پرداخت، <strong>احراز هویت (KYC)</strong> را تکمیل کنید.</span>
-    <a href="<?= APP_URL ?>/profile/edit.php" class="btn btn-accent btn-sm ms-auto">تأیید الآن</a>
+    <a href="<?= APP_URL ?>/profile/edit" class="btn btn-accent btn-sm ms-auto">تأیید الآن</a>
   </div>
 </div>
 <?php endif; ?>
@@ -135,7 +135,7 @@ render_navbar($user);
   <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
     <i class="bi bi-exclamation-triangle"></i>
     <span>بخشی از جدول‌ها یا ستون‌های لازم برای داشبورد هنوز روی سرور ساخته نشده‌اند. Migration دیتابیس را اجرا کنید.</span>
-    <a href="<?= APP_URL ?>/migrate.php" class="btn btn-accent btn-sm ms-auto">اجرای Migration</a>
+    <a href="<?= APP_URL ?>/migrate" class="btn btn-accent btn-sm ms-auto">اجرای Migration</a>
   </div>
 </div>
 <?php endif; ?>
@@ -150,7 +150,7 @@ render_navbar($user);
           <a href="#swap-matches" style="font-weight:600">پیشنهادهای معاوضه ↓</a>
         </p>
       </div>
-      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">
+      <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
     </header>
@@ -159,12 +159,12 @@ render_navbar($user);
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-8)">
       <?php
       $stats = [
-        ['wallet2',          number_format($user['credit_balance'], 0) . ' ' . CREDIT_UNIT, 'موجودی اعتبار',   'primary', APP_URL . '/wallet.php'],
-        ['grid',             $myListingsCount,                                    'آگهی‌های فعال',  'info',    APP_URL . '/listings/my.php'],
-        ['inbox',            $pendingOffers,                                      'پیشنهادهای در انتظار',   $pendingOffers > 0 ? 'warning' : 'info', APP_URL . '/listings/offers.php'],
-        ['arrow-left-right', $completedTrades,                                    'تهاترهای انجام‌شده', 'success', APP_URL . '/trades.php'],
-        ['chat-dots',        $unreadMsgs,                                         'پیام‌های خوانده‌نشده',  $unreadMsgs > 0 ? 'warning' : 'info', APP_URL . '/messages.php'],
-        ['send',             $sentOffers,                                         'پیشنهادهای ارسالی',      'info',    APP_URL . '/trades.php?tab=sent'],
+        ['wallet2',          number_format($user['credit_balance'], 0) . ' ' . CREDIT_UNIT, 'موجودی اعتبار',   'primary', APP_URL . '/wallet'],
+        ['grid',             $myListingsCount,                                    'آگهی‌های فعال',  'info',    APP_URL . '/listings/my'],
+        ['inbox',            $pendingOffers,                                      'پیشنهادهای در انتظار',   $pendingOffers > 0 ? 'warning' : 'info', APP_URL . '/listings/offers'],
+        ['arrow-left-right', $completedTrades,                                    'معاوضه‌های انجام‌شده', 'success', APP_URL . '/trades'],
+        ['chat-dots',        $unreadMsgs,                                         'پیام‌های خوانده‌نشده',  $unreadMsgs > 0 ? 'warning' : 'info', APP_URL . '/messages'],
+        ['send',             $sentOffers,                                         'پیشنهادهای ارسالی',      'info',    APP_URL . '/trades?tab=sent'],
       ];
       foreach ($stats as [$icon, $val, $label, $color, $link]):
       ?>
@@ -230,7 +230,7 @@ render_navbar($user);
             <div id="ai-match-list" style="display:flex;flex-direction:column;gap:var(--sp-3)">
             <?php if ($swapMatches): ?>
               <?php foreach ($swapMatches as $m): ?>
-              <a href="<?= APP_URL ?>/listings/view.php?id=<?= (int)$m['listing_id'] ?>" class="match-row" data-listing-id="<?= (int)$m['listing_id'] ?>">
+              <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>" class="match-row" data-listing-id="<?= (int)$m['listing_id'] ?>">
                 <div class="match-row__score"><?= (int)$m['match_score'] ?>٪</div>
                 <div class="match-row__body">
                   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -259,7 +259,7 @@ render_navbar($user);
               <div class="empty-state" style="padding:var(--sp-6) 0">
                 <i class="bi bi-plus-circle"></i>
                 <p class="fs-sm" style="color:var(--text-muted)">اول یک آگهی ثبت کنید تا پیشنهاد دریافت کنید.</p>
-                <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-accent btn-sm">ثبت آگهی</a>
+                <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-sm">ثبت آگهی</a>
               </div>
             <?php else: ?>
               <div class="empty-state" style="padding:var(--sp-6) 0">
@@ -291,7 +291,7 @@ render_navbar($user);
                 <div class="triangle-chain__arrow"><i class="bi bi-arrow-left"></i></div>
                 <div class="triangle-chain__step">
                   <span class="fs-xs" style="color:var(--text-muted)">نفر <?= $i + 1 ?>: <?= h($step['seller_name']) ?></span>
-                  <a href="<?= APP_URL ?>/listings/view.php?id=<?= $step['id'] ?>"><?= h(mb_strimwidth($step['title'], 0, 28, '…')) ?></a>
+                  <a href="<?= APP_URL ?>/listings/view?id=<?= $step['id'] ?>"><?= h(mb_strimwidth($step['title'], 0, 28, '…')) ?></a>
                 </div>
                 <?php endforeach; ?>
                 <div class="triangle-chain__arrow"><i class="bi bi-arrow-left"></i></div>
@@ -353,16 +353,16 @@ render_navbar($user);
                 <?php endif; ?>
               </div>
               <div style="display:flex;gap:var(--sp-2);flex-shrink:0">
-                <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $offer['listing_id'] ?>&accept=<?= $offer['id'] ?>"
+                <a href="<?= APP_URL ?>/listings/offers?id=<?= $offer['listing_id'] ?>&accept=<?= $offer['id'] ?>"
                    class="btn btn-primary btn-sm">پذیرفتن</a>
-                <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $offer['listing_id'] ?>&reject=<?= $offer['id'] ?>"
+                <a href="<?= APP_URL ?>/listings/offers?id=<?= $offer['listing_id'] ?>&reject=<?= $offer['id'] ?>"
                    class="btn btn-ghost btn-sm" style="color:var(--danger)">رد</a>
               </div>
             </div>
           </div>
           <?php endforeach; ?>
           <div class="card-footer">
-            <a href="<?= APP_URL ?>/listings/offers.php" class="fs-sm">مشاهده همه پیشنهادها ←</a>
+            <a href="<?= APP_URL ?>/listings/offers" class="fs-sm">مشاهده همه پیشنهادها ←</a>
           </div>
         </div>
         <?php endif; ?>
@@ -371,22 +371,22 @@ render_navbar($user);
         <div class="card mb-6">
           <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
             <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-grid" style="color:var(--primary)"></i> آگهی‌های فعال من</h3>
-            <a href="<?= APP_URL ?>/listings/my.php" class="fs-sm">مشاهده همه</a>
+            <a href="<?= APP_URL ?>/listings/my" class="fs-sm">مشاهده همه</a>
           </div>
           <?php if (empty($recentListings)): ?>
           <div class="card-body">
             <div class="empty-state" style="padding:var(--sp-8) var(--sp-4)">
               <i class="bi bi-box-seam" style="font-size:2.5rem"></i>
               <h3 style="font-size:1.125rem">هنوز آگهی‌ای ندارید</h3>
-              <p style="font-size:.875rem">اولین آگهی خود را ثبت کنید و تهاتر را شروع کنید!</p>
-              <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">ثبت آگهی</a>
+              <p style="font-size:.875rem">اولین آگهی خود را ثبت کنید و معاوضه را شروع کنید!</p>
+              <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary btn-sm">ثبت آگهی</a>
             </div>
           </div>
           <?php else: ?>
           <?php foreach ($recentListings as $listing): ?>
           <div style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border)">
             <?php if ($listing['thumb']): ?>
-            <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt=""
+            <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="<?= h($listing['title']) ?>"
                  style="width:52px;height:52px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0">
             <?php else: ?>
             <div style="width:52px;height:52px;border-radius:var(--radius-md);background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -407,11 +407,11 @@ render_navbar($user);
             </div>
             <div style="display:flex;gap:var(--sp-2)">
               <?php if ($listing['offer_count'] > 0): ?>
-              <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $listing['id'] ?>" class="btn btn-accent btn-sm">
+              <a href="<?= APP_URL ?>/listings/offers?id=<?= $listing['id'] ?>" class="btn btn-accent btn-sm">
                 <i class="bi bi-inbox"></i> پیشنهادها
               </a>
               <?php endif; ?>
-              <a href="<?= APP_URL ?>/listings/view.php?id=<?= $listing['id'] ?>" class="btn btn-ghost btn-sm">مشاهده</a>
+              <a href="<?= APP_URL ?>/listings/view?id=<?= $listing['id'] ?>" class="btn btn-ghost btn-sm">مشاهده</a>
             </div>
           </div>
           <?php endforeach; ?>
@@ -427,10 +427,10 @@ render_navbar($user);
           <div class="wallet-card__balance"><?= number_format($user['credit_balance'], 0) ?></div>
           <div class="wallet-card__symbol">اعتبار <?= APP_NAME ?></div>
           <div style="display:flex;gap:var(--sp-3);margin-top:var(--sp-6)">
-            <a href="<?= APP_URL ?>/wallet.php?action=deposit" class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3);flex:1">
+            <a href="<?= APP_URL ?>/wallet?action=deposit" class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3);flex:1">
               <i class="bi bi-plus-circle"></i> افزودن اعتبار
             </a>
-            <a href="<?= APP_URL ?>/wallet.php" class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);flex:1">
+            <a href="<?= APP_URL ?>/wallet" class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);flex:1">
               تاریخچه
             </a>
           </div>
@@ -440,7 +440,7 @@ render_navbar($user);
         <div class="card">
           <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
             <h3 style="margin:0;font-size:1rem">تراکنش‌های اخیر</h3>
-            <a href="<?= APP_URL ?>/wallet.php" class="fs-sm">مشاهده همه</a>
+            <a href="<?= APP_URL ?>/wallet" class="fs-sm">مشاهده همه</a>
           </div>
           <?php if (empty($recentTx)): ?>
           <div class="card-body" style="text-align:center;color:var(--text-muted);font-size:.875rem;padding:var(--sp-8)">
@@ -454,8 +454,8 @@ render_navbar($user);
             $typeLabels = [
               'deposit'      => ['arrow-down-circle', 'واریز',          'success'],
               'withdraw'     => ['arrow-up-circle',   'برداشت',       'danger'],
-              'trade_credit' => ['arrow-down-circle', 'دریافت از تهاتر',   'success'],
-              'trade_debit'  => ['arrow-up-circle',   'پرداخت در تهاتر',       'danger'],
+              'trade_credit' => ['arrow-down-circle', 'دریافت از معاوضه',   'success'],
+              'trade_debit'  => ['arrow-up-circle',   'پرداخت در معاوضه',       'danger'],
               'fee'          => ['dash-circle',        'کارمزد پلتفرم',     'warning'],
               'refund'       => ['arrow-counterclockwise','بازپرداخت',        'info'],
             ];

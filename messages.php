@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'to_user_id'   => $toId,
                 'body'         => $body,
             ]);
-            header('Location: ' . APP_URL . '/messages.php?to=' . $toId . '#chat-end'); exit;
+            header('Location: ' . APP_URL . '/messages?to=' . $toId . '#chat-end'); exit;
         }
     }
 }
@@ -102,7 +102,7 @@ if ($toUserId) {
     }
 }
 
-render_head('پیام‌ها');
+render_head('پیام‌ها', '', ['canonical' => APP_URL . '/messages']);
 render_navbar($user);
 ?>
 
@@ -128,7 +128,7 @@ render_navbar($user);
           <?php foreach ($threads as $thread):
             $isActive = ($thread['partner_id'] == $toUserId);
           ?>
-          <a href="<?= APP_URL ?>/messages.php?to=<?= $thread['partner_id'] ?>"
+          <a href="<?= APP_URL ?>/messages?to=<?= $thread['partner_id'] ?>"
              class="thread-item <?= $thread['unread_count'] > 0 ? 'unread' : '' ?> <?= $isActive ? 'active' : '' ?>"
              style="<?= $isActive ? 'background:rgba(26,107,74,.06);border-inline-start:3px solid var(--primary)' : '' ?>">
             <div class="avatar avatar-sm"><?= strtoupper(substr($thread['partner_name'], 0, 1)) ?></div>

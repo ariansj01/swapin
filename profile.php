@@ -70,7 +70,7 @@ render_navbar($currentUser);
           <div style="flex-shrink:0">
             <?php if ($profile['avatar']): ?>
             <img src="<?= UPLOAD_URL . h($profile['avatar']) ?>"
-                 style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border)" alt="">
+                 style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border)" alt="<?= h($profile['name']) ?>">
             <?php else: ?>
             <div class="avatar avatar-xl"><?= strtoupper(substr($profile['name'], 0, 1)) ?></div>
             <?php endif; ?>
@@ -78,7 +78,7 @@ render_navbar($currentUser);
 
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;margin-bottom:var(--sp-2)">
-              <h2 style="margin:0"><?= h($profile['name']) ?></h2>
+              <h1 style="margin:0;font-size:1.5rem;"><?= h($profile['name']) ?></h1>
               <?php if ($profile['verification_level'] >= 2): ?>
               <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأیید‌شده</span>
               <?php endif; ?>
@@ -146,15 +146,15 @@ render_navbar($currentUser);
           <!-- Actions -->
           <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
             <?php if ($isOwnProfile): ?>
-            <a href="<?= APP_URL ?>/profile/edit.php" class="btn btn-outline">
+            <a href="<?= APP_URL ?>/profile/edit" class="btn btn-outline">
               <i class="bi bi-pencil"></i> ویرایش پروفایل
             </a>
             <?php elseif ($currentUser): ?>
-            <a href="<?= APP_URL ?>/messages.php?to=<?= $profile['id'] ?>" class="btn btn-primary">
+            <a href="<?= APP_URL ?>/messages?to=<?= $profile['id'] ?>" class="btn btn-primary">
               <i class="bi bi-chat"></i> پیام
             </a>
             <?php else: ?>
-            <a href="<?= APP_URL ?>/auth/login.php" class="btn btn-primary">ورود برای پیام</a>
+            <a href="<?= APP_URL ?>/auth/login" class="btn btn-primary">ورود برای پیام</a>
             <?php endif; ?>
           </div>
 
@@ -172,7 +172,7 @@ render_navbar($currentUser);
           <i class="bi bi-box-seam"></i>
           <h3>هنوز آگهی‌ای نیست</h3>
           <?php if ($isOwnProfile): ?>
-          <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">اولین آگهی خود را ثبت کنید</a>
+          <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">اولین آگهی خود را ثبت کنید</a>
           <?php endif; ?>
         </div>
         <?php else: ?>

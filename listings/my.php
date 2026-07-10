@@ -186,7 +186,7 @@ render_navbar($user);
         <!-- Thumbnail -->
         <div style="width:80px;height:72px;flex-shrink:0;border-radius:var(--radius-md);overflow:hidden;background:var(--bg);border:1px solid var(--border)">
           <?php if ($l['thumb']): ?>
-          <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt=""
+          <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>"
                style="width:100%;height:100%;object-fit:cover">
           <?php else: ?>
           <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;opacity:.3;color:var(--text-muted)">
@@ -199,7 +199,7 @@ render_navbar($user);
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap">
             <div style="min-width:0;flex:1">
-              <a href="<?= APP_URL ?>/listings/view.php?id=<?= $l['id'] ?>"
+              <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>"
                  style="font-weight:700;font-size:1rem;color:var(--text-primary);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 <?= h($l['title']) ?>
               </a>

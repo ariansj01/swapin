@@ -5,8 +5,8 @@ require_once __DIR__ . '/../includes/layout.php';
 $user = auth_user();
 $url  = APP_URL;
 
-render_head('دستیار هوش مصنوعی', 'مشاوره معاوضه، ارزش‌گذاری و پیشنهاد هوشمند در سواپین', [
-    'canonical' => APP_URL . '/ai/chat.php',
+render_head('دستیار هوش مصنوعی | سواَپین', 'مشاوره معاوضه، ارزش‌گذاری و پیشنهاد هوشمند در سواَپین', [
+    'canonical' => APP_URL . '/ai/chat',
     'robots'    => 'noindex, nofollow',
 ]);
 render_navbar($user);
@@ -48,7 +48,7 @@ render_navbar($user);
           <h3>برای گفتگو با دستیار AI وارد شوید</h3>
           <p>این قابلیت فقط برای اعضای سواپین فعال است.</p>
           <div class="ai-chat-guest__actions">
-            <a href="<?= $url ?>/auth/login.php?redirect=<?= urlencode('/ai/chat.php') ?>" class="btn btn-accent btn-lg">
+            <a href="<?= $url ?>/auth/login?redirect=<?= urlencode('/ai/chat') ?>" class="btn btn-accent btn-lg">
               <i class="bi bi-box-arrow-in-right"></i> ورود / ثبت‌نام
             </a>
           </div>
@@ -60,7 +60,7 @@ render_navbar($user);
         $features = [
             ['bi-calculator', 'ارزش‌گذاری هوشمند', 'بعد از ثبت کالا، AI ارزش تقریبی ' . CREDIT_UNIT . ' را پیشنهاد می‌دهد.'],
             ['bi-arrow-left-right', 'پیشنهاد معاوضه', 'بر اساس نیاز شما، گزینه‌های مناسب معاوضه را پیشنهاد می‌کند.'],
-            ['bi-chat-heart', 'مشاوره معامله', 'سؤالات خود را درباره تهاتر امن بپرسید.'],
+            ['bi-chat-heart', 'مشاوره معامله', 'سؤالات خود را درباره معاوضه امن بپرسید.'],
         ];
         foreach ($features as [$icon, $title, $desc]):
         ?>
@@ -91,7 +91,7 @@ render_navbar($user);
                 <button type="button" class="ai-chip" data-prompt="چطور ارزش کالایم را تخمین بزنم؟">ارزش‌گذاری کالا</button>
                 <button type="button" class="ai-chip" data-prompt="چه کالایی برای معاوضه با لپ‌تاپ من مناسب است؟">پیشنهاد معاوضه</button>
                 <button type="button" class="ai-chip" data-prompt="مراحل معامله امن در سواپین چیست؟">معامله امن</button>
-                <a href="<?= $url ?>/dashboard.php#swap-matches" class="ai-chip" style="text-decoration:none;display:inline-flex;align-items:center">Matching Engine</a>
+                <a href="<?= $url ?>/dashboard#swap-matches" class="ai-chip" style="text-decoration:none;display:inline-flex;align-items:center">Matching Engine</a>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@ render_navbar($user);
             </p>
           </div>
         </div>
-        <a href="<?= $url ?>/listings/create.php" class="btn btn-primary" style="width:100%">
+        <a href="<?= $url ?>/listings/create" class="btn btn-primary" style="width:100%">
           <i class="bi bi-plus-circle"></i> ثبت کالا با قیمت‌گذاری AI
         </a>
       </aside>

@@ -91,11 +91,11 @@ $listings = DB::fetchAll(
 
 $cities = DB::fetchAll("SELECT DISTINCT city FROM listings WHERE city IS NOT NULL AND city != '' ORDER BY city LIMIT 30");
 
-render_head('مرور آگهی‌ها', 'کالاهای قابل تهاتر را در بازار ' . APP_NAME . ' پیدا کنید. مبادله هوشمند کالا با کالا در سراسر ایران.', [
+render_head('سواَپین | بازار هوشمند مبادله کالا', 'سواَپین - بزرگترین پلتفرم هوشمند مبادله کالا با کالا در ایران. کالاهای خود را ثبت کنید و با چیزهایی که نیاز دارید معاوضه کنید.', [
     'canonical' => APP_URL . '/',
     'og_type'   => 'website',
     'og_image'  => APP_URL . '/src/img/heropng.png',
-    'keywords'  => 'مبادله کالا, تعویض کالا, بازار تهاتر, سواپین, معاوضه',
+    'keywords'  => 'مبادله کالا, تعویض کالا, بازار مبادله, سواپین, معاوضه',
     'json_ld'   => [seo_json_ld_website(), seo_json_ld_organization()],
 ]);
 render_navbar($user);
@@ -111,7 +111,7 @@ render_navbar($user);
       </h1>
       <p class="hero__subtitle">کمتر بخر، بیشتر <span class="hero__gold">مبادله</span> کن</p>
       <div class="hero__actions">
-        <a href="<?= app_url('listings/create.php') ?>" class="btn btn-accent btn-lg">
+        <a href="<?= app_url('listings/create') ?>" class="btn btn-accent btn-lg">
           <i class="bi bi-plus-circle"></i> ثبت آگهی
         </a>
         <a href="#listings" class="btn btn-hero-outline btn-lg">
@@ -125,7 +125,7 @@ render_navbar($user);
         </div>
         <div class="hero__stat">
           <div class="hero__stat-value"><?= number_format((int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE status="completed"')['c'] ?? 0)) ?>+</div>
-          <div class="hero__stat-label">تهاتر انجام‌شده</div>
+          <div class="hero__stat-label">مبادله انجام‌شده</div>
         </div>
         <div class="hero__stat">
           <div class="hero__stat-value"><?= number_format((int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1')['c'] ?? 0)) ?>+</div>
@@ -166,9 +166,9 @@ render_navbar($user);
         <?php endforeach; ?>
       </select>
 
-      <label for="want-filter" class="visually-hidden">نوع تهاتر</label>
+      <label for="want-filter" class="visually-hidden">نوع مبادله</label>
       <select class="form-control" id="want-filter" name="want" style="width:auto;min-width:150px;height:50px">
-        <option value="">هر نوع تهاتر</option>
+        <option value="">هر نوع مبادله</option>
         <option value="item"    <?= $wantType === 'item'    ? 'selected' : '' ?>>کالا در برابر کالا</option>
         <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات می‌خواهد</option>
         <option value="credit"  <?= $wantType === 'credit'  ? 'selected' : '' ?>>اعتبار می‌خواهد</option>
@@ -202,7 +202,7 @@ render_navbar($user);
       <i class="bi bi-search"></i>
       <h3>آگهی‌ای یافت نشد</h3>
       <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
-      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">ثبت آگهی</a>
+      <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
     </div>
     <?php else: ?>
     <div class="listings-grid" id="listings-grid">
@@ -249,10 +249,10 @@ render_navbar($user);
         <h2>ارزش‌گذاری و مشاوره معاوضه با AI</h2>
         <p>بعد از ثبت کالا، هوش مصنوعی سواپین ارزش تقریبی را محاسبه می‌کند. با دستیار AI هم درباره بهترین گزینه‌های معاوضه مشورت کنید.</p>
         <div class="home-ai__actions">
-          <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-accent btn-lg">
+          <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-lg">
             <i class="bi bi-stars"></i> ثبت کالا + قیمت AI
           </a>
-          <a href="<?= APP_URL ?>/ai/chat.php" class="btn btn-hero-outline btn-lg">
+          <a href="<?= APP_URL ?>/ai/chat" class="btn btn-hero-outline btn-lg">
             <i class="bi bi-robot"></i> دستیار AI
           </a>
         </div>
@@ -279,7 +279,7 @@ render_navbar($user);
       <?php
       $steps = [
           ['bi-plus-circle',    '۱. ثبت آگهی',     'کالا یا خدمت خود را ثبت کنید، ارزش تقریبی بگذارید و بگویید چه چیزی می‌خواهید.'],
-          ['bi-search',         '۲. جستجو و کشف',  'بین آگهی‌ها بگردید. با دسته‌بندی، شهر و نوع تهاتر فیلتر کنید.'],
+          ['bi-search',         '۲. جستجو و کشف',  'بین آگهی‌ها بگردید. با دسته‌بندی، شهر و نوع مبادله فیلتر کنید.'],
           ['bi-chat-dots',      '۳. پیشنهاد دهید', 'کالای خود را پیشنهاد دهید، پیام بفرستید و جزئیات را هماهنگ کنید.'],
           ['bi-check2-all',     '۴. معامله کنید',  'هر دو طرف تأیید می‌کنند. امتیازدهی اعتماد را برای دفعات بعد می‌سازد.'],
       ];
@@ -304,9 +304,9 @@ render_navbar($user);
     <div class="trust-grid">
       <?php
       $trust = [
-          ['bi-star-fill',        'امتیاز و نظرات',    'بعد از هر تهاتر، طرفین به هم امتیاز می‌دهند و پروفایل اعتماد ساخته می‌شود.'],
+          ['bi-star-fill',        'امتیاز و نظرات',    'بعد از هر مبادله، طرفین به هم امتیاز می‌دهند و پروفایل اعتماد ساخته می‌شود.'],
           ['bi-patch-check-fill', 'احراز هویت',        'سطح تأیید تلفن و هویت در پروفایل هر کاربر نمایش داده می‌شود.'],
-          ['bi-clock-history',    'تاریخچه معاملات',   'سوابق تهاترهای انجام‌شده برای شفافیت در پروفایل قابل مشاهده است.'],
+          ['bi-clock-history',    'تاریخچه معاملات',   'سوابق مبادلات انجام‌شده برای شفافیت در پروفایل قابل مشاهده است.'],
           ['bi-shield-lock',      'پیام‌رسانی امن',     'گفتگوی مستقیم داخل پلتفرم قبل از نهایی کردن معامله.'],
       ];
       foreach ($trust as [$icon, $title, $desc]):

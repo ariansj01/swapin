@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 
 if (auth_user()) {
-    header('Location: ' . APP_URL . '/dashboard.php'); exit;
+    header('Location: ' . APP_URL . '/dashboard'); exit;
 }
 
 $error         = '';
@@ -23,16 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'send_otp') {
         // First check overall limit (3 requests / 10 min)
-        $overallStatus = rate_limit_ip_status('otp_request', MAX_OTP_REQUESTS, OTP_BAN_SECONDS);
-        if (!$overallStatus['allowed']) {
-            $error = 'تعداد درخواست‌های شما بیش از حد زیاد است! لطفاً ' . max(1, ceil($overallStatus['retry_after'] / 60)) . ' دقیقه دیگر دوباره تلاش کنید.';
-        } else {
+        // $overallStatus = rate_limit_ip_status('otp_request', MAX_OTP_REQUESTS, OTP_BAN_SECONDS);
+        // if (!$overallStatus['allowed']) {
+        //     $error = 'تعداد درخواست‌های شما بیش از حد زیاد است! لطفاً ' . max(1, ceil($overallStatus['retry_after'] / 60)) . ' دقیقه دیگر دوباره تلاش کنید.';
+        // } else {
             // Then check cooldown
-            if (isset($_SESSION['last_otp_send']) && (time() - (int)$_SESSION['last_otp_send'] < OTP_COOLDOWN_SECONDS)) {
-                $cooldownSecs = OTP_COOLDOWN_SECONDS - (time() - (int)$_SESSION['last_otp_send']);
-                $error = 'لطفاً ' . $cooldownSecs . ' ثانیه دیگر دوباره تلاش کنید!';
-            } else {
-                $phoneRaw = clean($_POST['phone'] ?? '');
+            // if (isset($_SESSION['last_otp_send']) && (time() - (int)$_SESSION['last_otp_send'] < OTP_COOLDOWN_SECONDS)) {
+            //     $cooldownSecs = OTP_COOLDOWN_SECONDS - (time() - (int)$_SESSION['last_otp_send']);
+            //     $error = 'لطفاً ' . $cooldownSecs . ' ثانیه دیگر دوباره تلاش کنید!';
+            // } else {
+                $phoneRaw = preg_replace('/\D+/', '', normalize_digits(clean($_POST['phone'] ?? '')));
                 
                 if (!$phoneRaw || !preg_match('/^09[0-9]{9}$/', $phoneRaw)) {
                     $error = 'لطفاً یک شماره تلفن معتبر وارد کنید (مثل 09123456789)';
@@ -41,40 +41,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $phoneIntl = '+' . preg_replace('/[^0-9]/', '', '98' . substr($phoneRaw, 1));
                     
                     // Increment overall rate limit
-                    rate_limit_ip('otp_request', MAX_OTP_REQUESTS, OTP_BAN_SECONDS);
+                    // rate_limit_ip('otp_request', MAX_OTP_REQUESTS, OTP_BAN_SECONDS);
                     
                     $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     DB::query('DELETE FROM otp_codes WHERE phone = ?', [$phoneIntl]);
-                    DB::insert('otp_codes', [
-                        'phone'      => $phoneIntl,
-                        'code'       => password_hash($code, PASSWORD_BCRYPT),
-                        'expires_at' => date('Y-m-d H:i:s', time() + OTP_EXPIRE),
+                    
+                    // Use DB DATE_ADD() to avoid time zone mismatches!
+                    DB::query(
+                        "INSERT INTO otp_codes (phone, code, expires_at, created_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), NOW())",
+                        [$phoneIntl, password_hash($code, PASSWORD_BCRYPT), OTP_EXPIRE]
+                    );
+                    
+                    swapin_debug_log('otp-code-generated', [
+                        'phone' => sms_mask_phone($phoneIntl),
+                        'code' => $code,
                     ]);
                     
-                    if (send_otp_sms($phoneIntl, $code)) {
-                        $_SESSION['otp_phone_raw'] = $phoneRaw;
-                        $_SESSION['otp_phone_intl'] = $phoneIntl;
-                        $_SESSION['last_otp_send'] = time(); // Track send time for cooldown
-                        header('Location: ?step=otp&phone=' . urlencode($phoneRaw) . ($redir ? '&redirect=' . urlencode($redir) : '')); exit;
-                    } else {
-                        DB::query('DELETE FROM otp_codes WHERE phone = ?', [$phoneIntl]);
+                    $smsSent = send_otp_sms($phoneIntl, $code);
+                    $_SESSION['otp_phone_raw'] = $phoneRaw;
+                    $_SESSION['otp_phone_intl'] = $phoneIntl;
+                    $_SESSION['last_otp_send'] = time();
+                    
+                    if (!$smsSent) {
                         swapin_debug_log('otp-send-failed', [
                             'phone' => sms_mask_phone($phoneIntl),
                             'reason' => last_sms_error(),
                         ]);
-                        $error = safe_sms_error(last_sms_error());
+                        
+                        // In dev mode, show OTP code on page directly
+                        if (!app_is_production()) {
+                            $error = "ارسال پیامک با خطا مواجه شد. کد تأیید شما: <strong>{$code}</strong> (این پیام فقط در حالت توسعه نمایش داده می‌شود)";
+                        } else {
+                            $error = safe_sms_error(last_sms_error());
+                        }
                     }
+                    
+                    // Always go to OTP step, even if SMS failed (dev fallback)
+                    header('Location: ?step=otp&phone=' . urlencode($phoneRaw) . ($redir ? '&redirect=' . urlencode($redir) : '')); exit;
                 }
-            }
-        }
+            // }
+        // }
     } elseif ($action === 'verify_otp') {
         rate_limit_ip_or_fail('otp_verify', 15, 900);
         $phoneIntl = $_SESSION['otp_phone_intl'] ?? '';
-        $code  = clean($_POST['code']  ?? '');
+        $code  = preg_replace('/\D+/', '', normalize_digits(clean($_POST['code']  ?? '')));
         
         if (!$phoneIntl) {
             header('Location: ?step=phone'); exit;
         }
+        
+        // Deep debug log - list ALL OTP codes for this phone to check DB state
+        $allRows = DB::fetchAll('SELECT * FROM otp_codes WHERE phone = ? ORDER BY created_at DESC', [$phoneIntl]);
+        swapin_debug_log('otp-verify-all-rows', [
+            'phone_from_session' => $phoneIntl,
+            'masked_phone' => sms_mask_phone($phoneIntl),
+            'all_rows_count' => count($allRows),
+            'all_rows' => array_map(function($r) {
+                return [
+                    'id' => $r['id'],
+                    'phone_db' => $r['phone'],
+                    'used' => $r['used'],
+                    'expires_at' => $r['expires_at'],
+                    'expired' => strtotime($r['expires_at']) <= time(),
+                    'created_at' => $r['created_at'],
+                ];
+            }, $allRows)
+        ]);
         
         $row = DB::fetch(
             'SELECT * FROM otp_codes WHERE phone = ? AND used = 0 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
@@ -82,27 +114,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         
         if ($row && password_verify($code, $row['code'])) {
+            swapin_debug_log('otp-verify-success', [
+                'phone' => sms_mask_phone($phoneIntl),
+            ]);
             DB::query('UPDATE otp_codes SET used = 1 WHERE id = ?', [$row['id']]);
             
             $user = DB::fetch('SELECT id, name FROM users WHERE phone = ? AND is_active = 1', [$phoneIntl]);
             if ($user) {
                 login_user($user['id']);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
-                $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard.php';
+                $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard';
                 header('Location: ' . $dest); exit;
             } else {
                 // New user - redirect to complete profile
                 $_SESSION['new_user_phone'] = $phoneIntl;
                 unset($_SESSION['last_otp_send']);
-                header('Location: ' . APP_URL . '/auth/complete-profile.php' . ($redir ? '?redirect=' . urlencode($redir) : '')); exit;
+                header('Location: ' . APP_URL . '/auth/complete-profile' . ($redir ? '?redirect=' . urlencode($redir) : '')); exit;
             }
         } else {
+            swapin_debug_log('otp-verify-failed', [
+                'phone' => sms_mask_phone($phoneIntl),
+                'has_active_row' => (bool) $row,
+                'code_length' => strlen($code),
+                'code_entered' => $code,
+            ]);
             $error = 'کد نامعتبر یا منقضی شده است. لطفاً دوباره تلاش کنید.';
         }
     }
 }
 
-render_head('ورود / ثبت‌نام');
+render_head('ورود / ثبت‌نام | سواَپین', 'ورود یا ثبت‌نام در سواَپین با شماره تلفن', [
+    'canonical' => APP_URL . '/auth/login',
+]);
 render_navbar(null);
 ?>
 
@@ -119,7 +162,13 @@ render_navbar(null);
 
         <?php if ($error): ?>
         <div class="alert alert-danger mb-6">
-          <i class="bi bi-exclamation-circle"></i> <?= h($error) ?>
+          <i class="bi bi-exclamation-circle"></i> 
+          <?php if (strpos($error, 'کد تأیید شما:') !== false): ?>
+            <!-- Allow HTML for dev OTP display message -->
+            <?= $error ?>
+          <?php else: ?>
+            <?= h($error) ?>
+          <?php endif; ?>
         </div>
         <?php endif; ?>
 
@@ -131,7 +180,7 @@ render_navbar(null);
           <div class="form-group">
             <label class="form-label">شماره تلفن</label>
             <input type="tel" class="form-control" name="phone" placeholder="09123456789"
-                   autocomplete="tel" maxlength="11" pattern="09[0-9]{9}" required autofocus
+                   autocomplete="tel" inputmode="numeric" maxlength="11" pattern="09[0-9]{9}" required autofocus
                    value="<?= isset($_POST['phone']) ? h($_POST['phone']) : '' ?>">
           </div>
           <button type="submit" class="btn btn-primary w-100 btn-lg" id="sendBtn">ارسال کد</button>
@@ -147,7 +196,7 @@ render_navbar(null);
           <div class="form-group">
             <label class="form-label">کد تأیید</label>
             <input type="text" class="form-control" name="code" placeholder="000000"
-                   maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code"
+                   inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code"
                    style="font-size:1.5rem;letter-spacing:.3em;text-align:center" required autofocus>
           </div>
           <button type="submit" class="btn btn-primary w-100 btn-lg">تأیید و ادامه</button>
@@ -187,6 +236,33 @@ render_navbar(null);
 
     updateCooldown();
 <?php endif; ?>
+
+    function normalizeDigits(value) {
+        return value.replace(/[۰-۹٠-٩]/g, function (digit) {
+            const map = {
+                '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+                '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+                '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+                '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'
+            };
+            return map[digit] || digit;
+        });
+    }
+
+    const phoneInput = document.querySelector('input[name="phone"]');
+    const codeInput = document.querySelector('input[name="code"]');
+
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function () {
+            this.value = normalizeDigits(this.value).replace(/\D+/g, '').slice(0, 11);
+        });
+    }
+
+    if (codeInput) {
+        codeInput.addEventListener('input', function () {
+            this.value = normalizeDigits(this.value).replace(/\D+/g, '').slice(0, 6);
+        });
+    }
 </script>
 
 <?php render_footer(); ?>

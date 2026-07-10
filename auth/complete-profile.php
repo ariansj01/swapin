@@ -3,11 +3,11 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 
 if (auth_user()) {
-    header('Location: ' . APP_URL . '/dashboard.php'); exit;
+    header('Location: ' . APP_URL . '/dashboard'); exit;
 }
 
 if (!isset($_SESSION['new_user_phone'])) {
-    header('Location: ' . APP_URL . '/auth/login.php'); exit;
+    header('Location: ' . APP_URL . '/auth/login'); exit;
 }
 
 $phoneIntl = $_SESSION['new_user_phone'];
@@ -61,12 +61,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         login_user($uid);
         unset($_SESSION['new_user_phone']);
-        $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard.php?welcome=1';
+        $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard?welcome=1';
         header('Location: ' . $dest); exit;
     }
 }
 
-render_head('تکمیل پروفایل');
+render_head('تکمیل پروفایل | سواَپین', 'تکمیل اطلاعات پروفایل برای ورود به سواَپین', [
+    'canonical' => APP_URL . '/auth/complete-profile',
+]);
 render_navbar(null);
 ?>
 

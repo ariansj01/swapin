@@ -11,6 +11,17 @@
 # Block direct web access to sensitive directories
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  # Force HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Remove www (optional)
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+  # Block sensitive directories
   RewriteRule ^includes/ - [F,L]
   RewriteRule ^seed/ - [F,L]
   RewriteRule ^database/ - [F,L]
@@ -20,6 +31,21 @@
   RewriteRule ^logs/ - [F,L]
   RewriteRule ^backups/ - [F,L]
   RewriteRule ^sql/ - [F,L]
+
+  # Remove .php extension
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.php -f
+  RewriteRule ^(.*?)/?$ $1.php [L]
+
+  # Support/index.php -> /support
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^support/?$ support/index.php [L,NC]
+
+  # Store/index.php -> /store
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^store/?$ store/index.php [L,NC]
 </IfModule>
 
 # Custom error documents

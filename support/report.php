@@ -31,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['page_url'] = clean($_GET['url'] ?? ($_SERVER['HTTP_REFERER'] ?? ''));
 }
 
-render_head('گزارش خطا', 'گزارش مشکلات فنی سایت به تیم ' . APP_NAME);
+render_head('گزارش خطا | سواَپین', 'گزارش مشکلات فنی سایت به تیم سواَپین', [
+    'canonical' => APP_URL . '/support/report',
+]);
 render_navbar($user);
 ?>
 
@@ -39,7 +41,7 @@ render_navbar($user);
   <div class="container-sm">
 
     <nav style="font-size:.875rem;margin-bottom:var(--sp-4)">
-      <a href="<?= APP_URL ?>/support/index.php"><i class="bi bi-arrow-right"></i> بازگشت به پشتیبانی</a>
+      <a href="<?= APP_URL ?>/support"><i class="bi bi-arrow-right"></i> بازگشت به پشتیبانی</a>
     </nav>
 
     <div style="text-align:center;padding:var(--sp-4) 0 var(--sp-5)">
@@ -79,7 +81,7 @@ render_navbar($user);
           </div>
           <?php if (!$user): ?>
           <div class="alert alert-info mb-4">
-            <i class="bi bi-info-circle"></i> برای پیگیری بهتر، <a href="<?= APP_URL ?>/auth/login.php">وارد شوید</a>.
+            <i class="bi bi-info-circle"></i> برای پیگیری بهتر، <a href="<?= APP_URL ?>/auth/login">وارد شوید</a>.
           </div>
           <?php endif; ?>
           <button type="submit" class="btn btn-primary w-100"><i class="bi bi-send"></i> ارسال گزارش</button>

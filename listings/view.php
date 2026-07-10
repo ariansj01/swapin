@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     csrf_verify_or_fail();
     rate_limit_ip_or_fail('listing_action', 40, 900);
     if (!$user) {
-        header('Location: ' . APP_URL . '/auth/login.php?redirect=/listings/view.php%3Fid=' . $id); exit;
+        header('Location: ' . APP_URL . '/auth/login?redirect=/listings/view%3Fid=' . $id); exit;
     }
     if ($_POST['action'] === 'make_offer') {
         if ($listing['user_id'] == $user['id']) {
@@ -173,7 +173,7 @@ $buyKbc  = 0;
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
 $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
-$listingUrl = APP_URL . '/listings/view.php?id=' . $id;
+$listingUrl = APP_URL . '/listings/view?id=' . $id;
 $ogImage    = $images ? UPLOAD_URL . $images[0]['filename'] : LOGO_URL;
 $metaDesc   = mb_strimwidth(strip_tags($listing['description']), 0, 160, '…');
 
@@ -202,7 +202,7 @@ render_navbar($user);
 <div class="alert alert-danger" style="border-radius:0;border-inline-start:0;border-inline-end:0">
   <div class="container"><i class="bi bi-x-circle"></i> این آگهی رد شده است.
     <?php if (!empty($listing['review_note'])): ?> دلیل: <?= h($listing['review_note']) ?><?php endif; ?>
-    — <a href="<?= APP_URL ?>/listings/edit.php?id=<?= $id ?>">ویرایش و ارسال مجدد</a>
+    — <a href="<?= APP_URL ?>/listings/edit?id=<?= $id ?>">ویرایش و ارسال مجدد</a>
   </div>
 </div>
 <?php endif; ?>
@@ -351,7 +351,7 @@ render_navbar($user);
               <span><i class="bi bi-shield-check" style="color:var(--accent-dark)"></i> Swap Score: <?= $sellerSwapScore['score'] ?>/100</span>
               <span><i class="bi bi-calendar3"></i> از <?= persian_date($listing['seller_since']) ?></span>
             </div>
-            <a href="<?= APP_URL ?>/profile.php?id=<?= $listing['user_id'] ?>" class="btn btn-outline w-100 btn-sm">مشاهده پروفایل</a>
+            <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="btn btn-outline w-100 btn-sm">مشاهده پروفایل</a>
           </div>
         </div>
 
@@ -362,10 +362,10 @@ render_navbar($user);
             <div class="alert alert-info mb-4" style="font-size:.875rem">
               <i class="bi bi-info-circle"></i> این آگهی متعلق به شماست.
             </div>
-            <a href="<?= APP_URL ?>/listings/edit.php?id=<?= $id ?>" class="btn btn-outline w-100 mb-3">
+            <a href="<?= APP_URL ?>/listings/edit?id=<?= $id ?>" class="btn btn-outline w-100 mb-3">
               <i class="bi bi-pencil"></i> ویرایش آگهی
             </a>
-            <a href="<?= APP_URL ?>/listings/bump.php?id=<?= $id ?>" class="btn btn-accent w-100 mb-3">
+            <a href="<?= APP_URL ?>/listings/bump?id=<?= $id ?>" class="btn btn-accent w-100 mb-3">
               <i class="bi bi-rocket"></i> ارتقای آگهی
             </a>
             <?php if (($listing['inspection_status'] ?? 'none') === 'none'): ?>
@@ -381,7 +381,7 @@ render_navbar($user);
               <i class="bi bi-search"></i> بازرسی: <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?>
             </div>
             <?php endif; ?>
-            <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $id ?>" class="btn btn-primary w-100">
+            <a href="<?= APP_URL ?>/listings/offers?id=<?= $id ?>" class="btn btn-primary w-100">
               <i class="bi bi-inbox"></i> مشاهده پیشنهادها
             </a>
           </div>
@@ -426,7 +426,7 @@ render_navbar($user);
 
             <?php if (!$user): ?>
             <p class="fs-sm mb-4" style="color:var(--text-muted)">برای ارسال پیشنهاد وارد شوید.</p>
-            <a href="<?= APP_URL ?>/auth/login.php?redirect=<?= urlencode('/listings/view.php?id='.$id) ?>" class="btn btn-primary w-100">
+            <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode('/listings/view?id='.$id) ?>" class="btn btn-primary w-100">
               ورود برای پیشنهاد
             </a>
 

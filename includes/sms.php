@@ -11,10 +11,48 @@ function sms_is_placeholder(string $value, array $placeholders = []): bool {
 }
 
 function sms_is_enabled(): bool {
-    if (!defined('SMS_ENABLED') || !SMS_ENABLED) return false;
-    if (!defined('SMS_IRANPAYAMAK_API_KEY') || sms_is_placeholder((string) SMS_IRANPAYAMAK_API_KEY)) return false;
-    if (!defined('SMS_IRANPAYAMAK_PATTERN_CODE') || sms_is_placeholder((string) SMS_IRANPAYAMAK_PATTERN_CODE)) return false;
-    if (!defined('SMS_IRANPAYAMAK_LINE_NUMBER') || trim((string) SMS_IRANPAYAMAK_LINE_NUMBER) === '') return false;
+    // Debug log for checking SMS configuration status
+    if (function_exists('swapin_debug_log')) {
+        swapin_debug_log('sms_is_enabled_check', [
+            'defined_SMS_ENABLED' => defined('SMS_ENABLED'),
+            'SMS_ENABLED_value' => defined('SMS_ENABLED') ? (bool)SMS_ENABLED : 'N/A',
+            'defined_SMS_IRANPAYAMAK_API_KEY' => defined('SMS_IRANPAYAMAK_API_KEY'),
+            'SMS_IRANPAYAMAK_API_KEY_value_masked' => defined('SMS_IRANPAYAMAK_API_KEY') ? substr(SMS_IRANPAYAMAK_API_KEY, 0, 5) . '...' : 'N/A',
+            'defined_SMS_IRANPAYAMAK_PATTERN_CODE' => defined('SMS_IRANPAYAMAK_PATTERN_CODE'),
+            'SMS_IRANPAYAMAK_PATTERN_CODE_value' => defined('SMS_IRANPAYAMAK_PATTERN_CODE') ? SMS_IRANPAYAMAK_PATTERN_CODE : 'N/A',
+            'defined_SMS_IRANPAYAMAK_LINE_NUMBER' => defined('SMS_IRANPAYAMAK_LINE_NUMBER'),
+            'SMS_IRANPAYAMAK_LINE_NUMBER_value' => defined('SMS_IRANPAYAMAK_LINE_NUMBER') ? SMS_IRANPAYAMAK_LINE_NUMBER : 'N/A',
+            'app_is_production_status' => function_exists('app_is_production') ? app_is_production() : 'N/A',
+        ]);
+    }
+
+    if (!defined('SMS_ENABLED') || !SMS_ENABLED) {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('sms_is_enabled_fail', ['reason' => 'SMS_ENABLED not defined or false']);
+        }
+        return false;
+    }
+    if (!defined('SMS_IRANPAYAMAK_API_KEY') || sms_is_placeholder((string) SMS_IRANPAYAMAK_API_KEY)) {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('sms_is_enabled_fail', ['reason' => 'SMS_IRANPAYAMAK_API_KEY not defined or placeholder']);
+        }
+        return false;
+    }
+    if (!defined('SMS_IRANPAYAMAK_PATTERN_CODE') || sms_is_placeholder((string) SMS_IRANPAYAMAK_PATTERN_CODE)) {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('sms_is_enabled_fail', ['reason' => 'SMS_IRANPAYAMAK_PATTERN_CODE not defined or placeholder']);
+        }
+        return false;
+    }
+    if (!defined('SMS_IRANPAYAMAK_LINE_NUMBER') || trim((string) SMS_IRANPAYAMAK_LINE_NUMBER) === '') {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('sms_is_enabled_fail', ['reason' => 'SMS_IRANPAYAMAK_LINE_NUMBER not defined or empty']);
+        }
+        return false;
+    }
+    if (function_exists('swapin_debug_log')) {
+        swapin_debug_log('sms_is_enabled_success', ['reason' => 'All SMS checks passed']);
+    }
     return true;
 }
 
@@ -27,7 +65,7 @@ function set_last_sms_error(string $msg): void {
 }
 
 function safe_sms_error(?string $detail): string {
-    if (!app_is_production()) {
+    if (function_exists('app_is_production') && !app_is_production()) {
         return $detail ?: 'ارسال پیامک ناموفق بود.';
     }
     return 'ارسال کد یکبارمصرف ناموفق بود. لطفاً کمی بعد دوباره تلاش کنید.';

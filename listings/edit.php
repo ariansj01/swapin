@@ -296,7 +296,7 @@ render_navbar($user);
             <div style="display:flex;flex-wrap:wrap;gap:var(--sp-3)">
               <?php foreach ($images as $img): ?>
               <div style="position:relative;width:96px">
-                <img src="<?= UPLOAD_URL . h($img['filename']) ?>" alt=""
+                <img src="<?= UPLOAD_URL . h($img['filename']) ?>" alt="تصویر آگهی"
                      style="width:96px;height:88px;object-fit:cover;border-radius:var(--radius-md);border:2px solid <?= $img['is_primary'] ? 'var(--primary)' : 'var(--border)' ?>">
                 <?php if ($img['is_primary']): ?>
                 <span style="position:absolute;top:4px;inset-inline-start:4px;font-size:.6rem;background:var(--primary);color:#fff;padding:2px 5px;border-radius:3px;font-weight:700">اصلی</span>

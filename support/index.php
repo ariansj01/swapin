@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($result['errors'])) {
         $errors = $result['errors'];
     } else {
-        header('Location: ' . APP_URL . '/support/view.php?id=' . $result['ticket_id'] . '&created=1');
+        header('Location: ' . APP_URL . '/support/view?id=' . $result['ticket_id'] . '&created=1');
         exit;
     }
 }
@@ -33,7 +33,9 @@ $tickets = DB::fetchAll(
 $catLabels = support_category_labels();
 $statusLabels = support_status_labels();
 
-render_head('پشتیبانی', 'ثبت تیکت و پیگیری درخواست‌های پشتیبانی.');
+render_head('پشتیبانی سواَپین | تیکت‌ها', 'ثبت تیکت و پیگیری درخواست‌های پشتیبانی سواَپین.', [
+    'canonical' => APP_URL . '/support',
+]);
 render_navbar($user);
 ?>
 
@@ -49,14 +51,14 @@ render_navbar($user);
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-6)">
-      <a href="<?= APP_URL ?>/support/report.php" class="card" style="text-decoration:none;color:inherit">
+      <a href="<?= APP_URL ?>/support/report" class="card" style="text-decoration:none;color:inherit">
         <div class="card-body" style="text-align:center;padding:var(--sp-5)">
           <i class="bi bi-bug" style="font-size:1.5rem;color:var(--danger);display:block;margin-bottom:var(--sp-2)"></i>
           <strong>گزارش خطا</strong>
           <p class="fs-sm" style="color:var(--text-muted);margin:var(--sp-2) 0 0">مشکل فنی در سایت؟ به ما بگویید.</p>
         </div>
       </a>
-      <a href="<?= APP_URL ?>/fraud-prevention.php" class="card" style="text-decoration:none;color:inherit">
+      <a href="<?= APP_URL ?>/fraud-prevention" class="card" style="text-decoration:none;color:inherit">
         <div class="card-body" style="text-align:center;padding:var(--sp-5)">
           <i class="bi bi-shield-exclamation" style="font-size:1.5rem;color:var(--warning);display:block;margin-bottom:var(--sp-2)"></i>
           <strong>راهنمای امنیت</strong>
@@ -116,7 +118,7 @@ render_navbar($user);
             <td><?= h($catLabels[$t['category']] ?? $t['category']) ?></td>
             <td><span class="badge badge-<?= $t['status'] === 'open' ? 'warning' : ($t['status'] === 'answered' ? 'success' : 'info') ?>"><?= h($statusLabels[$t['status']] ?? $t['status']) ?></span></td>
             <td class="fs-xs"><?= timeago($t['updated_at']) ?></td>
-            <td><a href="<?= APP_URL ?>/support/view.php?id=<?= $t['id'] ?>" class="btn btn-sm btn-outline">مشاهده</a></td>
+            <td><a href="<?= APP_URL ?>/support/view?id=<?= $t['id'] ?>" class="btn btn-sm btn-outline">مشاهده</a></td>
           </tr>
           <?php endforeach; ?>
         </tbody>

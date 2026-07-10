@@ -171,7 +171,7 @@ $sentOffers = DB::fetchAll(
     [$uid]
 );
 
-render_head('معاملات من');
+render_head('معاملات من', '', ['canonical' => APP_URL . '/trades']);
 render_navbar($user);
 ?>
 
@@ -179,7 +179,7 @@ render_navbar($user);
   <div class="container-md">
 
     <div class="mb-6">
-      <a href="<?= APP_URL ?>/dashboard.php" style="color:var(--text-muted);font-size:.875rem">
+      <a href="<?= APP_URL ?>/dashboard" style="color:var(--text-muted);font-size:.875rem">
         <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
       </a>
       <h2 class="mt-3">معاملات من</h2>
@@ -210,7 +210,7 @@ render_navbar($user);
       <div class="card-header">
         <div class="d-flex align-center gap-3" style="justify-content:space-between;flex-wrap:wrap">
           <h3 style="margin:0">معامله #<?= $dt['id'] ?> — <?= h($partner) ?></h3>
-          <a href="<?= APP_URL ?>/trades.php?tab=active" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-right"></i> بازگشت به فهرست</a>
+          <a href="<?= APP_URL ?>/trades?tab=active" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-right"></i> بازگشت به فهرست</a>
         </div>
       </div>
       <div class="card-body">
@@ -324,7 +324,7 @@ render_navbar($user);
               <i class="bi bi-check-circle"></i> تأیید دریافت معامله
             </button>
           </form>
-          <a href="<?= APP_URL ?>/messages.php?to=<?= $isA ? $dt['user_b_id'] : $dt['user_a_id'] ?>" class="btn btn-outline">پیام</a>
+          <a href="<?= APP_URL ?>/messages?to=<?= $isA ? $dt['user_b_id'] : $dt['user_a_id'] ?>" class="btn btn-outline">پیام</a>
         </div>
         <?php endif; ?>
 
@@ -447,11 +447,11 @@ render_navbar($user);
               </button>
             </form>
             <?php endif; ?>
-            <a href="<?= APP_URL ?>/messages.php?to=<?= $isA ? $trade['user_b_id'] : $trade['user_a_id'] ?>"
+            <a href="<?= APP_URL ?>/messages?to=<?= $isA ? $trade['user_b_id'] : $trade['user_a_id'] ?>"
                class="btn btn-outline btn-sm">
               <i class="bi bi-chat"></i> پیام
             </a>
-            <a href="<?= APP_URL ?>/trades.php?trade=<?= $trade['id'] ?>" class="btn btn-accent btn-sm">
+            <a href="<?= APP_URL ?>/trades?trade=<?= $trade['id'] ?>" class="btn btn-accent btn-sm">
               <i class="bi bi-gear"></i> مدیریت
             </a>
             <?php if (($trade['escrow_status'] ?? 'none') === 'held'): ?>

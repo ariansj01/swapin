@@ -29,7 +29,7 @@ $listings = DB::fetchAll(
     [$user['id'], LISTINGS_PER_PAGE, $pag['offset']]
 );
 
-render_head('علاقه‌مندی‌ها', 'آگهی‌های ذخیره‌شده شما در ' . APP_NAME);
+render_head('علاقه‌مندی‌ها', 'آگهی‌های ذخیره‌شده شما در ' . APP_NAME, ['canonical' => APP_URL . '/listings/saved']);
 render_navbar($user);
 ?>
 

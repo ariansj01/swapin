@@ -5,13 +5,13 @@ require_once __DIR__ . '/load_env.php';
 load_env(__DIR__ . '/../.env');
 
 // ─── Core Configuration ────────────────────────────────────────────────────
-define('APP_NAME',          'سواپین');
+define('APP_NAME',          'سواَپین');
 define('APP_NAME_EN',       'Swapin');
 define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE', 'IRT');
 define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
 define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
-define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'https://swaapin.ir'); // http://localhost/swaapin - https://swaapin.ir
+define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'http://localhost/swaapin'); // http://localhost/swaapin - https://swaapin.ir
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads/');
@@ -19,7 +19,7 @@ define('STORAGE_DIR',       __DIR__ . '/../storage/');
 define('PRIVATE_UPLOAD_DIR', STORAGE_DIR . 'private/');
 define('MAX_IMAGES',        8);
 // Environment: 'auto' | 'development' | 'production' (or SWAPIN_ENV env var)
-define('APP_ENV',           getenv('SWAPIN_ENV') ?: 'auto');
+define('APP_ENV',           'development'); // موقتاً برای دیباگ
 define('OTP_EXPIRE',        120);
 define('LISTINGS_PER_PAGE', 12);
 define('WELCOME_BONUS',     10000000);
@@ -28,9 +28,9 @@ define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه
 
 // ─── Database ──────────────────────────────────────────────────────────────
 define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'swapin'); // kala_b_kala
-define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'ltze_swapin_kP%user'); // ltze_swapin_kP%user
-define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : 'kP%B!-)+*75p'); // kP%B!-)+*75p
+define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'kala_b_kala'); // kala_b_kala
+define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'root'); // ltze_swapin_kP%user
+define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : ''); // kP%B!-)+*75p
 define('DB_CHAR', 'utf8mb4');
 
 require_once __DIR__ . '/security.php';
@@ -207,7 +207,7 @@ function require_auth(): array {
     $user = auth_user();
     if (!$user) {
         $redirect = urlencode($_SERVER['REQUEST_URI']);
-        header('Location: ' . APP_URL . '/auth/login.php?redirect=' . $redirect);
+        header('Location: ' . APP_URL . '/auth/login?redirect=' . $redirect);
         exit;
     }
     return $user;
@@ -315,6 +315,15 @@ function clean(string $val): string {
     return trim(htmlspecialchars_decode(strip_tags($val)));
 }
 
+function normalize_digits(string $val): string {
+    return strtr($val, [
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+    ]);
+}
+
 function h(string $val): string {
     return htmlspecialchars($val, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
@@ -405,104 +414,122 @@ if (is_readable($vendorAutoload)) {
     require_once $vendorAutoload;
 }
 
-// Mail configuration from .env
+// Mail configuration from mail_secrets.php or defaults
+$mailSecretsPath = __DIR__ . '/mail_secrets.php';
+if (file_exists($mailSecretsPath)) {
+    require_once $mailSecretsPath;
+}
+
+// Set mail defaults if not defined
 if (!defined('MAIL_ENABLED')) {
-    define('MAIL_ENABLED', getenv('MAIL_ENABLED') === 'true');
+    define('MAIL_ENABLED', true);
 }
 if (!defined('MAIL_SMTP_HOST')) {
-    define('MAIL_SMTP_HOST', getenv('MAIL_SMTP_HOST') ?: 'smtp.example.com');
+    define('MAIL_SMTP_HOST', 'mail.swaapin.ir');
 }
 if (!defined('MAIL_SMTP_PORT')) {
-    define('MAIL_SMTP_PORT', (int)(getenv('MAIL_SMTP_PORT') ?: 587));
+    define('MAIL_SMTP_PORT', 587);
 }
 if (!defined('MAIL_SMTP_SECURE')) {
-    define('MAIL_SMTP_SECURE', getenv('MAIL_SMTP_SECURE') ?: 'tls');
+    define('MAIL_SMTP_SECURE', 'tls');
 }
 if (!defined('MAIL_SMTP_USER')) {
-    define('MAIL_SMTP_USER', getenv('MAIL_SMTP_USER') ?: '');
+    define('MAIL_SMTP_USER', 'info@swaapin.ir');
 }
 if (!defined('MAIL_SMTP_PASS')) {
-    define('MAIL_SMTP_PASS', getenv('MAIL_SMTP_PASS') ?: '');
+    define('MAIL_SMTP_PASS', 'nuBrX0zz');
 }
 if (!defined('MAIL_FROM_EMAIL')) {
-    define('MAIL_FROM_EMAIL', getenv('MAIL_FROM_EMAIL') ?: '');
+    define('MAIL_FROM_EMAIL', 'info@swaapin.ir');
 }
 if (!defined('MAIL_FROM_NAME')) {
-    define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Swapin');
+    define('MAIL_FROM_NAME', 'سواَپین');
 }
 if (!defined('MAIL_REPLY_TO')) {
-    define('MAIL_REPLY_TO', getenv('MAIL_REPLY_TO') ?: 'info@swaapin.ir');
+    define('MAIL_REPLY_TO', 'info@swaapin.ir');
 }
 if (!defined('MAIL_ADMIN_TO')) {
-    define('MAIL_ADMIN_TO', getenv('MAIL_ADMIN_TO') ?: '');
+    define('MAIL_ADMIN_TO', 'info@swaapin.ir');
 }
 if (!defined('EMAILJS_ENABLED')) {
-    define('EMAILJS_ENABLED', getenv('EMAILJS_ENABLED') === 'true');
+    define('EMAILJS_ENABLED', false);
 }
 if (!defined('EMAILJS_PUBLIC_KEY')) {
-    define('EMAILJS_PUBLIC_KEY', getenv('EMAILJS_PUBLIC_KEY') ?: '');
+    define('EMAILJS_PUBLIC_KEY', '');
 }
 if (!defined('EMAILJS_SERVICE_ID')) {
-    define('EMAILJS_SERVICE_ID', getenv('EMAILJS_SERVICE_ID') ?: '');
+    define('EMAILJS_SERVICE_ID', '');
 }
 if (!defined('EMAILJS_CONTEMPLATE_ID')) {
-    define('EMAILJS_CONTEMPLATE_ID', getenv('EMAILJS_CONTEMPLATE_ID') ?: '');
+    define('EMAILJS_CONTEMPLATE_ID', '');
 }
 require_once __DIR__ . '/mail.php';
 
-// SMS configuration from .env
+// SMS configuration from sms_secrets.php or defaults
+$smsSecretsPath = __DIR__ . '/sms_secrets.php';
+if (file_exists($smsSecretsPath)) {
+    require_once $smsSecretsPath;
+}
+
+// Set defaults if not defined
 if (!defined('SMS_ENABLED')) {
-    define('SMS_ENABLED', getenv('SMS_ENABLED') === 'true');
+    define('SMS_ENABLED', true);
 }
 if (!defined('SMS_IRANPAYAMAK_API_KEY')) {
-    define('SMS_IRANPAYAMAK_API_KEY', getenv('SMS_IRANPAYAMAK_API_KEY') ?: '');
+    define('SMS_IRANPAYAMAK_API_KEY', 'XmuNKUha9fZhz365DH2BjkKIoNyNXhaHX0dqxq2pQW24vXbKXQ');
 }
 if (!defined('SMS_IRANPAYAMAK_PATTERN_CODE')) {
-    define('SMS_IRANPAYAMAK_PATTERN_CODE', getenv('SMS_IRANPAYAMAK_PATTERN_CODE') ?: '');
+    define('SMS_IRANPAYAMAK_PATTERN_CODE', 'mMR4lJx2Jq');
 }
 if (!defined('SMS_IRANPAYAMAK_LINE_NUMBER')) {
-    define('SMS_IRANPAYAMAK_LINE_NUMBER', getenv('SMS_IRANPAYAMAK_LINE_NUMBER') ?: '');
+    define('SMS_IRANPAYAMAK_LINE_NUMBER', '50002178584000');
 }
 if (!defined('SMS_NUMBER_FORMAT')) {
-    define('SMS_NUMBER_FORMAT', getenv('SMS_NUMBER_FORMAT') ?: 'english');
+    define('SMS_NUMBER_FORMAT', 'english');
 }
 if (!defined('SMS_OTP_ATTRIBUTE_MAP')) {
     define('SMS_OTP_ATTRIBUTE_MAP', [
-        'var1' => '{code}',
-        'var2' => '{minutes}',
-    ]);
+    'code' => '{code}',
+    'minutes' => '{minutes}',
+]);
 }
 require_once __DIR__ . '/sms.php';
 
-// AI configuration from .env
+// AI configuration from ai_secrets.php or defaults
+$aiSecretsPath = __DIR__ . '/ai_secrets.php';
+if (file_exists($aiSecretsPath)) {
+    require_once $aiSecretsPath;
+}
+
+// Set AI defaults if not defined (should be set in ai_secrets.php)
 if (!defined('GROQ_API_KEY')) {
-    define('GROQ_API_KEY', getenv('GROQ_API_KEY') ?: '');
+    define('GROQ_API_KEY', '');
 }
 if (!defined('GROQ_MODEL')) {
-    define('GROQ_MODEL', getenv('GROQ_MODEL') ?: 'llama-3.3-70b-versatile');
+    define('GROQ_MODEL', 'llama-3.3-70b-versatile');
 }
 if (!defined('OPENROUTER_API_KEY')) {
-    define('OPENROUTER_API_KEY', getenv('OPENROUTER_API_KEY') ?: '');
+    define('OPENROUTER_API_KEY', '');
 }
 if (!defined('OPENROUTER_MODEL')) {
-    define('OPENROUTER_MODEL', getenv('OPENROUTER_MODEL') ?: 'meta-llama/llama-3.3-70b-instruct');
+    define('OPENROUTER_MODEL', 'meta-llama/llama-3.3-70b-instruct');
 }
 if (!defined('AI_CHAT_USER_LIMIT')) {
-    define('AI_CHAT_USER_LIMIT', (int)(getenv('AI_CHAT_USER_LIMIT') ?: 30));
+    define('AI_CHAT_USER_LIMIT', 30);
 }
 if (!defined('AI_CHAT_USER_WINDOW')) {
-    define('AI_CHAT_USER_WINDOW', (int)(getenv('AI_CHAT_USER_WINDOW') ?: 3600));
+    define('AI_CHAT_USER_WINDOW', 3600);
 }
 if (!defined('AI_MATCH_REFRESH_LIMIT')) {
-    define('AI_MATCH_REFRESH_LIMIT', (int)(getenv('AI_MATCH_REFRESH_LIMIT') ?: 6));
+    define('AI_MATCH_REFRESH_LIMIT', 6);
 }
 if (!defined('AI_MATCH_REFRESH_WINDOW')) {
-    define('AI_MATCH_REFRESH_WINDOW', (int)(getenv('AI_MATCH_REFRESH_WINDOW') ?: 3600));
+    define('AI_MATCH_REFRESH_WINDOW', 3600);
 }
 if (!defined('AI_VALUATE_USER_LIMIT')) {
-    define('AI_VALUATE_USER_LIMIT', (int)(getenv('AI_VALUATE_USER_LIMIT') ?: 3));
+    define('AI_VALUATE_USER_LIMIT', 3);
 }
 if (!defined('AI_VALUATE_USER_WINDOW')) {
-    define('AI_VALUATE_USER_WINDOW', (int)(getenv('AI_VALUATE_USER_WINDOW') ?: 900));
+    define('AI_VALUATE_USER_WINDOW', 900);
 }
 require_once __DIR__ . '/ai.php';

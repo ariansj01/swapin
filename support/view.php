@@ -15,7 +15,7 @@ if (!$ticket) {
     http_response_code(404);
     render_head('تیکت یافت نشد');
     render_navbar($user);
-    echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-exclamation-circle"></i><h1>تیکت یافت نشد</h1><a href="' . APP_URL . '/support/index.php" class="btn btn-primary">بازگشت</a></div></div></main>';
+    echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-exclamation-circle"></i><h1>تیکت یافت نشد</h1><a href="' . APP_URL . '/support" class="btn btn-primary">بازگشت</a></div></div></main>';
     render_footer();
     exit;
 }
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $ticket['status'] !== 'closed') {
     if (isset($result['error'])) {
         $error = $result['error'];
     } else {
-        header('Location: ' . APP_URL . '/support/view.php?id=' . $id);
+        header('Location: ' . APP_URL . '/support/view?id=' . $id);
         exit;
     }
 }
@@ -49,7 +49,7 @@ render_navbar($user);
   <div class="container-sm">
 
     <nav style="font-size:.875rem;margin-bottom:var(--sp-4)">
-      <a href="<?= APP_URL ?>/support/index.php"><i class="bi bi-arrow-right"></i> بازگشت به پشتیبانی</a>
+      <a href="<?= APP_URL ?>/support"><i class="bi bi-arrow-right"></i> بازگشت به پشتیبانی</a>
     </nav>
 
     <?php if (isset($_GET['created'])): ?>
@@ -96,7 +96,7 @@ render_navbar($user);
       </div>
     </div>
     <?php else: ?>
-    <div class="alert alert-info"><i class="bi bi-lock"></i> این تیکت بسته شده است. برای موضوع جدید، <a href="<?= APP_URL ?>/support/index.php">تیکت جدید</a> ثبت کنید.</div>
+    <div class="alert alert-info"><i class="bi bi-lock"></i> این تیکت بسته شده است. برای موضوع جدید، <a href="<?= APP_URL ?>/support">تیکت جدید</a> ثبت کنید.</div>
     <?php endif; ?>
 
   </div>

@@ -3,8 +3,8 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $user = auth_user();
-render_head('درباره ما', 'با ' . APP_NAME . ' — بازار هوشمند تهاتر — آشنا شوید.', [
-    'canonical' => APP_URL . '/about.php',
+render_head('درباره سواَپین | پلتفرم مبادله کالا', 'با سواَپین - بزرگترین پلتفرم هوشمند مبادله کالا با کالا در ایران - آشنا شوید.', [
+    'canonical' => APP_URL . '/about',
     'json_ld'   => seo_json_ld_organization(),
 ]);
 render_navbar($user);
@@ -19,8 +19,8 @@ render_navbar($user);
       </div>
       <h1 style="font-size:2rem;margin:0 0 var(--sp-3)">درباره <?= APP_NAME ?></h1>
       <p style="font-size:1.125rem;color:var(--text-secondary);max-width:540px;margin:0 auto;line-height:1.7">
-        بازار هوشمند تهاتر که به مردم امکان می‌دهد کالا و خدمات را مستقیماً با هم مبادله کنند — بدون نیاز به پول نقد.
-      </p>
+          بازار هوشمند مبادله که به مردم امکان می‌دهد کالا و خدمات را مستقیماً با هم معاوضه کنند - بدون نیاز به پول نقد.
+        </p>
     </div>
 
     <!-- Story -->
@@ -30,13 +30,13 @@ render_navbar($user);
           <i class="bi bi-lightbulb" style="color:var(--accent-dark)"></i> داستان ما
         </h2>
         <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:var(--sp-4)">
-          <?= APP_NAME ?> از آنچه در جنگ روسیه و اوکراین رخ داد الهام گرفته — وقتی سیستم‌های بانکی سنتی مختل شدند،
+          <?= APP_NAME ?> از آنچه در جنگ روسیه و اوکراین رخ داد الهام گرفته - وقتی سیستم‌های بانکی سنتی مختل شدند،
           مردم در پلتفرم‌هایی مثل OLX و شبکه‌های اجتماعی شروع به مبادله مستقیم کالا کردند.
-          تهاتر دوباره به روشی قدرتمند و انسانی برای برآوردن نیازها بدون پول نقد تبدیل شد.
+          معاوضه دوباره به روشی قدرتمند و انسانی برای برآوردن نیازها بدون پول نقد تبدیل شد.
         </p>
         <p style="color:var(--text-secondary);line-height:1.8;margin:0">
           ما <?= APP_NAME ?> را ساختیم تا به این تبادل طبیعی خانه‌ای مناسب بدهیم: بازاری ساختاریافته با تطبیق هوشمند،
-          اقتصاد اعتباری و زیرساخت اعتماد — تا تهاتر به خوبی (یا بهتر از) تجارت نقدی کار کند.
+          اقتصاد اعتباری و زیرساخت اعتماد - تا معاوضه به خوبی (یا بهتر از) تجارت نقدی کار کند.
         </p>
       </div>
     </div>
@@ -50,10 +50,10 @@ render_navbar($user);
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-6)">
           <?php
           $steps = [
-            ['bi-plus-circle',   'primary',    '۱. ثبت آگهی',    'آنچه دارید — کالا یا خدمات — را ثبت کنید. ارزش تقریبی تعیین کنید و بگویید در ازای آن چه می‌خواهید.'],
-            ['bi-search',        'accent-dark', '۲. جستجو و کشف', 'هزاران آگهی را جستجو کنید. بر اساس دسته، شهر یا نوع تهاتر فیلتر کنید تا گزینه مناسب را پیدا کنید.'],
+            ['bi-plus-circle',   'primary',    '۱. ثبت آگهی',    'آنچه دارید - کالا یا خدمات - را ثبت کنید. ارزش تقریبی تعیین کنید و بگویید در ازای آن چه می‌خواهید.'],
+            ['bi-search',        'accent-dark', '۲. جستجو و کشف', 'هزاران آگهی را جستجو کنید. بر اساس دسته، شهر یا نوع مبادله فیلتر کنید تا گزینه مناسب را پیدا کنید.'],
             ['bi-chat-dots',     'success',     '۳. ارسال پیشنهاد',     'کالای خود را پیشنهاد دهید، برای تعادل ارزش اعتبار ' . CREDIT_UNIT . ' اضافه کنید و برای مذاکره پیام بفرستید.'],
-            ['bi-check2-all',    'primary',     '۴. تهاتر و امتیاز',      'هر دو طرف مبادله را تأیید می‌کنند. امتیازدهی اعتماد را برای تهاترهای آینده می‌سازد.'],
+            ['bi-check2-all',    'primary',     '۴. مبادله و امتیاز',      'هر دو طرف مبادله را تأیید می‌کنند. امتیازدهی اعتماد را برای مبادلات آینده می‌سازد.'],
           ];
           foreach ($steps as [$icon, $color, $title, $desc]):
           ?>
@@ -76,7 +76,7 @@ render_navbar($user);
           <i class="bi bi-wallet2" style="color:var(--primary)"></i> <?= CREDIT_UNIT ?> — اعتبار <?= APP_NAME ?>
         </h2>
         <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:var(--sp-5)">
-          هر تهاتری دقیقاً برابر ارزش نیست. اعتبار <?= CREDIT_UNIT ?> این فاصله را پر می‌کند — اگر کالای شما کمی کمتر ارزش دارد
+          هر معاوضه‌ای دقیقاً برابر ارزش نیست. اعتبار <?= CREDIT_UNIT ?> این فاصله را پر می‌کند — اگر کالای شما کمی کمتر ارزش دارد
           از آنچه می‌خواهید، می‌توانید اعتبار اضافه کنید تا معامله برای هر دو طرف منصفانه شود.
         </p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
@@ -101,10 +101,10 @@ render_navbar($user);
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--sp-5)">
           <?php
           $trust = [
-            ['bi-star-fill',        'accent-dark', 'امتیاز و نظرات',  'هر تهاتر تکمیل‌شده قابل امتیازدهی است و امتیاز اعتماد قابل مشاهده می‌سازد.'],
-            ['bi-patch-check-fill', 'primary',     'حساب‌های تأییدشده',  'سطح تأیید تلفن و هویت در هر پروفایل نمایش داده می‌شود.'],
-            ['bi-clock-history',    'info',        'تاریخچه تهاتر',      'تاریخچه کامل تهاتر در پروفایل کاربران برای شفافیت قابل مشاهده است.'],
-            ['bi-chat-left-dots',   'success',     'پیام‌رسانی مستقیم',   'پیام‌رسانی داخلی برای بحث جزئیات قبل از تعهد به تهاتر.'],
+            ['bi-star-fill',        'accent-dark', 'امتیاز و نظرات',  'هر مبادله تکمیل‌شده قابل امتیازدهی است و امتیاز اعتماد قابل مشاهده می‌سازد.'],
+            ['bi-patch-check-fill', 'primary',     'حساب‌های تأیید‌شده',  'سطح تأیید تلفن و هویت در هر پروفایل نمایش داده می‌شود.'],
+            ['bi-clock-history',    'info',        'تاریخچه مبادله',      'تاریخچه کامل مبادله در پروفایل کاربران برای شفافیت قابل مشاهده است.'],
+            ['bi-chat-left-dots',   'success',     'پیام‌رسانی مستقیم',   'پیام‌رسانی داخلی برای بحث جزئیات قبل از تعهد به مبادله.'],
           ];
           foreach ($trust as [$icon, $color, $title, $desc]):
           ?>
@@ -122,14 +122,14 @@ render_navbar($user);
 
     <!-- CTA -->
     <div style="text-align:center;padding-bottom:var(--sp-10)">
-      <h2 style="font-size:1.375rem;margin-bottom:var(--sp-3)">آماده شروع تهاتر هستید؟</h2>
-      <p style="color:var(--text-muted);margin-bottom:var(--sp-6)">به هزاران نفری بپیوندید که هر روز هوشمندانه‌تر تهاتر می‌کنند.</p>
+        <h2 style="font-size:1.375rem;margin-bottom:var(--sp-3)">آماده شروع مبادله هستید؟</h2>
+        <p style="color:var(--text-muted);margin-bottom:var(--sp-6)">به هزاران نفری بپیوندید که هر روز هوشمندانه‌تر مبادله می‌کنند.</p>
       <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap">
         <?php if ($user): ?>
-        <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-lg"><i class="bi bi-plus-lg"></i> ثبت آگهی</a>
+        <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary btn-lg"><i class="bi bi-plus-lg"></i> ثبت آگهی</a>
         <a href="<?= APP_URL ?>/" class="btn btn-outline btn-lg">مرور آگهی‌ها</a>
         <?php else: ?>
-        <a href="<?= APP_URL ?>/auth/login.php" class="btn btn-primary btn-lg"><i class="bi bi-person-plus"></i> ورود / ثبت‌نام</a>
+        <a href="<?= APP_URL ?>/auth/login" class="btn btn-primary btn-lg"><i class="bi bi-person-plus"></i> ورود / ثبت‌نام</a>
         <a href="<?= APP_URL ?>/" class="btn btn-outline btn-lg">مرور آگهی‌ها</a>
         <?php endif; ?>
       </div>

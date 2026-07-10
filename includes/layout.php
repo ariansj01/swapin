@@ -98,12 +98,14 @@ function render_navbar(?array $user = null): void {
     $navItems = [
         // ['/', 'خانه', 'bi-house', ''],
         // ['/#listings', 'کالاها', 'bi-grid', ''],
-        ['/listings/create.php', 'ثبت کالا', 'bi-plus-circle', ''],
-        ['/trades.php', 'پیشنهادها', 'bi-inbox', ''],
-        ['/wallet.php', 'کیف پول', 'bi-wallet2', ''],
-        ['/ai/chat.php', 'دستیار AI', 'bi-stars', 'navbar-nav__link--ai'],
-        ['/about.php', 'سوالات متداول', 'bi-question-circle', ''],
-        ['/fraud-prevention.php', 'راهنمای کلاهبرداری', 'bi-shield-exclamation', ''],
+        ['/listings/create', 'ثبت کالا', 'bi-plus-circle', ''],
+        ['/trades', 'پیشنهادها', 'bi-inbox', ''],
+        ['/wallet', 'کیف پول', 'bi-wallet2', ''],
+        ['/ai/chat', 'دستیار AI', 'bi-stars', 'navbar-nav__link--ai'],
+        ['/about', 'درباره ما', 'bi-question-circle', ''],
+        ['/contact', 'تماس با ما', 'bi-envelope', ''],
+        ['/support', 'پشتیبانی', 'bi-headset', ''],
+        ['/fraud-prevention', 'راهنمای امنیت', 'bi-shield-exclamation', ''],
     ];
 
     echo <<<HTML
@@ -139,7 +141,7 @@ HTML;
         $credFmt = number_format((float)$user['credit_balance'], 0);
         if (is_store_seller($user)) {
             echo <<<HTML
-      <a href="{$url}/store/index.php" class="btn btn-outline hide-mobile">
+      <a href="{$url}/store" class="btn btn-outline hide-mobile">
         <i class="bi bi-shop"></i> فروشگاه
       </a>
 HTML;
@@ -155,27 +157,27 @@ HTML;
           <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
         <div class="dropdown-menu" id="user-menu">
-          <a href="{$url}/dashboard.php" class="dropdown-item"><i class="bi bi-speedometer2"></i> داشبورد</a>
+          <a href="{$url}/dashboard" class="dropdown-item"><i class="bi bi-speedometer2"></i> داشبورد</a>
 HTML;
         if (is_store_seller($user)) {
             echo <<<HTML
-          <a href="{$url}/store/index.php" class="dropdown-item"><i class="bi bi-shop"></i> پنل فروشگاه</a>
+          <a href="{$url}/store" class="dropdown-item"><i class="bi bi-shop"></i> پنل فروشگاه</a>
 HTML;
         }
         echo <<<HTML
-          <a href="{$url}/listings/my.php" class="dropdown-item"><i class="bi bi-grid"></i> آگهی‌های من</a>
-          <a href="{$url}/listings/saved.php" class="dropdown-item"><i class="bi bi-heart"></i> علاقه‌مندی‌ها</a>
-          <a href="{$url}/support/index.php" class="dropdown-item"><i class="bi bi-headset"></i> پشتیبانی</a>
-          <a href="{$url}/trades.php" class="dropdown-item"><i class="bi bi-arrow-left-right"></i> معاملات من</a>
-          <a href="{$url}/wallet.php" class="dropdown-item"><i class="bi bi-wallet2"></i> کیف پول</a>
-          <a href="{$url}/subscription.php" class="dropdown-item"><i class="bi bi-gem"></i> اشتراک</a>
-          <a href="{$url}/profile/edit.php" class="dropdown-item"><i class="bi bi-shield-check"></i> احراز هویت</a>
+          <a href="{$url}/listings/my" class="dropdown-item"><i class="bi bi-grid"></i> آگهی‌های من</a>
+          <a href="{$url}/listings/saved" class="dropdown-item"><i class="bi bi-heart"></i> علاقه‌مندی‌ها</a>
+          <a href="{$url}/support" class="dropdown-item"><i class="bi bi-headset"></i> پشتیبانی</a>
+          <a href="{$url}/trades" class="dropdown-item"><i class="bi bi-arrow-left-right"></i> معاملات من</a>
+          <a href="{$url}/wallet" class="dropdown-item"><i class="bi bi-wallet2"></i> کیف پول</a>
+          <a href="{$url}/subscription" class="dropdown-item"><i class="bi bi-gem"></i> اشتراک</a>
+          <a href="{$url}/profile/edit" class="dropdown-item"><i class="bi bi-shield-check"></i> احراز هویت</a>
           <div class="dropdown-divider"></div>
-          <a href="{$url}/profile.php" class="dropdown-item"><i class="bi bi-person"></i> پروفایل</a>
+          <a href="{$url}/profile" class="dropdown-item"><i class="bi bi-person"></i> پروفایل</a>
 HTML;
         $logoutCsrf = csrf_field();
         echo <<<HTML
-          <form method="POST" action="{$url}/auth/logout.php" style="margin:0">
+          <form method="POST" action="{$url}/auth/logout" style="margin:0">
             {$logoutCsrf}
             <button type="submit" class="dropdown-item" style="color:var(--danger);width:100%;border:0;background:none;text-align:inherit;cursor:pointer;font:inherit">
               <i class="bi bi-box-arrow-right"></i> خروج
@@ -189,7 +191,7 @@ HTML;
       <button type="button" class="btn btn-ghost btn-icon {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
         <i class="bi bi-bell"></i>
       </button>
-      <a href="{$url}/auth/login.php" class="btn btn-accent">ورود / ثبت‌نام</a>
+      <a href="{$url}/auth/login" class="btn btn-accent">ورود / ثبت‌نام</a>
 HTML;
     }
     echo <<<HTML
@@ -211,7 +213,7 @@ HTML;
         echo "<a href=\"{$fullHref}\" class=\"mobile-drawer__link\"><i class=\"bi {$icon}\"></i> {$label}</a>";
     }
     if (!$loggedIn) {
-        echo "<a href=\"{$url}/auth/login.php\" class=\"mobile-drawer__link\"><i class=\"bi bi-box-arrow-in-right\"></i> ورود / ثبت‌نام</a>";
+        echo "<a href=\"{$url}/auth/login\" class=\"mobile-drawer__link\"><i class=\"bi bi-box-arrow-in-right\"></i> ورود / ثبت‌نام</a>";
     }
     echo <<<HTML
   </nav>
@@ -265,7 +267,7 @@ HTML;
       <div class="notif-empty">
         <i class="bi bi-bell"></i>
         <p>برای مشاهده اعلان‌ها وارد حساب خود شوید.</p>
-        <a href="{$url}/auth/login.php" class="btn btn-accent btn-sm">ورود / ثبت‌نام</a>
+        <a href="{$url}/auth/login" class="btn btn-accent btn-sm">ورود / ثبت‌نام</a>
       </div>
 HTML;
     } else {
@@ -285,8 +287,8 @@ HTML;
     if ($loggedIn) {
         echo <<<HTML
     <div class="modal-footer">
-      <a href="{$url}/messages.php" class="btn btn-ghost btn-sm">همه پیام‌ها</a>
-      <a href="{$url}/listings/offers.php" class="btn btn-primary btn-sm">پیشنهادهای دریافتی</a>
+      <a href="{$url}/messages" class="btn btn-ghost btn-sm">همه پیام‌ها</a>
+      <a href="{$url}/listings/offers" class="btn btn-primary btn-sm">پیشنهادهای دریافتی</a>
     </div>
 HTML;
     }
@@ -299,8 +301,8 @@ HTML;
 function render_mobile_bottom_nav(?array $user = null): void {
     $url      = APP_URL;
     $user     = $user ?? ($GLOBALS['_nav_user'] ?? null);
-    $profile  = $user ? $url . '/profile.php' : $url . '/auth/login.php';
-    $messages = $user ? $url . '/messages.php' : $url . '/auth/login.php';
+    $profile  = $user ? $url . '/profile' : $url . '/auth/login';
+    $messages = $user ? $url . '/messages' : $url . '/auth/login';
     echo <<<HTML
 <nav class="mobile-bottom-nav" aria-label="ناوبری موبایل">
   <a href="{$url}/" class="mobile-bottom-nav__item">
@@ -311,7 +313,7 @@ function render_mobile_bottom_nav(?array $user = null): void {
     <i class="bi bi-search"></i>
     <span>جستجو</span>
   </a>
-  <a href="{$url}/listings/create.php" class="mobile-bottom-nav__item mobile-bottom-nav__item--fab">
+  <a href="{$url}/listings/create" class="mobile-bottom-nav__item mobile-bottom-nav__item--fab">
     <span class="mobile-bottom-nav__fab"><i class="bi bi-plus-lg"></i></span>
     <span>ثبت کالا</span>
   </a>
@@ -390,19 +392,20 @@ function render_footer(): void {
       <div class="site-footer__col">
         <h3 class="site-footer__heading">نمادهای اعتماد</h3>
         <div class="site-footer__trust">
-          <img src="{$enamadUrl}" alt="نماد اعتماد الکترونیکی (اینماد)" class="site-footer__trust-badge" width="72" height="88">
+          <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
         </div>
       </div>
 
       <div class="site-footer__col">
         <h3 class="site-footer__heading">لینک‌های مفید</h3>
         <ul class="site-footer__links">
-          <li><a href="{$url}/about.php">درباره ما</a></li>
-          <li><a href="{$url}/contact.php">تماس با ما</a></li>
-          <li><a href="{$url}/support/index.php">پشتیبانی</a></li>
-          <li><a href="{$url}/fraud-prevention.php">راهنمای امنیت</a></li>
-          <li><a href="{$url}/about.php">قوانین و مقررات</a></li>
-          <li><a href="{$url}/about.php">حریم خصوصی</a></li>
+          <li><a href="{$url}/about">درباره ما</a></li>
+          <li><a href="{$url}/contact">تماس با ما</a></li>
+          <li><a href="{$url}/support">پشتیبانی</a></li>
+          <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
+          <li><a href="{$url}/blog">بلاگ</a></li>
+          <li><a href="{$url}/about">قوانین و مقررات</a></li>
+          <li><a href="{$url}/about">حریم خصوصی</a></li>
         </ul>
       </div>
 

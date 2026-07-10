@@ -5,9 +5,10 @@
 static $_savedListingIds = null;
 if ($_savedListingIds === null) {
     $_savedListingIds = [];
-    if (!empty($user['id'])) {
+    $currentUser = $user ?? auth_user();
+    if (!empty($currentUser['id'])) {
         $_savedListingIds = array_map('intval', array_column(
-            DB::fetchAll('SELECT listing_id FROM saved_listings WHERE user_id = ?', [(int)$user['id']]),
+            DB::fetchAll('SELECT listing_id FROM saved_listings WHERE user_id = ?', [(int)$currentUser['id']]),
             'listing_id'
         ));
     }
@@ -15,7 +16,7 @@ if ($_savedListingIds === null) {
 
 $isSwap   = empty($l['listing_mode']) || $l['listing_mode'] === 'swap' || $l['listing_mode'] === 'both';
 $isSaved  = in_array((int)$l['id'], $_savedListingIds, true);
-$cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
+$cardHref = APP_URL . '/listings/view?id=' . $l['id'];
 ?>
 <article class="listing-card <?= listing_is_featured($l) ? 'featured' : '' ?> <?= listing_is_bumped($l) ? 'bumped' : '' ?>">
   <div class="listing-card__header">
@@ -40,7 +41,8 @@ $cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
       <?php endif; ?>
       <?= listing_promotion_badges_html($l) ?>
     </div>
-    <?php if (!empty($user['id'])): ?>
+    <?php $currentUser = $currentUser ?? auth_user(); ?>
+    <?php if (!empty($currentUser['id'])): ?>
     <button type="button"
             class="listing-card__favorite<?= $isSaved ? ' is-saved' : '' ?>"
             data-save-toggle="<?= $isSaved ? 'true' : 'false' ?>"
@@ -50,7 +52,7 @@ $cardHref = APP_URL . '/listings/view.php?id=' . $l['id'];
       <i class="bi bi-<?= $isSaved ? 'heart-fill' : 'heart' ?>"></i>
     </button>
     <?php else: ?>
-    <a href="<?= APP_URL ?>/auth/login.php?redirect=<?= urlencode('/listings/view.php?id=' . $l['id']) ?>"
+    <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode('/listings/view?id=' . $l['id']) ?>"
        class="listing-card__favorite"
        aria-label="ورود برای ذخیره">
       <i class="bi bi-heart"></i>
