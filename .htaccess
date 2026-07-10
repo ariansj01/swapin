@@ -1,3 +1,6 @@
+# Enable MultiViews for automatic extension handling
+Options +MultiViews -Indexes
+
 # Block CLI migration scripts from web access (defense in depth)
 <FilesMatch "^run_.*\.php$">
   Require all denied
@@ -49,7 +52,13 @@
   # Remove .php extension
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME}.php -f
-  RewriteRule ^(.*?)/?$ $1.php [L,QSA]
+  RewriteRule ^([^/]+)/?$ $1.php [L,QSA]
+  
+  # Handle subdirectories like /auth/login
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{DOCUMENT_ROOT}/swaapin/$1.php -f
+  RewriteRule ^(.+?)/?$ $1.php [L,QSA]
 </IfModule>
 
 # Custom error documents

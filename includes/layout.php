@@ -65,8 +65,9 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
-<link rel="icon" type="image/png" sizes="32x32" href="{$url}/src/img/fav_icon/android-chrome-512x512.png">
-<link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/android-chrome-192x192.png">
+<link rel="icon" type="image/x-icon" href="{$url}/src/img/fav_icon/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="{$url}/src/img/fav_icon/web-app-manifest-512x512.png">
+<link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/web-app-manifest-192x192.png">
 <link rel="apple-touch-icon" href="{$url}/src/img/fav_icon/apple-touch-icon.png">
 <link rel="manifest" href="{$url}/src/img/fav_icon/site.webmanifest">
 </head>

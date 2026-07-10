@@ -44,3 +44,10 @@
 [10-Jul-2026 18:08:55 Europe/Berlin] [swapin-debug] [req:29c4aaf5ad69] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
 [10-Jul-2026 18:09:16 Europe/Berlin] [swapin-debug] [req:f860eab35e4b] index-start {"uri":"/swaapin/","query":[]}
 [10-Jul-2026 18:09:16 Europe/Berlin] [swapin-debug] [req:f860eab35e4b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Jul-2026 18:47:30 Europe/Berlin] [swapin-debug] [req:f60c58941db1] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":124,"uri":"/swaapin/auth/login","method":"GET"}
+[10-Jul-2026 23:45:39 Europe/Berlin] [swapin-debug] [req:dd1bedb63798] index-start {"uri":"/swaapin/","query":[]}
+[10-Jul-2026 23:46:01 Europe/Berlin] [swapin-debug] [req:dd1bedb63798] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":124,"uri":"/swaapin/","method":"GET"}
+[10-Jul-2026 23:47:01 Europe/Berlin] [swapin-debug] [req:3d9e892b2834] index-start {"uri":"/swaapin/","query":[]}
+[10-Jul-2026 23:47:22 Europe/Berlin] [swapin-debug] [req:3d9e892b2834] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[11-Jul-2026 00:26:14 Europe/Berlin] [swapin-debug] [req:a21488765682] index-start {"uri":"/swaapin/","query":[]}
+[11-Jul-2026 00:26:35 Europe/Berlin] [swapin-debug] [req:a21488765682] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":124,"uri":"/swaapin/","method":"GET"}
