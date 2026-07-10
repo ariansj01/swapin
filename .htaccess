@@ -11,6 +11,10 @@
 # Block direct web access to sensitive directories
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # For local development (XAMPP in /swaapin subdir):
+  RewriteBase /swaapin/
+  # For production server (root domain):
+  # RewriteBase /
 
   # Force HTTPS
   RewriteCond %{HTTPS} off
@@ -32,20 +36,20 @@
   RewriteRule ^backups/ - [F,L]
   RewriteRule ^sql/ - [F,L]
 
-  # Remove .php extension
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME}.php -f
-  RewriteRule ^(.*?)/?$ $1.php [L]
-
   # Support/index.php -> /support
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^support/?$ support/index.php [L,NC]
+  RewriteRule ^support/?$ support/index.php [L,NC,QSA]
 
   # Store/index.php -> /store
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^store/?$ store/index.php [L,NC]
+  RewriteRule ^store/?$ store/index.php [L,NC,QSA]
+
+  # Remove .php extension
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.php -f
+  RewriteRule ^(.*?)/?$ $1.php [L,QSA]
 </IfModule>
 
 # Custom error documents
