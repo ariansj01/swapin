@@ -16,8 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deposit_amount'])) {
         $error = 'واریز آزمایشی در محیط production غیرفعال است.';
     } else {
     $amount = (float)($_POST['deposit_amount'] ?? 0);
-    if ($amount < 10 || $amount > 10000) {
-        $error = 'مبلغ واریز باید بین ۱۰ تا ۱۰٬۰۰۰ ' . CREDIT_UNIT . ' باشد.';
+    if ($amount < 10 || $amount > 1000000) {
+        $error = 'مبلغ واریز باید بین ۱۰ تا ۱٬۰۰۰٬۰۰۰ ' . CREDIT_UNIT . ' باشد.';
     } else {
         credit_transact($uid, 'deposit', $amount, 'واریز دستی (درگاه آزمایشی)', ['ref_type' => 'external']);
         // Reload user
@@ -174,7 +174,7 @@ render_navbar($user);
               <div class="form-group">
                 <label class="form-label">مبلغ (<?= CREDIT_UNIT ?>)</label>
                 <input type="number" class="form-control" name="deposit_amount"
-                       placeholder="مثلاً ۱۰۰" min="10" max="10000" step="1" required>
+                       placeholder="مثلاً ۱۰۰" min="10" max="1000000" step="1" required>
               </div>
 
               <!-- Quick amounts -->

@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $offerType = clean($_POST['offer_type'] ?? 'message');
             $offerListingId = (int)($_POST['offer_listing_id'] ?? 0) ?: null;
             $message        = clean($_POST['message'] ?? '');
-            $offerCredit    = (float)($_POST['offer_credit'] ?? 0); // New line: Get offer credit
+
 
             if ($offerType === 'item') {
                 if (!$offerListingId) {
@@ -120,25 +120,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
             }
             
-            if ($offerCredit < 0) {
-                $offerError = 'مبلغ اعتبار پیشنهادی نمی‌تواند منفی باشد.';
-            }
+
 
             if (!$offerError) {
                 DB::insert('trade_offers', [
                     'listing_id'       => $id,
                     'from_user_id'     => $user['id'],
                     'offer_listing_id' => $offerListingId,
-                    'offer_credit'     => $offerCredit, // Use the new offerCredit variable
+
                     'message'          => $message ?: null,
                     'status'           => 'pending',
                 ]);
                 // Notify listing owner via message
                 $threadId = 'offer_' . uniqid();
                 $offerBody = $message ?: 'برای آگهی «' . $listing['title'] . '» پیشنهاد دادم.';
-                if ($offerCredit > 0) {
-                    $offerBody .= ' (به همراه ' . fmt_credit($offerCredit) . ' اعتبار).';
-                }
+
                 DB::insert('messages', [
                     'thread_id'    => $threadId,
                     'from_user_id' => $user['id'],
@@ -518,11 +514,7 @@ render_navbar($user);
                 </div>
               </div>
 
-              <div class="form-group mb-4">
-                <label class="form-label">مبلغ اعتبار پیشنهادی (اختیاری)</label>
-                <input type="number" name="offer_credit" class="form-control" placeholder="مثلاً ۵۰۰,۰۰۰ تومان" min="0">
-                <div class="fs-xs mt-2" style="color:var(--text-muted)">اگر می‌خواهید علاوه بر کالا یا به جای آن، مبلغی اعتبار پیشنهاد دهید.</div>
-              </div>
+
 
               <div class="form-group mb-4">
                 <label class="form-label">پیام (اختیاری)</label>
@@ -568,7 +560,7 @@ render_navbar($user);
 document.getElementById('offer-form')?.addEventListener('submit', function(e) {
       const offerType = document.querySelector('input[name="offer_type"]:checked')?.value || '';
       const message = document.querySelector('textarea[name="message"]').value.trim();
-      const offerCredit = parseFloat(document.querySelector('input[name="offer_credit"]').value) || 0;
+      const offerCredit = 0;
       
       // If "has item" is selected, require an item
       if (offerType === 'item') {
@@ -582,19 +574,14 @@ document.getElementById('offer-form')?.addEventListener('submit', function(e) {
       
       // If "no item" is selected, require either a message or offer credit
       if (offerType === 'message') {
-        if (!message && offerCredit <= 0) {
+        if (!message) {
           e.preventDefault();
-          showToast('برای ارسال پیشنهاد بدون کالا، لطفاً پیامی وارد کنید یا مبلغ اعتبار پیشنهادی را مشخص نمایید.', 'error');
+          showToast('برای ارسال پیشنهاد بدون کالا، لطفاً پیامی وارد کنید.', 'error');
           return;
         }
       }
 
-      // Basic validation for offer credit
-      if (offerCredit < 0) {
-        e.preventDefault();
-        showToast('مبلغ اعتبار پیشنهادی نمی‌تواند منفی باشد.', 'error');
-        return;
-      }
+
     });
 document.getElementById('share-listing-btn')?.addEventListener('click', function () {
   const title = this.dataset.title || '';
