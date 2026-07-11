@@ -90,8 +90,9 @@ function client_ip(): string {
 
 function rate_limit_storage_dir(): string {
     $dir = defined('STORAGE_DIR') ? STORAGE_DIR . '/rate_limit' : __DIR__ . '/../storage/rate_limit';
+    $dir = rtrim($dir, '/\\');
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        @mkdir($dir, 0755, true);
     }
     return $dir;
 }
@@ -145,7 +146,7 @@ function rate_limit_ip(string $action, int $maxAttempts, int $windowSeconds): bo
     }
 
     $data['count'] = (int)($data['count'] ?? 0) + 1;
-    file_put_contents($file, json_encode($data), LOCK_EX);
+    @file_put_contents($file, json_encode($data), LOCK_EX);
 
     return $data['count'] <= $maxAttempts;
 }
@@ -220,7 +221,7 @@ function rate_limit_user(string $action, int $userId, int $maxAttempts, int $win
     }
 
     $data['count'] = (int) ($data['count'] ?? 0) + 1;
-    file_put_contents($file, json_encode($data), LOCK_EX);
+    @file_put_contents($file, json_encode($data), LOCK_EX);
 
     return $data['count'] <= $maxAttempts;
 }

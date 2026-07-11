@@ -14,9 +14,9 @@ define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
 define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'https://swaapin.ir'); // http://localhost/swaapin - https://swaapin.ir
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
-define('UPLOAD_DIR',        __DIR__ . '/../uploads/');
-define('STORAGE_DIR',       __DIR__ . '/../storage/');
-define('PRIVATE_UPLOAD_DIR', STORAGE_DIR . 'private/');
+define('UPLOAD_DIR',        __DIR__ . '/../uploads');
+define('STORAGE_DIR',       __DIR__ . '/../storage');
+define('PRIVATE_UPLOAD_DIR', STORAGE_DIR . '/private');
 define('MAX_IMAGES',        8);
 // Environment: 'auto' | 'development' | 'production' (or SWAPIN_ENV env var)
 define('APP_ENV',           'development'); // موقتاً برای دیباگ

@@ -12,3 +12,9 @@
 [11-Jul-2026 11:14:40 Europe/Berlin] [swapin-debug] [req:ff0ead0a40a2] dashboard-before-render {"step":"before-render","my_listings_count":1}
 [11-Jul-2026 11:15:23 Europe/Berlin] [swapin-debug] [req:840f9bbfaf97] index-start {"uri":"/swaapin/","query":[]}
 [11-Jul-2026 11:15:44 Europe/Berlin] [swapin-debug] [req:840f9bbfaf97] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[11-Jul-2026 11:28:59 Europe/Berlin] [swapin-debug] [req:3c8cfe4a6ae9] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":124,"uri":"/swaapin/listings/view.php?id=269","method":"POST"}
+[11-Jul-2026 11:43:14 Europe/Berlin] [swapin-debug] [req:5bb0da4e1ef6] index-start {"uri":"/swaapin/","query":[]}
+[11-Jul-2026 11:43:14 Europe/Berlin] [swapin-debug] [req:5bb0da4e1ef6] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[11-Jul-2026 11:43:23 Europe/Berlin] [swapin-debug] [req:e8accd211b9a] otp-code-generated {"phone":"••••••••3576","code":"266128"}
+[11-Jul-2026 11:43:23 Europe/Berlin] [swapin-debug] [req:e8accd211b9a] sms_is_enabled_check {"defined_SMS_ENABLED":true,"SMS_ENABLED_value":true,"defined_SMS_IRANPAYAMAK_API_KEY":true,"SMS_IRANPAYAMAK_API_KEY_value_masked":"XmuNK...","defined_SMS_IRANPAYAMAK_PATTERN_CODE":true,"SMS_IRANPAYAMAK_PATTERN_CODE_value":"mMR4lJx2Jq","defined_SMS_IRANPAYAMAK_LINE_NUMBER":true,"SMS_IRANPAYAMAK_LINE_NUMBER_value":"50002178584000","app_is_production_status":false}
+[11-Jul-2026 11:43:23 Europe/Berlin] [swapin-debug] [req:e8accd211b9a] sms_is_enabled_success {"reason":"All SMS checks passed"}
