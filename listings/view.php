@@ -399,7 +399,7 @@ render_navbar($user);
             </a>
           </div>
         </div>
-
+ <?php endif; ?>
         <?php if ($listing['status'] === 'traded' && $isOwner): ?>
         <div class="card mb-4">
           <div class="card-body">
