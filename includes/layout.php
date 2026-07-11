@@ -1,6 +1,7 @@
 <?php
 // includes/layout.php — shared header/footer helpers
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/content_manager.php';
 require_once __DIR__ . '/seo.php';
 
 function render_head(string $title = '', string $desc = '', array $seo = []): void {
@@ -344,6 +345,8 @@ function render_footer(): void {
     $appName  = APP_NAME;
     $logoUrl  = $url . '/src/img/swapin-light-png.png';
     $enamadUrl = $url . '/src/img/enamad.png';
+    $tagline = h(swapin_content_get('footer_brand_tagline'));
+    $footerCopy = h(swapin_content_get('footer_copy'));
     $user     = $GLOBALS['_nav_user'] ?? null;
     render_mobile_bottom_nav($user);
     echo <<<HTML
@@ -423,7 +426,7 @@ function render_footer(): void {
         <a href="{$url}/" class="site-footer__brand">
           <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
         </a>
-        <p class="site-footer__tagline">بزرگترین پلتفرم مبادله کالا با کالا در ایران</p>
+        <p class="site-footer__tagline">{$tagline}</p>
         <div class="site-footer__social">
           <a href="#" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
           <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
@@ -433,7 +436,7 @@ function render_footer(): void {
       </div>
     </div>
 
-    <p class="site-footer__copy">تمامی حقوق این وبسایت متعلق به سواپین می‌باشد.</p>
+    <p class="site-footer__copy">{$footerCopy}</p>
   </div>
 </footer>
 HTML;

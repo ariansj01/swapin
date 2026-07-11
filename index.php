@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/content_manager.php';
 
 // #region debug-point homepage-500-index-start
 if (function_exists('swapin_debug_log')) {
@@ -91,7 +92,10 @@ $listings = DB::fetchAll(
 
 $cities = DB::fetchAll("SELECT DISTINCT city FROM listings WHERE city IS NOT NULL AND city != '' ORDER BY city LIMIT 30");
 
-render_head('سواَپین | بازار هوشمند مبادله کالا', 'سواَپین - بزرگترین پلتفرم هوشمند مبادله کالا با کالا در ایران. کالاهای خود را ثبت کنید و با چیزهایی که نیاز دارید معاوضه کنید.', [
+$homeMetaTitle = swapin_content_get('home_meta_title');
+$homeMetaDesc  = swapin_content_get('home_meta_desc');
+
+render_head($homeMetaTitle, $homeMetaDesc, [
     'canonical' => APP_URL . '/',
     'og_type'   => 'website',
     'og_image'  => APP_URL . '/src/img/heropng.png',
@@ -106,16 +110,16 @@ render_navbar($user);
   <div class="container hero__inner">
     <div class="hero__content">
       <h1 class="hero__title">
-        <span class="hero__line">سواَپین؛ پلتفرم هوشمند</span>
-        <span class="hero__line">مبادله <span class="hero__gold">کالا با کالا</span></span>
+        <span class="hero__line"><?= h(swapin_content_get('hero_title_line_1')) ?></span>
+        <span class="hero__line"><?= h(swapin_content_get('hero_title_line_2')) ?></span>
       </h1>
-      <p class="hero__subtitle">کمتر بخر، بیشتر <span class="hero__gold">مبادله</span> کن</p>
+      <p class="hero__subtitle"><?= h(swapin_content_get('hero_subtitle_before')) ?> <span class="hero__gold"><?= h(swapin_content_get('hero_subtitle_highlight')) ?></span> کن</p>
       <div class="hero__actions">
         <a href="<?= app_url('listings/create') ?>" class="btn btn-accent btn-lg">
-          <i class="bi bi-plus-circle"></i> ثبت آگهی
+          <i class="bi bi-plus-circle"></i> <?= h(swapin_content_get('hero_primary_cta')) ?>
         </a>
         <a href="#listings" class="btn btn-hero-outline btn-lg">
-          <i class="bi bi-search"></i> مرور آگهی‌ها
+          <i class="bi bi-search"></i> <?= h(swapin_content_get('hero_secondary_cta')) ?>
         </a>
       </div>
       <div class="hero__stats">
@@ -245,15 +249,15 @@ render_navbar($user);
   <div class="container">
     <div class="home-ai__inner">
       <div class="home-ai__content">
-        <span class="home-ai__badge"><i class="bi bi-stars"></i>هوش مصنوعی</span>
-        <h2>ارزش‌گذاری و مشاوره معاوضه با AI</h2>
-        <p>بعد از ثبت کالا، هوش مصنوعی سواپین ارزش تقریبی را محاسبه می‌کند. با دستیار AI هم درباره بهترین گزینه‌های معاوضه مشورت کنید.</p>
+        <span class="home-ai__badge"><i class="bi bi-stars"></i><?= h(swapin_content_get('home_ai_badge')) ?></span>
+        <h2><?= h(swapin_content_get('home_ai_title')) ?></h2>
+        <p><?= h(swapin_content_get('home_ai_desc')) ?></p>
         <div class="home-ai__actions">
           <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-lg">
-            <i class="bi bi-stars"></i> ثبت کالا + قیمت AI
+            <i class="bi bi-stars"></i> <?= h(swapin_content_get('home_ai_primary_cta')) ?>
           </a>
           <a href="<?= APP_URL ?>/ai/chat" class="btn btn-hero-outline btn-lg">
-            <i class="bi bi-robot"></i> دستیار AI
+            <i class="bi bi-robot"></i> <?= h(swapin_content_get('home_ai_secondary_cta')) ?>
           </a>
         </div>
       </div>
