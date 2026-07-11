@@ -28,6 +28,9 @@ Options +MultiViews -Indexes
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
   RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
+  # Explicitly handle /profile/ to avoid directory listing
+  RewriteRule ^profile/?$ profile.php [L,NC,QSA]
+  
   # Block sensitive directories
   RewriteRule ^includes/ - [F,L]
   RewriteRule ^seed/ - [F,L]
@@ -49,8 +52,13 @@ Options +MultiViews -Indexes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^store/?$ store/index.php [L,NC,QSA]
 
-  # Remove .php extension
-  RewriteCond %{REQUEST_FILENAME} !-d
+  # Handle trailing slashes for files (e.g., /profile/ -> /profile.php)
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_FILENAME} ^(.+)/$
+  RewriteCond %1.php -f
+  RewriteRule ^(.+)/$ $1.php [L,QSA]
+
+  # Remove .php extension (prioritize files over directories)
   RewriteCond %{REQUEST_FILENAME}.php -f
   RewriteRule ^([^/]+)/?$ $1.php [L,QSA]
   

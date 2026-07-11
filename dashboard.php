@@ -401,7 +401,7 @@ render_navbar($user);
                 <?php if ($listing['offer_count'] > 0): ?>
                 <span style="color:var(--warning);font-weight:600"><i class="bi bi-inbox"></i> <?= $listing['offer_count'] ?> پیشنهاد</span>
                 <?php else: ?>
-                ثبت شده <?= date('M j', strtotime($listing['created_at'])) ?>
+                ثبت شده <?= persian_date($listing['created_at']) ?>
                 <?php endif; ?>
               </div>
             </div>

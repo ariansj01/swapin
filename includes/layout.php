@@ -69,6 +69,15 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <link rel="icon" type="image/png" sizes="32x32" href="{$url}/src/img/fav_icon/web-app-manifest-512x512.png">
 <link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/web-app-manifest-192x192.png">
 <link rel="apple-touch-icon" href="{$url}/src/img/fav_icon/apple-touch-icon.png">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-S0RG4SWX8K"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-S0RG4SWX8K');
+</script>
 <link rel="manifest" href="{$url}/src/img/fav_icon/site.webmanifest">
 </head>
 <body>
@@ -377,11 +386,11 @@ function render_footer(): void {
         <ul class="site-footer__contact-list">
           <li>
             <i class="bi bi-telephone" aria-hidden="true"></i>
-            <a href="tel:+989981534269">+98 998 153 4269</a>
+            <span dir="ltr">+98 998 153 4269</span>
           </li>
           <li>
             <i class="bi bi-envelope" aria-hidden="true"></i>
-            <a href="mailto:info@swapin.ir">info@swapin.ir</a>
+            <a href="mailto:info@swaapin.ir">info@swaapin.ir</a>
           </li>
           <li>
             <i class="bi bi-geo-alt" aria-hidden="true"></i>

@@ -56,8 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'credit_balance'     => 0,
         ]);
         
-        // Give welcome bonus
-        credit_transact($uid, 'deposit', WELCOME_BONUS, 'پاداش خوش‌آمدگویی', ['ref_type' => 'none']);
+
         
         login_user($uid);
         unset($_SESSION['new_user_phone']);

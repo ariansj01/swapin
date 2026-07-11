@@ -37,7 +37,7 @@ function seo_json_ld_organization(): array {
             '@type'       => 'ContactPoint',
             'telephone'   => '+98-998-153-4269',
             'contactType' => 'customer service',
-            'email'       => 'info@swapin.ir',
+            'email'       => 'info@swaapin.ir',
             'areaServed'  => 'IR',
             'availableLanguage' => 'Persian',
         ],

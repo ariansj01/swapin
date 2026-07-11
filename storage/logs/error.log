@@ -1,53 +1,14 @@
-[10-Jul-2026 16:59:20 Europe/Berlin] [swapin-debug] [req:7664c9d8f36b] otp-code-generated {"phone":"••••••••3289","code":"810696"}
-[10-Jul-2026 16:59:20 Europe/Berlin] [swapin-debug] [req:7664c9d8f36b] sms_is_enabled_check {"defined_SMS_ENABLED":true,"SMS_ENABLED_value":true,"defined_SMS_IRANPAYAMAK_API_KEY":true,"SMS_IRANPAYAMAK_API_KEY_value_masked":"XmuNK...","defined_SMS_IRANPAYAMAK_PATTERN_CODE":true,"SMS_IRANPAYAMAK_PATTERN_CODE_value":"mMR4lJx2Jq","defined_SMS_IRANPAYAMAK_LINE_NUMBER":true,"SMS_IRANPAYAMAK_LINE_NUMBER_value":"50002178584000","app_is_production_status":false}
-[10-Jul-2026 16:59:20 Europe/Berlin] [swapin-debug] [req:7664c9d8f36b] sms_is_enabled_success {"reason":"All SMS checks passed"}
-[10-Jul-2026 16:59:44 Europe/Berlin] [swapin-debug] [req:53239dde0636] otp-verify-all-rows {"phone_from_session":"+989150583289","masked_phone":"••••••••3289","all_rows_count":1,"all_rows":[{"id":33,"phone_db":"+989150583289","used":0,"expires_at":"2026-07-10 17:09:20","expired":false,"created_at":"2026-07-10 18:29:20"}]}
-[10-Jul-2026 16:59:44 Europe/Berlin] [swapin-debug] [req:53239dde0636] otp-verify-failed {"phone":"••••••••3289","has_active_row":false,"code_length":6,"code_entered":"810696"}
-
-[10-Jul-2026 17:02:14 Europe/Berlin] [swapin-debug] [req:cbc1eeb5b7e7] otp-verify-all-rows {"phone_from_session":"+989150583289","masked_phone":"••••••••3289","all_rows_count":1,"all_rows":[{"id":33,"phone_db":"+989150583289","used":0,"expires_at":"2026-07-10 17:09:20","expired":false,"created_at":"2026-07-10 18:29:20"}]}
-[10-Jul-2026 17:02:14 Europe/Berlin] [swapin-debug] [req:cbc1eeb5b7e7] otp-verify-failed {"phone":"••••••••3289","has_active_row":false,"code_length":6,"code_entered":"810696"}
-[10-Jul-2026 17:09:39 Europe/Berlin] [swapin-debug] [req:e6fd6a375733] otp-verify-all-rows {"phone_from_session":"+989150583289","masked_phone":"••••••••3289","all_rows_count":1,"all_rows":[{"id":33,"phone_db":"+989150583289","used":0,"expires_at":"2026-07-10 17:09:20","expired":true,"created_at":"2026-07-10 18:29:20"}]}
-[10-Jul-2026 17:09:39 Europe/Berlin] [swapin-debug] [req:e6fd6a375733] otp-verify-failed {"phone":"••••••••3289","has_active_row":false,"code_length":6,"code_entered":"810696"}
-[10-Jul-2026 17:09:40 Europe/Berlin] [swapin-debug] [req:3dda027fd336] index-start {"uri":"/swaapin/","query":[]}
-[10-Jul-2026 17:09:40 Europe/Berlin] [swapin-debug] [req:3dda027fd336] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[10-Jul-2026 17:10:05 Europe/Berlin] [swapin-debug] [req:d5469795a90e] otp-code-generated {"phone":"••••••••3576","code":"153474"}
-[10-Jul-2026 17:10:05 Europe/Berlin] [swapin-debug] [req:d5469795a90e] sms_is_enabled_check {"defined_SMS_ENABLED":true,"SMS_ENABLED_value":true,"defined_SMS_IRANPAYAMAK_API_KEY":true,"SMS_IRANPAYAMAK_API_KEY_value_masked":"XmuNK...","defined_SMS_IRANPAYAMAK_PATTERN_CODE":true,"SMS_IRANPAYAMAK_PATTERN_CODE_value":"mMR4lJx2Jq","defined_SMS_IRANPAYAMAK_LINE_NUMBER":true,"SMS_IRANPAYAMAK_LINE_NUMBER_value":"50002178584000","app_is_production_status":false}
-[10-Jul-2026 17:10:05 Europe/Berlin] [swapin-debug] [req:d5469795a90e] sms_is_enabled_success {"reason":"All SMS checks passed"}
-
-
-
-
-[10-Jul-2026 17:10:26 Europe/Berlin] [swapin-debug] [req:e7c06f1cf57f] otp-verify-all-rows {"phone_from_session":"+989221923576","masked_phone":"••••••••3576","all_rows_count":1,"all_rows":[{"id":34,"phone_db":"+989221923576","used":0,"expires_at":"2026-07-10 18:50:05","expired":false,"created_at":"2026-07-10 18:40:05"}]}
-[10-Jul-2026 17:10:26 Europe/Berlin] [swapin-debug] [req:e7c06f1cf57f] otp-verify-success {"phone":"••••••••3576"}
-[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-dashboard] config.php loaded successfully
-[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-dashboard] layout.php loaded successfully
-[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-started {"step":"init","uri":"/swaapin/dashboard.php?welcome=1"}
-[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-auth-ok {"step":"auth","user_id":201}
-[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-migration-check-ok {"needs_migration":"false"}
-[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-incoming-offers-ok {"count":0}
-[10-Jul-2026 17:11:10 Europe/Berlin] [swapin-debug] [req:733979d177b2] dashboard-before-render {"step":"before-render","my_listings_count":0}
-
-
-
-[10-Jul-2026 17:18:38 Europe/Berlin] [swapin-dashboard] config.php loaded successfully
-[10-Jul-2026 17:18:38 Europe/Berlin] [swapin-dashboard] layout.php loaded successfully
-[10-Jul-2026 17:18:38 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-started {"step":"init","uri":"/swaapin/dashboard.php"}
-[10-Jul-2026 17:18:59 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-auth-ok {"step":"auth","user_id":201}
-[10-Jul-2026 17:18:59 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-migration-check-ok {"needs_migration":"false"}
-[10-Jul-2026 17:18:59 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-incoming-offers-ok {"count":0}
-[10-Jul-2026 17:18:59 Europe/Berlin] [swapin-debug] [req:d5fab530e5a3] dashboard-before-render {"step":"before-render","my_listings_count":0}
-[10-Jul-2026 18:08:12 Europe/Berlin] [swapin-debug] [req:2aa3af82300e] index-start {"uri":"/swaapin/","query":[]}
-[10-Jul-2026 18:08:12 Europe/Berlin] [swapin-debug] [req:2aa3af82300e] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[10-Jul-2026 18:08:33 Europe/Berlin] [swapin-debug] [req:8ef3376c3693] index-start {"uri":"/swaapin/","query":[]}
-[10-Jul-2026 18:08:33 Europe/Berlin] [swapin-debug] [req:8ef3376c3693] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[10-Jul-2026 18:08:55 Europe/Berlin] [swapin-debug] [req:29c4aaf5ad69] index-start {"uri":"/swaapin/","query":[]}
-[10-Jul-2026 18:08:55 Europe/Berlin] [swapin-debug] [req:29c4aaf5ad69] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[10-Jul-2026 18:09:16 Europe/Berlin] [swapin-debug] [req:f860eab35e4b] index-start {"uri":"/swaapin/","query":[]}
-[10-Jul-2026 18:09:16 Europe/Berlin] [swapin-debug] [req:f860eab35e4b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[10-Jul-2026 18:47:30 Europe/Berlin] [swapin-debug] [req:f60c58941db1] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":124,"uri":"/swaapin/auth/login","method":"GET"}
-[10-Jul-2026 23:45:39 Europe/Berlin] [swapin-debug] [req:dd1bedb63798] index-start {"uri":"/swaapin/","query":[]}
-[10-Jul-2026 23:46:01 Europe/Berlin] [swapin-debug] [req:dd1bedb63798] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":124,"uri":"/swaapin/","method":"GET"}
-[10-Jul-2026 23:47:01 Europe/Berlin] [swapin-debug] [req:3d9e892b2834] index-start {"uri":"/swaapin/","query":[]}
-[10-Jul-2026 23:47:22 Europe/Berlin] [swapin-debug] [req:3d9e892b2834] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
-[11-Jul-2026 00:26:14 Europe/Berlin] [swapin-debug] [req:a21488765682] index-start {"uri":"/swaapin/","query":[]}
-[11-Jul-2026 00:26:35 Europe/Berlin] [swapin-debug] [req:a21488765682] uncaught-exception {"type":"PDOException","message":"SQLSTATE[HY000] [1045] Access denied for user 'ltze_swapin_kP%user'@'localhost' (using password: YES)","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":124,"uri":"/swaapin/","method":"GET"}
+[11-Jul-2026 11:13:23 Europe/Berlin] [swapin-debug] [req:c6dfb03cd3bb] otp-code-generated {"phone":"••••••••3289","code":"354095"}
+[11-Jul-2026 11:13:23 Europe/Berlin] [swapin-debug] [req:c6dfb03cd3bb] sms_is_enabled_check {"defined_SMS_ENABLED":true,"SMS_ENABLED_value":true,"defined_SMS_IRANPAYAMAK_API_KEY":true,"SMS_IRANPAYAMAK_API_KEY_value_masked":"XmuNK...","defined_SMS_IRANPAYAMAK_PATTERN_CODE":true,"SMS_IRANPAYAMAK_PATTERN_CODE_value":"mMR4lJx2Jq","defined_SMS_IRANPAYAMAK_LINE_NUMBER":true,"SMS_IRANPAYAMAK_LINE_NUMBER_value":"50002178584000","app_is_production_status":false}
+[11-Jul-2026 11:13:23 Europe/Berlin] [swapin-debug] [req:c6dfb03cd3bb] sms_is_enabled_success {"reason":"All SMS checks passed"}
+[11-Jul-2026 11:14:19 Europe/Berlin] [swapin-debug] [req:e64c5fdc782e] otp-verify-all-rows {"phone_from_session":"+989150583289","masked_phone":"••••••••3289","all_rows_count":1,"all_rows":[{"id":35,"phone_db":"+989150583289","used":0,"expires_at":"2026-07-11 12:45:23","expired":false,"created_at":"2026-07-11 12:43:23"}]}
+[11-Jul-2026 11:14:19 Europe/Berlin] [swapin-debug] [req:e64c5fdc782e] otp-verify-success {"phone":"••••••••3289"}
+[11-Jul-2026 11:14:19 Europe/Berlin] [swapin-dashboard] config.php loaded successfully
+[11-Jul-2026 11:14:19 Europe/Berlin] [swapin-dashboard] layout.php loaded successfully
+[11-Jul-2026 11:14:19 Europe/Berlin] [swapin-debug] [req:ff0ead0a40a2] dashboard-started {"step":"init","uri":"/swaapin/dashboard.php"}
+[11-Jul-2026 11:14:40 Europe/Berlin] [swapin-debug] [req:ff0ead0a40a2] dashboard-auth-ok {"step":"auth","user_id":5}
+[11-Jul-2026 11:14:40 Europe/Berlin] [swapin-debug] [req:ff0ead0a40a2] dashboard-migration-check-ok {"needs_migration":"false"}
+[11-Jul-2026 11:14:40 Europe/Berlin] [swapin-debug] [req:ff0ead0a40a2] dashboard-incoming-offers-ok {"count":0}
+[11-Jul-2026 11:14:40 Europe/Berlin] [swapin-debug] [req:ff0ead0a40a2] dashboard-before-render {"step":"before-render","my_listings_count":1}
+[11-Jul-2026 11:15:23 Europe/Berlin] [swapin-debug] [req:840f9bbfaf97] index-start {"uri":"/swaapin/","query":[]}
+[11-Jul-2026 11:15:44 Europe/Berlin] [swapin-debug] [req:840f9bbfaf97] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
