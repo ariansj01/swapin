@@ -32,7 +32,8 @@ function validate_listing_content(array $fields): array {
     $combined    = "$title $description $want";
 
     // ── Title ───────────────────────────────────────────────────────────────
-    if (!preg_match('/[\p{L}\x{0600}-\x{06FF}]{3,}/u', $title)) {
+    $titleLetterCount = preg_match_all('/[\p{L}]/u', $title);
+    if ($titleLetterCount < 3) {
         $errors['title'] = 'عنوان باید حداقل ۳ حرف فارسی یا انگلیسی داشته باشد';
     } elseif (!preg_match('/^[\p{L}\p{N}\x{0600}-\x{06FF}\s\-\/\(\)\.,،\+&\']{5,200}$/u', $title)) {
         $errors['title'] = 'عنوان شامل کاراکترهای غیرمجاز است';
@@ -41,7 +42,8 @@ function validate_listing_content(array $fields): array {
     }
 
     // ── Description ─────────────────────────────────────────────────────────
-    if (!preg_match('/[\p{L}\x{0600}-\x{06FF}]{10,}/u', $description)) {
+    $letterCount = preg_match_all('/[\p{L}]/u', $description);
+    if ($letterCount < 10) {
         $errors['description'] = 'توضیحات باید متن واقعی و قابل فهم (حداقل ۱۰ حرف) باشد';
     } elseif (mb_strlen(preg_replace('/\s+/u', '', $description)) < 15) {
         $errors['description'] = 'توضیحات خیلی کوتاه یا نامفهوم است';
@@ -49,7 +51,8 @@ function validate_listing_content(array $fields): array {
 
     // ── Want in return ──────────────────────────────────────────────────────
     if ($want !== '' && mb_strlen($want) >= 10) {
-        if (!preg_match('/[\p{L}\x{0600}-\x{06FF}]{3,}/u', $want)) {
+        $wantLetterCount = preg_match_all('/[\p{L}]/u', $want);
+        if ($wantLetterCount < 3) {
             $errors['want_in_return'] = 'بخش «در ازای» باید شامل حروف معتبر باشد';
         }
     }
