@@ -9,11 +9,11 @@ $listing = DB::fetch(
     'SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
             u.city AS seller_city, u.credit_balance AS seller_credits, u.verification_level,
             u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug,
-            t.id AS trade_id, t.status AS trade_status, t.user_-id, t.user_b_id
+            t.id AS trade_id, t.status AS trade_status, t.user_a_id, t.user_b_id
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
-     LEFT JOIN trades t ON (t.listing_-id = l.id OR t.listing_b_id = l.id) AND t.status IN (\'in_progress\', \'user_a_confirmed\', \'user_b_confirmed\')
+     LEFT JOIN trades t ON (t.listing_a_id = l.id OR t.listing_b_id = l.id) AND t.status IN (\'in_progress\', \'user_a_confirmed\', \'user_b_confirmed\')
      WHERE l.id = ?',
     [$id]
 );
@@ -454,7 +454,7 @@ render_navbar($user);
               ورود برای پیشنهاد
             </a>
 
-            <?php elseif ($listing['trade_id'] && ($user['id'] == $listing['user_-id'] || $user['id'] == $listing['user_b_id'])): ?>
+            <?php elseif ($listing['trade_id'] && ($user['id'] == $listing['user_a_id'] || $user['id'] == $listing['user_b_id'])): ?>
             <div class="alert alert-success mb-0">
               <i class="bi bi-check-circle"></i>
               <div>
