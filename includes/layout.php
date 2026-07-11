@@ -428,10 +428,10 @@ function render_footer(): void {
         </a>
         <p class="site-footer__tagline">{$tagline}</p>
         <div class="site-footer__social">
-          <a href="#" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
+          <a href="https://www.instagram.com/swaapin_official" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
           <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
           <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
-          <a href="#" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
+          <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
         </div>
       </div>
     </div>
