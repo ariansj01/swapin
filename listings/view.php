@@ -118,6 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 )) {
                     $offerError = 'آگهی انتخاب‌شده برای پیشنهاد معتبر نیست یا متعلق به شما نیست.';
                 }
+            } elseif ($offerType === 'message') {
+                if (empty($message)) {
+                    $offerError = 'برای ارسال پیشنهاد بدون کالا، لطفاً پیامی وارد کنید.';
+                }
             }
             
 

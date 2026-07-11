@@ -300,6 +300,22 @@ render_navbar($user);
               </span>
             </div>
             <?php if (!$mySigned): ?>
+
+            <div class="alert alert-info my-4">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>توجه:</strong>
+                <ul>
+                  <li>پس از تأیید نهایی، کارمزد پلتفرم (<?= PLATFORM_FEE_RATE * 100 ?>%) از ارزش معامله از هر دو طرف کسر خواهد شد.</li>
+                  <?php if ((float)$dt['credit_diff'] != 0): ?>
+                    <li>
+                      مبلغ <strong><?= fmt_credit(abs((float)$dt['credit_diff'])) ?></strong> به عنوان مابه‌التفاوت قیمت از <?= (float)$dt['credit_diff'] < 0 ? 'شما' : 'طرف مقابل' ?> کسر و به حساب <?= (float)$dt['credit_diff'] < 0 ? 'طرف مقابل' : 'شما' ?> واریز می‌گردد.
+                    </li>
+                  <?php endif; ?>
+                </ul>
+              </div>
+            </div>
+
             <form method="POST">
             <?= csrf_field() ?>
               <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
@@ -330,23 +346,6 @@ render_navbar($user);
               </div>
               <button type="submit" class="btn btn-outline btn-sm">ذخیره روش</button>
             </form>
-            <form method="POST">
-            <?= csrf_field() ?>
-              <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
-              <input type="hidden" name="action" value="update_tracking">
-              <div class="form-group">
-                <label class="form-label">کد رهگیری شما</label>
-                <input type="text" name="tracking_code" class="form-control"
-                       value="<?= h($isA ? ($dt['tracking_code_a'] ?? '') : ($dt['tracking_code_b'] ?? '')) ?>"
-                       placeholder="کد رهگیری را وارد کنید">
-              </div>
-              <button type="submit" class="btn btn-outline btn-sm">ذخیره رهگیری</button>
-            </form>
-            <?php if ($dt['tracking_code_a'] || $dt['tracking_code_b']): ?>
-            <div class="fs-sm mt-4" style="color:var(--text-muted)">
-              الف: <?= h($dt['tracking_code_a'] ?: '—') ?> · ب: <?= h($dt['tracking_code_b'] ?: '—') ?>
-            </div>
-            <?php endif; ?>
           </div>
         </div>
         <?php endif; ?>
