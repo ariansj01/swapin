@@ -445,46 +445,114 @@ function complete_trade(int $tradeId): array {
 
 function escrow_release_with_fee(int $tradeId): float {
     $trade = DB::fetch('SELECT * FROM trades WHERE id = ?', [$tradeId]);
-    if (!$trade || $trade['escrow_status'] !== 'held') return 0.0;
+    if (!$trade) return 0.0;
 
-    $amount = (float)$trade['escrow_amount'];
-    $fee    = $amount > 0 ? max(1, (int)round($amount * PLATFORM_FEE_RATE)) : 0.0;
-    $net    = $amount - $fee;
+    // Get both listings' estimated values
+    $listingA = DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$trade['listing_a_id']]);
+    $listingB = $trade['listing_b_id'] ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$trade['listing_b_id']]) : null;
+    
+    $valueA = (float)($listingA['estimated_value'] ?? 0);
+    $valueB = (float)($listingB['estimated_value'] ?? 0);
+    
+    // Calculate 1% fee from each user
+    $feeA = $valueA > 0 ? max(1, (int)round($valueA * PLATFORM_FEE_RATE)) : 0;
+    $feeB = $valueB > 0 ? max(1, (int)round($valueB * PLATFORM_FEE_RATE)) : 0;
+    $totalFee = $feeA + $feeB;
 
-    if ($net > 0) {
+    // Charge fees from both users
+    if ($feeA > 0) {
         credit_transact(
             (int)$trade['user_a_id'],
-            'trade_credit',
-            $net,
-            'دریافت معامله #' . $tradeId . ' (پس از کارمزد ' . (int)(PLATFORM_FEE_RATE * 100) . '٪)',
+            'fee',
+            -$feeA,
+            'کارمزد پلتفرم ' . (int)(PLATFORM_FEE_RATE * 100) . '٪ — معامله #' . $tradeId,
             [
                 'ref_type'   => 'trade',
                 'ref_id'     => $tradeId,
                 'trade_id'   => $tradeId,
-                'listing_id' => wallet_listing_for_trade_user($trade, (int)$trade['user_a_id']),
+                'listing_id' => $trade['listing_a_id'],
             ]
         );
         DB::insert('escrow_transactions', [
             'trade_id' => $tradeId,
             'user_id'  => $trade['user_a_id'],
-            'amount'   => $net,
-            'type'     => 'release',
-            'note'     => 'آزادسازی پس از تکمیل معامله',
+            'amount'   => $feeA,
+            'type'     => 'fee_deduct',
+            'note'     => 'کارمزد پلتفرم ' . (int)(PLATFORM_FEE_RATE * 100) . '٪ — معامله #' . $tradeId,
         ]);
     }
-
-    if ($fee > 0) {
+    
+    if ($feeB > 0) {
+        credit_transact(
+            (int)$trade['user_b_id'],
+            'fee',
+            -$feeB,
+            'کارمزد پلتفرم ' . (int)(PLATFORM_FEE_RATE * 100) . '٪ — معامله #' . $tradeId,
+            [
+                'ref_type'   => 'trade',
+                'ref_id'     => $tradeId,
+                'trade_id'   => $tradeId,
+                'listing_id' => $trade['listing_b_id'],
+            ]
+        );
         DB::insert('escrow_transactions', [
             'trade_id' => $tradeId,
-            'user_id'  => (int)$trade['user_b_id'],
-            'amount'   => $fee,
+            'user_id'  => $trade['user_b_id'],
+            'amount'   => $feeB,
             'type'     => 'fee_deduct',
             'note'     => 'کارمزد پلتفرم ' . (int)(PLATFORM_FEE_RATE * 100) . '٪ — معامله #' . $tradeId,
         ]);
     }
 
-    DB::update('trades', ['escrow_status' => 'released'], 'id = ?', [$tradeId]);
-    return $fee;
+    // Release any remaining escrow amount to the correct user
+    if ($trade['escrow_status'] === 'held' && (float)$trade['escrow_amount'] > 0) {
+        $escrowAmount = (float)$trade['escrow_amount'];
+        
+        // Determine who should receive the escrow
+        if ((float)$trade['credit_diff'] > 0) {
+            // User A should receive (escrow was from user B)
+            credit_transact(
+                (int)$trade['user_a_id'],
+                'trade_credit',
+                $escrowAmount,
+                'دریافت معامله #' . $tradeId,
+                [
+                    'ref_type'   => 'trade',
+                    'ref_id'     => $tradeId,
+                    'trade_id'   => $tradeId,
+                    'listing_id' => $trade['listing_a_id'],
+                ]
+            );
+        } elseif ((float)$trade['credit_diff'] < 0) {
+            // User B should receive (escrow was from user A)
+            credit_transact(
+                (int)$trade['user_b_id'],
+                'trade_credit',
+                $escrowAmount,
+                'دریافت معامله #' . $tradeId,
+                [
+                    'ref_type'   => 'trade',
+                    'ref_id'     => $tradeId,
+                    'trade_id'   => $tradeId,
+                    'listing_id' => $trade['listing_b_id'],
+                ]
+            );
+        }
+        
+        DB::insert('escrow_transactions', [
+            'trade_id' => $tradeId,
+            'user_id'  => (float)$trade['credit_diff'] > 0 ? $trade['user_a_id'] : $trade['user_b_id'],
+            'amount'   => $escrowAmount,
+            'type'     => 'release',
+            'note'     => 'آزادسازی پس از تکمیل معامله',
+        ]);
+        
+        DB::update('trades', ['escrow_status' => 'released'], 'id = ?', [$tradeId]);
+    } else {
+        DB::update('trades', ['escrow_status' => 'released'], 'id = ?', [$tradeId]);
+    }
+
+    return $totalFee;
 }
 
 // ─── Swap Score ───────────────────────────────────────────────────────────

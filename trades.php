@@ -215,16 +215,65 @@ render_navbar($user);
       </div>
       <div class="card-body">
 
+        <!-- Trade Items -->
+        <div style="display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;margin-bottom:var(--sp-6)">
+          <div style="flex:1;min-width:150px;background:rgba(0,174,239,.04);border:1px solid rgba(0,174,239,.15);border-radius:var(--radius-md);padding:var(--sp-4);text-align:center">
+            <div class="fs-xs mb-2" style="color:var(--text-muted)">کالای شما</div>
+            <div style="font-weight:600;font-size:.9375rem"><?= h($isA ? $dt['listing_a_title'] : ($dt['listing_b_title'] ?? 'نامشخص')) ?></div>
+          </div>
+          <div style="font-size:1.5rem;color:var(--accent-dark);font-weight:700">⇄</div>
+          <div style="flex:1;min-width:150px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--sp-4);text-align:center">
+            <div class="fs-xs mb-2" style="color:var(--text-muted)">کالای طرف مقابل</div>
+            <div style="font-weight:600;font-size:.9375rem"><?= h($isA ? ($dt['listing_b_title'] ?? 'پیشنهاد اعتباری') : $dt['listing_a_title']) ?></div>
+          </div>
+        </div>
+
+        <?php if ((float)$dt['credit_diff'] != 0): ?>
+        <div class="alert alert-info mb-6" style="font-size:.875rem">
+          <i class="bi bi-wallet2"></i>
+          <?= (float)$dt['credit_diff'] > 0 ? 'دریافت می‌کنید' : 'پرداخت کردید' ?>
+          <strong><?= fmt_credit(abs((float)$dt['credit_diff'])) ?></strong>
+          در این معامله.
+        </div>
+        <?php endif; ?>
+
         <!-- Escrow -->
         <?php if (($dt['escrow_status'] ?? 'none') !== 'none'): ?>
-        <div class="alert alert-info mb-4">
+        <div class="alert alert-info mb-6">
           <i class="bi bi-shield-lock"></i>
           سپرده: <strong><?= $escrowLabels[$dt['escrow_status']] ?? $dt['escrow_status'] ?></strong>
           — <?= fmt_credit((float)$dt['escrow_amount']) ?> به‌صورت امن نگهداری می‌شود
         </div>
         <?php endif; ?>
 
-        <!-- Digital Contract -->
+        <!-- Progress Steps -->
+        <div class="mb-6">
+          <h4 class="mb-4" style="font-size:1rem">مراحل معامله</h4>
+          <div class="steps">
+            <?php
+            $steps = [
+              ['in_progress', 'ایجاد معامله', true],
+              ['contract', 'امضای قرارداد', contract_fully_signed($dt['id'])],
+              ['shipping', 'ارسال کالا', (bool)($dt['shipping_method'])],
+              ['confirm', 'تأیید دریافت', in_array($dt['status'], ['user_a_confirmed', 'user_b_confirmed', 'completed'], true)],
+              ['completed', 'تکمیل', $dt['status'] === 'completed'],
+            ];
+            $order = ['in_progress'=>0,'contract'=>1,'shipping'=>2,'confirm'=>3,'completed'=>4];
+            foreach ($steps as $i => [$sKey, $sName, $completed]):
+              $cls = $completed ? 'complete' : '';
+            ?>
+            <div class="step-item <?= $cls ?>">
+              <div class="step-num"><?= $completed ? '✓' : ($i+1) ?></div>
+              <div style="font-size:.7rem;color:<?= $cls === 'complete' ? 'var(--success)' : 'var(--text-muted)' ?>;margin-inline-start:4px;white-space:nowrap"><?= $sName ?></div>
+              <?php if ($i < 4): ?><div class="step-line"></div><?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+
+        <!-- Action Cards -->
+        <!-- 1. Contract -->
+        <?php if (!contract_fully_signed($dt['id'])): ?>
         <div class="card mb-4" style="border:1px solid var(--primary-light)">
           <div class="card-header"><h4 style="margin:0;font-size:.9375rem"><i class="bi bi-file-earmark-text"></i> قرارداد دیجیتال</h4></div>
           <div class="card-body">
@@ -247,10 +296,12 @@ render_navbar($user);
             <?php endif; ?>
           </div>
         </div>
+        <?php endif; ?>
 
-        <!-- Shipping -->
+        <!-- 2. Shipping -->
+        <?php if (contract_fully_signed($dt['id']) && $dt['status'] !== 'completed'): ?>
         <div class="card mb-4">
-          <div class="card-header"><h4 style="margin:0;font-size:.9375rem"><i class="bi bi-truck"></i> ارسال و رهگیری</h4></div>
+          <div class="card-header"><h4 style="margin:0;font-size:.9375rem"><i class="bi bi-truck"></i> ارسال کالا</h4></div>
           <div class="card-body">
             <form method="POST" class="mb-4">
             <?= csrf_field() ?>
@@ -285,42 +336,16 @@ render_navbar($user);
             <?php endif; ?>
           </div>
         </div>
-
-        <!-- BNPL -->
-        <?php if ((float)$dt['escrow_amount'] > 0 || (float)$dt['credit_diff'] > 0): ?>
-        <div class="card mb-4">
-          <div class="card-header"><h4 style="margin:0;font-size:.9375rem"><i class="bi bi-calendar2-check"></i> BNPL (خرید اقساطی)</h4></div>
-          <div class="card-body">
-            <?php if ($detailBnpl && $detailBnpl['status'] === 'active'): ?>
-            <div class="alert alert-success">
-              BNPL فعال — <?= fmt_credit((float)$detailBnpl['monthly_fee']) ?>/ماه × <?= $detailBnpl['months'] ?> ماه
-            </div>
-            <?php elseif (!$isA): ?>
-            <form method="POST" style="display:flex;gap:var(--sp-3);align-items:flex-end;flex-wrap:wrap">
-            <?= csrf_field() ?>
-              <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
-              <input type="hidden" name="action" value="request_bnpl">
-              <div class="form-group" style="margin:0">
-                <label class="form-label">اقساط</label>
-                <select name="bnpl_months" class="form-control">
-                  <?php foreach ([3,6,9,12] as $m): ?><option value="<?= $m ?>"><?= $m ?> ماه</option><?php endforeach; ?>
-                </select>
-              </div>
-              <button type="submit" class="btn btn-accent">درخواست BNPL</button>
-            </form>
-            <?php endif; ?>
-          </div>
-        </div>
         <?php endif; ?>
 
-        <!-- Confirm -->
-        <?php if (in_array($dt['status'], ['in_progress','user_a_confirmed'], true)): ?>
+        <!-- 3. Confirm -->
+        <?php if (contract_fully_signed($dt['id']) && in_array($dt['status'], ['in_progress','user_a_confirmed'], true)): ?>
         <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap">
           <form method="POST">
             <?= csrf_field() ?>
             <input type="hidden" name="trade_id" value="<?= $dt['id'] ?>">
             <input type="hidden" name="action" value="confirm">
-            <button type="submit" class="btn btn-primary" <?= !contract_fully_signed($dt['id']) ? 'disabled title="ابتدا قرارداد را امضا کنید"' : '' ?>>
+            <button type="submit" class="btn btn-primary">
               <i class="bi bi-check-circle"></i> تأیید دریافت معامله
             </button>
           </form>

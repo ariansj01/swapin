@@ -23,7 +23,7 @@ define('APP_ENV',           'development'); // موقتاً برای دیباگ
 define('OTP_EXPIRE',        120);
 define('LISTINGS_PER_PAGE', 12);
 define('WELCOME_BONUS',     10000000);
-define('PLATFORM_FEE_RATE', 0.02); // ۲٪ کارمزد روی معاملات موفق
+define('PLATFORM_FEE_RATE', 0.01); // ۱٪ کارمزد روی معاملات موفق
 define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه‌ها
 
 // ─── Database ──────────────────────────────────────────────────────────────

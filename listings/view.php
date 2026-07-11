@@ -102,25 +102,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } elseif ($myOffer) {
             $offerError = 'شما از قبل یک پیشنهاد در انتظار برای این آگهی دارید.';
         } else {
+            $offerType = clean($_POST['offer_type'] ?? 'message');
             $offerListingId = (int)($_POST['offer_listing_id'] ?? 0) ?: null;
-            $offerCredit    = max(0, (float)($_POST['offer_credit'] ?? 0));
             $message        = clean($_POST['message'] ?? '');
 
-            if (!$offerListingId && $offerCredit <= 0) {
-                $offerError = 'لطفاً یک کالا از آگهی‌های خود یا مقداری اعتبار ' . CREDIT_UNIT . ' پیشنهاد دهید.';
-            } elseif ($offerListingId && !DB::fetch(
-                'SELECT id FROM listings WHERE id = ? AND user_id = ? AND status = "active" AND review_status = "approved"',
-                [$offerListingId, $user['id']]
-            )) {
-                $offerError = 'آگهی انتخاب‌شده برای پیشنهاد معتبر نیست یا متعلق به شما نیست.';
-            } elseif ($offerCredit > 0 && $offerCredit > $user['credit_balance']) {
-                $offerError = 'موجودی ' . CREDIT_UNIT . ' کافی نیست. موجودی شما: ' . fmt_credit((float)$user['credit_balance']);
-            } else {
+            if ($offerType === 'item') {
+                if (!$offerListingId) {
+                    $offerError = 'لطفاً یکی از کالاهای خود را انتخاب کنید.';
+                } elseif (!DB::fetch(
+                    'SELECT id FROM listings WHERE id = ? AND user_id = ? AND status = "active" AND review_status = "approved"',
+                    [$offerListingId, $user['id']]
+                )) {
+                    $offerError = 'آگهی انتخاب‌شده برای پیشنهاد معتبر نیست یا متعلق به شما نیست.';
+                }
+            }
+            
+            if (!$offerError) {
                 DB::insert('trade_offers', [
                     'listing_id'       => $id,
                     'from_user_id'     => $user['id'],
                     'offer_listing_id' => $offerListingId,
-                    'offer_credit'     => $offerCredit,
+                    'offer_credit'     => 0,
                     'message'          => $message ?: null,
                     'status'           => 'pending',
                 ]);
@@ -451,29 +453,40 @@ render_navbar($user);
             <?= csrf_field() ?>
               <input type="hidden" name="action" value="make_offer">
 
-              <?php if ($myListings): ?>
-              <div class="form-group">
-                <label class="form-label">پیشنهاد از آگهی‌های شما</label>
-                <select class="form-control" name="offer_listing_id" id="offer-listing">
-                  <option value="">— یکی از کالاهای خود را انتخاب کنید —</option>
-                  <?php foreach ($myListings as $ml): ?>
-                  <option value="<?= $ml['id'] ?>"><?= h(mb_strimwidth($ml['title'], 0, 50, '…')) ?></option>
-                  <?php endforeach; ?>
-                </select>
+              <div class="mb-4">
+                <label class="form-label fw-600 mb-3">نوع پیشنهاد خود را انتخاب کنید</label>
+                
+                <?php if ($myListings): ?>
+                <div class="card mb-3" style="border: 2px solid var(--primary); background: rgba(0, 174, 239, 0.02);">
+                  <div class="card-body">
+                    <div class="d-flex gap-2 mb-3">
+                      <input type="radio" id="has-item" name="offer_type" value="item" class="mt-1" <?= $myListings ? 'checked' : '' ?>>
+                      <label for="has-item" class="fw-600">کالا دارم</label>
+                    </div>
+                    <select class="form-control" name="offer_listing_id" id="offer-listing">
+                      <option value="">— یکی از کالاهای خود را انتخاب کنید —</option>
+                      <?php foreach ($myListings as $ml): ?>
+                      <option value="<?= $ml['id'] ?>"><?= h(mb_strimwidth($ml['title'], 0, 50, '…')) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="text-center fs-sm mb-3" style="color:var(--text-muted);">یا</div>
+                <?php endif; ?>
+                
+                <div class="card mb-4" style="border: 2px solid var(--border);">
+                  <div class="card-body">
+                    <div class="d-flex gap-2 mb-3">
+                      <input type="radio" id="no-item" name="offer_type" value="message" class="mt-1" <?= !$myListings ? 'checked' : '' ?>>
+                      <label for="no-item" class="fw-600">کالا ندارم</label>
+                    </div>
+                    <p class="fs-sm" style="color:var(--text-muted);">فقط پیام برای فروشنده بفرستید</p>
+                  </div>
+                </div>
               </div>
-              <div class="text-center fs-sm" style="color:var(--text-muted);margin:-var(--sp-2) 0 var(--sp-4)">— یا —</div>
-              <?php endif; ?>
 
-              <div class="form-group">
-                <label class="form-label">
-                  افزودن اعتبار <?= CREDIT_UNIT ?>
-                  <span class="fs-xs" style="color:var(--text-muted)">(موجودی: <?= fmt_credit((float)$user['credit_balance']) ?>)</span>
-                </label>
-                <input type="number" class="form-control" name="offer_credit" id="offer-credit"
-                       placeholder="0" min="0" max="<?= $user['credit_balance'] ?>" step="1">
-              </div>
-
-              <div class="form-group">
+              <div class="form-group mb-4">
                 <label class="form-label">پیام (اختیاری)</label>
                 <textarea class="form-control" name="message" rows="3"
                           placeholder="درباره پیشنهاد خود توضیح دهید…"></textarea>
@@ -515,12 +528,18 @@ render_navbar($user);
 <script>
 // Validate offer form
 document.getElementById('offer-form')?.addEventListener('submit', function(e) {
-  const listing = document.getElementById('offer-listing')?.value || '';
-  const credit  = parseFloat(document.getElementById('offer-credit')?.value || 0);
-  if (!listing && (!credit || credit <= 0)) {
-    e.preventDefault();
-    showToast('لطفاً یک کالا یا مقداری اعتبار ' + '<?= CREDIT_UNIT ?>' + ' پیشنهاد دهید', 'error');
+  const offerType = document.querySelector('input[name="offer_type"]:checked')?.value || '';
+  
+  // If "has item" is selected, require an item
+  if (offerType === 'item') {
+    const listing = document.getElementById('offer-listing')?.value || '';
+    if (!listing) {
+      e.preventDefault();
+      showToast('لطفاً یکی از کالاهای خود را انتخاب کنید', 'error');
+    }
   }
+  
+  // No validation needed for "no item" (message only)
 });
 document.getElementById('share-listing-btn')?.addEventListener('click', function () {
   const title = this.dataset.title || '';

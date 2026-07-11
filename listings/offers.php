@@ -32,6 +32,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($action === 'accept') {
             DB::query('UPDATE trade_offers SET status = "accepted" WHERE id = ?', [$offerId]);
 
+            // Get both listings' estimated values
+            $listingA = DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offer['listing_id']]);
+            $listingB = $offer['offer_listing_id'] ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offer['offer_listing_id']]) : null;
+            
+            $valueA = (float)($listingA['estimated_value'] ?? 0);
+            $valueB = (float)($listingB['estimated_value'] ?? 0);
+            
+            // Calculate credit difference (positive if user B needs to pay user A)
+            $creditDiff = $valueA - $valueB;
+
             // Create trade record
             $tradeId = DB::insert('trades', [
                 'offer_id'     => $offerId,
@@ -39,14 +49,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'user_b_id'    => $offer['from_user_id'],
                 'listing_a_id' => $offer['listing_id'],
                 'listing_b_id' => $offer['offer_listing_id'] ?: null,
-                'credit_diff'  => $offer['offer_credit'] ?? 0,
+                'credit_diff'  => $creditDiff,
                 'status'       => 'in_progress',
             ]);
 
             // Escrow hold + contract instead of direct credit transfer
-            if ((float)$offer['offer_credit'] > 0) {
-                $creditAmt = (float)$offer['offer_credit'];
-                escrow_hold($tradeId, (int)$offer['from_user_id'], $creditAmt, 'سپرده معامله #' . $tradeId);
+            if ($creditDiff > 0) {
+                // User B needs to pay user A
+                escrow_hold($tradeId, (int)$offer['from_user_id'], $creditDiff, 'سپرده معامله #' . $tradeId);
+            } elseif ($creditDiff < 0) {
+                // User A needs to pay user B
+                escrow_hold($tradeId, $uid, abs($creditDiff), 'سپرده معامله #' . $tradeId);
             }
 
             create_trade_contract($tradeId);
