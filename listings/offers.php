@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $valueB = (float)($listingB['estimated_value'] ?? 0);
             
             // Calculate credit difference (positive if user B needs to pay user A)
-            $creditDiff = $valueA - $valueB;
+            $creditDiff = $valueA - ($valueB + (float)$offer['offer_credit']);
 
             // Create trade record
             $tradeId = DB::insert('trades', [
@@ -55,11 +55,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Escrow hold + contract instead of direct credit transfer
             if ($creditDiff > 0) {
-                // User B needs to pay user A
-                escrow_hold($tradeId, (int)$offer['from_user_id'], $creditDiff, 'سپرده معامله #' . $tradeId);
+                // User B (offerer) needs to pay user A (listing owner)
+                $userToPayId = (int)$offer['from_user_id'];
+                $amountToPay = $creditDiff;
             } elseif ($creditDiff < 0) {
-                // User A needs to pay user B
-                escrow_hold($tradeId, $uid, abs($creditDiff), 'سپرده معامله #' . $tradeId);
+                // User A (listing owner) needs to pay user B (offerer)
+                $userToPayId = $uid;
+                $amountToPay = abs($creditDiff);
+            } else {
+                $userToPayId = 0; // No one needs to pay
+                $amountToPay = 0;
+            }
+
+            if ($userToPayId && $amountToPay > 0) {
+                $payerUser = DB::fetch('SELECT credit_balance, name FROM users WHERE id = ?', [$userToPayId]);
+                if (!$payerUser || (float)$payerUser['credit_balance'] < $amountToPay) {
+                    $requiredAmount = $amountToPay - (float)($payerUser['credit_balance'] ?? 0);
+                    $_SESSION['error'] = 'موجودی کیف پول شما برای پرداخت مابه‌التفاوت معامله کافی نیست. لطفاً ' . fmt_credit($requiredAmount) . ' به کیف پول خود اضافه کنید.';
+                    header('Location: ' . WALLET_TOPUP_URL . '?amount=' . $requiredAmount);
+                    exit;
+                }
+                escrow_hold($tradeId, $userToPayId, $amountToPay, 'سپرده مابه‌التفاوت معامله #' . $tradeId);
             }
 
             create_trade_contract($tradeId);
@@ -76,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $success = 'پیشنهاد پذیرفته شد! معامله ایجاد شد.';
             // Mark listing as traded
-            DB::query('UPDATE listings SET status = "traded" WHERE id = ?', [$offer['listing_id']]);
+
             header('Location: ' . APP_URL . '/trades.php?trade=' . $tradeId . '&accepted=1'); exit;
 
         } elseif ($action === 'reject') {
@@ -206,16 +222,14 @@ render_navbar($user);
                   <?php endif; ?>
                   <div>
                     <div style="font-weight:600"><i class="bi bi-box"></i> <?= h($offer['offer_listing_title']) ?></div>
-                    <?php if ((float)$offer['offer_credit'] > 0): ?>
-                    <div class="fs-sm" style="color:var(--primary)">+ <?= fmt_credit((float)$offer['offer_credit']) ?></div>
-                    <?php endif; ?>
                   </div>
                 </div>
-                <?php elseif ((float)$offer['offer_credit'] > 0): ?>
-                <div style="font-weight:700;font-size:1.125rem;color:var(--primary)">
-                  <i class="bi bi-wallet2"></i> <?= fmt_credit((float)$offer['offer_credit']) ?>
+                <?php endif; ?>
+                <?php if ((float)$offer['offer_credit'] > 0): ?>
+                <div class="<?= $offer['offer_listing_title'] ? 'fs-sm mt-1' : 'font-weight:700;font-size:1.125rem' ?>" style="color:var(--primary)">
+                  <i class="bi bi-wallet2"></i> + <?= fmt_credit((float)$offer['offer_credit']) ?>
                 </div>
-                <?php else: ?>
+                <?php elseif (!$offer['offer_listing_title'] && (float)$offer['offer_credit'] <= 0): ?>
                 <div class="fs-sm" style="color:var(--text-muted)">پیشنهاد مشخصی ثبت نشده</div>
                 <?php endif; ?>
               </div>

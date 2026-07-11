@@ -8,10 +8,12 @@ $id   = (int)($_GET['id'] ?? 0);
 $listing = DB::fetch(
     'SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
             u.city AS seller_city, u.credit_balance AS seller_credits, u.verification_level,
-            u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug
+            u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug,
+            t.id AS trade_id, t.status AS trade_status, t.user_-id, t.user_b_id
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
+     LEFT JOIN trades t ON (t.listing_-id = l.id OR t.listing_b_id = l.id) AND t.status IN (\'in_progress\', \'user_a_confirmed\', \'user_b_confirmed\')
      WHERE l.id = ?',
     [$id]
 );
@@ -105,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $offerType = clean($_POST['offer_type'] ?? 'message');
             $offerListingId = (int)($_POST['offer_listing_id'] ?? 0) ?: null;
             $message        = clean($_POST['message'] ?? '');
+            $offerCredit    = (float)($_POST['offer_credit'] ?? 0); // New line: Get offer credit
 
             if ($offerType === 'item') {
                 if (!$offerListingId) {
@@ -117,23 +120,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
             }
             
+            if ($offerCredit < 0) {
+                $offerError = 'مبلغ اعتبار پیشنهادی نمی‌تواند منفی باشد.';
+            }
+
             if (!$offerError) {
                 DB::insert('trade_offers', [
                     'listing_id'       => $id,
                     'from_user_id'     => $user['id'],
                     'offer_listing_id' => $offerListingId,
-                    'offer_credit'     => 0,
+                    'offer_credit'     => $offerCredit, // Use the new offerCredit variable
                     'message'          => $message ?: null,
                     'status'           => 'pending',
                 ]);
                 // Notify listing owner via message
                 $threadId = 'offer_' . uniqid();
+                $offerBody = $message ?: 'برای آگهی «' . $listing['title'] . '» پیشنهاد دادم.';
+                if ($offerCredit > 0) {
+                    $offerBody .= ' (به همراه ' . fmt_credit($offerCredit) . ' اعتبار).';
+                }
                 DB::insert('messages', [
                     'thread_id'    => $threadId,
                     'from_user_id' => $user['id'],
                     'to_user_id'   => $listing['user_id'],
                     'offer_id'     => DB::lastId(),
-                    'body'         => $message ?: 'برای آگهی «' . $listing['title'] . '» پیشنهاد دادم.',
+                    'body'         => $offerBody,
                 ]);
                 $offerSuccess = 'پیشنهاد ارسال شد! فروشنده مطلع می‌شود.';
                 $myOffer = DB::fetch('SELECT * FROM trade_offers WHERE listing_id = ? AND from_user_id = ? ORDER BY id DESC LIMIT 1', [$id, $user['id']]);
@@ -389,6 +400,17 @@ render_navbar($user);
           </div>
         </div>
 
+        <?php if ($listing['status'] === 'traded' && $isOwner): ?>
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="alert alert-success" style="font-size:.875rem">
+              <i class="bi bi-check-circle"></i> پیشنهاد برای این آگهی پذیرفته شده و معامله در جریان است.
+              <?php if ($listing['trade_id']): ?>
+                <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="alert-link">مشاهده جزئیات معامله</a>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
         <?php elseif ($listing['status'] !== 'active'): ?>
         <div class="card mb-4">
           <div class="card-body">
@@ -431,6 +453,16 @@ render_navbar($user);
             <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode('/listings/view?id='.$id) ?>" class="btn btn-primary w-100">
               ورود برای پیشنهاد
             </a>
+
+            <?php elseif ($listing['trade_id'] && ($user['id'] == $listing['user_-id'] || $user['id'] == $listing['user_b_id'])): ?>
+            <div class="alert alert-success mb-0">
+              <i class="bi bi-check-circle"></i>
+              <div>
+                <strong>پیشنهاد شما پذیرفته شد!</strong><br>
+                <span class="fs-sm">معامله در جریان است.</span>
+                <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="alert-link">مشاهده جزئیات معامله</a>
+              </div>
+            </div>
 
             <?php elseif ($myOffer): ?>
             <div class="alert alert-success mb-0">
@@ -487,6 +519,12 @@ render_navbar($user);
               </div>
 
               <div class="form-group mb-4">
+                <label class="form-label">مبلغ اعتبار پیشنهادی (اختیاری)</label>
+                <input type="number" name="offer_credit" class="form-control" placeholder="مثلاً ۵۰۰,۰۰۰ تومان" min="0">
+                <div class="fs-xs mt-2" style="color:var(--text-muted)">اگر می‌خواهید علاوه بر کالا یا به جای آن، مبلغی اعتبار پیشنهاد دهید.</div>
+              </div>
+
+              <div class="form-group mb-4">
                 <label class="form-label">پیام (اختیاری)</label>
                 <textarea class="form-control" name="message" rows="3"
                           placeholder="درباره پیشنهاد خود توضیح دهید…"></textarea>
@@ -528,19 +566,36 @@ render_navbar($user);
 <script>
 // Validate offer form
 document.getElementById('offer-form')?.addEventListener('submit', function(e) {
-  const offerType = document.querySelector('input[name="offer_type"]:checked')?.value || '';
-  
-  // If "has item" is selected, require an item
-  if (offerType === 'item') {
-    const listing = document.getElementById('offer-listing')?.value || '';
-    if (!listing) {
-      e.preventDefault();
-      showToast('لطفاً یکی از کالاهای خود را انتخاب کنید', 'error');
-    }
-  }
-  
-  // No validation needed for "no item" (message only)
-});
+      const offerType = document.querySelector('input[name="offer_type"]:checked')?.value || '';
+      const message = document.querySelector('textarea[name="message"]').value.trim();
+      const offerCredit = parseFloat(document.querySelector('input[name="offer_credit"]').value) || 0;
+      
+      // If "has item" is selected, require an item
+      if (offerType === 'item') {
+        const listing = document.getElementById('offer-listing')?.value || '';
+        if (!listing) {
+          e.preventDefault();
+          showToast('لطفاً یکی از کالاهای خود را انتخاب کنید', 'error');
+          return;
+        }
+      }
+      
+      // If "no item" is selected, require either a message or offer credit
+      if (offerType === 'message') {
+        if (!message && offerCredit <= 0) {
+          e.preventDefault();
+          showToast('برای ارسال پیشنهاد بدون کالا، لطفاً پیامی وارد کنید یا مبلغ اعتبار پیشنهادی را مشخص نمایید.', 'error');
+          return;
+        }
+      }
+
+      // Basic validation for offer credit
+      if (offerCredit < 0) {
+        e.preventDefault();
+        showToast('مبلغ اعتبار پیشنهادی نمی‌تواند منفی باشد.', 'error');
+        return;
+      }
+    });
 document.getElementById('share-listing-btn')?.addEventListener('click', function () {
   const title = this.dataset.title || '';
   if (navigator.share) {

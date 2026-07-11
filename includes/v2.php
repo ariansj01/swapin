@@ -423,7 +423,27 @@ function complete_trade(int $tradeId): array {
     DB::query('UPDATE trades SET status = "completed", completed_at = NOW() WHERE id = ?', [$tradeId]);
 
     $fee = 0.0;
+    // Check for sufficient funds for fees before proceeding
     if ($trade['escrow_status'] === 'held') {
+        $listingA = DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$trade['listing_-id']]);
+        $listingB = $trade['listing_b_id'] ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$trade['listing_b_id']]) : null;
+        
+        $valueA = (float)($listingA['estimated_value'] ?? 0);
+        $valueB = (float)($listingB['estimated_value'] ?? 0);
+        
+        $feeA = $valueA > 0 ? max(1, (int)round($valueA * PLATFORM_FEE_RATE)) : 0;
+        $feeB = $valueB > 0 ? max(1, (int)round($valueB * PLATFORM_FEE_RATE)) : 0;
+
+        $userA = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [(int)$trade['user_-id']]);
+        $userB = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [(int)$trade['user_b_id']]);
+
+        if ($feeA > 0 && (float)($userA['credit_balance'] ?? 0) < $feeA) {
+            return ['error' => 'موجودی شما برای پرداخت کارمزد پلتفرم کافی نیست. نیاز به ' . fmt_credit($feeA - (float)($userA['credit_balance'] ?? 0)) . ' دارید.', 'required_amount' => $feeA - (float)($userA['credit_balance'] ?? 0), 'user_id' => (int)$trade['user_-id']];
+        }
+        if ($feeB > 0 && (float)($userB['credit_balance'] ?? 0) < $feeB) {
+            return ['error' => 'موجودی طرف مقابل برای پرداخت کارمزد پلتفرم کافی نیست. نیاز به ' . fmt_credit($feeB - (float)($userB['credit_balance'] ?? 0)) . ' دارید.', 'required_amount' => $feeB - (float)($userB['credit_balance'] ?? 0), 'user_id' => (int)$trade['user_b_id']];
+        }
+
         $fee = escrow_release_with_fee($tradeId);
     }
 

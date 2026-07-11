@@ -25,6 +25,7 @@ define('LISTINGS_PER_PAGE', 12);
 define('WELCOME_BONUS',     10000000);
 define('PLATFORM_FEE_RATE', 0.01); // ۱٪ کارمزد روی معاملات موفق
 define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه‌ها
+define('WALLET_TOPUP_URL', APP_URL . '/wallet?action=topup'); // آدرس صفحه شارژ کیف پول
 
 // ─── Database ──────────────────────────────────────────────────────────────
 define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');

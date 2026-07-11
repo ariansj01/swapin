@@ -44,14 +44,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_id'])) {
         );
         $success = 'کد رهگیری ذخیره شد.';
     } elseif ($action === 'request_bnpl') {
-        $months = (int)($_POST['bnpl_months'] ?? 3);
-        $amount = (float)$trade['escrow_amount'] ?: (float)$trade['credit_diff'];
-        $result = request_bnpl($tradeId, $uid, $amount, $months);
-        if (isset($result['error'])) {
-            $error = $result['error'];
-        } else {
-            $success = 'درخواست BNPL ثبت شد — در انتظار تأیید.';
-        }
+        // $months = (int)($_POST['bnpl_months'] ?? 3);
+        // $amount = (float)$trade['escrow_amount'] ?: (float)$trade['credit_diff'];
+        // $result = request_bnpl($tradeId, $uid, $amount, $months);
+        // if (isset($result['error'])) {
+        //     $error = $result['error'];
+        // } else {
+        //     $success = 'درخواست BNPL ثبت شد — در انتظار تأیید.';
+        // }
+        $error = 'قابلیت پرداخت اقساطی فعلاً غیرفعال است.';
     } elseif ($action === 'confirm') {
         if (!contract_fully_signed($tradeId)) {
             $error = 'هر دو طرف باید ابتدا قرارداد دیجیتال را امضا کنند.';
@@ -67,6 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_id'])) {
 
             if ($trade['status'] === 'user_b_confirmed') {
                 $result = complete_trade($tradeId);
+                if (isset($result['error'])) {
+                    $_SESSION['error'] = $result['error'];
+                    // Redirect the user who needs to top up
+                    if (isset($result['user_id']) && (int)$result['user_id'] === $uid) {
+                        header('Location: ' . WALLET_TOPUP_URL . '?amount=' . ($result['required_amount'] ?? 0));
+                        exit;
+                    } else {
+                        // If the other user needs to top up, just show error and don't redirect current user
+                        header('Location: ' . APP_URL . '/trades.php?trade=' . $tradeId);
+                        exit;
+                    }
+                }
                 $feeMsg = ($result['fee'] ?? 0) > 0
                     ? ' کارمزد پلتفرم: ' . fmt_credit((float)$result['fee']) . '.'
                     : '';
@@ -98,7 +111,7 @@ $escrowLabels = ['held' => 'نگهداری‌شده', 'released' => 'آزاد ش
 $detailTradeId = (int)($_GET['trade'] ?? 0);
 $detailTrade   = null;
 $detailContract = null;
-$detailBnpl     = null;
+$detailBnpl     = null; // BNPL is currently inactive, so we force null
 if ($detailTradeId) {
     $detailTrade = DB::fetch(
         'SELECT t.*, ua.name AS user_a_name, ub.name AS user_b_name,
