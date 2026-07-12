@@ -110,7 +110,7 @@ function render_navbar(?array $user = null): void {
         // ['/', 'خانه', 'bi-house', ''],
         // ['/#listings', 'کالاها', 'bi-grid', ''],
         ['/listings/create', 'ثبت کالا', 'bi-plus-circle', ''],
-        ['/trades', 'پیشنهادها', 'bi-inbox', ''],
+        ['/trades', 'معامله امن', 'bi-shield-lock', ''],
         // ['/wallet', 'کیف پول', 'bi-wallet2', ''],
         ['/ai/chat', 'دستیار AI', 'bi-stars', 'navbar-nav__link--ai'],
         ['/about', 'درباره ما', 'bi-question-circle', ''],

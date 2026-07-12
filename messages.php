@@ -172,7 +172,7 @@ render_navbar($user);
             </div>
           </div>
           <div style="margin-inline-start:auto;display:flex;gap:var(--sp-2)">
-            <a href="#" class="btn btn-outline btn-sm" title="معامله امن">
+            <a href="<?= APP_URL ?>/trades.php" class="btn btn-primary btn-sm" title="معامله امن">
               <i class="bi bi-shield-lock"></i> معامله امن
             </a>
             <a href="<?= APP_URL ?>/profile.php?id=<?= $chatUser['id'] ?>" class="btn btn-ghost btn-sm btn-icon" title="مشاهده پروفایل">
