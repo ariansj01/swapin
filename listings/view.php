@@ -521,8 +521,8 @@ render_navbar($user);
 
 
               <div class="form-group mb-4">
-                <label class="form-label">پیام (اختیاری)</label>
-                <textarea class="form-control" name="message" rows="3"
+                <label class="form-label">پیام (الزامی)</label>
+                <textarea class="form-control" name="message" rows="3" required
                           placeholder="درباره پیشنهاد خود توضیح دهید…"></textarea>
               </div>
 

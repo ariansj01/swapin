@@ -9,13 +9,12 @@ $listingId = (int)($_GET['id'] ?? 0);
 $success   = '';
 $error     = '';
 
-// Handle quick accept/reject removed — POST + CSRF only
-
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
     $offerId = (int)($_POST['offer_id'] ?? 0);
     $action  = clean($_POST['action'] ?? '');
+    $message = clean($_POST['message'] ?? '');
 
     if ($offerId && in_array($action, ['accept', 'reject'], true)) {
         // Verify this offer belongs to user's listing
@@ -30,81 +29,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$offer) {
             $error = 'پیشنهاد یافت نشد یا دسترسی ندارید.';
         } elseif ($action === 'accept') {
-            DB::query('UPDATE trade_offers SET status = "accepted" WHERE id = ?', [$offerId]);
-
-            // Get both listings' estimated values
-            $listingA = DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offer['listing_id']]);
-            $listingB = $offer['offer_listing_id'] ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offer['offer_listing_id']]) : null;
-            
-            $valueA = (float)($listingA['estimated_value'] ?? 0);
-            $valueB = (float)($listingB['estimated_value'] ?? 0);
-            
-            // Calculate credit difference (positive if user B needs to pay user A)
-            $creditDiff = $valueA - ($valueB + (float)$offer['offer_credit']);
-
-            // Create trade record
-            $tradeId = DB::insert('trades', [
-                'offer_id'     => $offerId,
-                'user_a_id'    => $uid,
-                'user_b_id'    => $offer['from_user_id'],
-                'listing_a_id' => $offer['listing_id'],
-                'listing_b_id' => $offer['offer_listing_id'] ?: null,
-                'credit_diff'  => $creditDiff,
-                'status'       => 'in_progress',
-            ]);
-
-            // Escrow hold + contract instead of direct credit transfer
-            if ($creditDiff > 0) {
-                // User B (offerer) needs to pay user A (listing owner)
-                $userToPayId = (int)$offer['from_user_id'];
-                $amountToPay = $creditDiff;
-            } elseif ($creditDiff < 0) {
-                // User A (listing owner) needs to pay user B (offerer)
-                $userToPayId = $uid;
-                $amountToPay = abs($creditDiff);
+            if (empty($message)) {
+                $error = 'لطفاً پیامی برای طرفین بنویسید.';
             } else {
-                $userToPayId = 0; // No one needs to pay
-                $amountToPay = 0;
-            }
+                DB::query('UPDATE trade_offers SET status = "accepted" WHERE id = ?', [$offerId]);
 
-            if ($userToPayId && $amountToPay > 0) {
-                $payerUser = DB::fetch('SELECT credit_balance, name FROM users WHERE id = ?', [$userToPayId]);
-                if (!$payerUser || (float)$payerUser['credit_balance'] < $amountToPay) {
-                    $requiredAmount = $amountToPay - (float)($payerUser['credit_balance'] ?? 0);
-                    $_SESSION['error'] = 'موجودی کیف پول شما برای پرداخت مابه‌التفاوت معامله کافی نیست. لطفاً ' . fmt_credit($requiredAmount) . ' به کیف پول خود اضافه کنید.';
-                    header('Location: ' . WALLET_TOPUP_URL . '?amount=' . $requiredAmount);
-                    exit;
+                // Get both listings' estimated values
+                $listingA = DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offer['listing_id']]);
+                $listingB = $offer['offer_listing_id'] ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offer['offer_listing_id']]) : null;
+                
+                $valueA = (float)($listingA['estimated_value'] ?? 0);
+                $valueB = (float)($listingB['estimated_value'] ?? 0);
+                
+                // Calculate credit difference (positive if user B needs to pay user A)
+                $creditDiff = $valueA - ($valueB + (float)$offer['offer_credit']);
+
+                // Create trade record
+                $tradeId = DB::insert('trades', [
+                    'offer_id'     => $offerId,
+                    'user_a_id'    => $uid,
+                    'user_b_id'    => $offer['from_user_id'],
+                    'listing_a_id' => $offer['listing_id'],
+                    'listing_b_id' => $offer['offer_listing_id'] ?: null,
+                    'credit_diff'  => $creditDiff,
+                    'status'       => 'in_progress',
+                ]);
+
+                // Escrow hold + contract instead of direct credit transfer
+                if ($creditDiff > 0) {
+                    // User B (offerer) needs to pay user A (listing owner)
+                    $userToPayId = (int)$offer['from_user_id'];
+                    $amountToPay = $creditDiff;
+                } elseif ($creditDiff < 0) {
+                    // User A (listing owner) needs to pay user B (offerer)
+                    $userToPayId = $uid;
+                    $amountToPay = abs($creditDiff);
+                } else {
+                    $userToPayId = 0; // No one needs to pay
+                    $amountToPay = 0;
                 }
-                escrow_hold($tradeId, $userToPayId, $amountToPay, 'سپرده مابه‌التفاوت معامله #' . $tradeId);
+
+                if ($userToPayId && $amountToPay > 0) {
+                    $payerUser = DB::fetch('SELECT credit_balance, name FROM users WHERE id = ?', [$userToPayId]);
+                    if (!$payerUser || (float)$payerUser['credit_balance'] < $amountToPay) {
+                        $requiredAmount = $amountToPay - (float)($payerUser['credit_balance'] ?? 0);
+                        $_SESSION['error'] = 'موجودی کیف پول شما برای پرداخت مابه‌التفاوت معامله کافی نیست. لطفاً ' . fmt_credit($requiredAmount) . ' به کیف پول خود اضافه کنید.';
+                        header('Location: ' . WALLET_TOPUP_URL . '?amount=' . $requiredAmount);
+                        exit;
+                    }
+                    escrow_hold($tradeId, $userToPayId, $amountToPay, 'سپرده مابه‌التفاوت معامله #' . $tradeId);
+                }
+
+                create_trade_contract($tradeId);
+
+                // Notify both users with the custom message
+                $thread = 'trade_' . $tradeId;
+                DB::insert('messages', [
+                    'thread_id'    => $thread,
+                    'from_user_id' => $uid,
+                    'to_user_id'   => $offer['from_user_id'],
+                    'offer_id'     => $offerId,
+                    'body'         => $message,
+                ]);
+
+                $success = 'پیشنهاد پذیرفته شد! معامله ایجاد شد.';
+                // Mark listing as traded
+
+                header('Location: ' . APP_URL . '/trades.php?trade=' . $tradeId . '&accepted=1'); exit;
             }
-
-            create_trade_contract($tradeId);
-
-            // Notify both users
-            $thread = 'trade_' . $tradeId;
-            DB::insert('messages', [
-                'thread_id'    => $thread,
-                'from_user_id' => $uid,
-                'to_user_id'   => $offer['from_user_id'],
-                'offer_id'     => $offerId,
-                'body'         => 'پیشنهاد شما پذیرفته شد! جزئیات معامله را هماهنگ کنیم.',
-            ]);
-
-            $success = 'پیشنهاد پذیرفته شد! معامله ایجاد شد.';
-            // Mark listing as traded
-
-            header('Location: ' . APP_URL . '/trades.php?trade=' . $tradeId . '&accepted=1'); exit;
 
         } elseif ($action === 'reject') {
-            DB::query('UPDATE trade_offers SET status = "rejected" WHERE id = ?', [$offerId]);
-            DB::insert('messages', [
-                'thread_id'    => 'offer_reject_' . $offerId,
-                'from_user_id' => $uid,
-                'to_user_id'   => $offer['from_user_id'],
-                'offer_id'     => $offerId,
-                'body'         => 'از پیشنهاد شما متشکرم، اما این بار آن را نپذیرفتم.',
-            ]);
-            $success = 'پیشنهاد رد شد.';
+            if (empty($message)) {
+                $error = 'لطفاً پیامی برای طرفین بنویسید.';
+            } else {
+                DB::query('UPDATE trade_offers SET status = "rejected" WHERE id = ?', [$offerId]);
+                DB::insert('messages', [
+                    'thread_id'    => 'offer_reject_' . $offerId,
+                    'from_user_id' => $uid,
+                    'to_user_id'   => $offer['from_user_id'],
+                    'offer_id'     => $offerId,
+                    'body'         => $message,
+                ]);
+                $success = 'پیشنهاد رد شد.';
+            }
         }
     }
 }
@@ -186,23 +193,23 @@ render_navbar($user);
         $statusColors = ['pending' => 'warning', 'accepted' => 'success', 'rejected' => 'danger', 'cancelled' => 'info', 'completed' => 'success'];
         $statusColor  = $statusColors[$offer['status']] ?? 'info';
       ?>
-      <div class="card <?= $offer['status'] === 'pending' ? '' : '' ?>" style="<?= $offer['status'] === 'pending' ? 'border-inline-start:3px solid var(--warning)' : '' ?>">
+      <div class="card" style="<?= $offer['status'] === 'pending' ? 'border-inline-start:4px solid var(--warning)' : '' ?>">
         <div class="card-body">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap">
 
             <!-- Offer Left -->
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-                <div class="avatar avatar-sm"><?= strtoupper(substr($offer['from_name'], 0, 1)) ?></div>
+                <div class="avatar avatar-md"><?= strtoupper(substr($offer['from_name'], 0, 1)) ?></div>
                 <div>
-                  <span style="font-weight:700"><?= h($offer['from_name']) ?></span>
+                  <div style="font-weight:700;font-size:1.0625rem"><?= h($offer['from_name']) ?></div>
                   <?php if ($offer['from_rating'] > 0): ?>
-                  <span class="fs-xs" style="color:var(--accent-dark);margin-inline-start:var(--sp-2)">
+                  <div class="fs-xs" style="color:var(--accent-dark)">
                     <i class="bi bi-star-fill"></i> <?= number_format((float)$offer['from_rating'], 1) ?>
-                  </span>
+                  </div>
                   <?php endif; ?>
                 </div>
-                <span class="badge badge-<?= $statusColor ?>" style="margin-inline-start:auto"><?= offer_status_label($offer['status']) ?></span>
+                <span class="badge badge-<?= $statusColor ?> fs-xs" style="margin-inline-start:auto"><?= offer_status_label($offer['status']) ?></span>
               </div>
 
               <?php if (!$listing): ?>
@@ -212,71 +219,78 @@ render_navbar($user);
               <?php endif; ?>
 
               <!-- What they're offering -->
-              <div style="background:rgba(0,174,239,.04);border:1px solid rgba(0,174,239,.15);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-3)">
-                <div class="fs-xs" style="color:var(--text-muted);margin-bottom:var(--sp-1)">پیشنهاد آن‌ها:</div>
+              <?php if ($offer['offer_listing_title'] || (float)$offer['offer_credit'] > 0): ?>
+              <div style="background:rgba(0,174,239,.04);border:1px solid rgba(0,174,239,.15);border-radius:var(--radius-md);padding:var(--sp-4);margin-bottom:var(--sp-3)">
+                <div class="fs-xs" style="color:var(--text-muted);margin-bottom:var(--sp-2)">پیشنهاد:</div>
                 <?php if ($offer['offer_listing_title']): ?>
-                <div style="display:flex;align-items:center;gap:var(--sp-2)">
+                <div style="display:flex;align-items:center;gap:var(--sp-3)">
                   <?php if ($offer['offer_listing_thumb'] ?? false): ?>
                   <img src="<?= UPLOAD_URL . h($offer['offer_listing_thumb']) ?>" alt="<?= h($offer['offer_listing_title']) ?>"
-                       style="width:36px;height:36px;border-radius:var(--radius-sm);object-fit:cover">
+                       style="width:60px;height:60px;border-radius:var(--radius-md);object-fit:cover">
                   <?php endif; ?>
-                  <div>
-                    <div style="font-weight:600"><i class="bi bi-box"></i> <?= h($offer['offer_listing_title']) ?></div>
-                  </div>
+                  <div style="font-weight:600"><i class="bi bi-box"></i> <?= h($offer['offer_listing_title']) ?></div>
                 </div>
                 <?php endif; ?>
                 <?php if ((float)$offer['offer_credit'] > 0): ?>
-                <div class="<?= $offer['offer_listing_title'] ? 'fs-sm mt-1' : 'font-weight:700;font-size:1.125rem' ?>" style="color:var(--primary)">
+                <div class="fs-md mt-2" style="color:var(--primary);font-weight:700">
                   <i class="bi bi-wallet2"></i> + <?= fmt_credit((float)$offer['offer_credit']) ?>
                 </div>
-                <?php elseif (!$offer['offer_listing_title'] && (float)$offer['offer_credit'] <= 0): ?>
-                <div class="fs-sm" style="color:var(--text-muted)">پیشنهاد مشخصی ثبت نشده</div>
                 <?php endif; ?>
               </div>
+              <?php endif; ?>
 
               <?php if ($offer['message']): ?>
-              <div style="background:var(--bg);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);font-size:.875rem;color:var(--text-secondary);font-style:italic">
+              <div style="background:var(--bg);border-radius:var(--radius-md);padding:var(--sp-4);font-size:.9375rem;color:var(--text-secondary)">
+                <div class="fs-xs mb-2" style="color:var(--text-muted)">پیام پیشنهاد‌دهنده:</div>
                 "<?= h($offer['message']) ?>"
               </div>
               <?php endif; ?>
 
-              <div class="fs-xs mt-3" style="color:var(--text-muted)">
+              <div class="fs-xs mt-4" style="color:var(--text-muted)">
                 <i class="bi bi-clock"></i> <?= persian_datetime($offer['created_at']) ?>
               </div>
             </div>
 
             <!-- Actions -->
             <?php if ($offer['status'] === 'pending'): ?>
-            <div style="display:flex;flex-direction:column;gap:var(--sp-3);min-width:140px">
-              <form method="POST">
+            <div style="width:100%;min-width:280px;max-width:420px">
+              <form method="POST" class="mb-3">
                 <?= csrf_field() ?>
-                <input type="hidden" name="action"   value="accept">
+                <input type="hidden" name="action" value="accept">
                 <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
                 <?php if ($listingId): ?>
                 <input type="hidden" name="id" value="<?= $listingId ?>">
                 <?php endif; ?>
+                <div class="form-group">
+                  <label class="form-label">پیام پذیرش:</label>
+                  <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم. برای هماهنگی بیشتر پیام بده."></textarea>
+                </div>
                 <button type="submit" class="btn btn-primary w-100">
-                  <i class="bi bi-check-lg"></i> پذیرش
+                  <i class="bi bi-check-lg"></i> پذیرش پیشنهاد
                 </button>
               </form>
-              <form method="POST">
+              <form method="POST" class="mb-3">
                 <?= csrf_field() ?>
-                <input type="hidden" name="action"   value="reject">
+                <input type="hidden" name="action" value="reject">
                 <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
+                <div class="form-group">
+                  <label class="form-label">پیام رد:</label>
+                  <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: متشکرم، اما این بار نمی‌تونم."></textarea>
+                </div>
                 <button type="submit" class="btn btn-ghost w-100" style="color:var(--danger)">
-                  <i class="bi bi-x-lg"></i> رد
+                  <i class="bi bi-x-lg"></i> رد پیشنهاد
                 </button>
               </form>
               <a href="<?= APP_URL ?>/messages.php?to=<?= $offer['from_user_id'] ?>"
-                 class="btn btn-outline w-100 btn-sm">
-                <i class="bi bi-chat"></i> پیام
+                 class="btn btn-outline w-100">
+                <i class="bi bi-chat"></i> چت مستقیم
               </a>
             </div>
             <?php elseif ($offer['status'] === 'accepted'): ?>
-            <div>
-              <span class="badge badge-success" style="font-size:.875rem;padding:var(--sp-2) var(--sp-3)">
-                <i class="bi bi-check-circle"></i> پذیرفته شد — معامله ایجاد شد
-              </span>
+            <div style="width:100%">
+              <div class="alert alert-success" style="margin-bottom:0">
+                <i class="bi bi-check-circle"></i> پیشنهاد پذیرفته شد — معامله ایجاد شد
+              </div>
             </div>
             <?php endif; ?>
 

@@ -70,7 +70,35 @@
     valueEl.value = data.value;
   }
 
+  function validateFormBeforeAi() {
+    const title = document.getElementById('title');
+    const desc = document.getElementById('description');
+    const category = document.getElementById('category_id');
+    const errors = [];
+
+    if (title.value.trim().length < 5) {
+      errors.push('عنوان باید حداقل ۵ کاراکتر باشد');
+    }
+    if (desc.value.trim().length < 20) {
+      errors.push('توضیحات باید حداقل ۲۰ کاراکتر باشد');
+    }
+    if (!category.value) {
+      errors.push('لطفاً دسته‌بندی را انتخاب کنید');
+    }
+
+    if (errors.length > 0) {
+      if (typeof showToast === 'function') {
+        showToast(errors[0], 'error');
+      }
+      return false;
+    }
+    return true;
+  }
+
   async function runAiPricing() {
+    if (!validateFormBeforeAi()) {
+      return;
+    }
     showOverlay();
     animateSteps();
 

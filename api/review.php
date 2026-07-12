@@ -11,10 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 csrf_verify_or_fail();
 
-$tradeId   = (int)($_POST['trade_id'] ?? 0);
-$toUserId  = (int)($_POST['to_user_id'] ?? 0);
-$rating    = max(1, min(5, (int)($_POST['rating'] ?? 0)));
-$comment   = clean($_POST['comment'] ?? '');
+$tradeId     = (int)($_POST['trade_id'] ?? 0);
+$toUserId    = (int)($_POST['to_user_id'] ?? 0);
+$userRating  = max(1, min(5, (int)($_POST['user_rating'] ?? 0)));
+$tradeRating = max(1, min(5, (int)($_POST['trade_rating'] ?? 0)));
+$comment     = clean($_POST['comment'] ?? '');
 
 $trade = DB::fetch(
     'SELECT * FROM trades WHERE id = ? AND status = "completed" AND (user_a_id = ? OR user_b_id = ?)',
@@ -35,14 +36,24 @@ if ($existing) {
     exit;
 }
 
-DB::insert('reviews', [
+// Prepare review data
+$reviewData = [
     'trade_id'     => $tradeId,
     'from_user_id' => $uid,
     'to_user_id'   => $toUserId,
-    'rating'       => $rating,
+    'rating'       => $userRating, // This is the user rating
     'comment'      => $comment ?: null,
-]);
+];
 
+// Check if trade_rating column exists and add it if present
+$reviewColumns = db_table_columns('reviews');
+if (in_array('trade_rating', $reviewColumns)) {
+    $reviewData['trade_rating'] = $tradeRating;
+}
+
+DB::insert('reviews', $reviewData);
+
+// Update user stats
 $stats = DB::fetch(
     'SELECT AVG(rating) AS avg_r, COUNT(*) AS cnt FROM reviews WHERE to_user_id = ?',
     [$toUserId]
