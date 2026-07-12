@@ -175,6 +175,11 @@ render_navbar($user);
     <div class="alert alert-danger mb-6">
       <i class="bi bi-exclamation-circle"></i>
       <div>لطفاً <strong><?= count($errors) ?></strong> خطای زیر را قبل از ارسال برطرف کنید.</div>
+      <ul style="margin-top: var(--sp-2); list-style: none; padding: 0;">
+        <?php foreach ($errors as $field => $msg): ?>
+          <li style="margin-bottom: var(--sp-1); padding-right: var(--sp-2);"><?= h($msg) ?></li>
+        <?php endforeach; ?>
+      </ul>
     </div>
     <?php endif; ?>
 
