@@ -13,6 +13,23 @@ function listing_bad_words(): array {
     ];
 }
 
+function listing_contains_bad_word(string $text, string $word): bool {
+    $text = trim($text);
+    $word = trim($word);
+
+    if ($text === '' || $word === '') {
+        return false;
+    }
+
+    $escaped = preg_quote($word, '/');
+
+    // Match full words/phrases only so short banned tokens like "کس"
+    // do not incorrectly block normal words such as "مکس".
+    $pattern = '/(?<![\p{L}\p{N}\x{0600}-\x{06FF}])' . $escaped . '(?![\p{L}\p{N}\x{0600}-\x{06FF}])/iu';
+
+    return preg_match($pattern, $text) === 1;
+}
+
 function listing_nonsense_patterns(): array {
     return [
         '/لورم\s*ایپس/u'                          => 'متن آزمایشی (لورم ایپس) مجاز نیست',
@@ -75,7 +92,7 @@ function validate_listing_content(array $fields): array {
     $lower = mb_strtolower($combined);
     foreach (listing_bad_words() as $word) {
         if ($word === '') continue;
-        if (mb_strpos($lower, mb_strtolower($word)) !== false) {
+        if (listing_contains_bad_word($lower, mb_strtolower($word))) {
             $errors['content'] = 'متن آگهی شامل کلمات نامناسب یا ممنوع است';
             break;
         }
