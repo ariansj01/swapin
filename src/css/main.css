@@ -614,6 +614,42 @@ select.form-control { cursor: pointer; appearance: none; background-image: url("
 
 textarea.form-control { resize: vertical; min-height: 100px; }
 
+/* Choice cards (onboarding / preference pickers) */
+.choice-grid { display: grid; gap: var(--sp-3); }
+.choice-grid--2 { grid-template-columns: repeat(2, 1fr); }
+.choice-grid--auto { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--sp-2); }
+
+.choice-card {
+  cursor: pointer;
+  padding: var(--sp-4);
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  transition: border-color var(--duration), background var(--duration), box-shadow var(--duration);
+}
+.choice-card--compact { padding: var(--sp-3); }
+.choice-card input { flex-shrink: 0; margin-top: 2px; }
+.choice-card__label { font-weight: 600; line-height: 1.4; }
+.choice-card:has(input:checked) {
+  border-color: var(--primary);
+  background: rgba(7, 26, 51, 0.05);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.no-listings-notice {
+  padding: var(--sp-4);
+  background: var(--warning-bg);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+.no-listings-notice p { color: var(--text-secondary); margin-bottom: var(--sp-3); font-size: .875rem; }
+
+@media (max-width: 540px) {
+  .choice-grid--2 { grid-template-columns: 1fr; }
+}
+
 /* ── 9. Badges ─────────────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;

@@ -119,15 +119,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             DB::query('UPDATE otp_codes SET used = 1 WHERE id = ?', [$row['id']]);
             
-            $user = DB::fetch('SELECT id, name, onboarding_completed FROM users WHERE phone = ? AND is_active = 1', [$phoneIntl]);
+            $user = DB::fetch('SELECT id, name FROM users WHERE phone = ? AND is_active = 1', [$phoneIntl]);
             if ($user) {
                 login_user($user['id']);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
-                if (!$user['onboarding_completed']) {
-                    $dest = APP_URL . '/auth/onboarding' . ($redir ? '?redirect=' . urlencode($redir) : '');
-                } else {
-                    $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard';
-                }
+                $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard';
                 header('Location: ' . $dest); exit;
             } else {
                 // New user - redirect to complete profile

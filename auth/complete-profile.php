@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         login_user($uid);
         unset($_SESSION['new_user_phone']);
-        $dest = APP_URL . '/auth/onboarding' . ($redir ? '?redirect=' . urlencode($redir) : '');
+        $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard?welcome=1';
         header('Location: ' . $dest); exit;
     }
 }

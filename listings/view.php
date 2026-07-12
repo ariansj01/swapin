@@ -110,7 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 
             if ($offerType === 'item') {
-                if (!$offerListingId) {
+                if (!$myListings) {
+                    $offerError = 'شما کالایی ندارید. ابتدا کالای خود را ثبت کنید.';
+                } elseif (!$offerListingId) {
                     $offerError = 'لطفاً یکی از کالاهای خود را انتخاب کنید.';
                 } elseif (!DB::fetch(
                     'SELECT id FROM listings WHERE id = ? AND user_id = ? AND status = "active" AND review_status = "approved"',
@@ -378,7 +380,7 @@ render_navbar($user);
             <a href="<?= APP_URL ?>/listings/edit?id=<?= $id ?>" class="btn btn-outline w-100 mb-3">
               <i class="bi bi-pencil"></i> ویرایش آگهی
             </a>
-            <a href="<?= APP_URL ?>/listings/bump?id=<?= $id ?>" class="btn btn-accent w-100 mb-3">
+            <a href="<?= APP_URL ?>/listings/promote?id=<?= $id ?>" class="btn btn-accent w-100 mb-3">
               <i class="bi bi-rocket"></i> ارتقای آگهی
             </a>
             <?php if (($listing['inspection_status'] ?? 'none') === 'none'): ?>
@@ -487,27 +489,34 @@ render_navbar($user);
 
               <div class="mb-4">
                 <label class="form-label fw-600 mb-3">نوع پیشنهاد خود را انتخاب کنید</label>
-                
-                <?php if ($myListings): ?>
-                <div class="card mb-3" style="border: 2px solid var(--primary); background: rgba(0, 174, 239, 0.02);">
+
+                <div class="card mb-3 offer-type-card" id="has-item-card" style="border: 2px solid var(--primary);">
                   <div class="card-body">
                     <div class="d-flex gap-2 mb-3">
                       <input type="radio" id="has-item" name="offer_type" value="item" class="mt-1" <?= $myListings ? 'checked' : '' ?>>
                       <label for="has-item" class="fw-600">کالا دارم</label>
                     </div>
+                    <?php if ($myListings): ?>
                     <select class="form-control" name="offer_listing_id" id="offer-listing">
                       <option value="">— یکی از کالاهای خود را انتخاب کنید —</option>
                       <?php foreach ($myListings as $ml): ?>
                       <option value="<?= $ml['id'] ?>"><?= h(mb_strimwidth($ml['title'], 0, 50, '…')) ?></option>
                       <?php endforeach; ?>
                     </select>
+                    <?php else: ?>
+                    <div class="no-listings-notice" id="no-listings-notice">
+                      <p><i class="bi bi-box-seam"></i> شما کالایی ندارید</p>
+                      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> ثبت کالا
+                      </a>
+                    </div>
+                    <?php endif; ?>
                   </div>
                 </div>
-                
+
                 <div class="text-center fs-sm mb-3" style="color:var(--text-muted);">یا</div>
-                <?php endif; ?>
-                
-                <div class="card mb-4" style="border: 2px solid var(--border);">
+
+                <div class="card mb-4 offer-type-card" id="no-item-card" style="border: 2px solid var(--border);">
                   <div class="card-body">
                     <div class="d-flex gap-2 mb-3">
                       <input type="radio" id="no-item" name="offer_type" value="message" class="mt-1" <?= !$myListings ? 'checked' : '' ?>>
@@ -560,6 +569,20 @@ render_navbar($user);
 </main>
 
 <script>
+// Highlight selected offer type
+function updateOfferTypeCards() {
+  const hasItem = document.getElementById('has-item')?.checked;
+  const hasCard = document.getElementById('has-item-card');
+  const noCard  = document.getElementById('no-item-card');
+  if (!hasCard || !noCard) return;
+  hasCard.style.borderColor = hasItem ? 'var(--primary)' : 'var(--border)';
+  hasCard.style.background  = hasItem ? 'rgba(7, 26, 51, 0.03)' : '';
+  noCard.style.borderColor  = hasItem ? 'var(--border)' : 'var(--primary)';
+  noCard.style.background   = hasItem ? '' : 'rgba(7, 26, 51, 0.03)';
+}
+document.querySelectorAll('input[name="offer_type"]').forEach(r => r.addEventListener('change', updateOfferTypeCards));
+updateOfferTypeCards();
+
 // Validate offer form
 document.getElementById('offer-form')?.addEventListener('submit', function(e) {
       const offerType = document.querySelector('input[name="offer_type"]:checked')?.value || '';
@@ -568,7 +591,13 @@ document.getElementById('offer-form')?.addEventListener('submit', function(e) {
       
       // If "has item" is selected, require an item
       if (offerType === 'item') {
-        const listing = document.getElementById('offer-listing')?.value || '';
+        const listingSelect = document.getElementById('offer-listing');
+        if (!listingSelect) {
+          e.preventDefault();
+          showToast('شما کالایی ندارید. ابتدا کالای خود را ثبت کنید.', 'error');
+          return;
+        }
+        const listing = listingSelect.value || '';
         if (!listing) {
           e.preventDefault();
           showToast('لطفاً یکی از کالاهای خود را انتخاب کنید', 'error');

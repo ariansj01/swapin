@@ -3,8 +3,17 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 
 $user = require_auth();
+$needsOnboarding = empty($user['onboarding_completed']);
 
 $errors = [];
+$onboardingErrors = [];
+$onboardingVals = [
+    'primary_goal'          => '',
+    'interested_categories' => [],
+    'city'                  => $user['city'] ?? '',
+    'typical_value_range'   => '',
+    'can_ship'              => null,
+];
 $vals   = [
     'title'           => '',
     'category_id'     => '',
@@ -28,6 +37,9 @@ $categories = DB::fetchAll(
      LEFT JOIN categories p ON p.id = c.parent_id
      WHERE c.is_active = 1 ORDER BY COALESCE(p.sort_order,c.sort_order), c.sort_order'
 );
+$parentCategories = DB::fetchAll(
+    'SELECT id, name FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order, id'
+);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
@@ -42,6 +54,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['sell_price']      = 0;
     $vals['needs_inspection']= !empty($_POST['needs_inspection']) ? 1 : 0;
     $vals['city']            = clean($_POST['city']            ?? '');
+
+    if ($needsOnboarding) {
+        $onboardingVals['primary_goal']          = clean($_POST['primary_goal'] ?? '');
+        $onboardingVals['interested_categories'] = $_POST['interested_categories'] ?? [];
+        $onboardingVals['city']                  = clean($_POST['onboarding_city'] ?? '');
+        $onboardingVals['typical_value_range']   = clean($_POST['typical_value_range'] ?? '');
+        $onboardingVals['can_ship']              = isset($_POST['can_ship']) ? (int)$_POST['can_ship'] : null;
+
+        if (!in_array($onboardingVals['primary_goal'], ['swap', 'buy', 'sell', 'any'], true)) {
+            $onboardingErrors['primary_goal'] = 'لطفاً یک هدف اصلی انتخاب کنید';
+        }
+    }
 
     if (!can_create_listing($user))
         $errors['limit'] = 'سقف آگهی پر شده (' . get_listing_limit($user) . '). اشتراک خود را ارتقا دهید.';
@@ -77,6 +101,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
     foreach ($contentErrors as $field => $msg) {
         if (!isset($errors[$field])) $errors[$field] = $msg;
+    }
+
+    if ($needsOnboarding && !empty($onboardingErrors)) {
+        $errors = array_merge($errors, $onboardingErrors);
     }
 
     if (empty($errors)) {
@@ -123,6 +151,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!empty($vals['needs_inspection'])) {
             request_expert_inspection($listingId, $user['id']);
+        }
+
+        if ($needsOnboarding) {
+            DB::update('users', [
+                'primary_goal'          => $onboardingVals['primary_goal'],
+                'interested_categories' => json_encode(array_map('intval', $onboardingVals['interested_categories'])),
+                'city'                  => $onboardingVals['city'] ?: ($vals['city'] ?: $user['city']),
+                'typical_value_range'   => $onboardingVals['typical_value_range'] ?: null,
+                'can_ship'              => $onboardingVals['can_ship'],
+                'onboarding_completed'  => 1,
+            ], 'id = ?', [$user['id']]);
         }
 
         ai_match_clear_cache((int) $user['id']);
@@ -185,6 +224,10 @@ render_navbar($user);
 
     <form method="POST" enctype="multipart/form-data" id="create-form" novalidate>
     <?= csrf_field() ?>
+
+    <?php if ($needsOnboarding): ?>
+    <?php require __DIR__ . '/../includes/onboarding_form.php'; ?>
+    <?php endif; ?>
 
       <!-- ── Step 1: Listing Details ───────────────────────────────── -->
       <div class="card mb-5" id="step-1">
