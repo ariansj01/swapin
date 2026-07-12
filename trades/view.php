@@ -57,6 +57,10 @@ if (!$contract) {
 }
 
 $bothPaid = $trade['fee_paid'] && $trade['diff_paid'];
+$myReview = DB::fetch(
+    'SELECT id FROM reviews WHERE trade_id = ? AND from_user_id = ? LIMIT 1',
+    [$tradeId, $uid]
+);
 
 // Handle ALL actions here
 $success = '';
@@ -66,7 +70,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
     $action = clean($_POST['action'] ?? '');
 
-    if ($action === 'pay_diff' && !$trade['diff_paid']) {
+    if ($action === 'send_message') {
+        $body = clean($_POST['body'] ?? '');
+        if ($body !== '') {
+            DB::insert('secure_room_messages', [
+                'trade_id' => $tradeId,
+                'user_id' => $uid,
+                'type' => 'text',
+                'body' => $body,
+            ]);
+            $success = 'پیام ارسال شد.';
+        }
+    } elseif ($action === 'pay_diff' && !$trade['diff_paid']) {
         $myBalance = (float)($user['credit_balance'] ?? 0);
         if ($myBalance < $amountToPay) {
             $_SESSION['error'] = 'موجودی کیف پول شما کافی نیست — نیاز: ' . fmt_credit($amountToPay - $myBalance);
@@ -100,17 +115,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 DB::query('UPDATE trades SET step = 6 WHERE id = ?', [$tradeId]);
             }
         }
-    } elseif ($action === 'send_item') {
-        $code = clean($_POST['tracking_code'] ?? '');
+    } elseif ($action === 'mark_shipped') {
         if ($isA) {
+            DB::update('trades', ['user_a_delivered' => 1], 'id = ?', [$tradeId]);
+        } else {
+            DB::update('trades', ['user_b_delivered' => 1], 'id = ?', [$tradeId]);
+        }
+        $success = 'ارسال کالا ثبت شد.';
+        $trade = DB::fetch('SELECT * FROM trades WHERE id = ?', [$tradeId]);
+        if (($trade['user_a_delivered'] ?? 0) && ($trade['user_b_delivered'] ?? 0)) {
+            DB::query('UPDATE trades SET step = 7 WHERE id = ?', [$tradeId]);
+        }
+    } elseif ($action === 'save_tracking') {
+        $code = clean($_POST['tracking_code'] ?? '');
+        if ($code === '') {
+            $error = 'کد رهگیری را وارد کنید.';
+        } elseif ($isA) {
             DB::update('trades', ['tracking_code_a' => $code], 'id = ?', [$tradeId]);
         } else {
             DB::update('trades', ['tracking_code_b' => $code], 'id = ?', [$tradeId]);
         }
-        $success = 'کد رهگیری ثبت شد!';
-        DB::query('UPDATE trades SET step = 7 WHERE id = ?', [$tradeId]);
+        if ($error === '') {
+            $success = 'کد رهگیری ثبت شد!';
+            $trade = DB::fetch('SELECT * FROM trades WHERE id = ?', [$tradeId]);
+            if (($trade['tracking_code_a'] ?? '') !== '' && ($trade['tracking_code_b'] ?? '') !== '') {
+                DB::query('UPDATE trades SET step = 8 WHERE id = ?', [$tradeId]);
+            }
+        }
     } elseif ($action === 'confirm_received') {
-        // Mark received flag (user received theirs?
         if ($isA) {
             DB::update('trades', ['user_a_received' => 1], 'id = ?', [$tradeId]);
         } else {
@@ -119,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $success = 'دریافت کالا تایید شد!';
         $trade = DB::fetch('SELECT * FROM trades WHERE id = ?', [$tradeId]);
         if (($trade['user_a_received'] ?? 0) && ($trade['user_b_received'] ?? 0)) {
-            DB::query('UPDATE trades SET step = 8 WHERE id = ?', [$tradeId]);
+            DB::query('UPDATE trades SET step = 9 WHERE id = ?', [$tradeId]);
         }
     } elseif ($action === 'confirm_trade') {
         if (!contract_fully_signed($tradeId)) {
@@ -146,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         exit;
                     }
                 }
-                DB::query('UPDATE trades SET step = 9 WHERE id = ?', [$tradeId]);
+                DB::query('UPDATE trades SET step = 10 WHERE id = ?', [$tradeId]);
                 $success = 'معامله تکمیل شد! سپرده آزاد شد!';
             } else {
                 $success = 'تایید ثبت شد! در انتظار طرف مقابل.';
@@ -166,6 +198,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
          WHERE t.id = ? AND (t.user_a_id = ? OR t.user_b_id = ?)',
         [$tradeId, $uid, $uid]
     );
+    $contract = get_trade_contract($tradeId) ?? $contract;
+    $myReview = DB::fetch(
+        'SELECT id FROM reviews WHERE trade_id = ? AND from_user_id = ? LIMIT 1',
+        [$tradeId, $uid]
+    );
 }
 
 // Fetch messages
@@ -184,35 +221,27 @@ DB::query(
     [$tradeId, $uid]
 );
 
-function get_step_status(int $stepId, array $trade, array $contract): string {
-    $step = (int)($trade['step'] ?? 1);
-    $contractSigned = $contract && $contract['user_a_signed'] && $contract['user_b_signed'];
+function get_step_status(int $stepId, array $trade, array $contract, bool $hasReview): string {
+    $feePaid = (bool)($trade['fee_paid'] ?? 0);
+    $diffPaid = (bool)($trade['diff_paid'] ?? 0);
+    $contractSigned = !empty($contract) && !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
+    $shippingReady = !empty($trade['user_a_shipping_date']) && !empty($trade['user_b_shipping_date']);
+    $shipped = !empty($trade['user_a_delivered']) && !empty($trade['user_b_delivered']);
+    $trackingReady = !empty($trade['tracking_code_a']) && !empty($trade['tracking_code_b']);
+    $received = !empty($trade['user_a_received']) && !empty($trade['user_b_received']);
+    $completed = ($trade['status'] ?? '') === 'completed';
 
-    if ($stepId < 1) return 'completed';
-    if ($stepId == 1) return 'completed'; // offer accepted
-    if ($stepId == 2) return 'completed'; // offer accepted
-    if ($stepId == 3) return $trade['fee_paid'] ? 'completed' : ($step >= 2 ? 'current' : 'locked');
-    if ($stepId == 4) return $trade['diff_paid'] ? 'completed' : ($step >= 2 ? 'current' : 'locked');
-    if ($stepId == 5) return $contractSigned ? 'completed' : ($step >=4 ? 'current' : 'locked');
-    if ($stepId == 6) {
-        if (($trade['user_a_shipping_date'] ?? false) && ($trade['user_b_shipping_date'] ?? false)) return 'completed';
-        if ($step >=5) return 'current';
-        return 'locked';
-    }
-    if ($stepId ==7) {
-        if (($trade['tracking_code_a'] ?? false) && ($trade['tracking_code_b'] ?? false)) return 'completed';
-        if ($step >=6) return 'current';
-        return 'locked';
-    }
-    if ($stepId ==8) {
-        if (($trade['user_a_received'] ?? 0) && ($trade['user_b_received'] ?? 0)) return 'completed';
-        if ($step >=7) return 'current';
-        return 'locked';
-    }
-    if ($stepId ==9) return $trade['status'] === 'user_b_confirmed' || $trade['status'] === 'completed' ? 'completed' : ($step >=8 ? 'current' : 'locked');
-    if ($stepId ==10) return $trade['status'] === 'completed' ? 'completed' : 'locked';
-    if ($stepId ==11) return 'locked'; // rating done on completed
-    if ($stepId ==12) return $trade['status'] === 'completed' ? 'completed' : 'locked';
+    if ($stepId === 1 || $stepId === 2) return 'completed';
+    if ($stepId === 3) return $feePaid ? 'completed' : 'current';
+    if ($stepId === 4) return $diffPaid ? 'completed' : ($feePaid ? 'current' : 'locked');
+    if ($stepId === 5) return $contractSigned ? 'completed' : (($feePaid && $diffPaid) ? 'current' : 'locked');
+    if ($stepId === 6) return $shippingReady ? 'completed' : ($contractSigned ? 'current' : 'locked');
+    if ($stepId === 7) return $shipped ? 'completed' : ($shippingReady ? 'current' : 'locked');
+    if ($stepId === 8) return $trackingReady ? 'completed' : ($shipped ? 'current' : 'locked');
+    if ($stepId === 9) return $received ? 'completed' : ($trackingReady ? 'current' : 'locked');
+    if ($stepId === 10) return $completed ? 'completed' : ($received ? 'current' : 'locked');
+    if ($stepId === 11) return $hasReview ? 'completed' : ($completed ? 'current' : 'locked');
+    if ($stepId === 12) return ($completed && $hasReview) ? 'completed' : 'locked';
     return 'pending';
 }
 
@@ -263,13 +292,13 @@ render_navbar($user);
             ['id' => 7, 'title' => 'ارسال کالا', 'icon' => 'bi-truck'],
             ['id' => 8, 'title' => 'ثبت کد رهگیری', 'icon' => 'bi-upc-scan'],
             ['id' => 9, 'title' => 'دریافت کالا', 'icon' => 'bi-box'],
-            ['id' =>10, 'title' => 'تایید دریافت', 'icon' => 'bi-check-circle-fill'],
+            ['id' =>10, 'title' => 'تایید نهایی معامله', 'icon' => 'bi-check-circle-fill'],
             ['id' =>11, 'title' => 'ثبت امتیاز', 'icon' => 'bi-star'],
             ['id' =>12, 'title' => 'پایان معامله', 'icon' => 'bi-flag'],
           ];
           echo '<div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:var(--sp-5);padding:var(--sp-4);background:#fff;border-radius:var(--radius-md);">';
           foreach ($steps as $i => $s):
-            $status = get_step_status($s['id'], $trade, $contract);
+            $status = get_step_status($s['id'], $trade, $contract, (bool)$myReview);
             $stepBg = $status === 'completed' ? 'var(--success)' : ($status === 'current' ? 'var(--primary)' : ($status === 'locked' ? 'var(--border)' : 'var(--text-muted)'));
             $stepText = $status === 'completed' || $status === 'current' ? '#fff' : 'var(--text-muted)';
             $stepShadow = $status === 'current' ? '0 4px 12px rgba(var(--primary-rgb),0.3)' : 'none';
@@ -294,7 +323,7 @@ render_navbar($user);
           // Render current step action card
           $currentStep = null;
           foreach ($steps as $s):
-            if (get_step_status($s['id'], $trade, $contract) === 'current') {
+            if (get_step_status($s['id'], $trade, $contract, (bool)$myReview) === 'current') {
                 $currentStep = $s;
                 break;
             }
@@ -409,38 +438,32 @@ render_navbar($user);
                 </div>
               </div>
             <?php elseif ($currentStep['id'] ==7): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">کالا رو ارسال کرد و کد رهگیری رو ثبت کن.</p>
+              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">بعد از ارسال واقعی کالا، وضعیت ارسال را ثبت کنید.</p>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);">
                 <div class="card" style="margin:0;">
                   <div class="card-body">
-                    <h6>کد رهگیری شما</h6>
-                    <?php if (($isA && $trade['tracking_code_a']) || (!$isA && $trade['tracking_code_b'])): ?>
+                    <h6>وضعیت شما</h6>
+                    <?php if (($isA && !empty($trade['user_a_delivered'])) || (!$isA && !empty($trade['user_b_delivered']))): ?>
                       <div style="color:var(--success);">
                         <i class="bi bi-check-circle"></i>
-                        ثبت شده:
-                        <?= h($isA ? $trade['tracking_code_a'] : $trade['tracking_code_b']) ?>
+                        ارسال شما ثبت شده است
                       </div>
                     <?php else: ?>
                       <form method="POST">
                         <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="send_item">
-                        <div class="form-group">
-                          <label class="form-label">کد رهگیری</label>
-                          <input type="text" name="tracking_code" class="form-control" required placeholder="کد رهگیری رو وارد کن">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm mt-2">ثبت کد رهگیری</button>
+                        <input type="hidden" name="action" value="mark_shipped">
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">کالا را ارسال کردم</button>
                       </form>
                     <?php endif; ?>
                   </div>
                 </div>
                 <div class="card" style="margin:0;">
                   <div class="card-body">
-                    <h6>کد رهگیری طرف مقابل</h6>
-                    <?php if ((!$isA && $trade['tracking_code_a']) || ($isA && $trade['tracking_code_b'])): ?>
+                    <h6>وضعیت طرف مقابل</h6>
+                    <?php if ((!$isA && !empty($trade['user_a_delivered'])) || ($isA && !empty($trade['user_b_delivered']))): ?>
                       <div style="color:var(--success);">
                         <i class="bi bi-check-circle"></i>
-                        ثبت شده:
-                        <?= h($isA ? $trade['tracking_code_b'] : $trade['tracking_code_a']) ?>
+                        ارسال طرف مقابل ثبت شده است
                       </div>
                     <?php else: ?>
                       <div style="color:var(--text-secondary);">در انتظار طرف مقابل...</div>
@@ -449,21 +472,26 @@ render_navbar($user);
                 </div>
               </div>
             <?php elseif ($currentStep['id'] ==8): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">کالا رو دریافت کردی؟ تایید کن.</p>
+              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">بعد از ارسال، کد رهگیری هر دو طرف را ثبت کنید.</p>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);">
                 <div class="card" style="margin:0;">
                   <div class="card-body">
-                    <h6>وضعیت شما</h6>
-                    <?php if (($isA && $trade['user_a_received']) || (!$isA && $trade['user_b_received'])): ?>
+                    <h6>کد رهگیری شما</h6>
+                    <?php if (($isA && !empty($trade['tracking_code_a'])) || (!$isA && !empty($trade['tracking_code_b']))): ?>
                       <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i> دریافت کردم
+                        <i class="bi bi-check-circle"></i>
+                        <?= h($isA ? $trade['tracking_code_a'] : $trade['tracking_code_b']) ?>
                       </div>
                     <?php else: ?>
                       <form method="POST">
                         <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="confirm_received">
+                        <input type="hidden" name="action" value="save_tracking">
+                        <div class="form-group">
+                          <label class="form-label">کد رهگیری</label>
+                          <input type="text" name="tracking_code" class="form-control" required placeholder="کد رهگیری را وارد کنید">
+                        </div>
                         <button type="submit" class="btn btn-primary">
-                          <i class="bi bi-box"></i> تایید دریافت کالا
+                          <i class="bi bi-upc-scan"></i> ثبت کد رهگیری
                         </button>
                       </form>
                     <?php endif; ?>
@@ -471,10 +499,11 @@ render_navbar($user);
                 </div>
                 <div class="card" style="margin:0;">
                   <div class="card-body">
-                    <h6>وضعیت طرف مقابل</h6>
-                    <?php if ((!$isA && $trade['user_a_received']) || ($isA && $trade['user_b_received'])): ?>
+                    <h6>کد رهگیری طرف مقابل</h6>
+                    <?php if ((!$isA && !empty($trade['tracking_code_a'])) || ($isA && !empty($trade['tracking_code_b']))): ?>
                       <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i> دریافت کرد
+                        <i class="bi bi-check-circle"></i>
+                        <?= h($isA ? $trade['tracking_code_b'] : $trade['tracking_code_a']) ?>
                       </div>
                     <?php else: ?>
                       <div style="color:var(--text-secondary);">در انتظار طرف مقابل...</div>
@@ -483,13 +512,79 @@ render_navbar($user);
                 </div>
               </div>
             <?php elseif ($currentStep['id'] ==9): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">معامله رو تایید کن تا تکمیل بشه.</p>
+              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">بعد از رسیدن کالا، دریافت را تایید کنید.</p>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);">
+                <div class="card" style="margin:0;">
+                  <div class="card-body">
+                    <h6>وضعیت شما</h6>
+                    <?php if (($isA && !empty($trade['user_a_received'])) || (!$isA && !empty($trade['user_b_received']))): ?>
+                      <div style="color:var(--success);">
+                        <i class="bi bi-check-circle"></i> دریافت شما تایید شده است
+                      </div>
+                    <?php else: ?>
+                      <form method="POST">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="action" value="confirm_received">
+                        <button type="submit" class="btn btn-primary">
+                          <i class="bi bi-box"></i> کالا را دریافت کردم
+                        </button>
+                      </form>
+                    <?php endif; ?>
+                  </div>
+                </div>
+                <div class="card" style="margin:0;">
+                  <div class="card-body">
+                    <h6>وضعیت طرف مقابل</h6>
+                    <?php if ((!$isA && !empty($trade['user_a_received'])) || ($isA && !empty($trade['user_b_received']))): ?>
+                      <div style="color:var(--success);">
+                        <i class="bi bi-check-circle"></i> طرف مقابل هم دریافت را تایید کرده
+                      </div>
+                    <?php else: ?>
+                      <div style="color:var(--text-secondary);">در انتظار تایید طرف مقابل...</div>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              </div>
+            <?php elseif ($currentStep['id'] ==10): ?>
+              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">هر دو طرف کالا را گرفته‌اند. حالا معامله را نهایی کنید.</p>
               <form method="POST">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="confirm_trade">
                 <button type="submit" class="btn btn-accent btn-lg">
-                  <i class="bi bi-check-circle"></i> تایید تکمیل معامله
+                  <i class="bi bi-check-circle"></i> تایید نهایی معامله
                 </button>
+              </form>
+            <?php elseif ($currentStep['id'] ==11): ?>
+              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">معامله کامل شده؛ امتیاز شما باقی مانده است.</p>
+              <form method="POST" action="<?= APP_URL ?>/api/review.php" style="display:grid;gap:var(--sp-3);max-width:420px;">
+                <?= csrf_field() ?>
+                <input type="hidden" name="trade_id" value="<?= $tradeId ?>">
+                <input type="hidden" name="to_user_id" value="<?= $otherId ?>">
+                <div class="form-group">
+                  <label class="form-label">امتیاز به معامله</label>
+                  <select name="trade_rating" class="form-control" required>
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">امتیاز به طرف مقابل</label>
+                  <select name="user_rating" class="form-control" required>
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">نظر</label>
+                  <textarea name="comment" class="form-control" rows="3" placeholder="اختیاری"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">ثبت امتیاز</button>
               </form>
             <?php endif; ?>
 
