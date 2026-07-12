@@ -124,6 +124,12 @@ try {
     if (!in_array('trade_rated', $tradesColumns)) {
         DB::query('ALTER TABLE `trades` ADD COLUMN `trade_rated` TINYINT(1) NOT NULL DEFAULT 0 AFTER `user_b_delivered`');
     }
+    if (!in_array('user_a_received', $tradesColumns)) {
+        DB::query('ALTER TABLE `trades` ADD COLUMN `user_a_received` TINYINT(1) NOT NULL DEFAULT 0 AFTER `trade_rated`');
+    }
+    if (!in_array('user_b_received', $tradesColumns)) {
+        DB::query('ALTER TABLE `trades` ADD COLUMN `user_b_received` TINYINT(1) NOT NULL DEFAULT 0 AFTER `user_a_received`');
+    }
     
     // Create secure_room_messages table if it doesn't exist
     if (!db_has_table('secure_room_messages')) {
