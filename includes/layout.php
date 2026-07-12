@@ -111,12 +111,12 @@ function render_navbar(?array $user = null): void {
         // ['/#listings', 'کالاها', 'bi-grid', ''],
         ['/listings/create', 'ثبت کالا', 'bi-plus-circle', ''],
         ['/trades', 'پیشنهادها', 'bi-inbox', ''],
-        ['/wallet', 'کیف پول', 'bi-wallet2', ''],
+        // ['/wallet', 'کیف پول', 'bi-wallet2', ''],
         ['/ai/chat', 'دستیار AI', 'bi-stars', 'navbar-nav__link--ai'],
         ['/about', 'درباره ما', 'bi-question-circle', ''],
         ['/contact', 'تماس با ما', 'bi-envelope', ''],
-        ['/support', 'پشتیبانی', 'bi-headset', ''],
-        ['/fraud-prevention', 'راهنمای امنیت', 'bi-shield-exclamation', ''],
+        // ['/support', 'پشتیبانی', 'bi-headset', ''],
+        // ['/fraud-prevention', 'راهنمای امنیت', 'bi-shield-exclamation', ''],
     ];
 
     echo <<<HTML
@@ -414,11 +414,11 @@ function render_footer(): void {
         <ul class="site-footer__links">
           <li><a href="{$url}/about">درباره ما</a></li>
           <li><a href="{$url}/contact">تماس با ما</a></li>
-          <li><a href="{$url}/support">پشتیبانی</a></li>
+          <!-- <li><a href="{$url}/support">پشتیبانی</a></li> -->
           <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
           <li><a href="{$url}/blog">بلاگ</a></li>
-          <li><a href="{$url}/about">قوانین و مقررات</a></li>
-          <li><a href="{$url}/about">حریم خصوصی</a></li>
+          <li><a href="{$url}/terms">قوانین و مقررات</a></li>
+          <li><a href="{$url}/privacy">حریم خصوصی</a></li>
         </ul>
       </div>
 
