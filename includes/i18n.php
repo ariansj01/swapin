@@ -73,6 +73,17 @@ function offer_status_label(string $status): string {
     };
 }
 
+function trade_status_label(string $status): string {
+    return match ($status) {
+        'in_progress'     => 'در حال انجام',
+        'user_a_confirmed' => 'تأیید طرف اول',
+        'user_b_confirmed' => 'تأیید طرف دوم',
+        'disputed'        => 'اختلاف',
+        'completed'       => 'تکمیل‌شده',
+        default           => $status,
+    };
+}
+
 function tx_type_label(string $type): array {
     return match ($type) {
         'deposit'      => ['arrow-down-circle', 'واریز', 'success'],

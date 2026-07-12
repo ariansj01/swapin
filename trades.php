@@ -211,147 +211,7 @@ render_navbar($user);
       </a>
     </div>
 
-    <!-- Detail Trade View -->
-    <?php if ($detailTrade):
-      $isA = (int)$detailTrade['user_a_id'] === $uid;
-      $otherName = $isA ? $detailTrade['user_b_name'] : $detailTrade['user_a_name'];
-      $otherId = $isA ? $detailTrade['user_b_id'] : $detailTrade['user_a_id'];
-      $myItem = $isA ? $detailTrade['listing_a_title'] : $detailTrade['listing_b_title'];
-      $otherItem = $isA ? $detailTrade['listing_b_title'] : $detailTrade['listing_a_title'];
-    ?>
-    <div class="card mb-6" style="border-right:4px solid var(--primary)">
-      <div class="card-body">
-        <div class="mb-4" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-          <h3 style="margin:0">معامله #<?= $detailTrade['id'] ?> با <?= h($otherName) ?></h3>
-          <span class="badge badge-<?= str_contains($detailTrade['status'], 'confirmed') || $detailTrade['status'] === 'completed' ? 'success' : ($detailTrade['status'] === 'disputed' ? 'danger' : 'warning') ?>">
-            <?= trade_status_label($detailTrade['status']) ?>
-          </span>
-        </div>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem">
-          <div class="card" style="margin:0;background:rgba(0,174,239,.04);border-color:rgba(0,174,239,.15)">
-            <div class="card-body">
-              <div class="fs-xs" style="color:var(--text-muted);margin-bottom:.5rem">من</div>
-              <div style="font-weight:700"><?= h($myItem ?: '—') ?></div>
-            </div>
-          </div>
-          <div class="card" style="margin:0;background:rgba(113,78,255,.04);border-color:rgba(113,78,255,.15)">
-            <div class="card-body">
-              <div class="fs-xs" style="color:var(--text-muted);margin-bottom:.5rem"><?= h($otherName) ?></div>
-              <div style="font-weight:700"><?= h($otherItem ?: '—') ?></div>
-            </div>
-          </div>
-        </div>
-
-        <?php if ($detailTrade['credit_diff'] != 0):
-          $iPay = ($isA && $detailTrade['credit_diff'] < 0) || (!$isA && $detailTrade['credit_diff'] > 0);
-        ?>
-        <div class="alert alert-<?= $iPay ? 'warning' : 'success' ?> mb-5">
-          <i class="bi bi-wallet2"></i>
-          <?php if ($iPay): ?>شما باید مبلغ <?= fmt_credit(abs((float)$detailTrade['credit_diff'])) ?> را پرداخت کنید<?php else: ?>شما مبلغ <?= fmt_credit(abs((float)$detailTrade['credit_diff'])) ?> را دریافت می‌کنید<?php endif; ?>
-        </div>
-        <?php endif; ?>
-
-        <?php if ($detailTrade['status'] !== 'completed'): ?>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap">
-          <a href="<?= APP_URL ?>/messages.php?to=<?= $otherId ?>" class="btn btn-primary">
-            <i class="bi bi-chat"></i> چت با <?= h($otherName) ?>
-          </a>
-          <?php if ($detailContract && !contract_fully_signed($detailTradeId)):
-            $iSigned = ($isA && $detailContract['user_a_signed_at']) || (!$isA && $detailContract['user_b_signed_at']);
-          ?>
-            <?php if (!$iSigned): ?>
-            <form method="POST">
-              <?= csrf_field() ?>
-              <input type="hidden" name="trade_id" value="<?= $detailTrade['id'] ?>">
-              <input type="hidden" name="action" value="sign_contract">
-              <button type="submit" class="btn btn-outline">
-                <i class="bi bi-pencil-square"></i> امضای قرارداد
-              </button>
-            </form>
-            <?php endif; ?>
-          <?php endif; ?>
-
-          <?php if (in_array($detailTrade['status'], ['in_progress', 'user_a_confirmed', 'user_b_confirmed'], true)): ?>
-          <form method="POST" class="d-inline">
-            <?= csrf_field() ?>
-            <input type="hidden" name="trade_id" value="<?= $detailTrade['id'] ?>">
-            <input type="hidden" name="action" value="confirm">
-            <button type="submit" class="btn btn-success">
-              <i class="bi bi-check-circle"></i> تأیید دریافت کالا
-            </button>
-          </form>
-          <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#dispute-modal">
-            <i class="bi bi-x-circle"></i> گزارش اختلاف
-          </button>
-          <?php endif; ?>
-        </div>
-
-        <!-- Dispute Modal -->
-        <div class="modal fade" id="dispute-modal" tabindex="-1">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">گزارش اختلاف</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <form method="POST">
-                <?= csrf_field() ?>
-                <input type="hidden" name="trade_id" value="<?= $detailTrade['id'] ?>">
-                <input type="hidden" name="action" value="dispute">
-                <div class="modal-body">
-                  <div class="form-group mb-3">
-                    <label class="form-label">دلیل</label>
-                    <select name="dispute_reason" class="form-select">
-                      <option value="wrong_item">کالا اشتباه</option>
-                      <option value="damaged">آسیب‌دیده</option>
-                      <option value="missing">موجود نیست</option>
-                      <option value="fraud">کلاهبرداری</option>
-                      <option value="other" selected>دیگری</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">توضیحات</label>
-                    <textarea name="dispute_desc" class="form-control" rows="3" required></textarea>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">انصراف</button>
-                  <button type="submit" class="btn btn-danger">ثبت گزارش</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <?php else: ?>
-          <!-- Completed: Show rating button -->
-          <?php
-            $myRating = DB::fetch(
-                'SELECT * FROM reviews WHERE trade_id = ? AND from_user_id = ?',
-                [$detailTradeId, $uid]
-            );
-          ?>
-          <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center">
-            <?php if (!$myRating): ?>
-              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#rating-modal" data-trade="<?= $detailTradeId ?>" data-other="<?= $otherId ?>">
-                <i class="bi bi-star"></i> امتیازدهی
-              </button>
-            <?php else: ?>
-              <div style="display:flex;align-items:center;gap:.5rem;color:var(--text-muted)">
-                <i class="bi bi-check-circle-fill" style="color:var(--success)"></i>
-                شما امتیاز <?= (int)$myRating['rating'] ?> دادید
-              </div>
-            <?php endif; ?>
-            <a href="<?= APP_URL ?>/messages.php?to=<?= $otherId ?>" class="btn btn-outline">
-              <i class="bi bi-chat"></i> چت
-            </a>
-          </div>
-        <?php endif; ?>
-
-      </div>
-    </div>
-    <?php endif; ?>
 
     <!-- List of trades -->
     <?php if ($tab === 'active'): ?>
@@ -369,7 +229,7 @@ render_navbar($user);
             $otherName = $isA ? $t['user_b_name'] : $t['user_a_name'];
             $otherId = $isA ? $t['user_b_id'] : $t['user_a_id'];
           ?>
-          <a href="?tab=active&trade=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
+          <a href="<?= APP_URL ?>/trades/view.php?id=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
             <div class="card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
               <?php if ($t['la_thumb']): ?>
               <img src="<?= UPLOAD_URL . h($t['la_thumb']) ?>" alt="" style="width:60px;height:60px;border-radius:12px;object-fit:cover">
@@ -402,7 +262,7 @@ render_navbar($user);
             $otherId = $isA ? $t['user_b_id'] : $t['user_a_id'];
             $myRating = $t['my_rating'];
           ?>
-          <a href="?tab=completed&trade=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
+          <a href="<?= APP_URL ?>/trades/view.php?id=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
             <div class="card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
               <div style="flex:1;min-width:0">
                 <div style="font-weight:700">معامله با <?= h($otherName) ?></div>

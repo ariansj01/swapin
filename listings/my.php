@@ -268,7 +268,7 @@ render_navbar($user);
           <a href="<?= APP_URL ?>/listings/edit.php?id=<?= $l['id'] ?>"
              class="btn btn-outline btn-sm" title="ویرایش"><i class="bi bi-pencil"></i></a>
 
-          <a href="<?= APP_URL ?>/listings/bump.php?id=<?= $l['id'] ?>"
+          <a href="<?= APP_URL ?>/listings/promote.php?id=<?= $l['id'] ?>"
              class="btn btn-accent btn-sm" title="ارتقا"><i class="bi bi-rocket"></i></a>
 
           <?php if ($l['total_offers'] > 0): ?>

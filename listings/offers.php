@@ -32,70 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($message)) {
                 $error = 'لطفاً پیامی برای طرفین بنویسید.';
             } else {
-                DB::query('UPDATE trade_offers SET status = "accepted" WHERE id = ?', [$offerId]);
-
-                // Get both listings' estimated values
-                $listingA = DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offer['listing_id']]);
-                $listingB = $offer['offer_listing_id'] ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offer['offer_listing_id']]) : null;
+                // Store the acceptance message in session temporarily
+                $_SESSION['offer_accept_message'] = $message;
                 
-                $valueA = (float)($listingA['estimated_value'] ?? 0);
-                $valueB = (float)($listingB['estimated_value'] ?? 0);
-                
-                // Calculate credit difference (positive if user B needs to pay user A)
-                $creditDiff = $valueA - ($valueB + (float)$offer['offer_credit']);
-
-                // Create trade record
-                $tradeId = DB::insert('trades', [
-                    'offer_id'     => $offerId,
-                    'user_a_id'    => $uid,
-                    'user_b_id'    => $offer['from_user_id'],
-                    'listing_a_id' => $offer['listing_id'],
-                    'listing_b_id' => $offer['offer_listing_id'] ?: null,
-                    'credit_diff'  => $creditDiff,
-                    'status'       => 'in_progress',
-                ]);
-
-                // Escrow hold + contract instead of direct credit transfer
-                if ($creditDiff > 0) {
-                    // User B (offerer) needs to pay user A (listing owner)
-                    $userToPayId = (int)$offer['from_user_id'];
-                    $amountToPay = $creditDiff;
-                } elseif ($creditDiff < 0) {
-                    // User A (listing owner) needs to pay user B (offerer)
-                    $userToPayId = $uid;
-                    $amountToPay = abs($creditDiff);
-                } else {
-                    $userToPayId = 0; // No one needs to pay
-                    $amountToPay = 0;
-                }
-
-                if ($userToPayId && $amountToPay > 0) {
-                    $payerUser = DB::fetch('SELECT credit_balance, name FROM users WHERE id = ?', [$userToPayId]);
-                    if (!$payerUser || (float)$payerUser['credit_balance'] < $amountToPay) {
-                        $requiredAmount = $amountToPay - (float)($payerUser['credit_balance'] ?? 0);
-                        $_SESSION['error'] = 'موجودی کیف پول شما برای پرداخت مابه‌التفاوت معامله کافی نیست. لطفاً ' . fmt_credit($requiredAmount) . ' به کیف پول خود اضافه کنید.';
-                        header('Location: ' . WALLET_TOPUP_URL . '?amount=' . $requiredAmount);
-                        exit;
-                    }
-                    escrow_hold($tradeId, $userToPayId, $amountToPay, 'سپرده مابه‌التفاوت معامله #' . $tradeId);
-                }
-
-                create_trade_contract($tradeId);
-
-                // Notify both users with the custom message
-                $thread = 'trade_' . $tradeId;
-                DB::insert('messages', [
-                    'thread_id'    => $thread,
-                    'from_user_id' => $uid,
-                    'to_user_id'   => $offer['from_user_id'],
-                    'offer_id'     => $offerId,
-                    'body'         => $message,
-                ]);
-
-                $success = 'پیشنهاد پذیرفته شد! معامله ایجاد شد.';
-                // Mark listing as traded
-
-                header('Location: ' . APP_URL . '/trades.php?trade=' . $tradeId . '&accepted=1'); exit;
+                // Redirect to fee payment page
+                header('Location: ' . APP_URL . '/trades/fee.php?offer=' . $offerId);
+                exit;
             }
 
         } elseif ($action === 'reject') {
