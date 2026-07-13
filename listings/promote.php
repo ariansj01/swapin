@@ -82,7 +82,7 @@ $plans = [
         'description' => 'نمایش به مخاطبان مرتبط بر اساس شهر و دسته‌بندی',
     ],
     'ai' => [
-        'name'        => 'تلگرام هوشمند',
+        'name'        => 'تبلیغ هوشمند',
         'icon'        => 'bi-telegram',
         'color'       => 'blue',
         'header'      => 'blue',

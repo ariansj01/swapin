@@ -298,7 +298,7 @@ HTML;
     if ($loggedIn) {
         echo <<<HTML
     <div class="modal-footer">
-      <a href="{$url}/trades" class="btn btn-ghost btn-sm">معاملات امن</a>
+      <a href="{$url}/trades" class="btn btn-ghost btn-sm">اتاق معامله</a>
       <a href="{$url}/listings/offers" class="btn btn-primary btn-sm">پیشنهادهای دریافتی</a>
     </div>
 HTML;

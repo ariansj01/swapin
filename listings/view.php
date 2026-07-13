@@ -490,7 +490,7 @@ render_navbar($user);
               <div class="mb-4">
                 <label class="form-label fw-600 mb-3">نوع پیشنهاد خود را انتخاب کنید</label>
 
-                <div class="offer-type-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="offer-type-grid" style="display:grid; gap:16px;">
                 <div class="card offer-type-card" id="has-item-card" style="border: 2px solid var(--primary);">
                   <div class="card-body" style="padding:24px;">
                     <div class="d-flex align-items-center gap-3 mb-3">

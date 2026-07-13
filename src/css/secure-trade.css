@@ -691,7 +691,7 @@
 
 .trade-room__hero {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 20px;
   background: #fff;
