@@ -177,9 +177,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$thumbUrl = !empty($listing['thumb']) ? UPLOAD_URL . $listing['thumb'] : '';
-$growthPct = min(999, max(50, (int)$listing['views'] * 2 + (int)$listing['offers_count'] * 40));
-
 $activePromos = DB::fetchAll(
     'SELECT plan, ends_at FROM listing_promotions
      WHERE listing_id = ? AND ends_at > NOW()
@@ -330,49 +327,12 @@ ob_start();
   <!-- Bottom -->
   <div class="promote-bottom">
     <!-- Performance -->
-    <div class="promote-card">
-      <h3 class="promote-card__title"><i class="bi bi-speedometer2"></i> عملکرد آگهی</h3>
-      <div class="promote-performance__product">
-        <?php if ($thumbUrl): ?>
-        <img src="<?= h($thumbUrl) ?>" alt="<?= h($listing['title']) ?>" class="promote-performance__thumb">
-        <?php else: ?>
-        <div class="promote-performance__thumb promote-performance__thumb--empty"><i class="bi bi-image"></i></div>
-        <?php endif; ?>
-        <div>
-          <p class="promote-performance__name"><?= h($listing['title']) ?></p>
-          <span class="promote-performance__meta">آگهی #<?= (int)$listing['id'] ?></span>
-        </div>
-      </div>
-
-      <div class="promote-stats">
-        <div class="promote-stat">
-          <span class="promote-stat__value"><?= number_format((int)$listing['views']) ?></span>
-          <span class="promote-stat__label">بازدید</span>
-        </div>
-        <div class="promote-stat">
-          <span class="promote-stat__value"><?= number_format((int)$listing['saved_count']) ?></span>
-          <span class="promote-stat__label">علاقه‌مندی</span>
-        </div>
-        <div class="promote-stat">
-          <span class="promote-stat__value"><?= number_format((int)$listing['offers_count']) ?></span>
-          <span class="promote-stat__label">پیشنهاد</span>
-        </div>
-      </div>
-
-      <div class="promote-growth">
-        <div class="promote-growth__chart" aria-hidden="true">
-          <?php
-          $bars = [30, 45, 38, 55, 48, 70, 65, 85, 78, 100];
-          foreach ($bars as $h):
-          ?>
-          <div class="promote-growth__bar" style="height:<?= $h ?>%"></div>
-          <?php endforeach; ?>
-        </div>
-        <div class="promote-growth__pct">
-          +<?= $growthPct ?>%
-          <small>رشد بازدید</small>
-        </div>
-      </div>
+    <div>
+      <?php
+      $perfListing = $listing;
+      $perfListing['link_url'] = APP_URL . '/listings/view?id=' . $listingId;
+      include __DIR__ . '/../includes/listing_performance_card.php';
+      ?>
     </div>
 
     <!-- FAQ + Support -->

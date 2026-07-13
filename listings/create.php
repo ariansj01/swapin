@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 
 $user = require_auth();
+$errors = [];
 
 // Category data
 $categories = DB::fetchAll(
@@ -50,6 +51,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
 
     if (empty($errors)) {
+        $hasImageUpload = false;
+        if (!empty($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
+            foreach ($_FILES['images']['name'] as $i => $name) {
+                if ($name && ($_FILES['images']['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                    $hasImageUpload = true;
+                    break;
+                }
+            }
+        }
+        if (!$hasImageUpload) {
+            $errors['images'] = 'حداقل یک تصویر الزامی است.';
+        }
+    }
+
+    if (empty($errors)) {
         // Insert listing
         $listingId = DB::insert('listings', [
             'user_id'          => $user['id'],
@@ -73,6 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_FILES['images']['name'][0])) {
             foreach ($_FILES['images']['tmp_name'] as $i => $tmp) {
                 if ($uploadedImages >= MAX_IMAGES) break;
+                if (empty($tmp) || ($_FILES['images']['error'][$i] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                    continue;
+                }
                 $file = [
                     'name'     => $_FILES['images']['name'][$i],
                     'tmp_name' => $tmp,
@@ -92,12 +111,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Clear cache
-        ai_match_clear_cache((int)$user['id']);
+        if ($uploadedImages === 0) {
+            DB::query('DELETE FROM listings WHERE id = ? AND user_id = ?', [$listingId, $user['id']]);
+            $errors['images'] = 'آپلود تصاویر ناموفق بود. لطفاً دوباره تلاش کنید.';
+        } else {
+            // Clear cache
+            ai_match_clear_cache((int)$user['id']);
 
-        // Redirect to success page
-        header('Location: ' . APP_URL . '/listings/success?id=' . $listingId);
-        exit;
+            // Redirect to success page
+            header('Location: ' . APP_URL . '/listings/success?id=' . $listingId);
+            exit;
+        }
     }
 }
 
@@ -134,10 +158,20 @@ render_navbar($user);
   </div>
 
   <div class="wizard-container">
+    <?php if (!empty($errors['images'])): ?>
+    <div class="wizard-alert wizard-alert--error">
+      <i class="bi bi-exclamation-circle"></i> <?= h($errors['images']) ?>
+    </div>
+    <?php endif; ?>
+
     <!-- Step Content Card -->
     <div class="wizard-card">
       <form method="POST" id="wizard-form" enctype="multipart/form-data">
         <?= csrf_field() ?>
+
+        <!-- File input always in form root (not inside hidden steps) -->
+        <input type="file" id="step2-images" name="images[]" multiple accept="image/jpeg,image/png,image/webp"
+               class="wizard-file-input" tabindex="-1" aria-hidden="true">
         
         <!-- Step 1: Title & Description -->
         <div class="wizard-step" data-step="1" id="step-1">
@@ -170,7 +204,6 @@ render_navbar($user);
             </div>
             <p class="upload-zone-text">تصاویر را اینجا رها کنید یا برای آپلود کلیک کنید</p>
             <p class="upload-zone-subtext">JPG، PNG یا WEBP — حداکثر ۵ مگابایت — تا <?= MAX_IMAGES ?> تصویر</p>
-            <input type="file" id="step2-images" name="images[]" multiple accept="image/*" style="display:none">
           </div>
           
           <div class="image-previews" id="step2-preview-grid"></div>
@@ -354,11 +387,21 @@ const totalSteps = 7;
 let exchangeCategories = new Set();
 let uploadedFiles = [];
 
+function syncUploadedFilesInput() {
+  const input = document.getElementById('step2-images');
+  if (!input) return 0;
+  const dt = new DataTransfer();
+  uploadedFiles.filter(Boolean).forEach(f => dt.items.add(f));
+  input.files = dt.files;
+  return dt.files.length;
+}
+
 // Initialize everything
 document.addEventListener('DOMContentLoaded', () => {
   updateStepper();
   initStep1Counters();
   initStep2Upload();
+  initWizardSubmit();
 });
 
 function initStep1Counters() {
@@ -407,7 +450,7 @@ function initStep2Upload() {
       reader.onload = e => renderPreview(e.target.result, idx);
       reader.readAsDataURL(f);
     }
-    syncFilesInput();
+    syncUploadedFilesInput();
     updateButtons();
   }
 
@@ -426,15 +469,38 @@ function initStep2Upload() {
     uploadedFiles[idx] = null;
     const el = document.getElementById('step2-preview-' + idx);
     if (el) el.remove();
-    syncFilesInput();
+    syncUploadedFilesInput();
     updateButtons();
   }
+}
 
-  function syncFilesInput() {
-    const dt = new DataTransfer();
-    uploadedFiles.filter(Boolean).forEach(f => dt.items.add(f));
-    input.files = dt.files;
+function initWizardSubmit() {
+  const form = document.getElementById('wizard-form');
+  const submitBtn = document.getElementById('wizard-submit-btn');
+  if (!form) return;
+
+  form.addEventListener('submit', function(e) {
+    const count = syncUploadedFilesInput();
+    if (count === 0) {
+      e.preventDefault();
+      goToStep(2);
+      showWizardError('لطفاً حداقل یک تصویر برای آگهی انتخاب کنید.');
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span> در حال انتشار…';
+    }
+  });
+}
+
+function showWizardError(msg) {
+  if (typeof showToast === 'function') {
+    showToast(msg, 'error');
+    return;
   }
+  alert(msg);
 }
 
 window.toggleExchangeCategory = function(el, cat) {

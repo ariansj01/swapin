@@ -60,6 +60,19 @@ $recentListings = DB::fetchAll(
     [$uid]
 );
 
+// Top-performing active listing for performance card
+$perfListing = DB::fetch(
+    'SELECT l.*,
+            (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb,
+            (SELECT COUNT(*) FROM saved_listings WHERE listing_id = l.id) AS saved_count,
+            (SELECT COUNT(*) FROM trade_offers WHERE listing_id = l.id) AS offers_count
+     FROM listings l
+     WHERE l.user_id = ? AND l.status = "active"
+     ORDER BY l.views DESC, l.updated_at DESC
+     LIMIT 1',
+    [$uid]
+);
+
 // Incoming offers (on my listings)
 $incomingOffers = [];
 try {
@@ -186,6 +199,15 @@ render_navbar($user);
       </a>
       <?php endforeach; ?>
     </div>
+
+    <?php if ($perfListing): ?>
+    <div class="mb-8">
+      <?php
+      $perfListing['link_url'] = APP_URL . '/listings/promote?id=' . (int)$perfListing['id'];
+      include __DIR__ . '/includes/listing_performance_card.php';
+      ?>
+    </div>
+    <?php endif; ?>
 
     <!-- ── Match Hub (AI Matching Engine) ─────────────────────────────── -->
     <div id="swap-matches" class="match-hub mb-8" data-ai-match="1">
