@@ -163,10 +163,10 @@ render_navbar($user);
       $stats = [
         ['wallet2',          number_format($user['credit_balance'], 0) . ' ' . CREDIT_UNIT, 'موجودی اعتبار',   'primary', APP_URL . '/wallet'],
         ['grid',             $myListingsCount,                                    'آگهی‌های فعال',  'info',    APP_URL . '/listings/my'],
-        ['inbox',            $pendingOffers,                                      'پیشنهادهای در انتظار',   $pendingOffers > 0 ? 'warning' : 'info', APP_URL . '/listings/offers'],
+        ['inbox',            $pendingOffers,                                      'پیشنهادهای در انتظار',   $pendingOffers > 0 ? 'warning' : 'info', APP_URL . '/trades?tab=received'],
         ['arrow-left-right', $completedTrades,                                    'معاوضه‌های انجام‌شده', 'success', APP_URL . '/trades'],
         ['chat-dots',        $unreadMsgs,                                         'پیام‌های خوانده‌نشده',  $unreadMsgs > 0 ? 'warning' : 'info', APP_URL . '/messages'],
-        ['send',             $sentOffers,                                         'پیشنهادهای ارسالی',      'info',    APP_URL . '/trades?tab=sent'],
+        ['send',             $sentOffers,                                         'پیشنهادهای ارسالی',      'info',    APP_URL . '/trades?tab=offers'],
       ];
       foreach ($stats as [$icon, $val, $label, $color, $link]):
       ?>
@@ -355,16 +355,14 @@ render_navbar($user);
                 <?php endif; ?>
               </div>
               <div style="display:flex;gap:var(--sp-2);flex-shrink:0">
-                <a href="<?= APP_URL ?>/listings/offers?id=<?= $offer['listing_id'] ?>&accept=<?= $offer['id'] ?>"
-                   class="btn btn-primary btn-sm">پذیرفتن</a>
-                <a href="<?= APP_URL ?>/listings/offers?id=<?= $offer['listing_id'] ?>&reject=<?= $offer['id'] ?>"
-                   class="btn btn-ghost btn-sm" style="color:var(--danger)">رد</a>
+                <a href="<?= APP_URL ?>/trades?tab=received"
+                   class="btn btn-primary btn-sm">مدیریت</a>
               </div>
             </div>
           </div>
           <?php endforeach; ?>
           <div class="card-footer">
-            <a href="<?= APP_URL ?>/listings/offers" class="fs-sm">مشاهده همه پیشنهادها ←</a>
+            <a href="<?= APP_URL ?>/trades?tab=received" class="fs-sm">مشاهده همه پیشنهادها ←</a>
           </div>
         </div>
         <?php endif; ?>
@@ -409,7 +407,7 @@ render_navbar($user);
             </div>
             <div style="display:flex;gap:var(--sp-2)">
               <?php if ($listing['offer_count'] > 0): ?>
-              <a href="<?= APP_URL ?>/listings/offers?id=<?= $listing['id'] ?>" class="btn btn-accent btn-sm">
+              <a href="<?= APP_URL ?>/trades?tab=received" class="btn btn-accent btn-sm">
                 <i class="bi bi-inbox"></i> پیشنهادها
               </a>
               <?php endif; ?>

@@ -81,6 +81,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $success = 'پیام ارسال شد.';
         }
+    } elseif ($action === 'pay_fee' && !(int)$trade['fee_paid']) {
+        if (!$isA) {
+            $error = 'فقط صاحب آگهی می‌تواند پرداخت کارمزد را آغاز کند.';
+        } else {
+            $result = pay_trade_platform_fee($tradeId);
+            if (isset($result['error'])) {
+                if (isset($result['user_id']) && (int)$result['user_id'] === $uid) {
+                    $_SESSION['error'] = $result['error'];
+                    header('Location: ' . WALLET_TOPUP_URL . '?amount=' . ($result['required_amount'] ?? 0));
+                    exit;
+                }
+                $error = $result['error'];
+            } else {
+                $success = 'کارمزد پلتفرم با موفقیت پرداخت شد.';
+            }
+        }
     } elseif ($action === 'pay_diff' && !(int)$trade['diff_paid']) {
         $myBalance = (float)($user['credit_balance'] ?? 0);
         if ($myBalance < $amountToPay) {
@@ -324,6 +340,10 @@ $receivedTheirs  = $isA ? !empty($trade['user_b_received']) : !empty($trade['use
 $receivedAll     = !empty($trade['user_a_received']) && !empty($trade['user_b_received']);
 $completedTrade  = ($trade['status'] ?? '') === 'completed';
 
+$feeA = (float)($trade['listing_a_val'] ?? 0) * PLATFORM_FEE_RATE;
+$feeB = (float)($trade['listing_b_val'] ?? 0) * PLATFORM_FEE_RATE;
+$myFee = $isA ? $feeA : $feeB;
+
 $allowedTabs = ['chat', 'fee', 'contract', 'diff', 'shipping', 'details', 'final'];
 $recommendedTab = get_trade_flow_tab($trade, $contract, $hasReview);
 $requestedTab = clean($_GET['tab'] ?? $recommendedTab);
@@ -443,6 +463,13 @@ render_user_panel_open($user, 'trades');
   </section>
 
   <!-- Alerts -->
+  <?php if (isset($_GET['accepted'])): ?>
+  <div class="alert alert-success">
+    <i class="bi bi-check-circle"></i>
+    پیشنهاد پذیرفته شد! لطفاً مراحل معامله را از همین اتاق امن دنبال کنید.
+  </div>
+  <?php endif; ?>
+
   <?php if (isset($_SESSION['error'])): ?>
   <div class="alert alert-danger">
     <i class="bi bi-exclamation-circle"></i>
@@ -574,8 +601,30 @@ render_user_panel_open($user, 'trades');
               <p>کارمزد پلتفرم با موفقیت پرداخت شده است.</p>
               <span class="trade-room__pill trade-room__pill--success">کارمزد پرداخت شده</span>
             <?php else: ?>
-              <p>این مرحله باید قبل از ادامه معامله تکمیل شود.</p>
-              <div class="trade-room__notice">کارمزد هنوز پرداخت نشده است. این مرحله از جریان پذیرش پیشنهاد باید تکمیل شود.</div>
+              <p>برای ادامه معامله، کارمزد پلتفرم باید پرداخت شود.</p>
+              <div class="trade-room__meta-box" style="margin: var(--sp-4) 0;">
+                <div class="trade-room__meta-line">
+                  <span>کارمزد شما</span>
+                  <strong><?= fmt_credit($myFee) ?></strong>
+                </div>
+                <div class="trade-room__meta-line">
+                  <span>کارمزد طرف مقابل</span>
+                  <strong><?= fmt_credit($isA ? $feeB : $feeA) ?></strong>
+                </div>
+              </div>
+              <?php if ($isA): ?>
+                <div class="trade-room__notice">با تایید، کارمزد هر دو طرف از کیف پول کسر می‌شود.</div>
+                <form method="POST" class="trade-room__cta-row">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="pay_fee">
+                  <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-check-circle"></i> تایید و پرداخت کارمزد
+                  </button>
+                </form>
+              <?php else: ?>
+                <div class="trade-room__notice">در انتظار پرداخت کارمزد توسط صاحب آگهی هستیم.</div>
+                <span class="trade-room__pill trade-room__pill--warning">در انتظار پرداخت</span>
+              <?php endif; ?>
             <?php endif; ?>
           </div>
 

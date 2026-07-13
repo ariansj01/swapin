@@ -244,6 +244,140 @@ function get_trade_contract(int $tradeId): ?array {
     return DB::fetch('SELECT * FROM trade_contracts WHERE trade_id = ?', [$tradeId]);
 }
 
+function accept_trade_offer(int $offerId, int $ownerId, string $message): array {
+    $offer = DB::fetch(
+        'SELECT o.*, l.user_id AS listing_owner, l.title AS listing_title, l.estimated_value AS listing_a_value,
+                ol.estimated_value AS listing_b_value
+         FROM trade_offers o
+         JOIN listings l ON l.id = o.listing_id
+         LEFT JOIN listings ol ON ol.id = o.offer_listing_id
+         WHERE o.id = ? AND l.user_id = ? AND o.status = "pending"',
+        [$offerId, $ownerId]
+    );
+    if (!$offer) {
+        return ['error' => 'پیشنهاد یافت نشد یا دسترسی ندارید.'];
+    }
+
+    $existing = DB::fetch('SELECT id FROM trades WHERE offer_id = ?', [$offerId]);
+    if ($existing) {
+        return ['trade_id' => (int)$existing['id']];
+    }
+
+    $valueA     = (float)($offer['listing_a_value'] ?? 0);
+    $valueB     = (float)($offer['listing_b_value'] ?? 0);
+    $creditDiff = $valueA - ($valueB + (float)$offer['offer_credit']);
+
+    DB::query('UPDATE trade_offers SET status = "accepted" WHERE id = ?', [$offerId]);
+
+    $tradeId = DB::insert('trades', [
+        'offer_id'     => $offerId,
+        'user_a_id'    => $ownerId,
+        'user_b_id'    => $offer['from_user_id'],
+        'listing_a_id' => $offer['listing_id'],
+        'listing_b_id' => $offer['offer_listing_id'] ?: null,
+        'credit_diff'  => $creditDiff,
+        'status'       => 'in_progress',
+        'step'         => 1,
+        'fee_paid'     => 0,
+    ]);
+
+    if ($message !== '') {
+        DB::insert('secure_room_messages', [
+            'trade_id' => $tradeId,
+            'user_id'  => $ownerId,
+            'type'     => 'text',
+            'body'     => $message,
+        ]);
+        DB::insert('messages', [
+            'thread_id'    => 'trade_' . $tradeId,
+            'from_user_id' => $ownerId,
+            'to_user_id'   => $offer['from_user_id'],
+            'offer_id'     => $offerId,
+            'body'         => $message,
+        ]);
+    }
+
+    return ['trade_id' => $tradeId];
+}
+
+function pay_trade_platform_fee(int $tradeId): array {
+    $trade = DB::fetch(
+        'SELECT t.*, la.estimated_value AS listing_a_value, lb.estimated_value AS listing_b_value
+         FROM trades t
+         JOIN listings la ON la.id = t.listing_a_id
+         LEFT JOIN listings lb ON lb.id = t.listing_b_id
+         WHERE t.id = ?',
+        [$tradeId]
+    );
+    if (!$trade) {
+        return ['error' => 'معامله یافت نشد.'];
+    }
+    if (!empty($trade['fee_paid'])) {
+        return ['ok' => true];
+    }
+
+    $valueA = (float)($trade['listing_a_value'] ?? 0);
+    $valueB = (float)($trade['listing_b_value'] ?? 0);
+    $feeA   = $valueA * PLATFORM_FEE_RATE;
+    $feeB   = $valueB * PLATFORM_FEE_RATE;
+
+    $userA = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$trade['user_a_id']]);
+    $userB = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$trade['user_b_id']]);
+
+    $userABalance = (float)($userA['credit_balance'] ?? 0);
+    $userBBalance = (float)($userB['credit_balance'] ?? 0);
+
+    if ($userABalance < $feeA) {
+        return [
+            'error'           => 'موجودی کیف پول شما برای پرداخت کارمزد کافی نیست. لطفاً ' . fmt_credit($feeA - $userABalance) . ' به کیف پول خود اضافه کنید.',
+            'user_id'         => (int)$trade['user_a_id'],
+            'required_amount' => $feeA - $userABalance,
+        ];
+    }
+    if ($userBBalance < $feeB) {
+        return ['error' => 'موجودی کیف پول طرف مقابل برای پرداخت کارمزد کافی نیست.'];
+    }
+
+    credit_transact((int)$trade['user_a_id'], 'fee', -$feeA, 'کارمزد پلتفرم برای معامله #' . $tradeId, [
+        'ref_type' => 'trade',
+        'ref_id'   => $tradeId,
+        'trade_id' => $tradeId,
+    ]);
+    credit_transact((int)$trade['user_b_id'], 'fee', -$feeB, 'کارمزد پلتفرم برای معامله #' . $tradeId, [
+        'ref_type' => 'trade',
+        'ref_id'   => $tradeId,
+        'trade_id' => $tradeId,
+    ]);
+
+    DB::query('UPDATE trades SET fee_paid = 1, step = 2 WHERE id = ?', [$tradeId]);
+
+    $creditDiff = (float)($trade['credit_diff'] ?? 0);
+    if ($creditDiff > 0) {
+        $userToPayId = (int)$trade['user_b_id'];
+        $amountToPay = $creditDiff;
+    } elseif ($creditDiff < 0) {
+        $userToPayId = (int)$trade['user_a_id'];
+        $amountToPay = abs($creditDiff);
+    } else {
+        $userToPayId = 0;
+        $amountToPay = 0;
+    }
+
+    if ($userToPayId && $amountToPay > 0) {
+        $payerUser = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$userToPayId]);
+        if ((float)($payerUser['credit_balance'] ?? 0) >= $amountToPay) {
+            escrow_hold($tradeId, $userToPayId, $amountToPay, 'سپرده مابه‌التفاوت معامله #' . $tradeId);
+            DB::query('UPDATE trades SET diff_paid = 1, step = 3 WHERE id = ?', [$tradeId]);
+        }
+    } else {
+        DB::query('UPDATE trades SET diff_paid = 1, step = 3 WHERE id = ?', [$tradeId]);
+    }
+
+    create_trade_contract($tradeId);
+
+    return ['ok' => true];
+}
+
 function request_bnpl(int $tradeId, int $userId, float $amount, int $months = 3): array {
     $months = max(3, min(12, $months));
     if ($amount <= 0) return ['error' => 'مبلغ BNPL باید بیشتر از صفر باشد'];

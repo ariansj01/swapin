@@ -299,7 +299,7 @@ HTML;
         echo <<<HTML
     <div class="modal-footer">
       <a href="{$url}/trades" class="btn btn-ghost btn-sm">اتاق معامله</a>
-      <a href="{$url}/listings/offers" class="btn btn-primary btn-sm">پیشنهادهای دریافتی</a>
+      <a href="{$url}/trades?tab=received" class="btn btn-primary btn-sm">پیشنهادهای دریافتی</a>
     </div>
 HTML;
     }

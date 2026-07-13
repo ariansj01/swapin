@@ -32,12 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($message)) {
                 $error = 'لطفاً پیامی برای طرفین بنویسید.';
             } else {
-                // Store the acceptance message in session temporarily
-                $_SESSION['offer_accept_message'] = $message;
-                
-                // Redirect to fee payment page
-                header('Location: ' . APP_URL . '/trades/fee.php?offer=' . $offerId);
-                exit;
+                $result = accept_trade_offer($offerId, $uid, $message);
+                if (isset($result['error'])) {
+                    $error = $result['error'];
+                } else {
+                    header('Location: ' . APP_URL . '/trades/view.php?id=' . $result['trade_id'] . '&accepted=1');
+                    exit;
+                }
             }
 
         } elseif ($action === 'reject') {
@@ -69,7 +70,8 @@ if ($listingId) {
     $offers = DB::fetchAll(
         'SELECT o.*, u.name AS from_name, u.rating AS from_rating, u.city AS from_city,
                 ol.title AS offer_listing_title, ol.id AS offer_listing_id_v,
-                (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb
+                (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb,
+                (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
          FROM trade_offers o
          JOIN users u ON u.id = o.from_user_id
          LEFT JOIN listings ol ON ol.id = o.offer_listing_id
@@ -83,7 +85,8 @@ if ($listingId) {
     $offers  = DB::fetchAll(
         'SELECT o.*, l.title AS listing_title, l.id AS listing_id_v,
                 u.name AS from_name, u.rating AS from_rating,
-                ol.title AS offer_listing_title
+                ol.title AS offer_listing_title,
+                (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
          FROM trade_offers o
          JOIN listings l ON l.id = o.listing_id
          JOIN users u ON u.id = o.from_user_id
@@ -102,7 +105,7 @@ render_navbar($user);
   <div class="container-md">
 
     <div class="mb-6">
-      <a href="<?= APP_URL ?>/dashboard.php" style="color:var(--text-muted);font-size:.875rem">
+      <a href="<?= APP_URL ?>/trades?tab=received" style="color:var(--text-muted);font-size:.875rem">
         <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
       </a>
       <h2 class="mt-3">
@@ -208,7 +211,7 @@ render_navbar($user);
                   <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم. برای هماهنگی بیشتر پیام بده."></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
-                  <i class="bi bi-check-lg"></i> پذیرش پیشنهاد
+                  <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
                 </button>
               </form>
               <form method="POST" class="mb-3">
@@ -228,11 +231,11 @@ render_navbar($user);
                 <i class="bi bi-chat"></i> چت مستقیم
               </a>
             </div>
-            <?php elseif ($offer['status'] === 'accepted'): ?>
+            <?php elseif ($offer['status'] === 'accepted' && $offer['trade_id']): ?>
             <div style="width:100%">
-              <div class="alert alert-success" style="margin-bottom:0">
-                <i class="bi bi-check-circle"></i> پیشنهاد پذیرفته شد — معامله ایجاد شد
-              </div>
+              <a href="<?= APP_URL ?>/trades/view.php?id=<?= (int)$offer['trade_id'] ?>" class="btn btn-primary w-100">
+                <i class="bi bi-shield-lock"></i> ورود به اتاق امن
+              </a>
             </div>
             <?php endif; ?>
 

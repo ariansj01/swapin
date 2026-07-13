@@ -29,11 +29,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$vals['name'] || mb_strlen($vals['name']) < 2)
         $errors['name'] = 'نام کامل الزامی است (حداقل ۲ کاراکتر)';
 
-    if ($vals['email'] && !filter_var($vals['email'], FILTER_VALIDATE_EMAIL))
+    if (!$vals['email'])
+        $errors['email'] = 'آدرس ایمیل الزامی است';
+    elseif (!filter_var($vals['email'], FILTER_VALIDATE_EMAIL))
         $errors['email'] = 'لطفاً یک آدرس ایمیل معتبر وارد کنید';
 
-    // Check email uniqueness if provided
-    if ($vals['email']) {
+    if (!$vals['city'] || mb_strlen($vals['city']) < 2)
+        $errors['city'] = 'شهر الزامی است (حداقل ۲ کاراکتر)';
+
+    // Check email uniqueness
+    if ($vals['email'] && !isset($errors['email'])) {
         if (DB::fetch('SELECT id FROM users WHERE email = ?', [$vals['email']]))
             $errors['email'] = 'این ایمیل قبلاً ثبت شده است';
     }
@@ -48,11 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Create user
         $uid = DB::insert('users', [
             'name'               => $vals['name'],
-            'email'              => $vals['email'] ?: null,
+            'email'              => $vals['email'],
             'phone'              => $phoneIntl,
-            'city'               => $vals['city'] ?: null,
+            'city'               => $vals['city'],
             'password_hash'      => password_hash($pass, PASSWORD_BCRYPT),
-            'verification_level' => $vals['email'] ? 1 : 0,
+            'verification_level' => 1,
             'credit_balance'     => 0,
         ]);
         
@@ -102,20 +107,23 @@ render_navbar(null);
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="email">آدرس ایمیل (اختیاری)</label>
+            <label class="form-label" for="email">آدرس ایمیل <span class="required">*</span></label>
             <input type="email" class="form-control <?= isset($errors['email']) ? 'is-invalid' : '' ?>"
                    id="email" name="email" value="<?= h($vals['email']) ?>"
-                   placeholder="you@example.com" autocomplete="email">
+                   placeholder="you@example.com" autocomplete="email" required>
             <?php if (isset($errors['email'])): ?>
             <div class="invalid-feedback"><?= h($errors['email']) ?></div>
             <?php endif; ?>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="city">شهر</label>
-            <input type="text" class="form-control"
+            <label class="form-label" for="city">شهر <span class="required">*</span></label>
+            <input type="text" class="form-control <?= isset($errors['city']) ? 'is-invalid' : '' ?>"
                    id="city" name="city" value="<?= h($vals['city']) ?>"
-                   placeholder="شهر شما (اختیاری)" autocomplete="address-level2">
+                   placeholder="شهر شما" autocomplete="address-level2" required>
+            <?php if (isset($errors['city'])): ?>
+            <div class="invalid-feedback"><?= h($errors['city']) ?></div>
+            <?php endif; ?>
           </div>
 
           <div class="form-group">

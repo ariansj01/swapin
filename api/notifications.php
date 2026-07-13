@@ -50,7 +50,7 @@ foreach ($pendingOffers as $o) {
         'body'    => $o['from_name'] . ' برای «' . mb_strimwidth($o['listing_title'], 0, 40, '…') . '» پیشنهاد داد',
         'time'    => $o['created_at'],
         'time_ago'=> timeago($o['created_at']),
-        'url'     => APP_URL . '/listings/offers.php',
+        'url'     => APP_URL . '/trades?tab=received',
         'icon'    => 'bi-arrow-left-right',
     ];
 }
