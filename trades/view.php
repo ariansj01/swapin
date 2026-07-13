@@ -380,105 +380,43 @@ render_user_panel_open($user, 'trades');
   <?php endif; ?>
 
   <div class="trade-room__layout">
-    <!-- Left Column: Details -->
-    <aside class="trade-room__details-column">
-      <section class="trade-room__card">
+    <!-- Right Column: Timeline (next to dashboard sidebar) -->
+    <aside class="trade-room__timeline-column">
+      <section class="trade-room__timeline-card">
         <h3 class="trade-room__card-title">
-          <i class="bi bi-receipt"></i>
-          جزئیات معامله
+          <i class="bi bi-list-check"></i>
+          وضعیت معامله
         </h3>
-
-        <!-- Products -->
-        <div class="trade-room__product-card">
-          <?php if ($myProduct['img']): ?>
-            <img src="<?= h($myProduct['img']) ?>" alt="<?= h($myProduct['title']) ?>" class="trade-room__product-thumb">
-          <?php else: ?>
-            <div class="trade-room__product-thumb"><i class="bi bi-image"></i></div>
-          <?php endif; ?>
-          <div>
-            <div class="trade-room__product-title"><?= h($myProduct['title']) ?></div>
-            <div class="trade-room__product-meta">کالای شما · <?= $myProduct['val'] ? fmt_credit((float)$myProduct['val']) : 'بدون ارزش‌گذاری' ?></div>
-          </div>
-        </div>
-        
-        <div class="trade-room__product-card" style="margin-top:12px;">
-          <div style="display:flex; justify-content:center; margin-bottom:12px;">
-            <i class="bi bi-arrow-left-right" style="color:#FFC107; font-size:1.5rem;"></i>
-          </div>
-          <?php if ($otherProduct['img']): ?>
-            <img src="<?= h($otherProduct['img']) ?>" alt="<?= h($otherProduct['title']) ?>" class="trade-room__product-thumb">
-          <?php else: ?>
-            <div class="trade-room__product-thumb"><i class="bi bi-image"></i></div>
-          <?php endif; ?>
-          <div>
-            <div class="trade-room__product-title"><?= h($otherProduct['title']) ?></div>
-            <div class="trade-room__product-meta">کالای طرف مقابل · <?= $otherProduct['val'] ? fmt_credit((float)$otherProduct['val']) : 'بدون ارزش‌گذاری' ?></div>
-          </div>
+        <div class="trade-room__timeline">
+          <?php foreach ($timelineItems as $item): ?>
+            <?php $stepStatus = get_step_status($item['id'], $trade, $contract, $hasReview); ?>
+            <a href="?id=<?= $tradeId ?>&tab=<?= h($item['tab']) ?>" class="trade-room__timeline-item trade-room__timeline-item--<?= $stepStatus ?>" style="text-decoration: none; display: block;">
+              <div class="trade-room__timeline-dot"></div>
+              <div class="trade-room__timeline-body">
+                <div class="trade-room__timeline-title">
+                  <?= h($item['title']) ?>
+                  <?php if ($stepStatus === 'current'): ?>
+                    <span class="trade-room__pill trade-room__pill--warning">مرحله فعال</span>
+                  <?php elseif ($stepStatus === 'done'): ?>
+                    <span class="trade-room__pill trade-room__pill--success">تکمیل شد</span>
+                  <?php endif; ?>
+                </div>
+                <div class="trade-room__timeline-note"><?= h($item['note']) ?></div>
+              </div>
+            </a>
+          <?php endforeach; ?>
         </div>
       </section>
 
-      <!-- Price Difference -->
-      <section class="trade-room__card">
+      <section class="trade-room__timeline-card trade-room__support">
         <h3 class="trade-room__card-title">
-          <i class="bi bi-cash"></i>
-          اختلاف قیمت
+          <i class="bi bi-headset"></i>
+          نیاز به کمک دارید؟
         </h3>
-        <div class="st-diff">
-          <div class="st-diff__amount"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'ندارد' ?></div>
-          <div class="st-diff__label">اختلاف قیمت</div>
+        <p class="trade-room__muted">اگر در هر مرحله ابهام یا اختلافی داشتید، از پشتیبانی کمک بگیرید.</p>
+        <div class="trade-room__cta-row">
+          <a href="<?= APP_URL ?>/support" class="btn btn-primary w-100">تماس با پشتیبانی</a>
         </div>
-      </section>
-
-      <!-- Fee Status -->
-      <section class="trade-room__card">
-        <h3 class="trade-room__card-title">
-          <i class="bi bi-credit-card"></i>
-          وضعیت کارمزد
-        </h3>
-        <div class="st-status-row">
-          <span class="st-status-row__label">شما</span>
-          <span class="trade-room__pill <?= $trade['fee_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
-            <?= $trade['fee_paid'] ? 'پرداخت شده' : 'در انتظار پرداخت' ?>
-          </span>
-        </div>
-        <div class="st-status-row">
-          <span class="st-status-row__label">طرف مقابل</span>
-          <span class="trade-room__pill trade-room__pill--success">پرداخت شده</span>
-        </div>
-      </section>
-
-      <!-- Payment Status -->
-      <section class="trade-room__card">
-        <h3 class="trade-room__card-title">
-          <i class="bi bi-check-circle"></i>
-          وضعیت تسویه
-        </h3>
-        <div class="st-status-row">
-          <span class="st-status-row__label">اختلاف قیمت</span>
-          <span class="trade-room__pill <?= $trade['diff_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
-            <?= $trade['diff_paid'] ? 'پرداخت شده' : 'در انتظار' ?>
-          </span>
-        </div>
-      </section>
-
-      <!-- Shipping Method -->
-      <section class="trade-room__card">
-        <h3 class="trade-room__card-title">
-          <i class="bi bi-truck"></i>
-          روش ارسال
-        </h3>
-        <div class="trade-room__muted" style="margin-bottom:8px;"><?= h($summaryShippingMethod) ?></div>
-        <div class="trade-room__pill trade-room__pill--warning" style="font-size:.75rem;">پیک فوری</div>
-      </section>
-
-      <!-- Payment Method -->
-      <section class="trade-room__card">
-        <h3 class="trade-room__card-title">
-          <i class="bi bi-wallet2"></i>
-          روش تسویه
-        </h3>
-        <div class="trade-room__muted" style="margin-bottom:8px;"><?= h($summaryPaymentMethod) ?></div>
-        <div class="trade-room__pill trade-room__pill--success" style="font-size:.75rem;">کیف پول امن</div>
       </section>
     </aside>
 
@@ -874,43 +812,105 @@ render_user_panel_open($user, 'trades');
       </section>
     </div>
 
-    <!-- Right Column: Timeline (clickable) -->
-    <aside class="trade-room__timeline-column">
-      <section class="trade-room__timeline-card">
+    <!-- Left Column: Details (30% width) -->
+    <aside class="trade-room__details-column">
+      <section class="trade-room__card">
         <h3 class="trade-room__card-title">
-          <i class="bi bi-list-check"></i>
-          وضعیت معامله
+          <i class="bi bi-receipt"></i>
+          جزئیات معامله
         </h3>
-        <div class="trade-room__timeline">
-          <?php foreach ($timelineItems as $item): ?>
-            <?php $stepStatus = get_step_status($item['id'], $trade, $contract, $hasReview); ?>
-            <a href="?id=<?= $tradeId ?>&tab=<?= h($item['tab']) ?>" class="trade-room__timeline-item trade-room__timeline-item--<?= $stepStatus ?>" style="text-decoration: none; display: block;">
-              <div class="trade-room__timeline-dot"></div>
-              <div class="trade-room__timeline-body">
-                <div class="trade-room__timeline-title">
-                  <?= h($item['title']) ?>
-                  <?php if ($stepStatus === 'current'): ?>
-                    <span class="trade-room__pill trade-room__pill--warning">مرحله فعال</span>
-                  <?php elseif ($stepStatus === 'done'): ?>
-                    <span class="trade-room__pill trade-room__pill--success">تکمیل شد</span>
-                  <?php endif; ?>
-                </div>
-                <div class="trade-room__timeline-note"><?= h($item['note']) ?></div>
-              </div>
-            </a>
-          <?php endforeach; ?>
+
+        <!-- Products -->
+        <div class="trade-room__product-card">
+          <?php if ($myProduct['img']): ?>
+            <img src="<?= h($myProduct['img']) ?>" alt="<?= h($myProduct['title']) ?>" class="trade-room__product-thumb">
+          <?php else: ?>
+            <div class="trade-room__product-thumb"><i class="bi bi-image"></i></div>
+          <?php endif; ?>
+          <div>
+            <div class="trade-room__product-title"><?= h($myProduct['title']) ?></div>
+            <div class="trade-room__product-meta">کالای شما · <?= $myProduct['val'] ? fmt_credit((float)$myProduct['val']) : 'بدون ارزش‌گذاری' ?></div>
+          </div>
+        </div>
+        
+        <div class="trade-room__product-card" style="margin-top:12px;">
+          <div style="display:flex; justify-content:center; margin-bottom:12px;">
+            <i class="bi bi-arrow-left-right" style="color:#FFC107; font-size:1.5rem;"></i>
+          </div>
+          <?php if ($otherProduct['img']): ?>
+            <img src="<?= h($otherProduct['img']) ?>" alt="<?= h($otherProduct['title']) ?>" class="trade-room__product-thumb">
+          <?php else: ?>
+            <div class="trade-room__product-thumb"><i class="bi bi-image"></i></div>
+          <?php endif; ?>
+          <div>
+            <div class="trade-room__product-title"><?= h($otherProduct['title']) ?></div>
+            <div class="trade-room__product-meta">کالای طرف مقابل · <?= $otherProduct['val'] ? fmt_credit((float)$otherProduct['val']) : 'بدون ارزش‌گذاری' ?></div>
+          </div>
         </div>
       </section>
 
-      <section class="trade-room__timeline-card trade-room__support">
+      <!-- Price Difference -->
+      <section class="trade-room__card">
         <h3 class="trade-room__card-title">
-          <i class="bi bi-headset"></i>
-          نیاز به کمک دارید؟
+          <i class="bi bi-cash"></i>
+          اختلاف قیمت
         </h3>
-        <p class="trade-room__muted">اگر در هر مرحله ابهام یا اختلافی داشتید، از پشتیبانی کمک بگیرید.</p>
-        <div class="trade-room__cta-row">
-          <a href="<?= APP_URL ?>/support" class="btn btn-primary w-100">تماس با پشتیبانی</a>
+        <div class="st-diff">
+          <div class="st-diff__amount"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'ندارد' ?></div>
+          <div class="st-diff__label">اختلاف قیمت</div>
         </div>
+      </section>
+
+      <!-- Fee Status -->
+      <section class="trade-room__card">
+        <h3 class="trade-room__card-title">
+          <i class="bi bi-credit-card"></i>
+          وضعیت کارمزد
+        </h3>
+        <div class="st-status-row">
+          <span class="st-status-row__label">شما</span>
+          <span class="trade-room__pill <?= $trade['fee_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
+            <?= $trade['fee_paid'] ? 'پرداخت شده' : 'در انتظار پرداخت' ?>
+          </span>
+        </div>
+        <div class="st-status-row">
+          <span class="st-status-row__label">طرف مقابل</span>
+          <span class="trade-room__pill trade-room__pill--success">پرداخت شده</span>
+        </div>
+      </section>
+
+      <!-- Payment Status -->
+      <section class="trade-room__card">
+        <h3 class="trade-room__card-title">
+          <i class="bi bi-check-circle"></i>
+          وضعیت تسویه
+        </h3>
+        <div class="st-status-row">
+          <span class="st-status-row__label">اختلاف قیمت</span>
+          <span class="trade-room__pill <?= $trade['diff_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
+            <?= $trade['diff_paid'] ? 'پرداخت شده' : 'در انتظار' ?>
+          </span>
+        </div>
+      </section>
+
+      <!-- Shipping Method -->
+      <section class="trade-room__card">
+        <h3 class="trade-room__card-title">
+          <i class="bi bi-truck"></i>
+          روش ارسال
+        </h3>
+        <div class="trade-room__muted" style="margin-bottom:8px;"><?= h($summaryShippingMethod) ?></div>
+        <div class="trade-room__pill trade-room__pill--warning" style="font-size:.75rem;">پیک فوری</div>
+      </section>
+
+      <!-- Payment Method -->
+      <section class="trade-room__card">
+        <h3 class="trade-room__card-title">
+          <i class="bi bi-wallet2"></i>
+          روش تسویه
+        </h3>
+        <div class="trade-room__muted" style="margin-bottom:8px;"><?= h($summaryPaymentMethod) ?></div>
+        <div class="trade-room__pill trade-room__pill--success" style="font-size:.75rem;">کیف پول امن</div>
       </section>
     </aside>
   </div>
