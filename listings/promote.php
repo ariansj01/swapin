@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/dashboard_layout.php';
 
 $user = require_auth();
@@ -408,9 +409,13 @@ ob_start();
 <?php
 $content = ob_get_clean();
 
-render_dashboard_head('ارتقای آگهی', 'ارتقای آگهی و افزایش بازدید در سواپین');
-render_dashboard_topbar($user);
-render_dashboard_shell($user, 'promote', $content, [
+render_head('ارتقای آگهی', 'ارتقای آگهی و افزایش بازدید در سواپین', ['robots' => 'noindex, nofollow']);
+render_panel_styles();
+render_navbar($user);
+render_user_panel_open($user, 'promote', [
     'promote' => APP_URL . '/listings/promote?id=' . $listingId,
 ]);
-render_dashboard_footer(['src/js/promote.js']);
+echo $content;
+render_user_panel_close();
+render_panel_scripts(['src/js/promote.js']);
+render_footer();

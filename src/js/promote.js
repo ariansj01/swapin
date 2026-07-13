@@ -1,27 +1,5 @@
-// Promote page interactions
+// Promote page — accordion + plan confirm
 (function () {
-  const toggle  = document.getElementById('dash-sidebar-toggle');
-  const sidebar = document.getElementById('dash-sidebar');
-  const overlay = document.getElementById('dash-sidebar-overlay');
-
-  function setSidebarOpen(open) {
-    if (!sidebar) return;
-    sidebar.classList.toggle('is-open', open);
-    if (overlay) overlay.hidden = !open;
-    document.body.style.overflow = open ? 'hidden' : '';
-  }
-
-  if (toggle && sidebar) {
-    toggle.addEventListener('click', () => setSidebarOpen(!sidebar.classList.contains('is-open')));
-    overlay?.addEventListener('click', () => setSidebarOpen(false));
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth > 992) return;
-      if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-        setSidebarOpen(false);
-      }
-    });
-  }
-
   document.querySelectorAll('.promote-accordion__trigger').forEach((btn) => {
     btn.addEventListener('click', () => {
       const item = btn.closest('.promote-accordion__item');

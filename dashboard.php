@@ -9,6 +9,7 @@ require_once __DIR__ . '/includes/config.php';
 error_log('[swapin-dashboard] config.php loaded successfully');
 
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/dashboard_layout.php';
 error_log('[swapin-dashboard] layout.php loaded successfully');
 
 swapin_debug_log('dashboard-started', ['step' => 'init', 'uri' => $_SERVER['REQUEST_URI'] ?? '']);
@@ -108,6 +109,7 @@ swapin_debug_log('dashboard-before-render', ['step' => 'before-render', 'my_list
 render_head('داشبورد', 'خلاصه حساب، آگهی‌ها و پیشنهادهای معاوضه در ' . APP_NAME, [
     'robots' => 'noindex, nofollow',
 ]);
+render_panel_styles();
 render_navbar($user);
 ?>
 
@@ -140,7 +142,7 @@ render_navbar($user);
 </div>
 <?php endif; ?>
 
-<main id="main-content" class="section-sm">
+<?php render_user_panel_open($user, 'dashboard'); ?>
   <div class="container">
 
     <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-6);flex-wrap:wrap;gap:var(--sp-3)">
@@ -484,6 +486,6 @@ render_navbar($user);
     </div>
 
   </div>
-</main>
-
+<?php render_user_panel_close(); ?>
+<?php render_panel_scripts(); ?>
 <?php render_footer(); ?>

@@ -1,38 +1,11 @@
 <?php
-// User dashboard layout — navbar + sidebar shell for account pages
+// User panel sidebar — uses standard site header/footer from layout.php
 
-function render_dashboard_head(string $title = '', string $desc = ''): void {
-    $t    = $title ? h($title) . ' — ' . APP_NAME : APP_NAME;
-    $d    = $desc ? h($desc) : 'پنل کاربری سواپین';
-    $url  = APP_URL;
-    $csrf = h(csrf_token());
-    $creditUnit = h(CREDIT_UNIT);
-    echo <<<HTML
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="csrf-token" content="{$csrf}">
-<meta name="app-url" content="{$url}">
-<meta name="credit-unit" content="{$creditUnit}">
-<title>{$t}</title>
-<meta name="description" content="{$d}">
-<meta name="robots" content="noindex, nofollow">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-<link rel="stylesheet" href="{$url}/src/css/main.css">
-<link rel="stylesheet" href="{$url}/src/css/dashboard.css">
-<link rel="icon" type="image/x-icon" href="{$url}/src/img/fav_icon/favicon.ico">
-</head>
-<body class="dashboard-body">
-<a href="#main-content" class="skip-link">رفتن به محتوای اصلی</a>
-HTML;
+function render_panel_styles(): void {
+    echo '<link rel="stylesheet" href="' . APP_URL . '/src/css/dashboard.css">' . "\n";
 }
 
-function dashboard_nav_counts(array $user): array {
+function panel_nav_counts(array $user): array {
     $uid = (int)$user['id'];
     return [
         'messages' => (int)(DB::fetch('SELECT COUNT(*) AS c FROM messages WHERE to_user_id = ? AND is_read = 0', [$uid])['c'] ?? 0),
@@ -43,65 +16,9 @@ function dashboard_nav_counts(array $user): array {
     ];
 }
 
-function render_dashboard_topbar(array $user): void {
-    $url      = APP_URL;
-    $logoUrl  = $url . '/src/img/swapin-light-png.png';
-    $counts   = dashboard_nav_counts($user);
-    $initials = mb_strtoupper(mb_substr($user['name'], 0, 1));
-    $credFmt  = number_format((float)$user['credit_balance'], 0) . ' ' . CREDIT_UNIT;
-    $notifTotal = $counts['messages'] + $counts['offers'];
-    $notifDot   = $notifTotal > 0 ? ' dash-topbar__icon-btn--dot' : '';
-    $appName    = h(APP_NAME);
-    $msgBadge   = $counts['messages'] > 0
-        ? '<span class="dash-topbar__badge">' . $counts['messages'] . '</span>'
-        : '';
-
-    echo <<<HTML
-<header class="dash-topbar" role="banner">
-  <div class="dash-topbar__inner">
-    <a href="{$url}/listings/create" class="dash-topbar__cta hide-mobile">
-      <i class="bi bi-plus-circle"></i> ثبت آگهی
-    </a>
-
-    <form class="dash-topbar__search" action="{$url}/" method="GET" role="search">
-      <i class="bi bi-search"></i>
-      <input type="search" name="q" placeholder="جستجوی آگهی‌ها…" autocomplete="off" aria-label="جستجو">
-    </form>
-
-    <nav class="dash-topbar__nav" aria-label="میانبرهای کاربر">
-      <a href="{$url}/profile" class="dash-topbar__nav-link" title="پروفایل">
-        <span class="dash-topbar__avatar">{$initials}</span>
-        <span class="hide-mobile">{$credFmt}</span>
-      </a>
-      <button type="button" class="dash-topbar__icon-btn{$notifDot}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
-        <i class="bi bi-bell"></i>
-      </button>
-      <a href="{$url}/trades" class="dash-topbar__icon-btn" title="معاملات">
-        <i class="bi bi-arrow-left-right"></i>
-      </a>
-      <a href="{$url}/listings/saved" class="dash-topbar__icon-btn" title="علاقه‌مندی‌ها">
-        <i class="bi bi-heart"></i>
-      </a>
-      <a href="{$url}/messages" class="dash-topbar__icon-btn" title="پیام‌ها">
-        <i class="bi bi-chat-dots"></i>{$msgBadge}
-      </a>
-    </nav>
-
-    <a href="{$url}/" class="dash-topbar__brand">
-      <img src="{$logoUrl}" alt="{$appName}" class="dash-topbar__logo">
-    </a>
-
-    <button type="button" class="dash-topbar__menu-btn" id="dash-sidebar-toggle" aria-label="منو">
-      <i class="bi bi-list"></i>
-    </button>
-  </div>
-</header>
-HTML;
-}
-
-function render_dashboard_shell(array $user, string $active, string $content, array $navOverrides = []): void {
+function render_user_panel_open(array $user, string $active, array $navOverrides = []): void {
     $url    = APP_URL;
-    $counts = dashboard_nav_counts($user);
+    $counts = panel_nav_counts($user);
 
     $nav = [
         'dashboard' => [$url . '/dashboard', 'داشبورد', 'bi-speedometer2', 0],
@@ -111,6 +28,7 @@ function render_dashboard_shell(array $user, string $active, string $content, ar
         'saved'     => [$url . '/listings/saved', 'علاقه‌مندی‌ها', 'bi-heart', 0],
         'trades'    => [$url . '/trades', 'معاملات', 'bi-shield-lock', $counts['offers']],
         'wallet'    => [$url . '/wallet', 'کیف پول', 'bi-wallet2', 0],
+        'subscription' => [$url . '/subscription', 'اشتراک', 'bi-gem', 0],
         'settings'  => [$url . '/profile/edit', 'تنظیمات', 'bi-gear', 0],
         'support'   => [$url . '/support', 'پشتیبانی', 'bi-headset', 0],
     ];
@@ -122,9 +40,10 @@ function render_dashboard_shell(array $user, string $active, string $content, ar
     }
 
     echo '<div class="dash-sidebar-overlay" id="dash-sidebar-overlay" hidden></div>';
-    echo '<div class="dash-layout">';
-    echo '<aside class="dash-sidebar" id="dash-sidebar">';
-    echo '<nav class="dash-sidebar__nav" aria-label="منوی پنل">';
+    echo '<section class="user-panel section-sm">';
+    echo '<div class="user-panel__inner">';
+    echo '<aside class="dash-sidebar" id="dash-sidebar" aria-label="منوی پنل کاربری">';
+    echo '<nav class="dash-sidebar__nav">';
 
     foreach ($nav as $key => [$href, $label, $icon, $badge]) {
         $cls = $active === $key ? ' dash-sidebar__link--active' : '';
@@ -144,19 +63,20 @@ function render_dashboard_shell(array $user, string $active, string $content, ar
     echo '</div></aside>';
 
     echo '<div class="dash-main-wrap">';
-    echo '<main class="dash-main" id="main-content">' . $content . '</main>';
-    echo '<footer class="dash-footer">';
-    echo '<span>© ' . date('Y') . ' ' . h(APP_NAME) . '</span>';
-    echo "<a href=\"{$url}/terms\">قوانین</a>";
-    echo "<a href=\"{$url}/support\">پشتیبانی</a>";
-    echo '</footer></div></div>';
+    echo '<button type="button" class="dash-sidebar-mobile-toggle" id="dash-sidebar-toggle" aria-label="باز کردن منوی پنل">';
+    echo '<i class="bi bi-layout-sidebar-inset"></i> منوی پنل';
+    echo '</button>';
+    echo '<main class="dash-main" id="main-content">';
 }
 
-function render_dashboard_footer(array $extraScripts = []): void {
+function render_user_panel_close(): void {
+    echo '</main></div></div></section>';
+}
+
+function render_panel_scripts(array $extra = []): void {
     $url = APP_URL;
-    echo "<script src=\"{$url}/src/js/app.js\"></script>";
-    foreach ($extraScripts as $script) {
+    echo "<script src=\"{$url}/src/js/panel.js\"></script>";
+    foreach ($extra as $script) {
         echo "<script src=\"{$url}/{$script}\"></script>";
     }
-    echo '</body></html>';
 }

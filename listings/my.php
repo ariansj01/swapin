@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/dashboard_layout.php';
 
 $user = require_auth();
 $uid  = $user['id'];
@@ -85,10 +86,11 @@ $tabMeta = [
 ];
 
 render_head('آگهی‌های من');
+render_panel_styles();
 render_navbar($user);
+render_user_panel_open($user, 'my');
 ?>
 
-<div class="section-sm">
   <div class="container">
 
     <!-- Page header -->

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/dashboard_layout.php';
 
 $user    = require_auth();
 $success = '';
@@ -25,10 +26,11 @@ $activeSub = get_active_subscription($user);
 $activeCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "active"', [$user['id']])['c'] ?? 0);
 
 render_head('پلن‌های اشتراک');
+render_panel_styles();
 render_navbar($user);
 ?>
 
-<div class="section-sm">
+<?php render_user_panel_open($user, 'subscription'); ?>
   <div class="container">
 
     <div class="mb-6 text-center">
@@ -99,6 +101,6 @@ render_navbar($user);
     </div>
 
   </div>
-</div>
-
+<?php render_user_panel_close(); ?>
+<?php render_panel_scripts(); ?>
 <?php render_footer(); ?>
