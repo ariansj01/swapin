@@ -94,15 +94,14 @@ function render_navbar(?array $user = null): void {
     $unread     = 0;
     $pendOffers = 0;
     if ($user) {
-        $unread     = (int)(DB::fetch('SELECT COUNT(*) as c FROM messages WHERE to_user_id = ? AND is_read = 0', [$user['id']])['c'] ?? 0);
         $pendOffers = (int)(DB::fetch(
             'SELECT COUNT(*) as c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "pending"',
             [$user['id']]
         )['c'] ?? 0);
     }
-    $notifTotal = $unread + $pendOffers;
+    $notifTotal = $pendOffers;
     $notifClass = $notifTotal > 0 ? 'notif-dot' : '';
-    $initials   = $user ? mb_strtoupper(mb_substr($user['name'], 0, 1)) : '';
+    $navAvatar  = $user ? avatar_html($user['avatar'] ?? null, $user['name'], 'sm') : '';
     $loggedIn   = $user !== null;
     $GLOBALS['_nav_user'] = $user;
 
@@ -163,7 +162,7 @@ HTML;
       </button>
       <div class="dropdown hide-mobile">
         <button class="btn btn-ghost d-flex align-center gap-2" id="user-menu-btn">
-          <span class="avatar avatar-sm">{$initials}</span>
+          {$navAvatar}
           <span class="hide-mobile" style="font-size:.875rem;font-weight:600">{$credFmt} {$creditUnit}</span>
           <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
@@ -298,8 +297,7 @@ HTML;
     if ($loggedIn) {
         echo <<<HTML
     <div class="modal-footer">
-      <a href="{$url}/trades" class="btn btn-ghost btn-sm">اتاق معامله</a>
-      <a href="{$url}/trades?tab=received" class="btn btn-primary btn-sm">پیشنهادهای دریافتی</a>
+      <a href="{$url}/trades" class="btn btn-primary btn-sm">اتاق معامله</a>
     </div>
 HTML;
     }

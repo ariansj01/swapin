@@ -42,7 +42,6 @@ $completedTrades = (int)(DB::fetch(
 $sentOffers = (int)(DB::fetch(
     'SELECT COUNT(*) AS c FROM trade_offers WHERE from_user_id = ? AND status = "pending"', [$uid]
 )['c'] ?? 0);
-$unreadMsgs = (int)(DB::fetch('SELECT COUNT(*) AS c FROM messages WHERE to_user_id = ? AND is_read = 0', [$uid])['c'] ?? 0);
 
 // Recent wallet transactions
 $recentTx = $dashboardNeedsMigration
@@ -130,7 +129,7 @@ render_navbar($user);
 <div class="alert alert-success" style="border-radius:0;border-left:0;border-right:0">
   <div class="container">
     <i class="bi bi-stars"></i>
-    <strong>به <?= APP_NAME ?> خوش آمدید!</strong> مبلغ <strong><?= number_format(WELCOME_BONUS, 0) ?> <?= CREDIT_UNIT ?></strong> به عنوان پاداش خوش‌آمدگویی به کیف پول شما اضافه شد. با ثبت اولین آگهی شروع کنید!
+    <strong>به <?= APP_NAME ?> خوش آمدید!</strong> مبلغ <strong><?= fmt_num(WELCOME_BONUS) ?> <?= CREDIT_UNIT ?></strong> به عنوان پاداش خوش‌آمدگویی به کیف پول شما اضافه شد. با ثبت اولین آگهی شروع کنید!
   </div>
 </div>
 <?php endif; ?>
@@ -174,11 +173,10 @@ render_navbar($user);
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-8)">
       <?php
       $stats = [
-        ['wallet2',          number_format($user['credit_balance'], 0) . ' ' . CREDIT_UNIT, 'موجودی اعتبار',   'primary', APP_URL . '/wallet'],
+        ['wallet2',          fmt_num($user['credit_balance']) . ' ' . CREDIT_UNIT, 'موجودی اعتبار',   'primary', APP_URL . '/wallet'],
         ['grid',             $myListingsCount,                                    'آگهی‌های فعال',  'info',    APP_URL . '/listings/my'],
         ['inbox',            $pendingOffers,                                      'پیشنهادهای در انتظار',   $pendingOffers > 0 ? 'warning' : 'info', APP_URL . '/trades?tab=received'],
         ['arrow-left-right', $completedTrades,                                    'معاوضه‌های انجام‌شده', 'success', APP_URL . '/trades'],
-        ['chat-dots',        $unreadMsgs,                                         'پیام‌های خوانده‌نشده',  $unreadMsgs > 0 ? 'warning' : 'info', APP_URL . '/messages'],
         ['send',             $sentOffers,                                         'پیشنهادهای ارسالی',      'info',    APP_URL . '/trades?tab=offers'],
       ];
       foreach ($stats as [$icon, $val, $label, $color, $link]):
@@ -367,7 +365,7 @@ render_navbar($user);
                 <?php endif; ?>
                 <?php if ($offer['offer_credit'] > 0): ?>
                 <div class="fs-sm" style="color:var(--primary);margin-top:2px">
-                  <i class="bi bi-wallet2"></i> + <?= number_format((float)$offer['offer_credit'], 0) ?> <?= CREDIT_UNIT ?>
+                  <i class="bi bi-wallet2"></i> + <?= fmt_credit((float)$offer['offer_credit']) ?>
                 </div>
                 <?php endif; ?>
                 <?php if ($offer['message']): ?>
@@ -406,7 +404,9 @@ render_navbar($user);
           </div>
           <?php else: ?>
           <?php foreach ($recentListings as $listing): ?>
-          <div style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border)">
+          <a href="<?= APP_URL ?>/listings/view?id=<?= $listing['id'] ?>"
+             style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:background .15s;cursor:pointer"
+             onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
             <?php if ($listing['thumb']): ?>
             <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="<?= h($listing['title']) ?>"
                  style="width:52px;height:52px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0">
@@ -421,21 +421,21 @@ render_navbar($user);
               </div>
               <div class="fs-xs" style="color:var(--text-muted)">
                 <?php if ($listing['offer_count'] > 0): ?>
-                <span style="color:var(--warning);font-weight:600"><i class="bi bi-inbox"></i> <?= $listing['offer_count'] ?> پیشنهاد</span>
+                <span style="color:var(--warning);font-weight:600"><i class="bi bi-inbox"></i> <?= fmt_num($listing['offer_count']) ?> پیشنهاد</span>
                 <?php else: ?>
                 ثبت شده <?= persian_date($listing['created_at']) ?>
                 <?php endif; ?>
               </div>
             </div>
-            <div style="display:flex;gap:var(--sp-2)">
+            <div style="display:flex;gap:var(--sp-2)" onclick="event.preventDefault();event.stopPropagation()">
               <?php if ($listing['offer_count'] > 0): ?>
               <a href="<?= APP_URL ?>/trades?tab=received" class="btn btn-accent btn-sm">
                 <i class="bi bi-inbox"></i> پیشنهادها
               </a>
               <?php endif; ?>
-              <a href="<?= APP_URL ?>/listings/view?id=<?= $listing['id'] ?>" class="btn btn-ghost btn-sm">مشاهده</a>
+              <span class="btn btn-ghost btn-sm">مشاهده</span>
             </div>
-          </div>
+          </a>
           <?php endforeach; ?>
           <?php endif; ?>
         </div>
@@ -446,7 +446,7 @@ render_navbar($user);
       <div>
         <div class="wallet-card mb-4">
           <div class="wallet-card__label"><i class="bi bi-wallet2"></i> موجودی <?= CREDIT_UNIT ?></div>
-          <div class="wallet-card__balance"><?= number_format($user['credit_balance'], 0) ?></div>
+          <div class="wallet-card__balance"><?= fmt_num($user['credit_balance']) ?></div>
           <div class="wallet-card__symbol">اعتبار <?= APP_NAME ?></div>
           <div style="display:flex;gap:var(--sp-3);margin-top:var(--sp-6)">
             <a href="<?= APP_URL ?>/wallet?action=deposit" class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3);flex:1">
@@ -495,7 +495,7 @@ render_navbar($user);
               <div class="fs-xs" style="color:var(--text-muted)"><?= date('M j, g:ia', strtotime($tx['created_at'])) ?></div>
             </div>
             <div style="font-weight:700;font-size:.9375rem;color:var(--<?= $isPos ? 'success' : 'danger' ?>)">
-              <?= $isPos ? '+' : '' ?><?= number_format($tx['amount'], 0) ?>
+              <?= $isPos ? '+' : '' ?><?= fmt_num($tx['amount']) ?>
             </div>
           </div>
           <?php endforeach; ?>

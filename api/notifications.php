@@ -16,17 +16,6 @@ rate_limit_ip_or_fail('notifications', 120, 3600, true);
 
 $uid = (int)$user['id'];
 
-$unreadMessages = DB::fetchAll(
-    'SELECT m.id, m.body, m.created_at, m.from_user_id, m.thread_id,
-            u.name AS from_name
-     FROM messages m
-     JOIN users u ON u.id = m.from_user_id
-     WHERE m.to_user_id = ? AND m.is_read = 0
-     ORDER BY m.created_at DESC
-     LIMIT 8',
-    [$uid]
-);
-
 $pendingOffers = DB::fetchAll(
     'SELECT o.id, o.created_at, o.listing_id, o.from_user_id,
             l.title AS listing_title,
@@ -36,7 +25,7 @@ $pendingOffers = DB::fetchAll(
      JOIN users u ON u.id = o.from_user_id
      WHERE l.user_id = ? AND o.status = "pending"
      ORDER BY o.created_at DESC
-     LIMIT 8',
+     LIMIT 12',
     [$uid]
 );
 
@@ -55,26 +44,8 @@ foreach ($pendingOffers as $o) {
     ];
 }
 
-foreach ($unreadMessages as $m) {
-    $items[] = [
-        'type'    => 'message',
-        'id'      => (int)$m['id'],
-        'title'   => 'پیام از ' . $m['from_name'],
-        'body'    => mb_strimwidth($m['body'], 0, 80, '…'),
-        'time'    => $m['created_at'],
-        'time_ago'=> timeago($m['created_at']),
-        'url'     => APP_URL . '/messages.php?to=' . (int)$m['from_user_id'],
-        'icon'    => 'bi-chat-dots',
-    ];
-}
-
-usort($items, fn($a, $b) => strtotime($b['time']) <=> strtotime($a['time']));
-$items = array_slice($items, 0, 12);
-
-$total = count($unreadMessages) + count($pendingOffers);
-
 echo json_encode([
     'ok'    => true,
-    'total' => $total,
+    'total' => count($items),
     'items' => $items,
 ], JSON_UNESCAPED_UNICODE);

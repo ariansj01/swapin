@@ -31,9 +31,7 @@ $planFeatures = [
     'نمایش در صفحه اول',
     'افزایش بازدید',
     'نمایش ویژه',
-    'گزارش عملکرد',
     'اولویت در جستجو',
-    'افزایش فروش',
 ];
 
 $plans = [
@@ -149,17 +147,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'amount_paid' => $price,
             ]);
 
-            $updateData = [];
-            if ($plan === 'boost' || $plan === 'gold') {
-                $updateData['bump_until'] = $endsAt;
-            }
-            if ($plan === 'featured' || $plan === 'gold') {
-                $updateData['featured_until'] = $endsAt;
-                $updateData['is_featured']      = 1;
-            }
-            if ($plan === 'vip' || $plan === 'gold') {
-                $updateData['vip_until'] = $endsAt;
-            }
+            $updateData = [
+                'bump_until'     => $endsAt,
+                'featured_until' => $endsAt,
+                'is_featured'    => 1,
+                'vip_until'      => $endsAt,
+            ];
             if ($plan === 'targeted' || $plan === 'gold') {
                 $updateData['targeted_until'] = $endsAt;
             }
@@ -167,9 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateData['ai_promo_until'] = $endsAt;
             }
 
-            if (!empty($updateData)) {
-                DB::update('listings', $updateData, 'id = ?', [$listingId]);
-            }
+            DB::update('listings', $updateData, 'id = ?', [$listingId]);
 
             $user = DB::fetch('SELECT * FROM users WHERE id = ? AND is_active = 1', [$uid]);
             $success = 'پلن «' . $planData['name'] . '» با موفقیت فعال شد!';

@@ -183,7 +183,12 @@ render_user_panel_open($user, 'my');
         $hasPending  = $l['pending_offers'] > 0;
         $borderStyle = $hasPending ? 'border-inline-start:3px solid var(--warning);' : '';
       ?>
-      <div style="display:flex;align-items:flex-start;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);<?= $idx > 0 ? 'border-top:1px solid var(--border);' : '' ?><?= $borderStyle ?>">
+      <div style="display:flex;align-items:flex-start;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);position:relative;cursor:pointer;transition:background .15s;<?= $idx > 0 ? 'border-top:1px solid var(--border);' : '' ?><?= $borderStyle ?>"
+           onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+
+        <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>"
+           style="position:absolute;inset:0;z-index:1;border-radius:0"
+           aria-label="مشاهده آگهی <?= h($l['title']) ?>"></a>
 
         <!-- Thumbnail -->
         <div style="width:80px;height:72px;flex-shrink:0;border-radius:var(--radius-md);overflow:hidden;background:var(--bg);border:1px solid var(--border)">
@@ -198,19 +203,18 @@ render_user_panel_open($user, 'my');
         </div>
 
         <!-- Body -->
-        <div style="flex:1;min-width:0">
+        <div style="flex:1;min-width:0;position:relative;z-index:0">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap">
             <div style="min-width:0;flex:1">
-              <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>"
-                 style="font-weight:700;font-size:1rem;color:var(--text-primary);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <div style="font-weight:700;font-size:1rem;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 <?= h($l['title']) ?>
-              </a>
+              </div>
               <div class="fs-xs" style="color:var(--text-muted);margin-top:var(--sp-1);display:flex;gap:var(--sp-3);flex-wrap:wrap">
                 <span><i class="<?= h($l['cat_icon']) ?>"></i> <?= h($l['cat_name']) ?></span>
                 <?php if ($l['city']): ?>
                 <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?></span>
                 <?php endif; ?>
-                <span><i class="bi bi-eye"></i> <?= number_format((int)$l['views']) ?> بازدید</span>
+                <span><i class="bi bi-eye"></i> <?= fmt_num((int)$l['views']) ?> بازدید</span>
                 <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
               </div>
             </div>
@@ -245,10 +249,10 @@ render_user_panel_open($user, 'my');
             <?php endif; ?>
             <?php if ($l['total_offers'] > 0): ?>
             <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $l['id'] ?>"
-               style="font-size:.875rem;font-weight:600;text-decoration:none;color:<?= $hasPending ? 'var(--warning)' : 'var(--text-muted)' ?>">
-              <i class="bi bi-inbox"></i> <?= $l['total_offers'] ?> پیشنهاد
+               style="position:relative;z-index:2;font-size:.875rem;font-weight:600;text-decoration:none;color:<?= $hasPending ? 'var(--warning)' : 'var(--text-muted)' ?>">
+              <i class="bi bi-inbox"></i> <?= fmt_num($l['total_offers']) ?> پیشنهاد
               <?php if ($hasPending): ?>
-              <span class="badge badge-warning" style="margin-inline-start:2px"><?= $l['pending_offers'] ?> جدید</span>
+              <span class="badge badge-warning" style="margin-inline-start:2px"><?= fmt_num($l['pending_offers']) ?> جدید</span>
               <?php endif; ?>
             </a>
             <?php endif; ?>
@@ -260,7 +264,7 @@ render_user_panel_open($user, 'my');
         </div>
 
         <!-- Actions -->
-        <div style="display:flex;flex-direction:column;gap:var(--sp-2);align-items:flex-end;flex-shrink:0">
+        <div style="display:flex;flex-direction:row;gap:var(--sp-4);align-items:center;flex-shrink:0;position:relative;z-index:2">
 
           <a href="<?= APP_URL ?>/listings/view.php?id=<?= $l['id'] ?>"
              class="btn btn-ghost btn-sm" title="مشاهده"><i class="bi bi-eye"></i></a>

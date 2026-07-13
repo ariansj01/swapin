@@ -191,6 +191,7 @@
     margin-bottom: var(--lv-gap);
   }
 
+  .lv-seller .avatar,
   .lv-seller__avatar {
     width: 48px;
     height: 48px;

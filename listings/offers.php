@@ -68,7 +68,7 @@ if ($listingId) {
         header('Location: ' . APP_URL . '/listings/my.php'); exit;
     }
     $offers = DB::fetchAll(
-        'SELECT o.*, u.name AS from_name, u.rating AS from_rating, u.city AS from_city,
+        'SELECT o.*, u.name AS from_name, u.avatar AS from_avatar, u.rating AS from_rating, u.city AS from_city,
                 ol.title AS offer_listing_title, ol.id AS offer_listing_id_v,
                 (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb,
                 (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
@@ -84,7 +84,7 @@ if ($listingId) {
     $listing = null;
     $offers  = DB::fetchAll(
         'SELECT o.*, l.title AS listing_title, l.id AS listing_id_v,
-                u.name AS from_name, u.rating AS from_rating,
+                u.name AS from_name, u.avatar AS from_avatar, u.rating AS from_rating,
                 ol.title AS offer_listing_title,
                 (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
          FROM trade_offers o
@@ -145,7 +145,7 @@ render_navbar($user);
             <!-- Offer Left -->
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-                <div class="avatar avatar-md"><?= strtoupper(substr($offer['from_name'], 0, 1)) ?></div>
+                <?= avatar_html($offer['from_avatar'] ?? null, $offer['from_name'], 'md') ?>
                 <div>
                   <div style="font-weight:700;font-size:1.0625rem"><?= h($offer['from_name']) ?></div>
                   <?php if ($offer['from_rating'] > 0): ?>
@@ -226,10 +226,6 @@ render_navbar($user);
                   <i class="bi bi-x-lg"></i> رد پیشنهاد
                 </button>
               </form>
-              <a href="<?= APP_URL ?>/messages.php?to=<?= $offer['from_user_id'] ?>"
-                 class="btn btn-outline w-100">
-                <i class="bi bi-chat"></i> چت مستقیم
-              </a>
             </div>
             <?php elseif ($offer['status'] === 'accepted' && $offer['trade_id']): ?>
             <div style="width:100%">

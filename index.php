@@ -105,6 +105,15 @@ render_head($homeMetaTitle, $homeMetaDesc, [
 render_navbar($user);
 ?>
 
+<?php if ($user && isset($_GET['welcome'])): ?>
+<div class="alert alert-success" style="border-radius:0;border-left:0;border-right:0">
+  <div class="container">
+    <i class="bi bi-stars"></i>
+    <strong>به <?= APP_NAME ?> خوش آمدید!</strong> مبلغ <strong><?= fmt_num(WELCOME_BONUS) ?> <?= CREDIT_UNIT ?></strong> به عنوان پاداش خوش‌آمدگویی به کیف پول شما اضافه شد. با ثبت اولین آگهی شروع کنید!
+  </div>
+</div>
+<?php endif; ?>
+
 <?php if (!$search && !$catSlug && $page === 1): ?>
 <section class="hero">
   <div class="container hero__inner">
@@ -124,15 +133,15 @@ render_navbar($user);
       </div>
       <div class="hero__stats">
         <div class="hero__stat">
-          <div class="hero__stat-value"><?= number_format($total) ?>+</div>
+          <div class="hero__stat-value"><?= fmt_num($total) ?>+</div>
           <div class="hero__stat-label">آگهی فعال</div>
         </div>
         <div class="hero__stat">
-          <div class="hero__stat-value"><?= number_format((int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE status="completed"')['c'] ?? 0)) ?>+</div>
+          <div class="hero__stat-value"><?= fmt_num((int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE status="completed"')['c'] ?? 0)) ?>+</div>
           <div class="hero__stat-label">مبادله انجام‌شده</div>
         </div>
         <div class="hero__stat">
-          <div class="hero__stat-value"><?= number_format((int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1')['c'] ?? 0)) ?>+</div>
+          <div class="hero__stat-value"><?= fmt_num((int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1')['c'] ?? 0)) ?>+</div>
           <div class="hero__stat-label">عضو</div>
         </div>
       </div>

@@ -47,34 +47,34 @@ render_navbar($user);
       <i class="bi bi-info-circle"></i>
       <div>
         پلن فعلی: <strong><?= $activeSub ? h($activeSub['name']) : 'رایگان' ?></strong>
-        — <?= $activeCount ?> / <?= get_listing_limit($user) ?> آگهی فعال
+        — <?= fmt_num($activeCount) ?> / <?= fmt_num(get_listing_limit($user)) ?> آگهی فعال
         <?php if (!empty($user['subscription_until'])): ?>
         — انقضا: <?= persian_date($user['subscription_until']) ?>
         <?php endif; ?>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-5)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-5);align-items:stretch">
       <?php foreach ($plans as $plan):
         $isCurrent = ($user['subscription_plan'] ?? 'none') === $plan['slug'] && $activeSub;
         $features = [
-            $plan['listings_max'] . ' آگهی فعال',
-            $plan['bump_credits'] . ' اعتبار بالا بردن رایگان/ماه',
+            fmt_num($plan['listings_max']) . ' آگهی فعال',
+            fmt_num($plan['bump_credits']) . ' اعتبار بالا بردن رایگان/ماه',
         ];
         if ($plan['has_reports']) $features[] = 'گزارش فروش';
         if ($plan['has_panel'])   $features[] = 'پنل کسب‌وکار';
-        if ($plan['has_api'])     $features[] = 'دسترسی API';
+        if ($plan['has_api'])     $features[] = 'دستیار هوشمند';
       ?>
-      <div class="card" style="<?= $plan['slug'] === 'gold' ? 'border:2px solid var(--accent-dark)' : '' ?>">
-        <div class="card-body" style="padding:var(--sp-6)">
+      <div class="card" style="display:flex;flex-direction:column;<?= $plan['slug'] === 'gold' ? 'border:2px solid var(--accent-dark)' : '' ?>">
+        <div class="card-body" style="padding:var(--sp-6);flex:1;display:flex;flex-direction:column">
           <?php if ($plan['slug'] === 'gold'): ?>
           <span class="badge badge-warning mb-3"><i class="bi bi-star-fill"></i> محبوب</span>
           <?php endif; ?>
           <h3><?= h($plan['name']) ?></h3>
           <div style="font-size:2rem;font-weight:800;color:var(--primary);margin:var(--sp-3) 0">
-            <?= number_format((float)$plan['price_month'], 0) ?> <span class="fs-sm fw-600" style="color:var(--text-muted)"><?= CREDIT_UNIT ?>/ماه</span>
+            <?= fmt_num((float)$plan['price_month'], 0) ?> <span class="fs-sm fw-600" style="color:var(--text-muted)"><?= CREDIT_UNIT ?>/ماه</span>
           </div>
-          <ul style="margin:var(--sp-4) 0 var(--sp-6);padding:0">
+          <ul style="margin:var(--sp-4) 0 var(--sp-6);padding:0;flex:1">
             <?php foreach ($features as $f): ?>
             <li style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-2);font-size:.875rem;color:var(--text-secondary)">
               <i class="bi bi-check-circle-fill" style="color:var(--success)"></i> <?= h($f) ?>
@@ -84,15 +84,17 @@ render_navbar($user);
           <?php if ($isCurrent): ?>
           <button class="btn btn-outline w-100" disabled>پلن فعلی</button>
           <?php else: ?>
-          <form method="POST">
+          <form method="POST" style="margin-top:auto">
             <?= csrf_field() ?>
             <input type="hidden" name="plan" value="<?= h($plan['slug']) ?>">
-            <select name="months" class="form-control mb-3">
-              <?php foreach ([1,3,6,12] as $m): ?>
-              <option value="<?= $m ?>"><?= $m ?> ماه<?= $m > 1 ? '' : '' ?> — <?= fmt_credit((float)$plan['price_month'] * $m) ?></option>
-              <?php endforeach; ?>
-            </select>
-            <button type="submit" class="btn btn-primary w-100">خرید اشتراک</button>
+            <div style="display:flex;gap:var(--sp-2);align-items:stretch">
+              <select name="months" class="form-control" style="flex:1;margin:0">
+                <?php foreach ([1,3,6,12] as $m): ?>
+                <option value="<?= $m ?>"><?= fmt_num($m) ?> ماه — <?= fmt_credit((float)$plan['price_month'] * $m) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <button type="submit" class="btn btn-primary" style="flex-shrink:0;white-space:nowrap">خرید اشتراک</button>
+            </div>
           </form>
           <?php endif; ?>
         </div>

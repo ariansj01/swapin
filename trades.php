@@ -226,7 +226,7 @@ $sentOffers = DB::fetchAll(
 // Received offers (on my listings)
 $receivedOffers = DB::fetchAll(
     'SELECT o.*, l.title AS listing_title, l.id AS listing_id_v,
-            u.name AS from_name, u.rating AS from_rating,
+            u.name AS from_name, u.avatar AS from_avatar, u.rating AS from_rating,
             ol.title AS offer_listing_title, ol.id AS offer_listing_id_v,
             (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb,
             (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
@@ -379,7 +379,7 @@ render_navbar($user);
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap">
                 <div style="flex:1;min-width:0">
                   <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-                    <div class="avatar avatar-md"><?= strtoupper(substr($offer['from_name'], 0, 1)) ?></div>
+                    <?= avatar_html($offer['from_avatar'] ?? null, $offer['from_name'], 'md') ?>
                     <div>
                       <div style="font-weight:700;font-size:1.0625rem"><?= h($offer['from_name']) ?></div>
                       <?php if ($offer['from_rating'] > 0): ?>

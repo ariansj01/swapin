@@ -11,7 +11,7 @@ define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE', 'IRT');
 define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
 define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
-define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'https://swaapin.ir'); // http://localhost/swaapin - https://swaapin.ir
+define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'http://localhost/swaapinr'); // http://localhost/swaapin - https://swaapin.ir
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads');
@@ -29,9 +29,9 @@ define('WALLET_TOPUP_URL', APP_URL . '/wallet?action=topup'); // آدرس صفح
 
 // ─── Database ──────────────────────────────────────────────────────────────
 define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'swapin'); // kala_b_kala
-define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'ltze_swapin_kP%user'); // ltze_swapin_kP%user
-define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : 'kP%B!-)+*75p'); // kP%B!-)+*75p
+define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'kala_b_kala'); // kala_b_kala
+define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'root'); // ltze_swapin_kP%user
+define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : ''); // kP%B!-)+*75p
 define('DB_CHAR', 'utf8mb4');
 
 require_once __DIR__ . '/security.php';
@@ -519,14 +519,40 @@ function store_uploaded_image(array $file, string $prefix, string $destDir): ?st
 
     $filename = $prefix . '_' . uniqid('', true) . '_' . time() . '.' . $valid['ext'];
     $destDir  = rtrim($destDir, '/\\') . DIRECTORY_SEPARATOR;
+
     if (!is_dir($destDir)) {
-        mkdir($destDir, 0755, true);
+        if (!@mkdir($destDir, 0775, true) && !is_dir($destDir)) {
+            if (function_exists('swapin_debug_log')) {
+                swapin_debug_log('upload-mkdir-failed', ['dir' => $destDir]);
+            }
+            return null;
+        }
     }
-    $dest = $destDir . $filename;
-    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+
+    // Ensure web server can write (fixes Permission denied on Linux hosts)
+    if (!is_writable($destDir)) {
+        @chmod($destDir, 0775);
+    }
+    if (!is_writable($destDir)) {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('upload-dir-not-writable', ['dir' => $destDir]);
+        }
         return null;
     }
 
+    $dest = $destDir . $filename;
+    if (!@move_uploaded_file($file['tmp_name'], $dest)) {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('upload-move-failed', [
+                'tmp'  => $file['tmp_name'] ?? '',
+                'dest' => $dest,
+                'writable' => is_writable($destDir),
+            ]);
+        }
+        return null;
+    }
+
+    @chmod($dest, 0644);
     return $filename;
 }
 

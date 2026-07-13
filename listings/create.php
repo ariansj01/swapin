@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($uploadedImages === 0) {
             DB::query('DELETE FROM listings WHERE id = ? AND user_id = ?', [$listingId, $user['id']]);
-            $errors['images'] = 'آپلود تصاویر ناموفق بود. لطفاً دوباره تلاش کنید.';
+            $errors['images'] = 'آپلود تصاویر ناموفق بود. لطفاً دوباره تلاش کنید. اگر مشکل ادامه داشت، با پشتیبانی تماس بگیرید.';
         } else {
             // Clear cache
             ai_match_clear_cache((int)$user['id']);
@@ -301,61 +301,57 @@ render_navbar($user);
 
         <!-- Step 7: Review -->
         <div class="wizard-step" data-step="7" id="step-7" style="display:none">
-          <h2 class="wizard-step-title">بررسی نهایی</h2>
+          <div class="review-header">
+            <h2 class="wizard-step-title" style="margin:0">بررسی نهایی</h2>
+            <button type="button" class="edit-btn" onclick="goToStep(1)">
+              <i class="bi bi-pencil"></i> ویرایش اطلاعات
+            </button>
+          </div>
           <p class="wizard-step-subtitle">تمام اطلاعات را بررسی کنید.</p>
 
           <div class="review-section">
             <p class="review-label">تصاویر</p>
             <div class="review-images" id="step7-images"></div>
-            <button type="button" class="edit-btn" onclick="goToStep(2)">ویرایش</button>
           </div>
           
           <div class="review-section">
             <p class="review-label">عنوان</p>
             <p class="review-value" id="step7-title"></p>
-            <button type="button" class="edit-btn" onclick="goToStep(1)">ویرایش</button>
           </div>
           
           <div class="review-section">
             <p class="review-label">توضیحات</p>
             <p class="review-value" id="step7-description"></p>
-            <button type="button" class="edit-btn" onclick="goToStep(1)">ویرایش</button>
           </div>
           
           <div class="review-section">
             <p class="review-label">دسته‌بندی</p>
             <p class="review-value" id="step7-category"></p>
-            <button type="button" class="edit-btn" onclick="goToStep(3)">ویرایش</button>
           </div>
           
           <div class="review-section">
             <p class="review-label">وضعیت کالا</p>
             <p class="review-value" id="step7-condition"></p>
-            <button type="button" class="edit-btn" onclick="goToStep(3)">ویرایش</button>
           </div>
           
           <div class="review-section">
             <p class="review-label">شهر</p>
             <p class="review-value" id="step7-city"></p>
-            <button type="button" class="edit-btn" onclick="goToStep(3)">ویرایش</button>
           </div>
           
           <div class="review-section">
             <p class="review-label">دسته‌بندی‌های مورد علاقه برای معاوضه</p>
             <p class="review-value" id="step7-want-cats"></p>
-            <button type="button" class="edit-btn" onclick="goToStep(4)">ویرایش</button>
           </div>
           
           <div class="review-section">
             <p class="review-label">توضیح آنچه می‌خواهید</p>
             <p class="review-value" id="step7-want-desc"></p>
-            <button type="button" class="edit-btn" onclick="goToStep(5)">ویرایش</button>
           </div>
           
           <div class="review-section">
             <p class="review-label">قیمت تخمینی</p>
             <p class="review-value" id="step7-price"></p>
-            <button type="button" class="edit-btn" onclick="goToStep(6)">ویرایش</button>
           </div>
         </div>
 
@@ -401,8 +397,18 @@ document.addEventListener('DOMContentLoaded', () => {
   updateStepper();
   initStep1Counters();
   initStep2Upload();
+  initStep3Fields();
   initWizardSubmit();
 });
+
+function initStep3Fields() {
+  const catSelect = document.getElementById('step3-category');
+  const condSelect = document.getElementById('step3-condition');
+  const cityInput = document.getElementById('step3-city');
+  if (catSelect) catSelect.addEventListener('change', updateButtons);
+  if (condSelect) condSelect.addEventListener('change', updateButtons);
+  if (cityInput) cityInput.addEventListener('input', updateButtons);
+}
 
 function initStep1Counters() {
   const titleInput = document.getElementById('step1-title');

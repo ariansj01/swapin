@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 
 if (auth_user()) {
-    header('Location: ' . APP_URL . '/dashboard'); exit;
+    header('Location: ' . APP_URL . '/'); exit;
 }
 
 $error         = '';
@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($user) {
                 login_user($user['id']);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
-                $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard';
+                $dest = $redir ? APP_URL . $redir : APP_URL . '/';
                 header('Location: ' . $dest); exit;
             } else {
                 // New user - redirect to complete profile

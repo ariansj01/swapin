@@ -46,7 +46,7 @@ $listings = DB::fetchAll(
 
 // Reviews
 $reviews = DB::fetchAll(
-    'SELECT r.*, u.name AS reviewer_name FROM reviews r
+    'SELECT r.*, u.name AS reviewer_name, u.avatar AS reviewer_avatar FROM reviews r
      JOIN users u ON u.id = r.from_user_id
      WHERE r.to_user_id = ?
      ORDER BY r.created_at DESC LIMIT 10',
@@ -62,23 +62,21 @@ render_navbar($currentUser);
 <div class="section-sm">
   <div class="container">
 
-    <!-- Profile Header Card -->
-    <div class="card mb-6">
-      <div class="card-body" style="padding:var(--sp-8)">
-        <div style="display:flex;align-items:flex-start;gap:var(--sp-6);flex-wrap:wrap">
-
-          <div style="flex-shrink:0">
-            <?php if ($profile['avatar']): ?>
-            <img src="<?= UPLOAD_URL . h($profile['avatar']) ?>"
-                 style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border)" alt="<?= h($profile['name']) ?>">
-            <?php else: ?>
-            <div class="avatar avatar-xl"><?= strtoupper(substr($profile['name'], 0, 1)) ?></div>
-            <?php endif; ?>
+    <!-- Profile Hero Card -->
+    <div class="card profile-hero mb-6">
+      <div class="profile-hero__cover"></div>
+      <div class="profile-hero__body">
+        <div class="profile-hero__top">
+          <div class="profile-hero__avatar-wrap">
+            <?= avatar_html($profile['avatar'] ?? null, $profile['name'], 'xl') ?>
           </div>
 
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;margin-bottom:var(--sp-2)">
-              <h1 style="margin:0;font-size:1.5rem;"><?= h($profile['name']) ?></h1>
+          <div class="profile-hero__info">
+            <h1 class="profile-hero__name"><?= h($profile['name']) ?></h1>
+            <div class="profile-hero__meta">
+              <?php if ($profile['city']): ?>
+              <span class="profile-hero__city"><i class="bi bi-geo-alt"></i> <?= h($profile['city']) ?></span>
+              <?php endif; ?>
               <?php if ($profile['verification_level'] >= 2): ?>
               <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأیید‌شده</span>
               <?php endif; ?>
@@ -89,75 +87,63 @@ render_navbar($currentUser);
               <span class="badge badge-warning"><i class="bi bi-gem"></i> <?= ucfirst($profile['subscription_plan']) ?></span>
               <?php endif; ?>
             </div>
-
-            <?php if ($profile['city']): ?>
-            <div class="fs-sm mb-3" style="color:var(--text-muted)">
-              <i class="bi bi-geo-alt"></i> <?= h($profile['city']) ?>
-            </div>
-            <?php endif; ?>
-
             <?php if ($profile['bio']): ?>
-            <p style="margin-bottom:var(--sp-4)"><?= nl2br(h($profile['bio'])) ?></p>
+            <p class="profile-hero__bio"><?= nl2br(h($profile['bio'])) ?></p>
             <?php endif; ?>
-
-            <!-- Swap Score -->
-            <div class="swap-score-card mb-4">
-              <div class="swap-score-card__header">
-                <span class="swap-score-card__label">Swap Score</span>
-                <span class="swap-score-card__value"><?= $swapScore['score'] ?><small>/100</small></span>
-              </div>
-              <div class="swap-score-card__bar">
-                <div class="swap-score-card__fill" style="width:<?= $swapScore['score'] ?>%"></div>
-              </div>
-              <div class="swap-score-card__status"><?= h($swapScore['label']) ?></div>
-              <div class="swap-score-card__breakdown">
-                <?php foreach ($swapScore['breakdown'] as $item): ?>
-                <div class="swap-score-card__item">
-                  <span><?= h($item['label']) ?></span>
-                  <span><?= (int)$item['points'] ?> / <?= (int)$item['max'] ?></span>
-                </div>
-                <?php endforeach; ?>
-              </div>
-            </div>
-
-            <!-- Stats row -->
-            <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap">
-              <?php if ($profile['rating'] > 0): ?>
-              <div class="stat-pill">
-                <span style="font-size:1.25rem;font-weight:800;color:var(--accent-dark)"><?= number_format((float)$profile['rating'], 1) ?></span>
-                <span class="fs-xs" style="color:var(--text-muted)">امتیاز (<?= $reviewCount ?>)</span>
-              </div>
-              <?php endif; ?>
-              <div class="stat-pill">
-                <span style="font-size:1.25rem;font-weight:800;color:var(--primary)"><?= $tradeCount ?></span>
-                <span class="fs-xs" style="color:var(--text-muted)">معامله انجام‌شده</span>
-              </div>
-              <div class="stat-pill">
-                <span style="font-size:1.25rem;font-weight:800;color:var(--text-secondary)"><?= $listingCount ?></span>
-                <span class="fs-xs" style="color:var(--text-muted)">آگهی فعال</span>
-              </div>
-              <div class="stat-pill">
-                <span class="fs-xs" style="color:var(--text-muted)">عضو از</span>
-                <span style="font-weight:700"><?= persian_date($profile['created_at']) ?></span>
-              </div>
-            </div>
           </div>
 
-          <!-- Actions -->
-          <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+          <div class="profile-hero__actions">
             <?php if ($isOwnProfile): ?>
             <a href="<?= APP_URL ?>/profile/edit" class="btn btn-outline">
               <i class="bi bi-pencil"></i> ویرایش پروفایل
             </a>
-            <?php elseif ($currentUser): ?>
-            <a href="<?= APP_URL ?>/messages?to=<?= $profile['id'] ?>" class="btn btn-primary">
-              <i class="bi bi-chat"></i> پیام
+            <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">
+              <i class="bi bi-plus-lg"></i> ثبت آگهی
             </a>
-            <?php else: ?>
-            <a href="<?= APP_URL ?>/auth/login" class="btn btn-primary">ورود برای پیام</a>
+            <?php elseif (!$currentUser): ?>
+            <a href="<?= APP_URL ?>/auth/login" class="btn btn-primary">ورود</a>
             <?php endif; ?>
           </div>
+        </div>
 
+        <div class="profile-hero__stats">
+          <?php if ($profile['rating'] > 0): ?>
+          <div class="profile-hero__stat">
+            <span class="profile-hero__stat-value"><?= fmt_num((float)$profile['rating'], 1) ?></span>
+            <span class="profile-hero__stat-label">امتیاز (<?= fmt_num($reviewCount) ?>)</span>
+          </div>
+          <?php endif; ?>
+          <div class="profile-hero__stat">
+            <span class="profile-hero__stat-value"><?= fmt_num($tradeCount) ?></span>
+            <span class="profile-hero__stat-label">معامله انجام‌شده</span>
+          </div>
+          <div class="profile-hero__stat">
+            <span class="profile-hero__stat-value"><?= fmt_num($listingCount) ?></span>
+            <span class="profile-hero__stat-label">آگهی فعال</span>
+          </div>
+          <div class="profile-hero__stat">
+            <span class="profile-hero__stat-value" style="font-size:1rem"><?= persian_date($profile['created_at']) ?></span>
+            <span class="profile-hero__stat-label">عضو از</span>
+          </div>
+        </div>
+
+        <div class="profile-hero__score swap-score-card">
+          <div class="swap-score-card__header">
+            <span class="swap-score-card__label">Swap Score</span>
+            <span class="swap-score-card__value"><?= fmt_num($swapScore['score']) ?><small>/100</small></span>
+          </div>
+          <div class="swap-score-card__bar">
+            <div class="swap-score-card__fill" style="width:<?= $swapScore['score'] ?>%"></div>
+          </div>
+          <div class="swap-score-card__status"><?= h($swapScore['label']) ?></div>
+          <div class="swap-score-card__breakdown">
+            <?php foreach ($swapScore['breakdown'] as $item): ?>
+            <div class="swap-score-card__item">
+              <span><?= h($item['label']) ?></span>
+              <span><?= fmt_num((int)$item['points']) ?> / <?= fmt_num((int)$item['max']) ?></span>
+            </div>
+            <?php endforeach; ?>
+          </div>
         </div>
       </div>
     </div>
@@ -166,7 +152,7 @@ render_navbar($currentUser);
 
       <!-- Listings -->
       <div>
-        <h3 class="mb-4">آگهی‌های فعال (<?= $listingCount ?>)</h3>
+        <h3 class="mb-4">آگهی‌های فعال (<?= fmt_num($listingCount) ?>)</h3>
         <?php if (empty($listings)): ?>
         <div class="empty-state" style="padding:var(--sp-10) 0">
           <i class="bi bi-box-seam"></i>
@@ -199,7 +185,7 @@ render_navbar($currentUser);
       <div>
         <div class="card">
           <div class="card-header">
-            <h3 style="margin:0;font-size:1rem"><i class="bi bi-star-fill" style="color:var(--accent)"></i> نظرات (<?= $reviewCount ?>)</h3>
+            <h3 style="margin:0;font-size:1rem"><i class="bi bi-star-fill" style="color:var(--accent)"></i> نظرات (<?= fmt_num($reviewCount) ?>)</h3>
           </div>
           <?php if (empty($reviews)): ?>
           <div class="card-body" style="text-align:center;color:var(--text-muted);padding:var(--sp-8)">
@@ -211,7 +197,7 @@ render_navbar($currentUser);
           <div style="padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border)">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-2)">
               <div style="display:flex;align-items:center;gap:var(--sp-2)">
-                <div class="avatar avatar-sm"><?= strtoupper(substr($review['reviewer_name'], 0, 1)) ?></div>
+                <?= avatar_html($review['reviewer_avatar'] ?? null, $review['reviewer_name'], 'sm') ?>
                 <span style="font-weight:600;font-size:.875rem"><?= h($review['reviewer_name']) ?></span>
               </div>
               <div class="stars">

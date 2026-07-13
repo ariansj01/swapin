@@ -6,7 +6,7 @@ $user = auth_user();
 $id   = (int)($_GET['id'] ?? 0);
 
 $listing = DB::fetch(
-    'SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
+    'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
             u.city AS seller_city, u.credit_balance AS seller_credits, u.verification_level,
             u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug,
             t.id AS trade_id, t.status AS trade_status, t.user_a_id, t.user_b_id
@@ -78,7 +78,7 @@ $isSaved = $user ? (bool)DB::fetch(
 
 // Related listings
 $related = DB::fetchAll(
-    'SELECT l.*, u.name AS seller_name, u.rating AS seller_rating,
+    'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating,
             c.name AS cat_name,
             (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
      FROM listings l
@@ -171,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } else {
                 $offerSuccess = 'درخواست بازرسی کارشناس ثبت شد! تیم با شما تماس می‌گیرد.';
                 $listing = DB::fetch(
-                    'SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
+                    'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
                             u.city AS seller_city, u.credit_balance AS seller_credits, u.verification_level,
                             u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug
                      FROM listings l JOIN users u ON u.id = l.user_id JOIN categories c ON c.id = l.category_id WHERE l.id = ?',
@@ -302,7 +302,7 @@ render_navbar($user);
 
     <!-- Seller -->
     <div class="lv-seller">
-      <div class="lv-seller__avatar"><?= strtoupper(substr($listing['seller_name'], 0, 1)) ?></div>
+      <?= avatar_html($listing['seller_avatar'] ?? null, $listing['seller_name'], 'md') ?>
       <div class="lv-seller__info">
         <div class="lv-seller__name"><?= h($listing['seller_name']) ?></div>
         <div class="lv-seller__meta">
@@ -627,7 +627,7 @@ render_navbar($user);
         <div class="card mb-4">
           <div class="card-body">
             <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-4)">
-              <div class="avatar avatar-md"><?= strtoupper(substr($listing['seller_name'], 0, 1)) ?></div>
+              <?= avatar_html($listing['seller_avatar'] ?? null, $listing['seller_name'], 'md') ?>
               <div>
                 <div style="font-weight:700"><?= h($listing['seller_name']) ?></div>
                 <?php if ($listing['seller_city']): ?>

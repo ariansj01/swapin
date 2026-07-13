@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         login_user($uid);
         unset($_SESSION['new_user_phone']);
-        $dest = $redir ? APP_URL . $redir : APP_URL . '/dashboard?welcome=1';
+        $dest = $redir ? APP_URL . $redir : APP_URL . '/?welcome=1';
         header('Location: ' . $dest); exit;
     }
 }

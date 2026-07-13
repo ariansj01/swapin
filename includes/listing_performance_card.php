@@ -104,17 +104,17 @@ $linkUrl    = $perfListing['link_url'] ?? (APP_URL . '/listings/promote?id=' . (
         <div class="lp-card__stats">
           <div class="lp-card__stat">
             <i class="bi bi-eye"></i>
-            <span class="lp-card__stat-value"><?= number_format($views) ?></span>
+            <span class="lp-card__stat-value"><?= fmt_num($views) ?></span>
             <span class="lp-card__stat-label">بازدید</span>
           </div>
           <div class="lp-card__stat">
             <i class="bi bi-heart"></i>
-            <span class="lp-card__stat-value"><?= number_format($saved) ?></span>
+            <span class="lp-card__stat-value"><?= fmt_num($saved) ?></span>
             <span class="lp-card__stat-label">علاقه‌مندی</span>
           </div>
           <div class="lp-card__stat">
             <i class="bi bi-arrow-left-right"></i>
-            <span class="lp-card__stat-value"><?= number_format($offers) ?></span>
+            <span class="lp-card__stat-value"><?= fmt_num($offers) ?></span>
             <span class="lp-card__stat-label">پیشنهاد</span>
           </div>
         </div>

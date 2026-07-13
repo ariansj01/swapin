@@ -638,7 +638,7 @@ render_user_panel_open($user, 'trades');
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="pay_fee">
                 <button type="submit" class="btn btn-primary w-100">
-                  <i class="bi bi-check-circle"></i> پرداخت کارمزد من
+                  <i class="bi bi-check-circle"></i> پرداخت کارمزد
                 </button>
               </form>
             <?php else: ?>

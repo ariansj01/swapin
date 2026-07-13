@@ -8,8 +8,7 @@ function render_panel_styles(): void {
 function panel_nav_counts(array $user): array {
     $uid = (int)$user['id'];
     return [
-        'messages' => (int)(DB::fetch('SELECT COUNT(*) AS c FROM messages WHERE to_user_id = ? AND is_read = 0', [$uid])['c'] ?? 0),
-        'offers'   => (int)(DB::fetch(
+        'offers' => (int)(DB::fetch(
             'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "pending"',
             [$uid]
         )['c'] ?? 0),
