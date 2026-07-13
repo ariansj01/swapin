@@ -390,7 +390,12 @@ render_user_panel_open($user, 'trades');
 <div class="trade-room">
   <!-- New Header -->
   <header class="trade-room__hero">
-    <div class="trade-room__hero-left">
+    
+    <div class="trade-room__hero-center">
+      <h1>اتاق امن معامله #<?= $tradeId ?></h1>
+      <p>لطفاً مراحل معامله را فقط از طریق این اتاق دنبال کنید.</p>
+    </div>
+    <div class="trade-room__hero-right">
       <a href="#" class="trade-room__hero-btn">
         <i class="bi bi-question-circle"></i>
         راهنمای معامله
@@ -400,11 +405,7 @@ render_user_panel_open($user, 'trades');
         گزارش مشکل
       </a>
     </div>
-    <div class="trade-room__hero-center">
-      <h1>اتاق امن معامله #<?= $tradeId ?></h1>
-      <p>لطفاً مراحل معامله را فقط از طریق این اتاق دنبال کنید.</p>
-    </div>
-    <div class="trade-room__hero-right">
+    <!-- <div class="trade-room__hero-right">
       <a href="<?= APP_URL ?>/trades" class="trade-room__back">
         <i class="bi bi-arrow-right"></i>
         بازگشت
@@ -416,12 +417,29 @@ render_user_panel_open($user, 'trades');
           <div class="trade-room__hero-user-meta">حساب کاربری شما</div>
         </div>
       </div>
-    </div>
+    </div> -->
   </header>
 
   <section class="trade-room__status-banner">
     <i class="bi bi-arrow-left-right"></i>
     <span>معامله در حال انجام</span>
+  </section>
+
+  <!-- Parties Header moved up -->
+  <section class="trade-room__card" style="margin-bottom: var(--sp-4);">
+    <div class="trade-room__parties">
+      <div class="trade-room__party">
+        <div class="trade-room__avatar"><?= h(mb_substr($user['name'], 0, 1)) ?></div>
+        <div class="trade-room__party-name">شما</div>
+        <div class="trade-room__party-meta"><?= h($user['city'] ?? 'شهر نامشخص') ?></div>
+      </div>
+
+      <div class="trade-room__party">
+        <div class="trade-room__avatar"><?= h(mb_substr($otherName, 0, 1)) ?></div>
+        <div class="trade-room__party-name"><?= h($otherName) ?></div>
+        <div class="trade-room__party-meta">طرف مقابل</div>
+      </div>
+    </div>
   </section>
 
   <!-- Alerts -->
@@ -488,22 +506,6 @@ render_user_panel_open($user, 'trades');
 
     <!-- Center Column: Main Content -->
     <div class="trade-room__content">
-      <!-- Parties Header -->
-      <section class="trade-room__card">
-        <div class="trade-room__parties">
-          <div class="trade-room__party">
-            <div class="trade-room__avatar"><?= h(mb_substr($user['name'], 0, 1)) ?></div>
-            <div class="trade-room__party-name">شما</div>
-            <div class="trade-room__party-meta"><?= h($user['city'] ?? 'شهر نامشخص') ?></div>
-          </div>
-
-          <div class="trade-room__party">
-            <div class="trade-room__avatar"><?= h(mb_substr($otherName, 0, 1)) ?></div>
-            <div class="trade-room__party-name"><?= h($otherName) ?></div>
-            <div class="trade-room__party-meta">طرف مقابل</div>
-          </div>
-        </div>
-      </section>
 
       <!-- Tabs -->
       <nav class="trade-room__tabs" aria-label="مراحل معامله">
@@ -891,7 +893,7 @@ render_user_panel_open($user, 'trades');
       <section class="trade-room__card">
         <h3 class="trade-room__card-title">
           <i class="bi bi-gear-wide-connected"></i>
-          تنظیمات ارسال و تسویه
+          ارسال و تسویه
         </h3>
         <div class="trade-room__subcard">
           <div class="trade-room__subcard-title">روش ارسال</div>
@@ -910,4 +912,25 @@ render_user_panel_open($user, 'trades');
 
 <?php render_user_panel_close(); ?>
 <?php render_panel_scripts(); ?>
+
+<!-- Persian (Jalali) Date Picker (Vanilla JS) -->
+<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.4/dist/jalaali.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fa.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Flatpickr with Persian locale
+  const dateInputs = document.querySelectorAll('input[name="shipping_date"]');
+  dateInputs.forEach(function(input) {
+    flatpickr(input, {
+      locale: 'fa',
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altFormat: 'j F Y',
+      altInputClass: 'form-control'
+    });
+  });
+});
+</script>
 <?php render_footer(); ?>

@@ -356,20 +356,8 @@ function formatKBC(amount) {
 
 /* ── Offer form validation ──────────────────────────────────────────────── */
 function initOfferForm() {
-  const form = document.getElementById('offer-form');
-  if (!form) return;
-
-  form.addEventListener('submit', function(e) {
-    const listingSelect = document.getElementById('offer-listing');
-    const creditInput   = document.getElementById('offer-credit');
-    const listingVal    = listingSelect ? listingSelect.value : '';
-    const creditVal     = creditInput   ? parseFloat(creditInput.value || 0) : 0;
-
-    if (!listingVal && creditVal <= 0) {
-      e.preventDefault();
-      showToast('لطفاً یک کالا یا مقداری اعتبار ' + getCreditUnit() + ' پیشنهاد دهید.', 'error');
-    }
-  });
+  // This is now handled in listings/view.php's inline JS, so we'll keep this empty or remove it
+  // to avoid conflicting validation
 }
 
 /* ── Loading button state ───────────────────────────────────────────────── */

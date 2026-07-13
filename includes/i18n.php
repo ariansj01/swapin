@@ -159,6 +159,38 @@ function persian_datetime(string|int $datetime): string {
   return persian_jalali_month($jm) . ' ' . $jd . '، ' . $jy . ' — ' . date('G:i', $timestamp);
 }
 
+/**
+ * Convert Jalali (Persian) date to Gregorian
+ * @param int $jy Jalali year
+ * @param int $jm Jalali month
+ * @param int $jd Jalali day
+ * @return array [year, month, day] in Gregorian
+ */
+function jalali_to_gregorian(int $jy, int $jm, int $jd): array {
+  $jy += 1595;
+  $days = -355668 + (365 * $jy) + ((int)($jy / 33)) * 8 + ((int)((($jy % 33) + 3) / 4)) + $jd + (($jm < 7) ? ($jm - 1) * 31 : (($jm - 7) * 30) + 186);
+  $gy = 400 * ((int)($days / 146097));
+  $days %= 146097;
+  if ($days > 36524) {
+    $gy += 100 * ((int)(--$days / 36524));
+    $days %= 36524;
+    if ($days >= 365) $days++;
+  }
+  $gy += 4 * ((int)($days / 1461));
+  $days %= 1461;
+  if ($days > 365) {
+    $gy += (int)(($days - 1) / 365);
+    $days = ($days - 1) % 365;
+  }
+  $gd = $days + 1;
+  $sal_a = [0, 31, (($gy % 4 == 0 && $gy % 100 != 0) || ($gy % 400 == 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  $gm = 0;
+  while ($gm < 13 && $gd > $sal_a[$gm]) {
+    $gd -= $sal_a[$gm++];
+  }
+  return [$gy, $gm, $gd];
+}
+
 function shipping_label(string $method): string {
   return match ($method) {
     'in_person' => 'تحویل حضوری',

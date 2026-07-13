@@ -298,7 +298,7 @@ HTML;
     if ($loggedIn) {
         echo <<<HTML
     <div class="modal-footer">
-      <a href="{$url}/messages" class="btn btn-ghost btn-sm">همه پیام‌ها</a>
+      <a href="{$url}/trades" class="btn btn-ghost btn-sm">معاملات امن</a>
       <a href="{$url}/listings/offers" class="btn btn-primary btn-sm">پیشنهادهای دریافتی</a>
     </div>
 HTML;
@@ -313,7 +313,7 @@ function render_mobile_bottom_nav(?array $user = null): void {
     $url      = APP_URL;
     $user     = $user ?? ($GLOBALS['_nav_user'] ?? null);
     $profile  = $user ? $url . '/profile' : $url . '/auth/login';
-    $messages = $user ? $url . '/messages' : $url . '/auth/login';
+    $trades   = $user ? $url . '/trades' : $url . '/auth/login';
     echo <<<HTML
 <nav class="mobile-bottom-nav" aria-label="ناوبری موبایل">
   <a href="{$url}/" class="mobile-bottom-nav__item">
@@ -328,9 +328,9 @@ function render_mobile_bottom_nav(?array $user = null): void {
     <span class="mobile-bottom-nav__fab"><i class="bi bi-plus-lg"></i></span>
     <span>ثبت کالا</span>
   </a>
-  <a href="{$messages}" class="mobile-bottom-nav__item">
-    <i class="bi bi-chat-dots"></i>
-    <span>پیام‌ها</span>
+  <a href="{$trades}" class="mobile-bottom-nav__item">
+    <i class="bi bi-shield-lock"></i>
+    <span>معامله امن</span>
   </a>
   <a href="{$profile}" class="mobile-bottom-nav__item">
     <i class="bi bi-person"></i>

@@ -31,7 +31,6 @@ function render_user_panel_open(array $user, string $active, array $navOverrides
         'dashboard' => [$url . '/dashboard', 'داشبورد', 'bi-speedometer2', 0],
         'my'        => [$url . '/listings/my', 'آگهی‌های من', 'bi-grid', 0],
         'promote'   => [$promoteHref, 'ارتقای آگهی', 'bi-rocket-takeoff', 0],
-        'messages'  => [$url . '/messages', 'پیام‌ها', 'bi-chat-dots', $counts['messages']],
         'saved'     => [$url . '/listings/saved', 'علاقه‌مندی‌ها', 'bi-heart', 0],
         'trades'    => [$url . '/trades', 'معاملات امن', 'bi-shield-lock', $counts['offers']],
         'wallet'    => [$url . '/wallet', 'کیف پول', 'bi-wallet2', 0],
