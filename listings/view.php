@@ -363,7 +363,7 @@ render_navbar($user);
               <?php if ($listing['seller_rating'] > 0): ?>
               <span><i class="bi bi-star-fill" style="color:var(--accent)"></i> <?= number_format((float)$listing['seller_rating'], 1) ?> (<?= $listing['seller_rating_count'] ?>)</span>
               <?php endif; ?>
-              <span><i class="bi bi-shield-check" style="color:var(--accent-dark)"></i> Swap Score: <?= $sellerSwapScore['score'] ?>/100</span>
+              <span><i class="bi bi-shield-check" style="color:var(--accent-dark)"></i>نمره سواَپین: <?= $sellerSwapScore['score'] ?>/100</span>
               <span><i class="bi bi-calendar3"></i> از <?= persian_date($listing['seller_since']) ?></span>
             </div>
             <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="btn btn-outline w-100 btn-sm">مشاهده پروفایل</a>

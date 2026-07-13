@@ -33,7 +33,7 @@ function render_user_panel_open(array $user, string $active, array $navOverrides
         'promote'   => [$promoteHref, 'ارتقای آگهی', 'bi-rocket-takeoff', 0],
         'messages'  => [$url . '/messages', 'پیام‌ها', 'bi-chat-dots', $counts['messages']],
         'saved'     => [$url . '/listings/saved', 'علاقه‌مندی‌ها', 'bi-heart', 0],
-        'trades'    => [$url . '/trades', 'معاملات', 'bi-shield-lock', $counts['offers']],
+        'trades'    => [$url . '/trades', 'معاملات امن', 'bi-shield-lock', $counts['offers']],
         'wallet'    => [$url . '/wallet', 'کیف پول', 'bi-wallet2', 0],
         'subscription' => [$url . '/subscription', 'اشتراک', 'bi-gem', 0],
         'settings'  => [$url . '/profile/edit', 'تنظیمات', 'bi-gear', 0],
