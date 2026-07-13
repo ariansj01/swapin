@@ -3,35 +3,8 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 
 $user = require_auth();
-$needsOnboarding = empty($user['onboarding_completed']);
 
-$errors = [];
-$onboardingErrors = [];
-$onboardingVals = [
-    'primary_goal'          => '',
-    'interested_categories' => [],
-    'city'                  => $user['city'] ?? '',
-    'typical_value_range'   => '',
-    'can_ship'              => null,
-];
-$vals   = [
-    'title'           => '',
-    'category_id'     => '',
-    'description'     => '',
-    'condition'       => 'good',
-    'estimated_value' => '',
-    'want_in_return'  => '',
-    'want_type'       => 'any',
-    'listing_mode'    => 'swap',
-    'sell_price'      => '',
-    'needs_inspection'=> 0,
-    'city'            => $user['city'] ?? '',
-];
-
-if (!can_create_listing($user)) {
-    $limit = get_listing_limit($user);
-}
-
+// Category data
 $categories = DB::fetchAll(
     'SELECT c.*, p.name AS parent_name FROM categories c
      LEFT JOIN categories p ON p.id = c.parent_id
@@ -41,73 +14,35 @@ $parentCategories = DB::fetchAll(
     'SELECT id, name FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order, id'
 );
 
+// Exchange categories for step 4 & 8
+$exchangeCategories = [
+    'موبایل', 'لپ‌تاپ', 'خودرو', 'موتور', 'کنسول بازی', 'دوربین', 'طلا', 'ساعت',
+];
+
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
-    $vals['title']           = clean($_POST['title']           ?? '');
-    $vals['category_id']     = (int)($_POST['category_id']     ?? 0);
-    $vals['description']     = clean($_POST['description']     ?? '');
-    $vals['condition']       = clean($_POST['condition']       ?? 'good');
-    $vals['estimated_value'] = (float)($_POST['estimated_value'] ?? 0);
-    $vals['want_in_return']  = clean($_POST['want_in_return']  ?? '');
-    $vals['want_type']       = clean($_POST['want_type']       ?? 'any');
-    $vals['listing_mode']    = 'swap';
-    $vals['sell_price']      = 0;
-    $vals['needs_inspection']= !empty($_POST['needs_inspection']) ? 1 : 0;
-    $vals['city']            = clean($_POST['city']            ?? '');
+    
+    $vals = [
+        'title'           => clean($_POST['title']           ?? ''),
+        'description'     => clean($_POST['description']     ?? ''),
+        'category_id'     => (int)($_POST['category_id']     ?? 0),
+        'condition'       => clean($_POST['condition']       ?? 'good'),
+        'city'            => clean($_POST['city']            ?? ''),
+        'want_categories' => $_POST['want_categories']       ?? [],
+        'want_description'=> clean($_POST['want_description']?? ''),
+        'estimated_value' => (float)($_POST['estimated_value'] ?? 0),
+    ];
 
-    if ($needsOnboarding) {
-        $onboardingVals['primary_goal']          = clean($_POST['primary_goal'] ?? '');
-        $onboardingVals['interested_categories'] = $_POST['interested_categories'] ?? [];
-        $onboardingVals['city']                  = clean($_POST['onboarding_city'] ?? '');
-        $onboardingVals['typical_value_range']   = clean($_POST['typical_value_range'] ?? '');
-        $onboardingVals['can_ship']              = isset($_POST['can_ship']) ? (int)$_POST['can_ship'] : null;
-
-        if (!in_array($onboardingVals['primary_goal'], ['swap', 'buy', 'sell', 'any'], true)) {
-            $onboardingErrors['primary_goal'] = 'لطفاً یک هدف اصلی انتخاب کنید';
-        }
-    }
-
-    if (!can_create_listing($user))
-        $errors['limit'] = 'سقف آگهی پر شده (' . get_listing_limit($user) . '). اشتراک خود را ارتقا دهید.';
-
-    // Validate
-    if (mb_strlen($vals['title']) < 5)
-        $errors['title'] = 'عنوان باید حداقل ۵ کاراکتر باشد';
-    if (mb_strlen($vals['title']) > 200)
-        $errors['title'] = 'عنوان باید کمتر از ۲۰۰ کاراکتر باشد';
-    if (!$vals['category_id'])
-        $errors['category_id'] = 'لطفاً دسته‌بندی را انتخاب کنید';
-    if (!DB::fetch('SELECT id FROM categories WHERE id = ? AND is_active = 1', [$vals['category_id']]))
-        $errors['category_id'] = 'دسته‌بندی انتخاب‌شده نامعتبر است';
-    if (mb_strlen($vals['description']) < 20)
-        $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
-    if (!in_array($vals['condition'], ['new','like_new','good','fair','poor'], true))
-        $errors['condition'] = 'وضعیت انتخاب‌شده نامعتبر است';
-    if (mb_strlen($vals['want_in_return']) < 10 && $vals['listing_mode'] !== 'sell')
-        $errors['want_in_return'] = 'لطفاً بنویسید چه چیزی در ازای آن می‌خواهید (حداقل ۱۰ کاراکتر)';
-    if (!in_array($vals['want_type'], ['item','service','credit','any'], true))
-        $errors['want_type'] = 'نوع معامله نامعتبر است';
-    if (!in_array($vals['listing_mode'], ['swap'], true))
-        $vals['listing_mode'] = 'swap';
-    if (in_array($vals['listing_mode'], ['sell','both'], true) && $vals['sell_price'] <= 0)
-        $errors['sell_price'] = 'برای حالت فروش/هر دو، قیمت فروش الزامی است';
-    if ($vals['listing_mode'] === 'sell' && mb_strlen($vals['want_in_return']) < 10)
-        $vals['want_in_return'] = 'فروش مستقیم — نیازی به تعویض نیست';
-
-    $contentErrors = validate_listing_content([
-        'title'           => $vals['title'],
-        'description'     => $vals['description'],
-        'want_in_return'  => $vals['want_in_return'],
-    ]);
-    foreach ($contentErrors as $field => $msg) {
-        if (!isset($errors[$field])) $errors[$field] = $msg;
-    }
-
-    if ($needsOnboarding && !empty($onboardingErrors)) {
-        $errors = array_merge($errors, $onboardingErrors);
-    }
+    // Validation
+    $errors = [];
+    if (mb_strlen($vals['title']) < 5) $errors['title'] = 'عنوان باید حداقل ۵ کاراکتر باشد';
+    if (mb_strlen($vals['title']) > 200) $errors['title'] = 'عنوان باید کمتر از ۲۰۰ کاراکتر باشد';
+    if (!$vals['category_id']) $errors['category_id'] = 'لطفاً دسته‌بندی را انتخاب کنید';
+    if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
 
     if (empty($errors)) {
+        // Insert listing
         $listingId = DB::insert('listings', [
             'user_id'          => $user['id'],
             'category_id'      => $vals['category_id'],
@@ -115,17 +50,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'description'      => $vals['description'],
             'condition'        => $vals['condition'],
             'estimated_value'  => $vals['estimated_value'] ?: 0,
-            'want_in_return'   => $vals['want_in_return'],
-            'want_type'        => $vals['want_type'],
+            'want_in_return'   => $vals['want_description'] ?: '',
+            'want_type'        => 'any',
             'listing_mode'     => 'swap',
             'sell_price'       => 0,
-            'needs_inspection' => $vals['needs_inspection'],
+            'needs_inspection' => 0,
             'city'             => $vals['city'] ?: null,
             'status'           => 'active',
             'review_status'    => 'pending',
         ]);
 
-        // Handle image uploads
+        // Handle image uploads (from session first)
         $uploadedImages = 0;
         if (!empty($_FILES['images']['name'][0])) {
             foreach ($_FILES['images']['tmp_name'] as $i => $tmp) {
@@ -149,408 +84,517 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        if (!empty($vals['needs_inspection'])) {
-            request_expert_inspection($listingId, $user['id']);
-        }
+        // Clear cache
+        ai_match_clear_cache((int)$user['id']);
 
-        if ($needsOnboarding) {
-            DB::update('users', [
-                'primary_goal'          => $onboardingVals['primary_goal'],
-                'interested_categories' => json_encode(array_map('intval', $onboardingVals['interested_categories'])),
-                'city'                  => $onboardingVals['city'] ?: ($vals['city'] ?: $user['city']),
-                'typical_value_range'   => $onboardingVals['typical_value_range'] ?: null,
-                'can_ship'              => $onboardingVals['can_ship'],
-                'onboarding_completed'  => 1,
-            ], 'id = ?', [$user['id']]);
-        }
-
-        ai_match_clear_cache((int) $user['id']);
-
-        header('Location: ' . APP_URL . '/listings/view.php?id=' . $listingId . '&pending=1'); exit;
+        // Redirect to success
+        header('Location: ' . APP_URL . '/listings/success?id=' . $listingId);
+        exit;
     }
 }
 
-render_head('ثبت آگهی');
+// Render the wizard
+render_head('ثبت آگهی جدید');
 render_navbar($user);
 ?>
 
-<div class="section-sm">
-  <div class="container-md">
-
-    <div class="mb-6">
-      <a href="<?= APP_URL ?>/" style="color:var(--text-muted);font-size:.875rem">
-        <i class="bi bi-arrow-right"></i> بازگشت به آگهی‌ها
-      </a>
-      <h2 class="mt-3">ثبت آگهی جدید</h2>
-      <p style="color:var(--text-muted)">کالا یا خدمت خود را ثبت کنید — پس از بررسی تیم، آگهی منتشر می‌شود</p>
-    </div>
-
-    <!-- Progress Steps -->
-    <div class="steps mb-8">
-      <div class="step-item active" id="step-1-indicator">
-        <div class="step-num">1</div>
-        <div style="font-size:.8125rem;font-weight:600;color:var(--primary);margin-inline-start:var(--sp-2)">جزئیات</div>
-        <div class="step-line"></div>
+<div class="wizard-page">
+  <!-- Stepper Header -->
+  <div class="wizard-header">
+    <div class="wizard-container" style="padding: var(--sp-4) var(--sp-5);">
+      <div class="stepper">
+        <?php for ($i = 1; $i <= 8; $i++): ?>
+          <div class="stepper-step" data-step="<?= $i ?>" id="step-<?= $i ?>-indicator">
+            <div class="stepper-circle"><?= $i ?></div>
+            <div class="stepper-label">
+              <?php
+                $stepLabels = [
+                    1 => 'عنوان و توضیحات',
+                    2 => 'تصاویر',
+                    3 => 'جزئیات',
+                    4 => 'معاوضه',
+                    5 => 'توضیح',
+                    6 => 'قیمت',
+                    7 => 'بازبینی',
+                    8 => 'پیشنهادات',
+                ];
+                echo $stepLabels[$i];
+              ?>
+            </div>
+          </div>
+        <?php endfor; ?>
       </div>
-      <div class="step-item" id="step-2-indicator">
-        <div class="step-num">2</div>
-        <div style="font-size:.8125rem;color:var(--text-muted);margin-inline-start:var(--sp-2)">تصاویر</div>
-        <div class="step-line"></div>
-      </div>
-      <div class="step-item" id="step-3-indicator">
-        <div class="step-num">3</div>
-        <div style="font-size:.8125rem;color:var(--text-muted);margin-inline-start:var(--sp-2)">شرایط معامله</div>
-      </div>
     </div>
+  </div>
 
-    <?php if (!empty($errors['limit'])): ?>
-    <div class="alert alert-warning mb-6">
-      <i class="bi bi-exclamation-triangle"></i>
-      <?= h($errors['limit']) ?> <a href="<?= APP_URL ?>/subscription.php">مشاهده پلن‌ها</a>
-    </div>
-    <?php endif; ?>
+  <div class="wizard-container">
+    <!-- Step Content Card -->
+    <div class="wizard-card">
+      <form method="POST" id="wizard-form" enctype="multipart/form-data">
+        <?= csrf_field() ?>
+        
+        <!-- Step 1: Title & Description -->
+        <div class="wizard-step" data-step="1" id="step-1">
+          <h2 class="wizard-step-title">عنوان و توضیحات</h2>
+          <p class="wizard-step-subtitle">نام کالا و توضیحات کامل را وارد کنید.</p>
 
-    <?php if (!empty($errors)): ?>
-    <div class="alert alert-danger mb-6">
-      <i class="bi bi-exclamation-circle"></i>
-      <div>لطفاً <strong><?= count($errors) ?></strong> خطای زیر را قبل از ارسال برطرف کنید.</div>
-      <ul style="margin-top: var(--sp-2); list-style: none; padding: 0;">
-        <?php foreach ($errors as $field => $msg): ?>
-          <li style="margin-bottom: var(--sp-1); padding-right: var(--sp-2);"><?= h($msg) ?></li>
-        <?php endforeach; ?>
-      </ul>
-    </div>
-    <?php endif; ?>
-
-    <form method="POST" enctype="multipart/form-data" id="create-form" novalidate>
-    <?= csrf_field() ?>
-
-    <?php if ($needsOnboarding): ?>
-    <?php require __DIR__ . '/../includes/onboarding_form.php'; ?>
-    <?php endif; ?>
-
-      <!-- ── Step 1: Listing Details ───────────────────────────────── -->
-      <div class="card mb-5" id="step-1">
-        <div class="card-header">
-          <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-info-circle" style="color:var(--primary)"></i> جزئیات آگهی</h3>
-        </div>
-        <div class="card-body">
-
-          <div class="form-group">
-            <label class="form-label" for="title">عنوان <span class="required">*</span></label>
-            <input type="text" class="form-control <?= isset($errors['title']) ? 'is-invalid' : '' ?>"
-                   id="title" name="title" value="<?= h($vals['title']) ?>"
-                   placeholder="مثلاً آیفون ۱۳ پرو مکس ۲۵۶ گیگ" maxlength="200" required>
-            <?php if (isset($errors['title'])): ?>
-            <div class="invalid-feedback"><?= h($errors['title']) ?></div>
-            <?php endif; ?>
-            <div class="form-hint"><span id="title-count">0</span>/200 کاراکتر</div>
+          <div class="wizard-form-group">
+            <label class="wizard-form-label">عنوان آگهی *</label>
+            <input type="text" name="title" id="step1-title" class="wizard-form-input" 
+                   placeholder="مثلاً آیفون ۱۳ پرو مکس ۲۵۶ گیگ" maxlength="200">
+            <div class="char-count"><span id="step1-title-count">0</span>/200 کاراکتر</div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5)">
-            <div class="form-group">
-              <label class="form-label" for="category_id">دسته‌بندی <span class="required">*</span></label>
-              <select class="form-control <?= isset($errors['category_id']) ? 'is-invalid' : '' ?>"
-                      id="category_id" name="category_id" required>
-                <option value="">انتخاب دسته‌بندی…</option>
-                <?php
+          <div class="wizard-form-group">
+            <label class="wizard-form-label">توضیحات *</label>
+            <textarea name="description" id="step1-description" class="wizard-form-textarea" rows="6"
+                      placeholder="کالا را با جزئیات توضیح دهید — سن، برند، مشخصات، ایرادات…"></textarea>
+            <div class="char-count"><span id="step1-desc-count">0</span> کاراکتر</div>
+          </div>
+        </div>
+
+        <!-- Step 2: Images -->
+        <div class="wizard-step" data-step="2" id="step-2" style="display:none">
+          <h2 class="wizard-step-title">تصاویر</h2>
+          <p class="wizard-step-subtitle">تصاویر واضح از کالا اضافه کنید.</p>
+
+          <div class="upload-zone" id="step2-upload-zone">
+            <div class="upload-zone-icon">
+              <i class="bi bi-cloud-upload"></i>
+            </div>
+            <p class="upload-zone-text">تصاویر را اینجا رها کنید یا برای آپلود کلیک کنید</p>
+            <p class="upload-zone-subtext">JPG، PNG یا WEBP — حداکثر ۵ مگابایت — تا <?= MAX_IMAGES ?> تصویر</p>
+            <input type="file" id="step2-images" name="images[]" multiple accept="image/*" style="display:none">
+          </div>
+          
+          <div class="image-previews" id="step2-preview-grid"></div>
+        </div>
+
+        <!-- Step 3: Category, Condition, City -->
+        <div class="wizard-step" data-step="3" id="step-3" style="display:none">
+          <h2 class="wizard-step-title">دسته‌بندی، وضعیت و شهر</h2>
+          <p class="wizard-step-subtitle">جزئیات بیشتر را وارد کنید.</p>
+
+          <div class="wizard-form-group">
+            <label class="wizard-form-label">دسته‌بندی *</label>
+            <select name="category_id" id="step3-category" class="wizard-form-select">
+              <option value="">انتخاب دسته‌بندی…</option>
+              <?php
                 $lastParent = null;
                 foreach ($categories as $cat):
-                    if ($cat['parent_id'] === null) {
-                        if ($lastParent !== null) echo '</optgroup>';
-                        echo "<optgroup label=\"" . h(category_label($cat['slug'], $cat['name'])) . "\">";
-                        $lastParent = $cat['id'];
-                    } else {
-                        $sel = $vals['category_id'] == $cat['id'] ? 'selected' : '';
-                        echo "<option value=\"{$cat['id']}\" {$sel}>" . h(category_label($cat['slug'], $cat['name'])) . "</option>";
-                    }
+                  if ($cat['parent_id'] === null) {
+                    if ($lastParent !== null) echo '</optgroup>';
+                    echo '<optgroup label="'.h(category_label($cat['slug'], $cat['name'])).'">';
+                    $lastParent = $cat['id'];
+                  } else {
+                    echo '<option value="'.$cat['id'].'">'.h(category_label($cat['slug'], $cat['name'])).'</option>';
+                  }
                 endforeach;
                 if ($lastParent !== null) echo '</optgroup>';
-                ?>
-              </select>
-              <?php if (isset($errors['category_id'])): ?>
-              <div class="invalid-feedback"><?= h($errors['category_id']) ?></div>
-              <?php endif; ?>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="condition">وضعیت <span class="required">*</span></label>
-              <select class="form-control" id="condition" name="condition">
-                <?php foreach (['new','like_new','good','fair','poor'] as $v): ?>
-                <option value="<?= $v ?>" <?= $vals['condition'] === $v ? 'selected' : '' ?>><?= condition_label($v) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="description">توضیحات <span class="required">*</span></label>
-            <textarea class="form-control <?= isset($errors['description']) ? 'is-invalid' : '' ?>"
-                      id="description" name="description" rows="5"
-                      placeholder="کالا را با جزئیات توضیح دهید — سن، برند، مشخصات، ایرادات…" required><?= h($vals['description']) ?></textarea>
-            <?php if (isset($errors['description'])): ?>
-            <div class="invalid-feedback"><?= h($errors['description']) ?></div>
-            <?php endif; ?>
-            <div class="form-hint"><span id="desc-count">0</span> کاراکتر</div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr;gap:var(--sp-5)">
-            <div class="form-group">
-              <label class="form-label" for="city">شهر</label>
-              <input type="text" class="form-control" id="city" name="city"
-                     value="<?= h($vals['city']) ?>" placeholder="شهر شما">
-            </div>
-          </div>
-
-          <div class="ai-pricing-hint">
-            <div class="ai-pricing-hint__icon"><i class="bi bi-stars"></i></div>
-            <div>
-              <strong>ارزش‌گذاری هوشمند با AI</strong>
-              <p>بعد از تکمیل فرم، هوش مصنوعی سواپین ارزش تقریبی کالای شما را محاسبه می‌کند — نیازی به حدس زدن قیمت نیست.</p>
-            </div>
-          </div>
-          <input type="hidden" id="estimated_value" name="estimated_value" value="<?= h((string)$vals['estimated_value']) ?>">
-
-        </div>
-      </div>
-
-      <!-- ── Step 2: Photos ────────────────────────────────────────── -->
-      <div class="card mb-5" id="step-2">
-        <div class="card-header">
-          <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-images" style="color:var(--primary)"></i> تصاویر</h3>
-        </div>
-        <div class="card-body">
-          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('images').click()">
-            <i class="bi bi-cloud-upload"></i>
-            <p style="font-weight:600;color:var(--text-secondary);margin-bottom:var(--sp-1)">تصاویر را اینجا رها کنید یا برای آپلود کلیک کنید</p>
-            <p class="fs-sm" style="color:var(--text-muted)">JPG، PNG یا WEBP — حداکثر ۵ مگابایت — تا <?= MAX_IMAGES ?> تصویر</p>
-            <input type="file" id="images" name="images[]" multiple accept="image/*" style="display:none">
-          </div>
-          <div class="image-preview-grid" id="preview-grid"></div>
-        </div>
-      </div>
-
-      <!-- ── Step 3: Trade Terms ────────────────────────────────────── -->
-      <div class="card mb-6" id="step-3">
-        <div class="card-header">
-          <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-arrow-left-right" style="color:var(--primary)"></i> شرایط معامله</h3>
-        </div>
-        <div class="card-body">
-
-          <div class="alert alert-info mb-5">
-            <i class="bi bi-lightbulb"></i>
-            <div>هسته <?= APP_NAME ?> همین است — دقیق بگویید در ازای کالای خود چه چیزی می‌خواهید.</div>
-          </div>
-
-          <input type="hidden" name="listing_mode" value="swap">
-
-          <div class="alert alert-info mb-5">
-            <i class="bi bi-arrow-left-right"></i>
-            <div>سواپین فقط برای <strong>معاوضه</strong> است — کالای خود را بدهید، آنچه می‌خواهید بگیرید.</div>
-          </div>
-
-          <div class="form-group" id="sell-price-group" style="display:none">
-            <label class="form-label" for="sell_price">قیمت فروش (تومان) <span class="required">*</span></label>
-            <input type="number" class="form-control <?= isset($errors['sell_price']) ? 'is-invalid' : '' ?>"
-                   id="sell_price" name="sell_price" value="<?= h((string)$vals['sell_price']) ?>"
-                   min="0" step="1000" placeholder="مثلاً ۵۰۰۰۰۰۰">
-            <?php if (isset($errors['sell_price'])): ?><div class="invalid-feedback"><?= h($errors['sell_price']) ?></div><?php endif; ?>
-          </div>
-
-          <div class="form-group">
-            <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer">
-              <input type="checkbox" name="needs_inspection" value="1" <?= !empty($vals['needs_inspection']) ? 'checked' : '' ?>>
-              <span class="form-label" style="margin:0">درخواست بازرسی کارشناس (<?= fmt_credit(INSPECTION_KBC) ?>)</span>
-            </label>
-            <div class="form-hint">کارشناس تأییدشده وضعیت کالا را قبل از معامله بررسی می‌کند</div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">به دنبال چه چیزی هستید؟ <span class="required">*</span></label>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3)">
-              <?php
-              $types = ['any' => ['bi-stars','هر معامله‌ای'], 'item' => ['bi-box','یک کالا'], 'service' => ['bi-tools','یک خدمت'], 'credit' => ['bi-wallet2','اعتبار ' . CREDIT_UNIT]];
-              foreach ($types as $v => [$icon, $label]):
-                $sel = $vals['want_type'] === $v;
               ?>
-              <label style="cursor:pointer">
-                <input type="radio" name="want_type" value="<?= $v ?>" <?= $sel ? 'checked' : '' ?> style="display:none" class="want-radio">
-                <div class="trade-type-btn <?= $sel ? 'selected' : '' ?>" style="text-align:center;padding:var(--sp-4);border:2px solid var(--border);border-radius:var(--radius-md);transition:all var(--duration)">
-                  <i class="bi <?= $icon ?>" style="font-size:1.5rem;color:var(--text-muted);display:block;margin-bottom:var(--sp-2)"></i>
-                  <span style="font-size:.8125rem;font-weight:600;color:var(--text-secondary)"><?= $label ?></span>
-                </div>
-              </label>
+            </select>
+          </div>
+
+          <div class="wizard-form-group">
+            <label class="wizard-form-label">وضعیت کالا *</label>
+            <select name="condition" id="step3-condition" class="wizard-form-select">
+              <?php foreach (['new','like_new','good','fair','poor'] as $v): ?>
+                <option value="<?= $v ?>"><?= condition_label($v) ?></option>
               <?php endforeach; ?>
-            </div>
+            </select>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="want_in_return">
-              توضیح آنچه می‌خواهید <span class="required">*</span>
-            </label>
-            <textarea class="form-control <?= isset($errors['want_in_return']) ? 'is-invalid' : '' ?>"
-                      id="want_in_return" name="want_in_return" rows="3"
-                      placeholder="مثلاً لپ‌تاپ خوب، هدست گیمینگ یا اعتبار معادل <?= CREDIT_UNIT ?>…" required><?= h($vals['want_in_return']) ?></textarea>
-            <?php if (isset($errors['want_in_return'])): ?>
-            <div class="invalid-feedback"><?= h($errors['want_in_return']) ?></div>
-            <?php endif; ?>
-            <div class="form-hint">هرچه دقیق‌تر بنویسید، پیشنهادهای مرتبط‌تری دریافت می‌کنید</div>
+          <div class="wizard-form-group">
+            <label class="wizard-form-label">شهر</label>
+            <input type="text" name="city" id="step3-city" class="wizard-form-input"
+                   value="<?= h($user['city'] ?? '') ?>" placeholder="شهر شما">
           </div>
-
         </div>
-      </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:var(--sp-3)">
-        <a href="<?= APP_URL ?>/" class="btn btn-ghost">انصراف</a>
-        <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
-          <i class="bi bi-stars"></i>
-          <span id="btn-text">ادامه — قیمت‌گذاری هوشمند</span>
-          <span id="btn-spinner" class="spinner" style="display:none;width:18px;height:18px;border-width:2px;border-color:rgba(255,255,255,.3);border-top-color:#fff"></span>
-        </button>
-      </div>
+        <!-- Step 4: What to exchange (category selection) -->
+        <div class="wizard-step" data-step="4" id="step-4" style="display:none">
+          <h2 class="wizard-step-title">به دنبال چه چیزی هستید؟</h2>
+          <p class="wizard-step-subtitle">دسته‌بندی‌های مورد علاقه خود را انتخاب کنید.</p>
 
-    </form>
+          <div class="category-chips">
+            <?php foreach ($exchangeCategories as $cat): ?>
+              <div class="category-chip" data-category="<?= h($cat) ?>" 
+                   onclick="toggleExchangeCategory(this, '<?= h($cat) ?>')">
+                <?= h($cat) ?>
+              </div>
+            <?php endforeach; ?>
+          </div>
+          <input type="hidden" id="step4-want-cats" name="want_categories[]" multiple>
+        </div>
+
+        <!-- Step 5: Describe what you want -->
+        <div class="wizard-step" data-step="5" id="step-5" style="display:none">
+          <h2 class="wizard-step-title">توضیح آنچه می‌خواهید</h2>
+          <p class="wizard-step-subtitle">دقیق بنویسید که به چه چیزی نیاز دارید.</p>
+
+          <div class="wizard-form-group">
+            <textarea name="want_description" id="step5-description" class="wizard-form-textarea" rows="6"
+                      placeholder="مثلاً فقط آیفون ۱۵ پرو تمیز با سلامت باتری بالای ۹۰ درصد…"></textarea>
+          </div>
+        </div>
+
+        <!-- Step 6: Estimated Price -->
+        <div class="wizard-step" data-step="6" id="step-6" style="display:none">
+          <h2 class="wizard-step-title">ارزش تقریبی</h2>
+          <p class="wizard-step-subtitle">این قیمت صرفاً تخمینی است.</p>
+
+          <div class="price-estimate-card">
+            <p class="price-estimate-label">قیمت تخمینی</p>
+            <p class="price-estimate-value" id="step6-price">
+              <?php
+                // Dummy estimate for now; replace with real AI later
+                $dummy = rand(10000000, 50000000);
+                echo h(number_format($dummy)) . ' تومان';
+              ?>
+            </p>
+            <p class="price-estimate-note">این قیمت صرفاً تخمینی است و ممکن است با قیمت نهایی متفاوت باشد.</p>
+          </div>
+          <input type="hidden" id="step6-estimated-value" name="estimated_value" value="<?= $dummy ?>">
+        </div>
+
+        <!-- Step 7: Review -->
+        <div class="wizard-step" data-step="7" id="step-7" style="display:none">
+          <h2 class="wizard-step-title">بازبینی اطلاعات</h2>
+          <p class="wizard-step-subtitle">تمام اطلاعات را بررسی کنید.</p>
+
+          <div class="review-section">
+            <p class="review-label">تصاویر</p>
+            <div class="review-images" id="step7-images"></div>
+            <button type="button" class="edit-btn" onclick="goToStep(2)">ویرایش</button>
+          </div>
+          
+          <div class="review-section">
+            <p class="review-label">عنوان</p>
+            <p class="review-value" id="step7-title"></p>
+            <button type="button" class="edit-btn" onclick="goToStep(1)">ویرایش</button>
+          </div>
+          
+          <div class="review-section">
+            <p class="review-label">توضیحات</p>
+            <p class="review-value" id="step7-description"></p>
+            <button type="button" class="edit-btn" onclick="goToStep(1)">ویرایش</button>
+          </div>
+          
+          <div class="review-section">
+            <p class="review-label">دسته‌بندی</p>
+            <p class="review-value" id="step7-category"></p>
+            <button type="button" class="edit-btn" onclick="goToStep(3)">ویرایش</button>
+          </div>
+          
+          <div class="review-section">
+            <p class="review-label">وضعیت کالا</p>
+            <p class="review-value" id="step7-condition"></p>
+            <button type="button" class="edit-btn" onclick="goToStep(3)">ویرایش</button>
+          </div>
+          
+          <div class="review-section">
+            <p class="review-label">شهر</p>
+            <p class="review-value" id="step7-city"></p>
+            <button type="button" class="edit-btn" onclick="goToStep(3)">ویرایش</button>
+          </div>
+          
+          <div class="review-section">
+            <p class="review-label">دسته‌بندی‌های مورد علاقه برای معاوضه</p>
+            <p class="review-value" id="step7-want-cats"></p>
+            <button type="button" class="edit-btn" onclick="goToStep(4)">ویرایش</button>
+          </div>
+          
+          <div class="review-section">
+            <p class="review-label">توضیح آنچه می‌خواهید</p>
+            <p class="review-value" id="step7-want-desc"></p>
+            <button type="button" class="edit-btn" onclick="goToStep(5)">ویرایش</button>
+          </div>
+          
+          <div class="review-section">
+            <p class="review-label">قیمت تخمینی</p>
+            <p class="review-value" id="step7-price"></p>
+            <button type="button" class="edit-btn" onclick="goToStep(6)">ویرایش</button>
+          </div>
+        </div>
+
+        <!-- Step 8: Final preference categories -->
+        <div class="wizard-step" data-step="8" id="step-8" style="display:none">
+          <h2 class="wizard-step-title">انتخاب دسته‌بندی برای پیشنهادات</h2>
+          <p class="wizard-step-subtitle">این دسته‌بندی‌ها در پیشنهادات آینده برای شما نمایش داده می‌شوند.</p>
+
+          <div class="category-chips">
+            <?php foreach ($exchangeCategories as $cat): ?>
+              <div class="category-chip" data-category="<?= h($cat) ?>" 
+                   onclick="toggleFinalCategory(this, '<?= h($cat) ?>')">
+                <?= h($cat) ?>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+
+        <!-- Wizard Footer -->
+        <div class="wizard-footer">
+          <div>
+            <button type="button" id="wizard-back-btn" class="wizard-btn wizard-btn-secondary" style="display:none">
+              بازگشت
+            </button>
+          </div>
+          <div class="wizard-footer-right">
+            <button type="button" id="wizard-next-btn" class="wizard-btn wizard-btn-primary">
+              ادامه
+            </button>
+            <button type="submit" id="wizard-submit-btn" class="wizard-btn wizard-btn-primary" style="display:none">
+              انتشار آگهی
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
-<div class="ai-pricing-overlay" id="ai-pricing-overlay" hidden>
-  <div class="ai-pricing-panel">
-    <div class="ai-pricing-panel__head">
-      <span class="ai-pricing-panel__badge"><i class="bi bi-stars"></i> هوش مصنوعی سواپین</span>
-      <h2 id="ai-pricing-title">در حال تحلیل کالای شما…</h2>
-    </div>
-
-    <div class="ai-pricing-loading" id="ai-pricing-loading">
-      <div class="ai-pricing-loader">
-        <div class="ai-pricing-loader__ring"></div>
-        <i class="bi bi-robot"></i>
-      </div>
-      <ul class="ai-pricing-steps" id="ai-pricing-steps">
-        <li class="is-active">بررسی مشخصات و وضعیت کالا</li>
-        <li>مقایسه با بازار معاوضه</li>
-        <li>محاسبه ارزش تقریبی <?= CREDIT_UNIT ?></li>
-      </ul>
-    </div>
-
-    <div class="ai-pricing-result" id="ai-pricing-result" hidden>
-      <div class="ai-pricing-result__value">
-        <span class="ai-pricing-result__label">ارزش پیشنهادی AI</span>
-        <div class="ai-pricing-result__amount" id="ai-pricing-amount">—</div>
-        <div class="ai-pricing-result__range" id="ai-pricing-range"></div>
-        <div class="ai-pricing-result__confidence" id="ai-pricing-confidence"></div>
-      </div>
-      <ul class="ai-pricing-result__reasons" id="ai-pricing-reasons"></ul>
-      <p class="ai-pricing-result__note" id="ai-pricing-note"></p>
-      <div class="ai-pricing-result__actions">
-        <button type="button" class="btn btn-ghost" id="ai-pricing-back">ویرایش مشخصات</button>
-        <button type="button" class="btn btn-accent btn-lg" id="ai-pricing-confirm">
-          <i class="bi bi-check-circle"></i> تأیید و ثبت آگهی
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-wizard.css">
 <script>
-// Character counters
-const titleInput = document.getElementById('title');
-const descInput  = document.getElementById('description');
-titleInput.addEventListener('input', () => {
-  document.getElementById('title-count').textContent = titleInput.value.length;
-});
-descInput.addEventListener('input', () => {
-  document.getElementById('desc-count').textContent = descInput.value.length;
-});
-// Init counts
-document.getElementById('title-count').textContent = titleInput.value.length;
-document.getElementById('desc-count').textContent  = descInput.value.length;
+let currentStep = 1;
+const totalSteps = 8;
+let exchangeCategories = new Set();
+let finalCategories = new Set();
+let uploadedFiles = [];
 
-// Image preview
-const zone    = document.getElementById('upload-zone');
-const input   = document.getElementById('images');
-const grid    = document.getElementById('preview-grid');
-let files     = [];
-
-input.addEventListener('change', () => addFiles(input.files));
-
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragging'); });
-zone.addEventListener('dragleave',() => zone.classList.remove('dragging'));
-zone.addEventListener('drop', e => {
-  e.preventDefault();
-  zone.classList.remove('dragging');
-  addFiles(e.dataTransfer.files);
+// Initialize step 1 character counters
+document.addEventListener('DOMContentLoaded', () => {
+  updateStepper();
+  initStep1Counters();
+  initStep2Upload();
 });
 
-function addFiles(newFiles) {
-  for (const f of newFiles) {
-    if (files.length >= <?= MAX_IMAGES ?>) break;
-    if (!f.type.match('image.*')) continue;
-    files.push(f);
-    const reader = new FileReader();
-    const idx    = files.length - 1;
-    reader.onload = e => renderPreview(e.target.result, idx);
-    reader.readAsDataURL(f);
-  }
-  syncFilesInput();
-}
+function initStep1Counters() {
+  const titleInput = document.getElementById('step1-title');
+  const descInput  = document.getElementById('step1-description');
 
-function renderPreview(src, idx) {
-  const wrap = document.createElement('div');
-  wrap.className = 'preview-img-wrap';
-  wrap.id = 'prev-' + idx;
-  wrap.innerHTML = `<img src="${src}"><button type="button" class="preview-img-remove" onclick="removeImg(${idx})"><i class="bi bi-x"></i></button>`;
-  if (idx === 0) wrap.style.outline = '2.5px solid var(--primary)'; // primary badge
-  grid.appendChild(wrap);
-}
-
-function removeImg(idx) {
-  files[idx] = null;
-  const el = document.getElementById('prev-' + idx);
-  if (el) el.remove();
-  syncFilesInput();
-}
-
-function syncFilesInput() {
-  const dt = new DataTransfer();
-  files.filter(Boolean).forEach(f => dt.items.add(f));
-  input.files = dt.files;
-}
-
-// Listing mode toggle
-function updateListingMode() {
-  const mode = document.querySelector('.mode-radio:checked')?.value || 'swap';
-  const sellGroup = document.getElementById('sell-price-group');
-  const wantGroup = document.querySelector('.form-group:has(.want-radio)')?.parentElement;
-  sellGroup.style.display = (mode === 'sell' || mode === 'both') ? '' : 'none';
-  const wantField = document.getElementById('want_in_return');
-  if (mode === 'sell') {
-    wantField.removeAttribute('required');
-    wantField.placeholder = 'اختیاری — خریدار ترجیحی را توضیح دهید یا خالی بگذارید';
-  } else {
-    wantField.setAttribute('required', 'required');
-  }
-}
-document.querySelectorAll('.mode-radio').forEach(r => r.addEventListener('change', updateListingMode));
-updateListingMode();
-
-// Trade type selection highlight
-document.querySelectorAll('.want-radio').forEach(radio => {
-  radio.addEventListener('change', () => {
-    document.querySelectorAll('.trade-type-btn').forEach(btn => {
-      btn.style.borderColor = 'var(--border)';
-      btn.style.background  = '';
-      btn.querySelector('i').style.color = 'var(--text-muted)';
-    });
-    const btn = radio.nextElementSibling;
-    btn.style.borderColor = 'var(--primary-light)';
-    btn.style.background  = 'rgba(0,174,239,.05)';
-    btn.querySelector('i').style.color = 'var(--primary-light)';
+  titleInput.addEventListener('input', () => {
+    document.getElementById('step1-title-count').textContent = titleInput.value.length;
   });
-});
-// Init selected
-document.querySelector('.want-radio:checked')?.dispatchEvent(new Event('change'));
-</script>
+  descInput.addEventListener('input', () => {
+    document.getElementById('step1-desc-count').textContent = descInput.value.length;
+  });
+}
 
-<script src="<?= APP_URL ?>/src/js/ai-pricing.js"></script>
+function initStep2Upload() {
+  const zone = document.getElementById('step2-upload-zone');
+  const input = document.getElementById('step2-images');
+  const grid = document.getElementById('step2-preview-grid');
+
+  zone.addEventListener('click', () => input.click());
+
+  input.addEventListener('change', () => addFiles(input.files));
+
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    addFiles(e.dataTransfer.files);
+  });
+
+  function addFiles(newFiles) {
+    for (const f of newFiles) {
+      if (uploadedFiles.length >= <?= MAX_IMAGES ?>) break;
+      if (!f.type.match('image.*')) continue;
+      uploadedFiles.push(f);
+      const reader = new FileReader();
+      const idx = uploadedFiles.length - 1;
+      reader.onload = e => renderPreview(e.target.result, idx);
+      reader.readAsDataURL(f);
+    }
+    syncFilesInput();
+  }
+
+  function renderPreview(src, idx) {
+    const wrap = document.createElement('div');
+    wrap.className = 'image-preview';
+    wrap.id = 'step2-preview-' + idx;
+    wrap.innerHTML = `<img src="${src}"><button type="button" class="image-preview-remove" onclick="removeImg(${idx})"><i class="bi bi-x"></i></button>`;
+    if (idx === 0) {
+      wrap.style.outline = '2.5px solid var(--wizard-primary)';
+    }
+    grid.appendChild(wrap);
+  }
+
+  window.removeImg = function(idx) {
+    uploadedFiles[idx] = null;
+    const el = document.getElementById('step2-preview-' + idx);
+    if (el) el.remove();
+    syncFilesInput();
+  }
+
+  function syncFilesInput() {
+    const dt = new DataTransfer();
+    uploadedFiles.filter(Boolean).forEach(f => dt.items.add(f));
+    input.files = dt.files;
+  }
+}
+
+// Exchange category toggles for step4
+window.toggleExchangeCategory = function(el, cat) {
+  if (exchangeCategories.has(cat)) {
+    exchangeCategories.delete(cat);
+    el.classList.remove('selected');
+  } else {
+    exchangeCategories.add(cat);
+    el.classList.add('selected');
+  }
+  document.getElementById('step4-want-cats').value = JSON.stringify([...exchangeCategories]);
+}
+
+window.toggleFinalCategory = function(el, cat) {
+  if (finalCategories.has(cat)) {
+    finalCategories.delete(cat);
+    el.classList.remove('selected');
+  } else {
+    finalCategories.add(cat);
+    el.classList.add('selected');
+  }
+}
+
+function validateCurrentStep() {
+  switch (currentStep) {
+    case 1:
+      const title = document.getElementById('step1-title').value.trim();
+      const desc = document.getElementById('step1-description').value.trim();
+      return title.length >= 5 && desc.length >= 20;
+
+    case 2:
+      return uploadedFiles.filter(Boolean).length > 0;
+
+    case 3:
+      const catId = document.getElementById('step3-category').value;
+      return !!catId;
+
+    case 4:
+      return exchangeCategories.size > 0;
+
+    case 5:
+    case 6:
+    case 8:
+      return true;
+
+    case 7:
+      return true;
+
+    default:
+      return true;
+  }
+}
+
+function goToStep(step) {
+  if (step < 1 || step > totalSteps) return;
+  // Hide all steps first
+  document.querySelectorAll('.wizard-step').forEach(el => el.style.display = 'none');
+  // Show target step
+  document.getElementById('step-' + step).style.display = 'block';
+  currentStep = step;
+  updateStepper();
+  updateButtons();
+  
+  if (step === 7) {
+    populateReview();
+  }
+}
+
+function updateStepper() {
+  for (let i = 1; i <= totalSteps; i++) {
+    const indicator = document.getElementById('step-' + i + '-indicator');
+    indicator.classList.remove('active', 'completed');
+    
+    if (i < currentStep) {
+      indicator.classList.add('completed');
+    } else if (i === currentStep) {
+      indicator.classList.add('active');
+    }
+  }
+}
+
+function updateButtons() {
+  const backBtn = document.getElementById('wizard-back-btn');
+  const nextBtn = document.getElementById('wizard-next-btn');
+  const submitBtn = document.getElementById('wizard-submit-btn');
+
+  backBtn.style.display = currentStep > 1 ? 'inline-block' : 'none';
+  
+  if (currentStep === totalSteps) {
+    nextBtn.style.display = 'none';
+    submitBtn.style.display = 'inline-block';
+  } else {
+    nextBtn.style.display = 'inline-block';
+    submitBtn.style.display = 'none';
+  }
+
+  // Disable next button if current step is invalid
+  nextBtn.disabled = !validateCurrentStep();
+}
+
+function populateReview() {
+  // Step 1
+  document.getElementById('step7-title').textContent = document.getElementById('step1-title').value;
+  document.getElementById('step7-description').textContent = document.getElementById('step1-description').value;
+
+  // Step 3
+  const catSelect = document.getElementById('step3-category');
+  document.getElementById('step7-category').textContent = catSelect.options[catSelect.selectedIndex].text;
+  const condSelect = document.getElementById('step3-condition');
+  document.getElementById('step7-condition').textContent = condSelect.options[condSelect.selectedIndex].text;
+  document.getElementById('step7-city').textContent = document.getElementById('step3-city').value || 'نامشخص';
+
+  // Step 4 & 5
+  document.getElementById('step7-want-cats').textContent = [...exchangeCategories].join('، ');
+  document.getElementById('step7-want-desc').textContent = document.getElementById('step5-description').value;
+
+  // Step 6
+  document.getElementById('step7-price').textContent = document.getElementById('step6-price').textContent;
+
+  // Step 2 images
+  const imgGrid = document.getElementById('step7-images');
+  imgGrid.innerHTML = '';
+  uploadedFiles.filter(Boolean).forEach((_, idx) => {
+    const preview = document.getElementById('step2-preview-' + idx);
+    if (preview) {
+      const img = preview.querySelector('img');
+      if (img) {
+        const clone = document.createElement('img');
+        clone.src = img.src;
+        clone.style.height = '80px';
+        clone.style.borderRadius = '8px';
+        imgGrid.appendChild(clone);
+      }
+    }
+  });
+}
+
+// Event listeners for buttons
+document.getElementById('wizard-back-btn').addEventListener('click', () => {
+  if (currentStep > 1) {
+    goToStep(currentStep - 1);
+  }
+});
+
+document.getElementById('wizard-next-btn').addEventListener('click', () => {
+  if (validateCurrentStep() && currentStep < totalSteps) {
+    goToStep(currentStep + 1);
+  }
+});
+
+// Also update next button state when fields change
+document.querySelectorAll('#wizard-form input, #wizard-form textarea, #wizard-form select').forEach(el => {
+  el.addEventListener('input', updateButtons);
+  el.addEventListener('change', updateButtons);
+});
+
+</script>
 
 <?php render_footer(); ?>
