@@ -10,13 +10,21 @@ $categories = DB::fetchAll(
      LEFT JOIN categories p ON p.id = c.parent_id
      WHERE c.is_active = 1 ORDER BY COALESCE(p.sort_order,c.sort_order), c.sort_order'
 );
-$parentCategories = DB::fetchAll(
-    'SELECT id, name FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order, id'
-);
 
-// Exchange categories for step 4 & 8
+// Exchange categories for the new step 4
 $exchangeCategories = [
-    'موبایل', 'لپ‌تاپ', 'خودرو', 'موتور', 'کنسول بازی', 'دوربین', 'طلا', 'ساعت',
+    ['name' => 'موبایل', 'icon' => 'bi-phone'],
+    ['name' => 'لپ‌تاپ', 'icon' => 'bi-laptop'],
+    ['name' => 'خودرو', 'icon' => 'bi-car-front'],
+    ['name' => 'موتور', 'icon' => 'bi-bicycle'],
+    ['name' => 'کنسول بازی', 'icon' => 'bi-controller'],
+    ['name' => 'دوربین', 'icon' => 'bi-camera'],
+    ['name' => 'طلا و جواهر', 'icon' => 'bi-gem'],
+    ['name' => 'ساعت', 'icon' => 'bi-watch'],
+    ['name' => 'کتاب', 'icon' => 'bi-book'],
+    ['name' => 'لوازم خانگی', 'icon' => 'bi-tv'],
+    ['name' => 'پوشاک', 'icon' => 'bi-bag'],
+    ['name' => 'لوازم ورزشی', 'icon' => 'bi-activity'],
 ];
 
 // Handle form submission
@@ -30,15 +38,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'condition'       => clean($_POST['condition']       ?? 'good'),
         'city'            => clean($_POST['city']            ?? ''),
         'want_categories' => $_POST['want_categories']       ?? [],
-        'want_description'=> clean($_POST['want_description']?? ''),
-        'estimated_value' => (float)($_POST['estimated_value'] ?? 0),
+        'want_description' => clean($_POST['want_description'] ?? ''),
+        'estimated_value' => (int)($_POST['estimated_value'] ?? 0),
     ];
 
     // Validation
     $errors = [];
     if (mb_strlen($vals['title']) < 5) $errors['title'] = 'عنوان باید حداقل ۵ کاراکتر باشد';
     if (mb_strlen($vals['title']) > 200) $errors['title'] = 'عنوان باید کمتر از ۲۰۰ کاراکتر باشد';
-    if (!$vals['category_id']) $errors['category_id'] = 'لطفاً دسته‌بندی را انتخاب کنید';
+    if (!$vals['category_id']) $errors['category_id'] = 'لطفا دسته‌بندی را انتخاب کنید';
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
 
     if (empty($errors)) {
@@ -60,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'review_status'    => 'pending',
         ]);
 
-        // Handle image uploads (from session first)
+        // Handle image uploads
         $uploadedImages = 0;
         if (!empty($_FILES['images']['name'][0])) {
             foreach ($_FILES['images']['tmp_name'] as $i => $tmp) {
@@ -87,13 +95,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Clear cache
         ai_match_clear_cache((int)$user['id']);
 
-        // Redirect to success
+        // Redirect to success page
         header('Location: ' . APP_URL . '/listings/success?id=' . $listingId);
         exit;
     }
 }
 
-// Render the wizard
 render_head('ثبت آگهی جدید');
 render_navbar($user);
 ?>
@@ -101,26 +108,25 @@ render_navbar($user);
 <div class="wizard-page">
   <!-- Stepper Header -->
   <div class="wizard-header">
-    <div class="wizard-container" style="padding: var(--sp-4) var(--sp-5);">
+    <div class="wizard-container" style="padding: var(--wizard-gap) var(--wizard-gap);">
       <div class="stepper">
-        <?php for ($i = 1; $i <= 8; $i++): ?>
+        <div class="stepper-progress" id="stepper-progress"></div>
+        <?php 
+        $stepLabels = [
+          1 => 'عنوان و توضیحات',
+          2 => 'تصاویر',
+          3 => 'جزئیات',
+          4 => 'چی می‌خوای؟',
+          5 => 'توضیح دقیق‌تر',
+          6 => 'قیمت تخمینی',
+          7 => 'بررسی نهایی'
+        ];
+        for ($i = 1; $i <= 7; $i++): ?>
           <div class="stepper-step" data-step="<?= $i ?>" id="step-<?= $i ?>-indicator">
-            <div class="stepper-circle"><?= $i ?></div>
-            <div class="stepper-label">
-              <?php
-                $stepLabels = [
-                    1 => 'عنوان و توضیحات',
-                    2 => 'تصاویر',
-                    3 => 'جزئیات',
-                    4 => 'معاوضه',
-                    5 => 'توضیح',
-                    6 => 'قیمت',
-                    7 => 'بازبینی',
-                    8 => 'پیشنهادات',
-                ];
-                echo $stepLabels[$i];
-              ?>
+            <div class="stepper-circle">
+              <i class="bi bi-check-lg" style="display: none;"></i>
             </div>
+            <div class="stepper-label"><?= $stepLabels[$i] ?></div>
           </div>
         <?php endfor; ?>
       </div>
@@ -141,7 +147,7 @@ render_navbar($user);
           <div class="wizard-form-group">
             <label class="wizard-form-label">عنوان آگهی *</label>
             <input type="text" name="title" id="step1-title" class="wizard-form-input" 
-                   placeholder="مثلاً آیفون ۱۳ پرو مکس ۲۵۶ گیگ" maxlength="200">
+                   placeholder="مثلا آیفون ۱۳ پرو مکس ۲۵۶ گیگ" maxlength="200">
             <div class="char-count"><span id="step1-title-count">0</span>/200 کاراکتر</div>
           </div>
 
@@ -160,7 +166,7 @@ render_navbar($user);
 
           <div class="upload-zone" id="step2-upload-zone">
             <div class="upload-zone-icon">
-              <i class="bi bi-cloud-upload"></i>
+              <i class="bi bi-cloud-arrow-up"></i>
             </div>
             <p class="upload-zone-text">تصاویر را اینجا رها کنید یا برای آپلود کلیک کنید</p>
             <p class="upload-zone-subtext">JPG، PNG یا WEBP — حداکثر ۵ مگابایت — تا <?= MAX_IMAGES ?> تصویر</p>
@@ -182,13 +188,13 @@ render_navbar($user);
               <?php
                 $lastParent = null;
                 foreach ($categories as $cat):
-                  if ($cat['parent_id'] === null) {
+                  if ($cat['parent_id'] === null):
                     if ($lastParent !== null) echo '</optgroup>';
                     echo '<optgroup label="'.h(category_label($cat['slug'], $cat['name'])).'">';
                     $lastParent = $cat['id'];
-                  } else {
+                  else:
                     echo '<option value="'.$cat['id'].'">'.h(category_label($cat['slug'], $cat['name'])).'</option>';
-                  }
+                  endif;
                 endforeach;
                 if ($lastParent !== null) echo '</optgroup>';
               ?>
@@ -198,9 +204,11 @@ render_navbar($user);
           <div class="wizard-form-group">
             <label class="wizard-form-label">وضعیت کالا *</label>
             <select name="condition" id="step3-condition" class="wizard-form-select">
-              <?php foreach (['new','like_new','good','fair','poor'] as $v): ?>
-                <option value="<?= $v ?>"><?= condition_label($v) ?></option>
-              <?php endforeach; ?>
+              <option value="new">نو</option>
+              <option value="like_new">مثل نو</option>
+              <option value="good" selected>خوب</option>
+              <option value="fair">متوسط</option>
+              <option value="poor">خورده</option>
             </select>
           </div>
 
@@ -211,16 +219,17 @@ render_navbar($user);
           </div>
         </div>
 
-        <!-- Step 4: What to exchange (category selection) -->
+        <!-- Step 4: What do you want in exchange? -->
         <div class="wizard-step" data-step="4" id="step-4" style="display:none">
           <h2 class="wizard-step-title">به دنبال چه چیزی هستید؟</h2>
           <p class="wizard-step-subtitle">دسته‌بندی‌های مورد علاقه خود را انتخاب کنید.</p>
 
           <div class="category-chips">
             <?php foreach ($exchangeCategories as $cat): ?>
-              <div class="category-chip" data-category="<?= h($cat) ?>" 
-                   onclick="toggleExchangeCategory(this, '<?= h($cat) ?>')">
-                <?= h($cat) ?>
+              <div class="category-chip" data-category="<?= h($cat['name']) ?>" 
+                   onclick="toggleExchangeCategory(this, '<?= h($cat['name']) ?>')">
+                <span class="chip-icon"><i class="bi <?= $cat['icon'] ?>"></i></span>
+                <?= h($cat['name']) ?>
               </div>
             <?php endforeach; ?>
           </div>
@@ -229,19 +238,19 @@ render_navbar($user);
 
         <!-- Step 5: Describe what you want -->
         <div class="wizard-step" data-step="5" id="step-5" style="display:none">
-          <h2 class="wizard-step-title">توضیح آنچه می‌خواهید</h2>
+          <h2 class="wizard-step-title">توضیح دقیق‌تر</h2>
           <p class="wizard-step-subtitle">دقیق بنویسید که به چه چیزی نیاز دارید.</p>
 
           <div class="wizard-form-group">
             <textarea name="want_description" id="step5-description" class="wizard-form-textarea" rows="6"
-                      placeholder="مثلاً فقط آیفون ۱۵ پرو تمیز با سلامت باتری بالای ۹۰ درصد…"></textarea>
+                      placeholder="مثلا فقط آیفون ۱۵ پرو تمیز با سلامت باتری بالای ۹۰ درصد…"></textarea>
           </div>
         </div>
 
         <!-- Step 6: Estimated Price -->
         <div class="wizard-step" data-step="6" id="step-6" style="display:none">
-          <h2 class="wizard-step-title">ارزش تقریبی</h2>
-          <p class="wizard-step-subtitle">این قیمت صرفاً تخمینی است.</p>
+          <h2 class="wizard-step-title">قیمت تخمینی</h2>
+          <p class="wizard-step-subtitle">این قیمت صرفا تخمینی است.</p>
 
           <div class="price-estimate-card">
             <p class="price-estimate-label">قیمت تخمینی</p>
@@ -252,14 +261,14 @@ render_navbar($user);
                 echo h(number_format($dummy)) . ' تومان';
               ?>
             </p>
-            <p class="price-estimate-note">این قیمت صرفاً تخمینی است و ممکن است با قیمت نهایی متفاوت باشد.</p>
+            <p class="price-estimate-note">این قیمت صرفا تخمینی است و ممکن است با قیمت نهایی متفاوت باشد.</p>
           </div>
           <input type="hidden" id="step6-estimated-value" name="estimated_value" value="<?= $dummy ?>">
         </div>
 
         <!-- Step 7: Review -->
         <div class="wizard-step" data-step="7" id="step-7" style="display:none">
-          <h2 class="wizard-step-title">بازبینی اطلاعات</h2>
+          <h2 class="wizard-step-title">بررسی نهایی</h2>
           <p class="wizard-step-subtitle">تمام اطلاعات را بررسی کنید.</p>
 
           <div class="review-section">
@@ -317,21 +326,6 @@ render_navbar($user);
           </div>
         </div>
 
-        <!-- Step 8: Final preference categories -->
-        <div class="wizard-step" data-step="8" id="step-8" style="display:none">
-          <h2 class="wizard-step-title">انتخاب دسته‌بندی برای پیشنهادات</h2>
-          <p class="wizard-step-subtitle">این دسته‌بندی‌ها در پیشنهادات آینده برای شما نمایش داده می‌شوند.</p>
-
-          <div class="category-chips">
-            <?php foreach ($exchangeCategories as $cat): ?>
-              <div class="category-chip" data-category="<?= h($cat) ?>" 
-                   onclick="toggleFinalCategory(this, '<?= h($cat) ?>')">
-                <?= h($cat) ?>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-
         <!-- Wizard Footer -->
         <div class="wizard-footer">
           <div>
@@ -356,12 +350,11 @@ render_navbar($user);
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-wizard.css">
 <script>
 let currentStep = 1;
-const totalSteps = 8;
+const totalSteps = 7;
 let exchangeCategories = new Set();
-let finalCategories = new Set();
 let uploadedFiles = [];
 
-// Initialize step 1 character counters
+// Initialize everything
 document.addEventListener('DOMContentLoaded', () => {
   updateStepper();
   initStep1Counters();
@@ -370,13 +363,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initStep1Counters() {
   const titleInput = document.getElementById('step1-title');
-  const descInput  = document.getElementById('step1-description');
+  const descInput = document.getElementById('step1-description');
 
   titleInput.addEventListener('input', () => {
     document.getElementById('step1-title-count').textContent = titleInput.value.length;
+    updateButtons();
   });
   descInput.addEventListener('input', () => {
     document.getElementById('step1-desc-count').textContent = descInput.value.length;
+    updateButtons();
   });
 }
 
@@ -413,15 +408,16 @@ function initStep2Upload() {
       reader.readAsDataURL(f);
     }
     syncFilesInput();
+    updateButtons();
   }
 
   function renderPreview(src, idx) {
     const wrap = document.createElement('div');
     wrap.className = 'image-preview';
     wrap.id = 'step2-preview-' + idx;
-    wrap.innerHTML = `<img src="${src}"><button type="button" class="image-preview-remove" onclick="removeImg(${idx})"><i class="bi bi-x"></i></button>`;
+    wrap.innerHTML = `<img src="${src}"><button type="button" class="image-preview-remove" onclick="removeImg(${idx})"><i class="bi bi-x-lg"></i></button>`;
     if (idx === 0) {
-      wrap.style.outline = '2.5px solid var(--wizard-primary)';
+      wrap.style.borderColor = 'var(--wizard-primary)';
     }
     grid.appendChild(wrap);
   }
@@ -431,6 +427,7 @@ function initStep2Upload() {
     const el = document.getElementById('step2-preview-' + idx);
     if (el) el.remove();
     syncFilesInput();
+    updateButtons();
   }
 
   function syncFilesInput() {
@@ -440,7 +437,6 @@ function initStep2Upload() {
   }
 }
 
-// Exchange category toggles for step4
 window.toggleExchangeCategory = function(el, cat) {
   if (exchangeCategories.has(cat)) {
     exchangeCategories.delete(cat);
@@ -450,16 +446,7 @@ window.toggleExchangeCategory = function(el, cat) {
     el.classList.add('selected');
   }
   document.getElementById('step4-want-cats').value = JSON.stringify([...exchangeCategories]);
-}
-
-window.toggleFinalCategory = function(el, cat) {
-  if (finalCategories.has(cat)) {
-    finalCategories.delete(cat);
-    el.classList.remove('selected');
-  } else {
-    finalCategories.add(cat);
-    el.classList.add('selected');
-  }
+  updateButtons();
 }
 
 function validateCurrentStep() {
@@ -481,9 +468,6 @@ function validateCurrentStep() {
 
     case 5:
     case 6:
-    case 8:
-      return true;
-
     case 7:
       return true;
 
@@ -494,11 +478,14 @@ function validateCurrentStep() {
 
 function goToStep(step) {
   if (step < 1 || step > totalSteps) return;
-  // Hide all steps first
+  
+  // Hide all steps
   document.querySelectorAll('.wizard-step').forEach(el => el.style.display = 'none');
-  // Show target step
+  
+  // Show target
   document.getElementById('step-' + step).style.display = 'block';
   currentStep = step;
+  
   updateStepper();
   updateButtons();
   
@@ -508,14 +495,32 @@ function goToStep(step) {
 }
 
 function updateStepper() {
+  // Update the progress line
+  const progressEl = document.getElementById('stepper-progress');
+  const percentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  progressEl.style.width = percentage + '%';
+
+  // Update each step indicator
   for (let i = 1; i <= totalSteps; i++) {
     const indicator = document.getElementById('step-' + i + '-indicator');
+    const circle = indicator.querySelector('.stepper-circle');
+    const icon = circle.querySelector('i');
+    
     indicator.classList.remove('active', 'completed');
     
     if (i < currentStep) {
       indicator.classList.add('completed');
+      // Show check icon
+      icon.style.display = 'flex';
+      circle.textContent = '';
+      circle.appendChild(icon);
     } else if (i === currentStep) {
       indicator.classList.add('active');
+      // Hide check icon
+      icon.style.display = 'none';
+    } else {
+      // Hide check icon
+      icon.style.display = 'none';
     }
   }
 }
@@ -535,7 +540,7 @@ function updateButtons() {
     submitBtn.style.display = 'none';
   }
 
-  // Disable next button if current step is invalid
+  // Disable next if current invalid
   nextBtn.disabled = !validateCurrentStep();
 }
 
@@ -547,13 +552,17 @@ function populateReview() {
   // Step 3
   const catSelect = document.getElementById('step3-category');
   document.getElementById('step7-category').textContent = catSelect.options[catSelect.selectedIndex].text;
+  
   const condSelect = document.getElementById('step3-condition');
-  document.getElementById('step7-condition').textContent = condSelect.options[condSelect.selectedIndex].text;
-  document.getElementById('step7-city').textContent = document.getElementById('step3-city').value || 'نامشخص';
+  const condLabels = { 'new' : 'نو', 'like_new' : 'مثل نو', 'good' : 'خوب', 'fair' : 'متوسط', 'poor' : 'خورده'};
+  document.getElementById('step7-condition').textContent = condLabels[condSelect.value];
+  
+  const cityVal = document.getElementById('step3-city').value;
+  document.getElementById('step7-city').textContent = cityVal || 'نامشخص';
 
   // Step 4 & 5
   document.getElementById('step7-want-cats').textContent = [...exchangeCategories].join('، ');
-  document.getElementById('step7-want-desc').textContent = document.getElementById('step5-description').value;
+  document.getElementById('step7-want-desc').textContent = document.getElementById('step5-description').value || 'نوشته نشده';
 
   // Step 6
   document.getElementById('step7-price').textContent = document.getElementById('step6-price').textContent;
@@ -568,8 +577,6 @@ function populateReview() {
       if (img) {
         const clone = document.createElement('img');
         clone.src = img.src;
-        clone.style.height = '80px';
-        clone.style.borderRadius = '8px';
         imgGrid.appendChild(clone);
       }
     }
@@ -587,12 +594,6 @@ document.getElementById('wizard-next-btn').addEventListener('click', () => {
   if (validateCurrentStep() && currentStep < totalSteps) {
     goToStep(currentStep + 1);
   }
-});
-
-// Also update next button state when fields change
-document.querySelectorAll('#wizard-form input, #wizard-form textarea, #wizard-form select').forEach(el => {
-  el.addEventListener('input', updateButtons);
-  el.addEventListener('change', updateButtons);
 });
 
 </script>

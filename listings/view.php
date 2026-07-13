@@ -490,11 +490,17 @@ render_navbar($user);
               <div class="mb-4">
                 <label class="form-label fw-600 mb-3">نوع پیشنهاد خود را انتخاب کنید</label>
 
-                <div class="card mb-3 offer-type-card" id="has-item-card" style="border: 2px solid var(--primary);">
-                  <div class="card-body">
-                    <div class="d-flex gap-2 mb-3">
-                      <input type="radio" id="has-item" name="offer_type" value="item" class="mt-1" <?= $myListings ? 'checked' : '' ?>>
-                      <label for="has-item" class="fw-600">کالا دارم</label>
+                <div class="offer-type-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="card offer-type-card" id="has-item-card" style="border: 2px solid var(--primary);">
+                  <div class="card-body" style="padding:24px;">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                      <div style="width:56px; height:56px; border-radius:16px; background:var(--primary); display:flex; align-items:center; justify-content:center;">
+                        <i class="bi bi-box-seam" style="font-size:28px; color:white;"></i>
+                      </div>
+                      <div class="d-flex gap-2 align-items-center">
+                        <input type="radio" id="has-item" name="offer_type" value="item" class="mt-0" <?= $myListings ? 'checked' : '' ?>>
+                        <label for="has-item" class="fw-700 mb-0" style="font-size:1.0625rem;">کالا دارم</label>
+                      </div>
                     </div>
                     <?php if ($myListings): ?>
                     <select class="form-control" name="offer_listing_id" id="offer-listing">
@@ -514,16 +520,20 @@ render_navbar($user);
                   </div>
                 </div>
 
-                <div class="text-center fs-sm mb-3" style="color:var(--text-muted);">یا</div>
-
-                <div class="card mb-4 offer-type-card" id="no-item-card" style="border: 2px solid var(--border);">
-                  <div class="card-body">
-                    <div class="d-flex gap-2 mb-3">
-                      <input type="radio" id="no-item" name="offer_type" value="message" class="mt-1" <?= !$myListings ? 'checked' : '' ?>>
-                      <label for="no-item" class="fw-600">کالا ندارم</label>
+                <div class="card offer-type-card" id="no-item-card" style="border: 2px solid var(--border);">
+                  <div class="card-body" style="padding:24px;">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                      <div style="width:56px; height:56px; border-radius:16px; background:var(--border); display:flex; align-items:center; justify-content:center;">
+                        <i class="bi bi-chat-dots" style="font-size:28px; color:var(--text-muted);"></i>
+                      </div>
+                      <div class="d-flex gap-2 align-items-center">
+                        <input type="radio" id="no-item" name="offer_type" value="message" class="mt-0" <?= !$myListings ? 'checked' : '' ?>>
+                        <label for="no-item" class="fw-700 mb-0" style="font-size:1.0625rem;">کالا ندارم</label>
+                      </div>
                     </div>
-                    <p class="fs-sm" style="color:var(--text-muted);">فقط پیام برای فروشنده بفرستید</p>
+                    <p class="fs-sm mb-0" style="color:var(--text-muted);">فقط پیام برای فروشنده بفرستید</p>
                   </div>
+                </div>
                 </div>
               </div>
 
@@ -574,12 +584,42 @@ function updateOfferTypeCards() {
   const hasItem = document.getElementById('has-item')?.checked;
   const hasCard = document.getElementById('has-item-card');
   const noCard  = document.getElementById('no-item-card');
+  
   if (!hasCard || !noCard) return;
+  
+  const hasIconDiv = hasCard.querySelector('.card-body > div > div:first-child');
+  const noIconDiv = noCard.querySelector('.card-body > div > div:first-child');
+  const hasIcon = hasIconDiv?.querySelector('i');
+  const noIcon = noIconDiv?.querySelector('i');
+
+  // Update has item card
   hasCard.style.borderColor = hasItem ? 'var(--primary)' : 'var(--border)';
   hasCard.style.background  = hasItem ? 'rgba(7, 26, 51, 0.03)' : '';
+  if (hasIconDiv) hasIconDiv.style.background = hasItem ? 'var(--primary)' : 'var(--border)';
+  if (hasIcon) hasIcon.style.color = hasItem ? 'white' : 'var(--text-muted)';
+  
+  // Update no item card
   noCard.style.borderColor  = hasItem ? 'var(--border)' : 'var(--primary)';
   noCard.style.background   = hasItem ? '' : 'rgba(7, 26, 51, 0.03)';
+  if (noIconDiv) noIconDiv.style.background = hasItem ? 'var(--border)' : 'var(--primary)';
+  if (noIcon) noIcon.style.color = hasItem ? 'var(--text-muted)' : 'white';
 }
+// Make entire offer cards clickable
+document.getElementById('has-item-card')?.addEventListener('click', () => {
+  const radio = document.getElementById('has-item');
+  if (radio) {
+    radio.checked = true;
+    updateOfferTypeCards();
+  }
+});
+document.getElementById('no-item-card')?.addEventListener('click', () => {
+  const radio = document.getElementById('no-item');
+  if (radio) {
+    radio.checked = true;
+    updateOfferTypeCards();
+  }
+});
+
 document.querySelectorAll('input[name="offer_type"]').forEach(r => r.addEventListener('change', updateOfferTypeCards));
 updateOfferTypeCards();
 
