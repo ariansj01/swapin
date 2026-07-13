@@ -224,7 +224,7 @@ render_head($listing['title'], $metaDesc, [
 ]);
 render_navbar($user);
 ?>
-<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-view-mobile.css">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-view-mobile.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-view-mobile.css') ?>">
 
 <?php if (isset($_GET['pending']) || $reviewStatus === 'pending'): ?>
 <div class="alert alert-warning" style="border-radius:0;border-inline-start:0;border-inline-end:0">

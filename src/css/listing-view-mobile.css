@@ -9,14 +9,21 @@
   --lv-bottom-nav-h: 72px;
 }
 
-.lv-mobile { display: none; }
+/* Desktop: hide all mobile-only markup */
+@media (min-width: 769px) {
+  #main-content.lv-mobile,
+  .lv-sheet {
+    display: none !important;
+  }
+}
 
 @media (max-width: 768px) {
-  .lv-desktop { display: none !important; }
+  .lv-desktop,
+  #main-content-desktop {
+    display: none !important;
+  }
 
-  #main-content-desktop { display: none !important; }
-
-  .lv-mobile {
+  #main-content.lv-mobile {
     display: block;
     background: var(--lv-white);
     padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
@@ -379,6 +386,7 @@
   }
 
   .lv-sheet {
+    display: block;
     position: fixed;
     inset: 0;
     z-index: 600;
