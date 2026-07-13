@@ -19,11 +19,18 @@ function panel_nav_counts(array $user): array {
 function render_user_panel_open(array $user, string $active, array $navOverrides = []): void {
     $url    = APP_URL;
     $counts = panel_nav_counts($user);
+    $latestPromotableListing = DB::fetch(
+        'SELECT id FROM listings WHERE user_id = ? AND status = "active" ORDER BY updated_at DESC, id DESC LIMIT 1',
+        [(int)$user['id']]
+    );
+    $promoteHref = $latestPromotableListing
+        ? $url . '/listings/promote.php?id=' . (int)$latestPromotableListing['id']
+        : $url . '/listings/my.php';
 
     $nav = [
         'dashboard' => [$url . '/dashboard', 'داشبورد', 'bi-speedometer2', 0],
         'my'        => [$url . '/listings/my', 'آگهی‌های من', 'bi-grid', 0],
-        'promote'   => [$url . '/listings/my', 'ارتقای آگهی', 'bi-rocket-takeoff', 0],
+        'promote'   => [$promoteHref, 'ارتقای آگهی', 'bi-rocket-takeoff', 0],
         'messages'  => [$url . '/messages', 'پیام‌ها', 'bi-chat-dots', $counts['messages']],
         'saved'     => [$url . '/listings/saved', 'علاقه‌مندی‌ها', 'bi-heart', 0],
         'trades'    => [$url . '/trades', 'معاملات', 'bi-shield-lock', $counts['offers']],

@@ -283,9 +283,9 @@ render_user_panel_open($user, 'my');
           </a>
           <?php endif; ?>
 
-          <form method="POST" style="display:contents">
-            <?= csrf_field() ?>
+          <form method="POST" style="display:contents"
                 onsubmit="return confirm('«<?= addslashes($l['title']) ?>» به‌عنوان معامله‌شده علامت بخورد؟')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action"     value="mark_traded">
             <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
             <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--success)" title="علامت معامله‌شده">
@@ -293,9 +293,9 @@ render_user_panel_open($user, 'my');
             </button>
           </form>
 
-          <form method="POST" style="display:contents">
-            <?= csrf_field() ?>
+          <form method="POST" style="display:contents"
                 onsubmit="return confirm('«<?= addslashes($l['title']) ?>» حذف شود؟ دیگر در نتایج جستجو نمایش داده نمی‌شود.')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action"     value="delete">
             <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
             <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger)" title="حذف">
@@ -305,9 +305,9 @@ render_user_panel_open($user, 'my');
 
           <?php elseif (in_array($l['status'], ['traded', 'expired'])): ?>
 
-          <form method="POST" style="display:contents">
-            <?= csrf_field() ?>
+          <form method="POST" style="display:contents"
                 onsubmit="return confirm('«<?= addslashes($l['title']) ?>» دوباره فعال شود؟ در بازار دوباره نمایش داده می‌شود.')">
+            <?= csrf_field() ?>
             <input type="hidden" name="action"     value="reactivate">
             <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
             <button type="submit" class="btn btn-outline btn-sm">
@@ -345,6 +345,6 @@ render_user_panel_open($user, 'my');
     <?php endif; ?>
 
   </div>
-</div>
-
+<?php render_user_panel_close(); ?>
+<?php render_panel_scripts(); ?>
 <?php render_footer(); ?>

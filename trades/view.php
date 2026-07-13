@@ -14,7 +14,10 @@ if (!$tradeId) {
 // Fetch trade
 $trade = DB::fetch(
     'SELECT t.*, ua.name AS user_a_name, ub.name AS user_b_name,
-            la.title AS listing_a_title, lb.title AS listing_b_title
+            la.title AS listing_a_title, lb.title AS listing_b_title,
+            la.estimated_value AS listing_a_val, lb.estimated_value AS listing_b_val,
+            (SELECT filename FROM listing_images WHERE listing_id = la.id AND is_primary = 1 LIMIT 1) AS img_a,
+            (SELECT filename FROM listing_images WHERE listing_id = lb.id AND is_primary = 1 LIMIT 1) AS img_b
      FROM trades t
      JOIN users ua ON ua.id = t.user_a_id
      JOIN users ub ON ub.id = t.user_b_id
@@ -35,7 +38,6 @@ $otherId = $isA ? $trade['user_b_id'] : $trade['user_a_id'];
 
 // Calculate who owes what
 $creditDiff = (float)($trade['credit_diff'] ?? 0);
-
 if ($creditDiff > 0) {
     $userToPayId = $trade['user_b_id'];
     $amountToPay = $creditDiff;
@@ -46,7 +48,6 @@ if ($creditDiff > 0) {
     $userToPayId = 0;
     $amountToPay = 0;
 }
-
 $iOwe = (int)$userToPayId === $uid;
 
 // Get contract
@@ -189,13 +190,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Refresh trade after any action
     $trade = DB::fetch(
         'SELECT t.*, ua.name AS user_a_name, ub.name AS user_b_name,
-                la.title AS listing_a_title, lb.title AS listing_b_title
-         FROM trades t
-         JOIN users ua ON ua.id = t.user_a_id
-         JOIN users ub ON ub.id = t.user_b_id
-         JOIN listings la ON la.id = t.listing_a_id
-         LEFT JOIN listings lb ON lb.id = t.listing_b_id
-         WHERE t.id = ? AND (t.user_a_id = ? OR t.user_b_id = ?)',
+            la.title AS listing_a_title, lb.title AS listing_b_title,
+            la.estimated_value AS listing_a_val, lb.estimated_value AS listing_b_val,
+            (SELECT filename FROM listing_images WHERE listing_id = la.id AND is_primary = 1 LIMIT 1) AS img_a,
+            (SELECT filename FROM listing_images WHERE listing_id = lb.id AND is_primary = 1 LIMIT 1) AS img_b
+     FROM trades t
+     JOIN users ua ON ua.id = t.user_a_id
+     JOIN users ub ON ub.id = t.user_b_id
+     JOIN listings la ON la.id = t.listing_a_id
+     LEFT JOIN listings lb ON lb.id = t.listing_b_id
+     WHERE t.id = ? AND (t.user_a_id = ? OR t.user_b_id = ?)',
         [$tradeId, $uid, $uid]
     );
     $contract = get_trade_contract($tradeId) ?? $contract;
@@ -221,7 +225,8 @@ DB::query(
     [$tradeId, $uid]
 );
 
-function get_step_status(int $stepId, array $trade, array $contract, bool $hasReview): string {
+function get_step_status(int $stepId, array $trade, array $contract, bool $hasReview): string
+{
     $feePaid = (bool)($trade['fee_paid'] ?? 0);
     $diffPaid = (bool)($trade['diff_paid'] ?? 0);
     $contractSigned = !empty($contract) && !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
@@ -247,455 +252,436 @@ function get_step_status(int $stepId, array $trade, array $contract, bool $hasRe
 
 $tab = clean($_GET['tab'] ?? 'chat');
 
-render_head('اتاق امن معامله #' . $tradeId);
-render_navbar($user);
+// Setup product images and values
+$myProduct = $isA ? [
+    'title' => $trade['listing_a_title'],
+    'img' => $trade['img_a'] ? (UPLOAD_URL . $trade['img_a']) : '',
+    'val' => $trade['listing_a_val']
+] : [
+    'title' => $trade['listing_b_title'],
+    'img' => $trade['img_b'] ? (UPLOAD_URL . $trade['img_b']) : '',
+    'val' => $trade['listing_b_val']
+];
+$otherProduct = $isA ? [
+    'title' => $trade['listing_b_title'],
+    'img' => $trade['img_b'] ? (UPLOAD_URL . $trade['img_b']) : '',
+    'val' => $trade['listing_b_val']
+] : [
+    'title' => $trade['listing_a_title'],
+    'img' => $trade['img_a'] ? (UPLOAD_URL . $trade['img_a']) : '',
+    'val' => $trade['listing_a_val']
+];
 ?>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اتاق امن معامله #<?= $tradeId ?> — سواپین</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="<?= APP_URL ?>/src/css/secure-trade.css">
+  <link rel="stylesheet" href="<?= APP_URL ?>/src/css/main.css">
+</head>
+<body class="secure-trade">
 
-<div class="section-sm">
-  <div class="container-lg">
-    <div class="mb-6">
-      <a href="<?= APP_URL ?>/trades.php" style="color:var(--text-muted);font-size:.875rem">
-        <i class="bi bi-arrow-right"></i> بازگشت به معاملات
+<!-- Top Bar -->
+<div class="st-topbar">
+  <div class="st-topbar__inner">
+    <div class="st-topbar__left">
+      <a href="<?= APP_URL ?>" class="st-topbar__brand">
+        <img src="<?= APP_URL ?>/src/img/swapin-dark-png.png" alt="Swapin">
       </a>
-      <h2 class="mt-3" style="display:flex;align-items:center;gap:.5rem">
-        <i class="bi bi-shield-check" style="color:var(--primary)"></i>
-        اتاق امن معامله #<?= $tradeId ?> با <?= h($otherName) ?>
-      </h2>
-    </div>
-
-    <?php if (isset($_SESSION['error'])): ?>
-    <div class="alert alert-danger mb-5"><i class="bi bi-exclamation-circle"></i> <?= h($_SESSION['error']) ?></div>
-    <?php unset($_SESSION['error']); ?>
-    <?php endif; ?>
-    <?php if ($success): ?>
-    <div class="alert alert-success mb-5"><i class="bi bi-check-circle"></i> <?= h($success) ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="alert alert-danger mb-5"><i class="bi bi-exclamation-circle"></i> <?= h($error) ?></div>
-    <?php endif; ?>
-
-    <!-- Timeline -->
-    <div class="card mb-5" style="background:linear-gradient(135deg, rgba(var(--primary-rgb),0.05), rgba(var(--accent-rgb),0.05));">
-      <div class="card-body">
-        <h4 style="margin-bottom:var(--sp-5);display:flex;align-items:center;gap:.5rem">
-          <i class="bi bi-clock-history" style="color:var(--primary)"></i>
-          پیشرفت معامله
-        </h4>
-        <?php
-          $steps = [
-            ['id' => 1, 'title' => 'پیشنهاد ارسال شد', 'icon' => 'bi-send'],
-            ['id' => 2, 'title' => 'پیشنهاد تایید شد', 'icon' => 'bi-check-lg'],
-            ['id' => 3, 'title' => 'پرداخت کارمزد', 'icon' => 'bi-wallet2'],
-            ['id' => 4, 'title' => 'پرداخت مابه‌التفاوت', 'icon' => 'bi-credit-card'],
-            ['id' => 5, 'title' => 'امضای قرارداد', 'icon' => 'bi-pencil-square'],
-            ['id' => 6, 'title' => 'انتخاب زمان ارسال', 'icon' => 'bi-clock'],
-            ['id' => 7, 'title' => 'ارسال کالا', 'icon' => 'bi-truck'],
-            ['id' => 8, 'title' => 'ثبت کد رهگیری', 'icon' => 'bi-upc-scan'],
-            ['id' => 9, 'title' => 'دریافت کالا', 'icon' => 'bi-box'],
-            ['id' =>10, 'title' => 'تایید نهایی معامله', 'icon' => 'bi-check-circle-fill'],
-            ['id' =>11, 'title' => 'ثبت امتیاز', 'icon' => 'bi-star'],
-            ['id' =>12, 'title' => 'پایان معامله', 'icon' => 'bi-flag'],
-          ];
-          echo '<div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:var(--sp-5);padding:var(--sp-4);background:#fff;border-radius:var(--radius-md);">';
-          foreach ($steps as $i => $s):
-            $status = get_step_status($s['id'], $trade, $contract, (bool)$myReview);
-            $stepBg = $status === 'completed' ? 'var(--success)' : ($status === 'current' ? 'var(--primary)' : ($status === 'locked' ? 'var(--border)' : 'var(--text-muted)'));
-            $stepText = $status === 'completed' || $status === 'current' ? '#fff' : 'var(--text-muted)';
-            $stepShadow = $status === 'current' ? '0 4px 12px rgba(var(--primary-rgb),0.3)' : 'none';
-            $stepBorder = $status === 'current' ? '2px solid var(--primary)' : 'none';
-            $fontWeight = $status === 'current' ? '600' : '500';
-            $titleColor = $status === 'completed' ? 'var(--success)' : ($status === 'current' ? 'var(--primary)' : 'var(--text-muted)');
-            echo '<div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;flex:1;min-width:80px;">';
-              echo '<div style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:'.$stepBg.';color:'.$stepText.';box-shadow:'.$stepShadow.';border:'.$stepBorder.';">';
-                echo '<i class="bi '.$s['icon'].'" style="font-size:1.25rem"></i>';
-              echo '</div>';
-              echo '<div class="fs-xs" style="text-align:center;line-height:1.3;font-weight:'.$fontWeight.';color:'.$titleColor.'">';
-                echo h($s['title']);
-              echo '</div>';
-            echo '</div>';
-            if ($i < count($steps)-1):
-              $lineColor = $status === 'completed' ? 'var(--success)' : 'var(--border)';
-              echo '<div style="flex:0 0 auto;width:40px;height:2px;background:'.$lineColor.'"></div>';
-            endif;
-          endforeach;
-          echo '</div>';
-
-          // Render current step action card
-          $currentStep = null;
-          foreach ($steps as $s):
-            if (get_step_status($s['id'], $trade, $contract, (bool)$myReview) === 'current') {
-                $currentStep = $s;
-                break;
-            }
-          endforeach;
-
-          if ($currentStep): ?>
-        <div class="card" style="margin:0;background:#fff;border:2px solid var(--primary);">
-          <div class="card-body">
-            <h5 style="display:flex;align-items:center;gap:.5rem;margin-bottom:var(--sp-4);">
-              <i class="bi <?= $currentStep['icon'] ?>" style="color:var(--primary)"></i>
-              مرحله فعلی: <?= h($currentStep['title']) ?>
-            </h5>
-
-            <?php if ($currentStep['id'] == 3 && !$trade['fee_paid']): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">کارمزد باید پرداخت بشه. از صفحه <a href="<?= APP_URL ?>/trades.php" style="color:var(--primary)">پرداخت کارمزد</a> انجام بشه.</p>
-            <?php elseif ($currentStep['id'] ==4 && !$trade['diff_paid']): ?>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);">
-                <div class="card" style="margin:0;background:rgba(var(--accent-rgb),0.05);">
-                  <div class="card-body">
-                    <div class="fs-sm" style="color:var(--text-muted);margin-bottom:var(--sp-2)">وضعیت مابه‌التفاوت</div>
-                    <?php if ($iOwe): ?>
-                      <h4 style="color:var(--accent);margin-bottom:var(--sp-2);">شما باید پرداخت کنید</h4>
-                      <div style="font-size:1.75rem;font-weight:800;color:var(--accent);">
-                        <?= fmt_credit($amountToPay) ?></div>
-                      <form method="POST" style="margin-top:var(--sp-4);">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="pay_diff">
-                        <button type="submit" class="btn btn-accent btn-lg" style="width:100%;">
-                          <i class="bi bi-credit-card"></i> پرداخت مابه‌التفاوت
-                        </button>
-                      </form>
-                    <?php else: ?>
-                      <h4 style="color:var(--primary);margin-bottom:var(--sp-2);">شما دریافت می‌کنید</h4>
-                      <div style="font-size:1.75rem;font-weight:800;color:var(--primary);">
-                        <?= fmt_credit($amountToPay) ?></div>
-                      <div style="margin-top:var(--sp-3);color:var(--text-secondary);">در انتظار پرداخت طرف هستیم...</div>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </div>
-            <?php elseif ($currentStep['id'] == 5): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">قرارداد دیجیتال رو امضا کنید.</p>
-              <div class="card" style="background:rgba(var(--primary-rgb),0.05);margin-bottom:var(--sp-4);">
-                <div class="card-body">
-                  <h6>قرارداد معامله</h6>
-                  <div style="color:var(--text-secondary);font-size:.875rem;line-height:1.8;margin-bottom:var(--sp-3);">
-                    این قرارداد برای معامله بین شما و <?= h($otherName) ?> هست. با کلیک روی «امضا» با شرایط موافقید.
-                  </div>
-                  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:var(--sp-3);">
-                    <span class="badge badge-<?= $contract['user_a_signed'] ? 'success' : 'warning' ?>">
-                      <?= h($trade['user_a_name']) ?>: <?= $contract['user_a_signed'] ? 'امضا کرده' : 'امضا نکرده' ?>
-                    </span>
-                    <span class="badge badge-<?= $contract['user_b_signed'] ? 'success' : 'warning' ?>">
-                      <?= h($trade['user_b_name']) ?>: <?= $contract['user_b_signed'] ? 'امضا کرده' : 'امضا نکرده' ?>
-                    </span>
-                  </div>
-                  <?php if (($isA && !$contract['user_a_signed']) || (!$isA && !$contract['user_b_signed'])): ?>
-                    <form method="POST">
-                      <?= csrf_field() ?>
-                      <input type="hidden" name="action" value="sign_contract">
-                      <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="bi bi-pencil"></i> امضای قرارداد
-                      </button>
-                    </form>
-                  <?php endif; ?>
-                </div>
-              </div>
-            <?php elseif ($currentStep['id'] == 6): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">زمان ارسال کالا رو ثبت کنید.</p>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);">
-                <div class="card" style="margin:0;">
-                  <div class="card-body">
-                    <h6>زمان شما</h6>
-                    <?php if (($isA && $trade['user_a_shipping_date']) || (!$isA && $trade['user_b_shipping_date'])): ?>
-                      <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i>
-                        ثبت شده:
-                        <?= h($isA ? $trade['user_a_shipping_date'] : $trade['user_b_shipping_date']) ?>
-                        •
-                        <?= h($isA ? $trade['user_a_shipping_time'] : $trade['user_b_shipping_time']) ?>
-                      </div>
-                    <?php else: ?>
-                      <form method="POST">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="set_shipping">
-                        <div class="form-group">
-                          <label class="form-label">تاریخ ارسال</label>
-                          <input type="date" name="shipping_date" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                          <label class="form-label">ساعت ارسال</label>
-                          <input type="time" name="shipping_time" class="form-control" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm mt-2">ثبت زمان ارسال</button>
-                      </form>
-                    <?php endif; ?>
-                  </div>
-                  <div class="card-body">
-                    <h6>زمان طرف مقابل</h6>
-                    <?php if ((!$isA && $trade['user_a_shipping_date']) || ($isA && $trade['user_b_shipping_date'])): ?>
-                      <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i>
-                        ثبت شده:
-                        <?= h($isA ? $trade['user_b_shipping_date'] : $trade['user_a_shipping_date']) ?>
-                        •
-                        <?= h($isA ? $trade['user_b_shipping_time'] : $trade['user_a_shipping_time']) ?>
-                      </div>
-                    <?php else: ?>
-                      <div style="color:var(--text-secondary);">در انتظار طرف مقابل...</div>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </div>
-            <?php elseif ($currentStep['id'] ==7): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">بعد از ارسال واقعی کالا، وضعیت ارسال را ثبت کنید.</p>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);">
-                <div class="card" style="margin:0;">
-                  <div class="card-body">
-                    <h6>وضعیت شما</h6>
-                    <?php if (($isA && !empty($trade['user_a_delivered'])) || (!$isA && !empty($trade['user_b_delivered']))): ?>
-                      <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i>
-                        ارسال شما ثبت شده است
-                      </div>
-                    <?php else: ?>
-                      <form method="POST">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="mark_shipped">
-                        <button type="submit" class="btn btn-primary btn-sm mt-2">کالا را ارسال کردم</button>
-                      </form>
-                    <?php endif; ?>
-                  </div>
-                </div>
-                <div class="card" style="margin:0;">
-                  <div class="card-body">
-                    <h6>وضعیت طرف مقابل</h6>
-                    <?php if ((!$isA && !empty($trade['user_a_delivered'])) || ($isA && !empty($trade['user_b_delivered']))): ?>
-                      <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i>
-                        ارسال طرف مقابل ثبت شده است
-                      </div>
-                    <?php else: ?>
-                      <div style="color:var(--text-secondary);">در انتظار طرف مقابل...</div>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </div>
-            <?php elseif ($currentStep['id'] ==8): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">بعد از ارسال، کد رهگیری هر دو طرف را ثبت کنید.</p>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);">
-                <div class="card" style="margin:0;">
-                  <div class="card-body">
-                    <h6>کد رهگیری شما</h6>
-                    <?php if (($isA && !empty($trade['tracking_code_a'])) || (!$isA && !empty($trade['tracking_code_b']))): ?>
-                      <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i>
-                        <?= h($isA ? $trade['tracking_code_a'] : $trade['tracking_code_b']) ?>
-                      </div>
-                    <?php else: ?>
-                      <form method="POST">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="save_tracking">
-                        <div class="form-group">
-                          <label class="form-label">کد رهگیری</label>
-                          <input type="text" name="tracking_code" class="form-control" required placeholder="کد رهگیری را وارد کنید">
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                          <i class="bi bi-upc-scan"></i> ثبت کد رهگیری
-                        </button>
-                      </form>
-                    <?php endif; ?>
-                  </div>
-                </div>
-                <div class="card" style="margin:0;">
-                  <div class="card-body">
-                    <h6>کد رهگیری طرف مقابل</h6>
-                    <?php if ((!$isA && !empty($trade['tracking_code_a'])) || ($isA && !empty($trade['tracking_code_b']))): ?>
-                      <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i>
-                        <?= h($isA ? $trade['tracking_code_b'] : $trade['tracking_code_a']) ?>
-                      </div>
-                    <?php else: ?>
-                      <div style="color:var(--text-secondary);">در انتظار طرف مقابل...</div>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </div>
-            <?php elseif ($currentStep['id'] ==9): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">بعد از رسیدن کالا، دریافت را تایید کنید.</p>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-4);">
-                <div class="card" style="margin:0;">
-                  <div class="card-body">
-                    <h6>وضعیت شما</h6>
-                    <?php if (($isA && !empty($trade['user_a_received'])) || (!$isA && !empty($trade['user_b_received']))): ?>
-                      <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i> دریافت شما تایید شده است
-                      </div>
-                    <?php else: ?>
-                      <form method="POST">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="confirm_received">
-                        <button type="submit" class="btn btn-primary">
-                          <i class="bi bi-box"></i> کالا را دریافت کردم
-                        </button>
-                      </form>
-                    <?php endif; ?>
-                  </div>
-                </div>
-                <div class="card" style="margin:0;">
-                  <div class="card-body">
-                    <h6>وضعیت طرف مقابل</h6>
-                    <?php if ((!$isA && !empty($trade['user_a_received'])) || ($isA && !empty($trade['user_b_received']))): ?>
-                      <div style="color:var(--success);">
-                        <i class="bi bi-check-circle"></i> طرف مقابل هم دریافت را تایید کرده
-                      </div>
-                    <?php else: ?>
-                      <div style="color:var(--text-secondary);">در انتظار تایید طرف مقابل...</div>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </div>
-            <?php elseif ($currentStep['id'] ==10): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">هر دو طرف کالا را گرفته‌اند. حالا معامله را نهایی کنید.</p>
-              <form method="POST">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="confirm_trade">
-                <button type="submit" class="btn btn-accent btn-lg">
-                  <i class="bi bi-check-circle"></i> تایید نهایی معامله
-                </button>
-              </form>
-            <?php elseif ($currentStep['id'] ==11): ?>
-              <p style="margin-bottom:var(--sp-3);color:var(--text-secondary)">معامله کامل شده؛ امتیاز شما باقی مانده است.</p>
-              <form method="POST" action="<?= APP_URL ?>/api/review.php" style="display:grid;gap:var(--sp-3);max-width:420px;">
-                <?= csrf_field() ?>
-                <input type="hidden" name="trade_id" value="<?= $tradeId ?>">
-                <input type="hidden" name="to_user_id" value="<?= $otherId ?>">
-                <div class="form-group">
-                  <label class="form-label">امتیاز به معامله</label>
-                  <select name="trade_rating" class="form-control" required>
-                    <option value="5">5</option>
-                    <option value="4">4</option>
-                    <option value="3">3</option>
-                    <option value="2">2</option>
-                    <option value="1">1</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">امتیاز به طرف مقابل</label>
-                  <select name="user_rating" class="form-control" required>
-                    <option value="5">5</option>
-                    <option value="4">4</option>
-                    <option value="3">3</option>
-                    <option value="2">2</option>
-                    <option value="1">1</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">نظر</label>
-                  <textarea name="comment" class="form-control" rows="3" placeholder="اختیاری"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">ثبت امتیاز</button>
-              </form>
-            <?php endif; ?>
-
-          </div>
+      <div class="st-topbar__title-block">
+        <div class="st-topbar__title">
+          اتاق امن معامله
+          <span class="st-topbar__title-badge">#<?= $tradeId ?></span>
         </div>
-          <?php endif; ?>
+        <div class="st-topbar__subtitle">لطفاً مراحل معامله را فقط از طریق این اتاق دنبال کنید.</div>
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-header" style="display:flex;gap:var(--sp-2)">
-        <a href="?id=<?= $tradeId ?>&tab=chat" class="btn <?= $tab === 'chat' ? 'btn-primary' : 'btn-ghost' ?>">
-          <i class="bi bi-chat"></i> گفتگو
-        </a>
-        <a href="?id=<?= $tradeId ?>&tab=details" class="btn <?= $tab === 'details' ? 'btn-primary' : 'btn-ghost' ?>">
-          <i class="bi bi-info-circle"></i> جزئیات معامله
-        </a>
-      </div>
-      
-      <div class="card-body">
-        <?php if ($tab === 'chat'): ?>
-          <!-- Chat Section -->
-          <div id="messages" style="max-height:500px;overflow-y:auto;margin-bottom:var(--sp-4);padding:var(--sp-3);background:var(--bg);border-radius:var(--radius-md);">
-            <?php if (empty($messages)): ?>
-              <div class="empty-state" style="padding:var(--sp-6);text-align:center">
-                <i class="bi bi-chat-dots" style="font-size:3rem;color:var(--text-muted)"></i>
-                <p class="mt-3" style="color:var(--text-muted)">هنوز پیامی ارسال نشده است</p>
-              </div>
-            <?php else:
-              foreach ($messages as $msg):
-                $isMe = (int)$msg['user_id'] === $uid;
-            ?>
-              <div style="display:flex;justify-content:<?= $isMe ? 'flex-start' : 'flex-end' ?>;margin-bottom:var(--sp-3)">
-                <div class="card" style="margin:0;max-width:70%;<?= $isMe ? 'border-right:4px solid var(--primary)' : 'border-left:4px solid var(--accent)' ?>;">
-                  <div class="card-body" style="padding:var(--sp-3)">
-                    <div class="fs-xs" style="color:var(--text-muted);margin-bottom:var(--sp-1)"><?= h($msg['user_name']) ?> • <?= persian_datetime($msg['created_at']) ?></div>
-                    <div><?= h($msg['body']) ?></div>
-                  </div>
-                </div>
-              </div>
-            <?php endforeach; endif; ?>
-          </div>
-          
-          <form method="POST">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action" value="send_message">
-            <div style="display:flex;gap:var(--sp-2)">
-              <input type="text" name="body" class="form-control" placeholder="پیام خود را بنویسید..." required>
-              <button type="submit" class="btn btn-primary">
-                <i class="bi bi-send"></i>
-              </button>
-            </div>
-          </form>
-        <?php else: ?>
-          <!-- Details Section -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-4);">
-            <div class="card" style="margin:0;">
-              <div class="card-body">
-                <h5>کالاهای معامله</h5>
-                <div style="margin-top:var(--sp-3);">
-                  <div style="font-weight:600;margin-bottom:var(--sp-1)">شما:</div>
-                  <div><?= h($isA ? $trade['listing_a_title'] : $trade['listing_b_title']) ?></div>
-                </div>
-                <div style="margin-top:var(--sp-3);">
-                  <div style="font-weight:600;margin-bottom:var(--sp-1)"><?= h($otherName) ?>:</div>
-                  <div><?= h($isA ? $trade['listing_b_title'] : $trade['listing_a_title']) ?></div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="card" style="margin:0;">
-              <div class="card-body">
-                <h5>وضعیت پرداخت</h5>
-                <div style="margin-top:var(--sp-3);">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-2)">
-                    <span>کارمزد:</span>
-                    <span class="badge badge-<?= $trade['fee_paid'] ? 'success' : 'warning' ?>"><?= $trade['fee_paid'] ? 'پرداخت شده' : 'پرداخت نشده' ?></span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span>مابه‌التفاوت:</span>
-                    <span class="badge badge-<?= $trade['diff_paid'] ? 'success' : 'warning' ?>"><?= $trade['diff_paid'] ? 'پرداخت شده' : 'پرداخت نشده' ?></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="card" style="margin:0;">
-              <div class="card-body">
-                <h5>زمان ارسال</h5>
-                <div style="margin-top:var(--sp-3);">
-                  <?php if (($isA && $trade['user_a_shipping_date']) || (!$isA && $trade['user_b_shipping_date'])): ?>
-                    <div style="margin-bottom:var(--sp-2);">
-                      <div class="fs-xs" style="color:var(--text-muted)">زمان شما:</div>
-                      <div><?= h($isA ? $trade['user_a_shipping_date'] : $trade['user_b_shipping_date']) ?> • <?= h($isA ? $trade['user_a_shipping_time'] : $trade['user_b_shipping_time']) ?></div>
-                    </div>
-                  <?php endif; ?>
-                  <?php if ((!$isA && $trade['user_a_shipping_date']) || ($isA && $trade['user_b_shipping_date'])): ?>
-                    <div style="margin-top:var(--sp-3);">
-                      <div class="fs-xs" style="color:var(--text-muted)">زمان طرف مقابل:</div>
-                      <div><?= h($isA ? $trade['user_b_shipping_date'] : $trade['user_a_shipping_date']) ?> • <?= h($isA ? $trade['user_b_shipping_time'] : $trade['user_a_shipping_time']) ?></div>
-                    </div>
-                  <?php endif; ?>
-                </div>
-              </div>
-            </div>
-          </div>
-        <?php endif; ?>
-      </div>
+    <div class="st-topbar__right">
+      <a href="<?= APP_URL ?>/support" class="st-topbar__btn st-topbar__btn--ghost">
+        <i class="bi bi-question-circle"></i> راهنمای معامله
+      </a>
+      <a href="<?= APP_URL ?>/support" class="st-topbar__btn st-topbar__btn--primary">
+        <i class="bi bi-exclamation-triangle"></i> گزارش مشکل
+      </a>
     </div>
-    
   </div>
 </div>
 
-<?php render_footer(); ?>
+<!-- Main Layout -->
+<div class="st-main">
+
+  <!-- Right Sidebar -->
+  <aside class="st-sidebar">
+    <div class="st-sidebar__brand">
+      <img src="<?= APP_URL ?>/src/img/swapin-dark-png.png" alt="Swapin" class="st-sidebar__logo">
+    </div>
+    <a href="<?= APP_URL ?>/listings/create.php" class="st-sidebar__btn">
+      <i class="bi bi-plus-circle"></i> ثبت آگهی
+    </a>
+    <nav class="st-sidebar__nav">
+      <a href="<?= APP_URL ?>/dashboard.php" class="st-sidebar__nav-link">
+        <i class="bi bi-speedometer2"></i> داشبورد
+      </a>
+      <a href="<?= APP_URL ?>/listings/my.php" class="st-sidebar__nav-link">
+        <i class="bi bi-grid"></i> آگهی‌های من
+      </a>
+      <a href="<?= APP_URL ?>/listings/offers.php" class="st-sidebar__nav-link">
+        <i class="bi bi-send"></i> پیشنهادها
+      </a>
+      <a href="<?= APP_URL ?>/messages.php" class="st-sidebar__nav-link">
+        <i class="bi bi-chat-dots"></i> پیام‌ها
+      </a>
+      <a href="<?= APP_URL ?>/listings/saved.php" class="st-sidebar__nav-link">
+        <i class="bi bi-heart"></i> علاقه‌مندی
+      </a>
+      <a href="<?= APP_URL ?>/trades.php" class="st-sidebar__nav-link st-sidebar__nav-link--active">
+        <i class="bi bi-shield-lock"></i> اتاق‌های معامله
+      </a>
+      <a href="<?= APP_URL ?>/wallet.php" class="st-sidebar__nav-link">
+        <i class="bi bi-wallet2"></i> کیف پول
+      </a>
+      <a href="<?= APP_URL ?>/profile/edit.php" class="st-sidebar__nav-link">
+        <i class="bi bi-gear"></i> تنظیمات
+      </a>
+      <a href="<?= APP_URL ?>/support" class="st-sidebar__nav-link">
+        <i class="bi bi-headset"></i> پشتیبانی
+      </a>
+    </nav>
+    <div class="st-sidebar__pro">
+      <div class="st-sidebar__pro-icon"><i class="bi bi-gem"></i></div>
+      <div class="st-sidebar__pro-title">اشتراک حرفه‌ای</div>
+      <div class="st-sidebar__pro-desc">آگهی نامحدود + گزارش پیشرفته</div>
+      <a href="<?= APP_URL ?>/subscription.php" class="st-sidebar__pro-cta">مشاهده پلن‌ها</a>
+    </div>
+  </aside>
+
+  <!-- Center Column -->
+  <div class="st-center">
+
+    <!-- Trade Header (Buyer ↔ Seller) -->
+    <div class="st-trade-header">
+      <div class="st-party">
+        <div class="st-party__avatar"><?= mb_substr($user['name'], 0, 1) ?></div>
+        <div class="st-party__name">شما</div>
+        <div class="st-party__meta"><?= $user['city'] ?? 'شهر نامشخص' ?></div>
+      </div>
+
+      <div class="st-exchange-badge">
+        <div class="st-exchange-badge__arrow"><i class="bi bi-arrow-left-right"></i></div>
+        <div class="st-exchange-badge__status">معامله در حال انجام</div>
+      </div>
+
+      <div class="st-party">
+        <div class="st-party__avatar"><?= mb_substr($otherName, 0, 1) ?></div>
+        <div class="st-party__name"><?= h($otherName) ?></div>
+        <div class="st-party__meta">طرف مقابل</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="st-tabs">
+      <button class="st-tab <?= $tab === 'chat' ? 'st-tab--active' : '' ?>" onclick="location.href='?id=<?= $tradeId ?>&tab=chat'">
+        <i class="bi bi-chat-dots"></i> ارتباط
+      </button>
+      <button class="st-tab <?= $tab === 'shipping' ? 'st-tab--active' : '' ?>" onclick="location.href='?id=<?= $tradeId ?>&tab=shipping'">
+        <i class="bi bi-truck"></i> ارسال
+      </button>
+      <button class="st-tab <?= $tab === 'contract' ? 'st-tab--active' : '' ?>" onclick="location.href='?id=<?= $tradeId ?>&tab=contract'">
+        <i class="bi bi-file-text"></i> قرارداد
+      </button>
+      <button class="st-tab <?= $tab === 'details' ? 'st-tab--active' : '' ?>" onclick="location.href='?id=<?= $tradeId ?>&tab=details'">
+        <i class="bi bi-box-seam"></i> تحویل
+      </button>
+      <button class="st-tab <?= $tab === 'status' ? 'st-tab--active' : '' ?>" onclick="location.href='?id=<?= $tradeId ?>&tab=status'">
+        <i class="bi bi-check-circle"></i> وضعیت معامله
+      </button>
+      <button class="st-tab <?= $tab === 'rating' ? 'st-tab--active' : '' ?>" onclick="location.href='?id=<?= $tradeId ?>&tab=rating'">
+        <i class="bi bi-star"></i> امتیازدهی
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <?php if ($tab === 'chat'): ?>
+      <div class="st-chat">
+        <div class="st-chat__header">
+          <div class="st-chat__header-left">
+            <div class="st-chat__header-icon"><i class="bi bi-lock"></i></div>
+            <div>
+              <div class="st-chat__header-title">گفتگوی امن</div>
+              <div class="st-chat__header-desc">تمام پیام‌ها در محیط امن ذخیره می‌شوند.</div>
+            </div>
+          </div>
+        </div>
+        <div class="st-chat__messages" id="chat-messages">
+          <?php if (empty($messages)): ?>
+            <div class="st-chat__empty">
+              <i class="bi bi-chat-dots"></i>
+              <p>هنوز پیامی ارسال نشده است.</p>
+            </div>
+          <?php else: foreach ($messages as $msg):
+            $isMe = (int)$msg['user_id'] === $uid;
+          ?>
+            <div class="st-message <?= $isMe ? 'st-message--user' : 'st-message--other' ?>">
+              <?php if (!$isMe): ?>
+                <div class="st-message__avatar"><?= mb_substr($msg['user_name'], 0, 1) ?></div>
+              <?php endif; ?>
+              <div class="st-message__bubble">
+                <div class="st-message__text"><?= h($msg['body']) ?></div>
+                <div class="st-message__meta">
+                  <span><?= persian_date($msg['created_at']) ?></span>
+                  <?php if ($isMe): ?>
+                    <i class="bi bi-check-all"></i>
+                  <?php endif; ?>
+                </div>
+              </div>
+              <?php if ($isMe): ?>
+                <div class="st-message__avatar"><?= mb_substr($user['name'], 0, 1) ?></div>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; endif; ?>
+        </div>
+        <div class="st-chat__input">
+          <div class="st-chat__attach">
+            <button class="st-chat__attach-btn" title="فایل"><i class="bi bi-paperclip"></i></button>
+            <button class="st-chat__attach-btn" title="گالری"><i class="bi bi-image"></i></button>
+            <button class="st-chat__attach-btn" title="ویس"><i class="bi bi-mic"></i></button>
+          </div>
+          <form method="POST" class="st-chat__input-wrap" style="flex: 1; display: flex; align-items: center; gap: 10px;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="send_message">
+            <input type="text" name="body" placeholder="پیام خود را بنویسید..." autocomplete="off">
+          </form>
+          <button class="st-chat__send-btn" onclick="this.closest('.st-chat__input').querySelector('form').submit();">
+            <i class="bi bi-send"></i>
+          </button>
+        </div>
+      </div>
+    <?php else: ?>
+      <div class="st-card" style="padding: 30px;">
+        <h4 style="margin-bottom: 16px; color: #081B45; font-weight: 800;">
+          <i class="bi bi-tools"></i> بخش در حال توسعه
+        </h4>
+        <p style="color: #6b7280;">این بخش به‌زودی کامل می‌شود. لطفاً از بخش گفتگو استفاده کنید.</p>
+      </div>
+    <?php endif; ?>
+
+  </div>
+
+  <!-- Left Column: Summary Cards -->
+  <div class="st-left">
+
+    <!-- Product Swap -->
+    <div class="st-card">
+      <div class="st-card__title"><i class="bi bi-arrow-left-right"></i> کالاهای معامله</div>
+      <div class="st-product-swap">
+        <div class="st-product">
+          <?php if ($myProduct['img']): ?>
+            <img src="<?= h($myProduct['img']) ?>" class="st-product__img" alt="">
+          <?php else: ?>
+            <div class="st-product__img"><i class="bi bi-image" style="opacity: .3; font-size: 1.5rem;"></i></div>
+          <?php endif; ?>
+          <div class="st-product__info">
+            <div class="st-product__name"><?= h($myProduct['title']) ?></div>
+            <div class="st-product__price">
+              <?php if ($myProduct['val']): ?>
+                ~<?= fmt_credit($myProduct['val']) ?>
+              <?php else: ?>
+                قیمت ثبت نشده
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+        <div class="st-swap-arrow"><i class="bi bi-arrow-down-up"></i></div>
+        <div class="st-product">
+          <?php if ($otherProduct['img']): ?>
+            <img src="<?= h($otherProduct['img']) ?>" class="st-product__img" alt="">
+          <?php else: ?>
+            <div class="st-product__img"><i class="bi bi-image" style="opacity: .3; font-size: 1.5rem;"></i></div>
+          <?php endif; ?>
+          <div class="st-product__info">
+            <div class="st-product__name"><?= h($otherProduct['title']) ?></div>
+            <div class="st-product__price">
+              <?php if ($otherProduct['val']): ?>
+                ~<?= fmt_credit($otherProduct['val']) ?>
+              <?php else: ?>
+                قیمت ثبت نشده
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Price Difference -->
+    <?php if ($amountToPay > 0): ?>
+      <div class="st-card st-diff">
+        <div class="st-diff__amount"><?= fmt_credit($amountToPay) ?></div>
+        <div class="st-diff__label"><?= $iOwe ? 'مبلغی که شما باید پرداخت کنید' : 'مبلغی که شما دریافت می‌کنید' ?></div>
+      </div>
+    <?php endif; ?>
+
+    <!-- Fees + Diff Status -->
+    <div class="st-card">
+      <div class="st-card__title"><i class="bi bi-cash-coin"></i> وضعیت پرداخت‌ها</div>
+      <div class="st-status-row">
+        <span class="st-status-row__label">شما (کارمزد)</span>
+        <span class="st-status-badge st-status-badge--<?= $trade['fee_paid'] ? 'paid' : 'pending' ?>">
+          <?= $trade['fee_paid'] ? 'پرداخت شده' : 'پرداخت نشده' ?>
+        </span>
+      </div>
+      <div class="st-status-row">
+        <span class="st-status-row__label">طرف مقابل (کارمزد)</span>
+        <span class="st-status-badge st-status-badge--<?= $trade['fee_paid'] ? 'paid' : 'pending' ?>">
+          <?= $trade['fee_paid'] ? 'پرداخت شده' : 'در انتظار' ?>
+        </span>
+      </div>
+      <?php if ($amountToPay > 0): ?>
+      <div class="st-status-row">
+        <span class="st-status-row__label">مابه‌التفاوت</span>
+        <span class="st-status-badge st-status-badge--<?= $trade['diff_paid'] ? 'paid' : 'pending' ?>">
+          <?= $trade['diff_paid'] ? 'پرداخت شده' : 'پرداخت نشده' ?>
+        </span>
+      </div>
+      <?php endif; ?>
+      <button class="st-details-btn">مشاهده جزئیات معامله</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Right Column: Timeline + Support (In main for desktop, separate for mobile; we place below for now for ease of layout with grid swap) -->
+<div class="st-main" style="padding-top:0; margin-top:-24px;">
+  <div style="grid-column:3;"></div>
+  <div class="st-right" style="margin-top:-24px;">
+
+    <!-- Timeline -->
+    <div class="st-card st-timeline-card">
+      <div class="st-timeline-card__title"><i class="bi bi-list-check"></i> وضعیت معامله</div>
+      <div class="st-timeline">
+        <?php
+        $timelineSteps = [
+            1 => 'پیشنهاد ثبت شد',
+            2 => 'پیشنهاد پذیرفته شد',
+            3 => 'کارمزد پرداخت شد',
+            4 => 'مابه‌التفاوت پرداخت شد',
+            5 => 'کالا آماده ارسال',
+            6 => 'کالا ارسال شد',
+            7 => 'کالا تحویل داده شد',
+            8 => 'تایید نهایی',
+            9 => 'پایان معامله'
+        ];
+        // Calculate current step:
+        $currentStep = null;
+        foreach (array_reverse($timelineSteps, true) as $id => $label) {
+            if (get_step_status($id, $trade, $contract, (bool)$myReview) === 'current') {
+                $currentStep = $id; break;
+            } elseif (get_step_status($id, $trade, $contract, (bool)$myReview) === 'completed' && !$currentStep) {
+                $currentStep = $id + 1;
+            }
+        }
+        if (!$currentStep) $currentStep = 3;
+        ?>
+        <?php foreach ($timelineSteps as $id => $label):
+          $status = get_step_status($id, $trade, $contract, (bool)$myReview);
+          $class = '';
+          if ($status === 'completed') $class = 'st-timeline-item--done';
+          if ($id === $currentStep) $class = 'st-timeline-item--current';
+        ?>
+          <div class="st-timeline-item <?= $class ?>">
+            <div class="st-timeline-item__dot"></div>
+            <div class="st-timeline-item__text">
+              <i class="bi bi-check"></i> <?= $label ?>
+              <?php if ($id === $currentStep): ?>
+                <span class="st-timeline-item__badge">در حال انجام</span>
+              <?php endif; ?>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <!-- Support Card -->
+    <div class="st-card st-support-card">
+      <div class="st-support-card__icon"><i class="bi bi-headset"></i></div>
+      <div class="st-support-card__title">نیاز به کمک دارید؟</div>
+      <div class="st-support-card__desc">تیم پشتیبانی سواپین آماده پاسخگویی است.</div>
+      <a href="<?= APP_URL ?>/support" class="st-support-card__btn">تماس با پشتیبانی</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- Bottom Section: Shipping & Payment Methods -->
+<div class="st-bottom">
+  <div>
+    <div class="st-section-title">روش ارسال</div>
+    <div class="st-option-cards">
+      <div class="st-option st-option--active">
+        <div style="display:flex; justify-content: space-between; align-items: start; width:100%; gap:10px;">
+          <div class="st-option__icon"><i class="bi bi-lightning-charge"></i></div>
+          <span class="st-option__tag">پیشنهاد ویژه</span>
+        </div>
+        <div class="st-option__name">پیک فوری</div>
+        <div class="st-option__meta">تحویل کمتر از ۲ ساعت</div>
+      </div>
+      <div class="st-option">
+        <div class="st-option__icon"><i class="bi bi-box-seam"></i></div>
+        <div class="st-option__name">پست پیشتاز</div>
+        <div class="st-option__meta">تحویل ۳ تا ۵ روز کاری</div>
+      </div>
+      <div class="st-option">
+        <div class="st-option__icon"><i class="bi bi-shield-check"></i></div>
+        <div class="st-option__name">ارسال امن سواپین</div>
+        <div class="st-option__meta">با بیمه کامل</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="st-section-title">روش پرداخت اختلاف</div>
+    <div class="st-option-cards">
+      <div class="st-option st-option--active">
+        <div class="st-option__icon"><i class="bi bi-cash-stack"></i></div>
+        <div class="st-option__name">پرداخت نقدی</div>
+        <div class="st-option__meta">از کیف پول شما</div>
+      </div>
+      <div class="st-option">
+        <div class="st-option__icon"><i class="bi bi-calendar-check"></i></div>
+        <div class="st-option__name">پرداخت اقساطی (BNPL)</div>
+        <div class="st-option__meta">در ۳ قسط</div>
+      </div>
+      <div class="st-option">
+        <div class="st-option__icon"><i class="bi bi-handbag"></i></div>
+        <div class="st-option__name">پرداخت هنگام تحویل</div>
+        <div class="st-option__meta">به صورت حضوری</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<?php if ($success): ?>
+  <div style="position:fixed; top:100px; right:20px; z-index: 300; background:#dcfce7; color:#16a34a; padding:12px 20px; border-radius:12px; font-weight:800; box-shadow:0 8px 24px rgba(0,0,0,.08);">
+    <i class="bi bi-check-circle"></i> <?= h($success) ?>
+  </div>
+<?php endif; ?>
+<?php if ($error || isset($_SESSION['error'])): ?>
+  <div style="position:fixed; top:100px; right:20px; z-index: 300; background:#fee2e2; color:#dc2626; padding:12px 20px; border-radius:12px; font-weight:800; box-shadow:0 8px 24px rgba(0,0,0,.08);">
+    <i class="bi bi-exclamation-circle"></i> <?= h($error ?: $_SESSION['error']) ?>
+  </div>
+  <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
+<script>
+  // Scroll chat to bottom on load
+  const chat = document.getElementById('chat-messages');
+  if (chat) chat.scrollTop = chat.scrollHeight;
+</script>
+
+</body>
+</html>

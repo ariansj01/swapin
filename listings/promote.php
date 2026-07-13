@@ -7,6 +7,10 @@ $user = require_auth();
 $uid  = (int)$user['id'];
 
 $listingId = (int)($_GET['id'] ?? 0);
+$userListings = DB::fetchAll(
+    'SELECT id, title FROM listings WHERE user_id = ? AND status = "active" ORDER BY updated_at DESC, id DESC',
+    [$uid]
+);
 
 $listing = DB::fetch(
     'SELECT l.*,
@@ -218,6 +222,18 @@ ob_start();
       </p>
     </div>
     <div class="promote-header__actions">
+      <?php if (count($userListings) > 1): ?>
+      <form method="GET" action="<?= APP_URL ?>/listings/promote.php" style="margin:0">
+        <label for="promote-listing-switch" class="fs-xs" style="display:block;color:var(--text-muted);margin-bottom:6px">تغییر آگهی</label>
+        <select id="promote-listing-switch" name="id" class="form-control" style="min-width:240px" onchange="this.form.submit()">
+          <?php foreach ($userListings as $userListing): ?>
+          <option value="<?= (int)$userListing['id'] ?>" <?= (int)$userListing['id'] === $listingId ? 'selected' : '' ?>>
+            <?= h(mb_strimwidth($userListing['title'], 0, 45, '…')) ?>
+          </option>
+          <?php endforeach; ?>
+        </select>
+      </form>
+      <?php endif; ?>
       <span class="promote-wallet-chip">
         <i class="bi bi-wallet2"></i> <?= fmt_credit((float)$user['credit_balance']) ?>
       </span>
@@ -413,7 +429,7 @@ render_head('ارتقای آگهی', 'ارتقای آگهی و افزایش با
 render_panel_styles();
 render_navbar($user);
 render_user_panel_open($user, 'promote', [
-    'promote' => APP_URL . '/listings/promote?id=' . $listingId,
+    'promote' => APP_URL . '/listings/promote.php?id=' . $listingId,
 ]);
 echo $content;
 render_user_panel_close();
