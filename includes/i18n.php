@@ -191,6 +191,38 @@ function jalali_to_gregorian(int $jy, int $jm, int $jd): array {
   return [$gy, $gm, $gd];
 }
 
+/**
+ * Parse Jalali date input (e.g. 1404/04/23) to Gregorian Y-m-d for DB storage.
+ */
+function parse_jalali_date_input(string $input): ?string {
+    $input = trim(str_replace(['-', '.'], '/', $input));
+    $input = strtr($input, ['۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9']);
+    $input = strtr($input, ['٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9']);
+    if (!preg_match('/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/', $input, $m)) {
+        return null;
+    }
+    [$gy, $gm, $gd] = jalali_to_gregorian((int)$m[1], (int)$m[2], (int)$m[3]);
+    if ($gm < 1 || $gm > 12 || $gd < 1 || $gd > 31) {
+        return null;
+    }
+    return sprintf('%04d-%02d-%02d', $gy, $gm, $gd);
+}
+
+/**
+ * Parse shipping date from Jalali (1404/04/23) or Gregorian (2025-07-13) input.
+ */
+function parse_shipping_date_input(string $input): ?string {
+    $jalali = parse_jalali_date_input($input);
+    if ($jalali) {
+        return $jalali;
+    }
+    $input = trim($input);
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input)) {
+        return $input;
+    }
+    return null;
+}
+
 function shipping_label(string $method): string {
   return match ($method) {
     'in_person' => 'تحویل حضوری',

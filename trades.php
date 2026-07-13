@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
                 if (isset($result['error'])) {
                     $error = $result['error'];
                 } else {
-                    header('Location: ' . APP_URL . '/trades/view.php?id=' . $result['trade_id'] . '&accepted=1');
+                    header('Location: ' . APP_URL . '/trades/view.php?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
                     exit;
                 }
             }
@@ -244,7 +244,7 @@ $pendingReceivedCount = (int)(DB::fetch(
     [$uid]
 )['c'] ?? 0);
 
-render_head('معاملات من', '', ['canonical' => APP_URL . '/trades']);
+render_head('اتاق امن معاملات', '', ['canonical' => APP_URL . '/trades']);
 render_navbar($user);
 ?>
 <style>
@@ -262,7 +262,7 @@ render_navbar($user);
       <a href="<?= APP_URL ?>/dashboard.php" style="color:var(--text-muted);font-size:.875rem">
         <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
       </a>
-      <h2 class="mt-3">معاملات من</h2>
+      <h2 class="mt-3">اتاق امن معاملات</h2>
     </div>
 
     <?php if ($success): ?>

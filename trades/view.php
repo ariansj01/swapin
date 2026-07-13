@@ -81,21 +81,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $success = 'پیام ارسال شد.';
         }
-    } elseif ($action === 'pay_fee' && !(int)$trade['fee_paid']) {
-        if (!$isA) {
-            $error = 'فقط صاحب آگهی می‌تواند پرداخت کارمزد را آغاز کند.';
-        } else {
-            $result = pay_trade_platform_fee($tradeId);
-            if (isset($result['error'])) {
-                if (isset($result['user_id']) && (int)$result['user_id'] === $uid) {
-                    $_SESSION['error'] = $result['error'];
-                    header('Location: ' . WALLET_TOPUP_URL . '?amount=' . ($result['required_amount'] ?? 0));
-                    exit;
-                }
-                $error = $result['error'];
-            } else {
-                $success = 'کارمزد پلتفرم با موفقیت پرداخت شد.';
+    } elseif ($action === 'pay_fee' && !trade_user_fee_paid($trade, $isA)) {
+        $result = pay_trade_user_fee($tradeId, $uid);
+        if (isset($result['error'])) {
+            if (isset($result['user_id']) && (int)$result['user_id'] === $uid) {
+                $_SESSION['error'] = $result['error'];
+                header('Location: ' . WALLET_TOPUP_URL . '?amount=' . ($result['required_amount'] ?? 0));
+                exit;
             }
+            $error = $result['error'];
+        } elseif (!empty($result['already_paid'])) {
+            $success = 'کارمزد شما قبلاً پرداخت شده است.';
+        } else {
+            $success = 'کارمزد شما با موفقیت پرداخت شد.';
         }
     } elseif ($action === 'pay_diff' && !(int)$trade['diff_paid']) {
         $myBalance = (float)($user['credit_balance'] ?? 0);
@@ -107,7 +105,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = 'اختلاف قیمت با موفقیت پرداخت شد.';
         }
     } elseif ($action === 'sign_contract') {
-        if (sign_trade_contract($tradeId, $uid)) {
+        if (!trade_fees_fully_paid($trade)) {
+            $error = 'ابتدا هر دو طرف باید کارمزد خود را پرداخت کنند.';
+        } elseif (sign_trade_contract($tradeId, $uid)) {
             $success = 'قرارداد با موفقیت امضا شد.';
             if (contract_fully_signed($tradeId)) {
                 DB::query('UPDATE trades SET step = 5 WHERE id = ?', [$tradeId]);
@@ -116,27 +116,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'امضای قرارداد ممکن نشد.';
         }
     } elseif ($action === 'set_shipping') {
-        $shippingDate = clean($_POST['shipping_date'] ?? '');
-        $shippingTime = clean($_POST['shipping_time'] ?? '');
-        if ($shippingDate && $shippingTime) {
+        $shippingDateInput = clean($_POST['shipping_date'] ?? '');
+        $shippingTime      = clean($_POST['shipping_time'] ?? '');
+        $shippingMethod    = clean($_POST['shipping_method'] ?? '');
+        $shippingDate      = parse_shipping_date_input($shippingDateInput);
+
+        if (!$shippingDate) {
+            $error = 'تاریخ شمسی را به‌درستی وارد کنید (مثال: ۱۴۰۴/۰۴/۲۳).';
+        } elseif (!$shippingTime) {
+            $error = 'ساعت ارسال را وارد کنید.';
+        } elseif (!in_array($shippingMethod, ['in_person', 'post', 'tipax', 'courier'], true)) {
+            $error = 'روش ارسال را انتخاب کنید.';
+        } else {
             if ($isA) {
                 DB::update('trades', [
-                    'user_a_shipping_date' => $shippingDate,
-                    'user_a_shipping_time' => $shippingTime,
+                    'user_a_shipping_date'   => $shippingDate,
+                    'user_a_shipping_time'   => $shippingTime,
+                    'user_a_shipping_method' => $shippingMethod,
                 ], 'id = ?', [$tradeId]);
             } else {
                 DB::update('trades', [
-                    'user_b_shipping_date' => $shippingDate,
-                    'user_b_shipping_time' => $shippingTime,
+                    'user_b_shipping_date'   => $shippingDate,
+                    'user_b_shipping_time'   => $shippingTime,
+                    'user_b_shipping_method' => $shippingMethod,
                 ], 'id = ?', [$tradeId]);
             }
-            $success = 'زمان ارسال ثبت شد.';
+            $success = 'زمان و روش ارسال ثبت شد.';
             $trade = fetch_trade_room($tradeId, $uid) ?? $trade;
-            if (!empty($trade['user_a_shipping_date']) && !empty($trade['user_b_shipping_date'])) {
+            $aReady = !empty($trade['user_a_shipping_date']) && !empty($trade['user_a_shipping_time']) && !empty($trade['user_a_shipping_method']);
+            $bReady = !empty($trade['user_b_shipping_date']) && !empty($trade['user_b_shipping_time']) && !empty($trade['user_b_shipping_method']);
+            if ($aReady && $bReady) {
                 DB::query('UPDATE trades SET step = 6 WHERE id = ?', [$tradeId]);
             }
-        } else {
-            $error = 'تاریخ و ساعت ارسال را کامل وارد کنید.';
         }
     } elseif ($action === 'mark_shipped') {
         if ($isA) {
@@ -225,10 +236,10 @@ DB::query(
 
 function get_step_status(int $stepId, array $trade, array $contract, bool $hasReview): string
 {
-    $feePaid        = !empty($trade['fee_paid']);
+    $feePaid        = trade_fees_fully_paid($trade);
     $diffPaid       = !empty($trade['diff_paid']);
     $contractSigned = !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
-    $shippingReady  = !empty($trade['user_a_shipping_date']) && !empty($trade['user_b_shipping_date']);
+    $shippingReady  = trade_shipping_fully_scheduled($trade);
     $shipped        = !empty($trade['user_a_delivered']) && !empty($trade['user_b_delivered']);
     $trackingReady  = !empty($trade['tracking_code_a']) && !empty($trade['tracking_code_b']);
     $received       = !empty($trade['user_a_received']) && !empty($trade['user_b_received']);
@@ -250,10 +261,10 @@ function get_step_status(int $stepId, array $trade, array $contract, bool $hasRe
 
 function get_trade_flow_tab(array $trade, array $contract, bool $hasReview): string
 {
-    $feePaid        = !empty($trade['fee_paid']);
+    $feePaid        = trade_fees_fully_paid($trade);
     $diffPaid       = !empty($trade['diff_paid']);
     $contractSigned = !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
-    $shippingReady  = !empty($trade['user_a_shipping_date']) && !empty($trade['user_b_shipping_date']);
+    $shippingReady  = trade_shipping_fully_scheduled($trade);
     $trackingReady  = !empty($trade['tracking_code_a']) && !empty($trade['tracking_code_b']);
     $received       = !empty($trade['user_a_received']) && !empty($trade['user_b_received']);
     $completed      = ($trade['status'] ?? '') === 'completed';
@@ -289,7 +300,7 @@ function get_step_datetime(int $stepId, array $trade, array $contract, bool $has
         return $createdAt;
     }
 
-    if ($stepId === 3 && !empty($trade['fee_paid'])) {
+    if ($stepId === 3 && trade_fees_fully_paid($trade)) {
         return $trade['updated_at'] ?? $createdAt;
     }
 
@@ -330,7 +341,10 @@ function get_step_datetime(int $stepId, array $trade, array $contract, bool $has
 
 $hasReview       = (bool)$myReview;
 $contractSigned  = !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
-$shippingReady   = !empty($trade['user_a_shipping_date']) && !empty($trade['user_b_shipping_date']);
+$shippingReady   = trade_shipping_fully_scheduled($trade);
+$myFeePaid       = trade_user_fee_paid($trade, $isA);
+$theirFeePaid    = trade_user_fee_paid($trade, !$isA);
+$feesFullyPaid   = trade_fees_fully_paid($trade);
 $deliveredByMe   = $isA ? !empty($trade['user_a_delivered']) : !empty($trade['user_b_delivered']);
 $deliveredByThem = $isA ? !empty($trade['user_b_delivered']) : !empty($trade['user_a_delivered']);
 $trackingMine    = $isA ? (string)($trade['tracking_code_a'] ?? '') : (string)($trade['tracking_code_b'] ?? '');
@@ -346,6 +360,9 @@ $myFee = $isA ? $feeA : $feeB;
 
 $allowedTabs = ['chat', 'fee', 'contract', 'diff', 'shipping', 'details', 'final'];
 $recommendedTab = get_trade_flow_tab($trade, $contract, $hasReview);
+if (isset($_GET['accepted'])) {
+    $recommendedTab = trade_fees_fully_paid($trade) ? $recommendedTab : 'fee';
+}
 $requestedTab = clean($_GET['tab'] ?? $recommendedTab);
 $tab = in_array($requestedTab, $allowedTabs, true) ? $requestedTab : $recommendedTab;
 
@@ -370,8 +387,9 @@ $otherProduct = $isA ? [
 ];
 
 $summaryShippingMethod = $shippingReady
-    ? 'ارسال هماهنگ شده بین طرفین'
-    : 'در انتظار انتخاب زمان ارسال';
+    ? shipping_label((string)($isA ? ($trade['user_a_shipping_method'] ?? '') : ($trade['user_b_shipping_method'] ?? '')))
+        . ' / ' . shipping_label((string)($isA ? ($trade['user_b_shipping_method'] ?? '') : ($trade['user_a_shipping_method'] ?? '')))
+    : 'در انتظار انتخاب زمان و روش ارسال';
 $summaryPaymentMethod = $amountToPay > 0
     ? 'کیف پول امن سواپین / نگهداری امانی'
     : 'بدون اختلاف قیمت';
@@ -597,34 +615,35 @@ render_user_panel_open($user, 'trades');
           </h3>
           <div class="trade-room__action">
             <h4>وضعیت کارمزد پلتفرم</h4>
-            <?php if ($trade['fee_paid']): ?>
-              <p>کارمزد پلتفرم با موفقیت پرداخت شده است.</p>
-              <span class="trade-room__pill trade-room__pill--success">کارمزد پرداخت شده</span>
-            <?php else: ?>
-              <p>برای ادامه معامله، کارمزد پلتفرم باید پرداخت شود.</p>
-              <div class="trade-room__meta-box" style="margin: var(--sp-4) 0;">
-                <div class="trade-room__meta-line">
-                  <span>کارمزد شما</span>
-                  <strong><?= fmt_credit($myFee) ?></strong>
-                </div>
-                <div class="trade-room__meta-line">
-                  <span>کارمزد طرف مقابل</span>
-                  <strong><?= fmt_credit($isA ? $feeB : $feeA) ?></strong>
-                </div>
+            <p>هر طرف باید کارمزد خودش را جداگانه پرداخت کند.</p>
+            <div class="trade-room__meta-box" style="margin: var(--sp-4) 0;">
+              <div class="trade-room__meta-line">
+                <span><?= h($trade['user_a_name']) ?> (کارمزد: <?= fmt_credit($feeA) ?>)</span>
+                <span class="<?= trade_user_fee_paid($trade, true) ? 'trade-room__pill trade-room__pill--success' : 'trade-room__pill trade-room__pill--warning' ?>">
+                  <?= trade_user_fee_paid($trade, true) ? 'پرداخت شده' : 'در انتظار' ?>
+                </span>
               </div>
-              <?php if ($isA): ?>
-                <div class="trade-room__notice">با تایید، کارمزد هر دو طرف از کیف پول کسر می‌شود.</div>
-                <form method="POST" class="trade-room__cta-row">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="action" value="pay_fee">
-                  <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-check-circle"></i> تایید و پرداخت کارمزد
-                  </button>
-                </form>
-              <?php else: ?>
-                <div class="trade-room__notice">در انتظار پرداخت کارمزد توسط صاحب آگهی هستیم.</div>
-                <span class="trade-room__pill trade-room__pill--warning">در انتظار پرداخت</span>
-              <?php endif; ?>
+              <div class="trade-room__meta-line">
+                <span><?= h($trade['user_b_name']) ?> (کارمزد: <?= fmt_credit($feeB) ?>)</span>
+                <span class="<?= trade_user_fee_paid($trade, false) ? 'trade-room__pill trade-room__pill--success' : 'trade-room__pill trade-room__pill--warning' ?>">
+                  <?= trade_user_fee_paid($trade, false) ? 'پرداخت شده' : 'در انتظار' ?>
+                </span>
+              </div>
+            </div>
+            <?php if ($feesFullyPaid): ?>
+              <span class="trade-room__pill trade-room__pill--success">کارمزد هر دو طرف پرداخت شد</span>
+            <?php elseif (!$myFeePaid): ?>
+              <div class="trade-room__notice">کارمزد شما: <strong><?= fmt_credit($myFee) ?></strong></div>
+              <form method="POST" class="trade-room__cta-row">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="pay_fee">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="bi bi-check-circle"></i> پرداخت کارمزد من
+                </button>
+              </form>
+            <?php else: ?>
+              <span class="trade-room__pill trade-room__pill--success">کارمزد شما پرداخت شده است</span>
+              <div class="trade-room__notice">در انتظار پرداخت کارمزد توسط طرف مقابل هستیم.</div>
             <?php endif; ?>
           </div>
 
@@ -633,6 +652,9 @@ render_user_panel_open($user, 'trades');
             <i class="bi bi-file-earmark-text"></i>
             تایید قرارداد
           </h3>
+          <?php if (!$feesFullyPaid): ?>
+            <div class="trade-room__notice">ابتدا از تب «پرداخت کارمزد» هر دو طرف باید کارمزد خود را پرداخت کنند.</div>
+          <?php else: ?>
           <div class="trade-room__action">
             <h4>امضای قرارداد</h4>
             <p>هر دو طرف باید قرارداد را امضا کنند تا تب ارسال فعال شود.</p>
@@ -660,6 +682,7 @@ render_user_panel_open($user, 'trades');
               </div>
             <?php endif; ?>
           </div>
+          <?php endif; ?>
 
         <?php elseif ($tab === 'diff'): ?>
           <h3 class="trade-room__card-title">
@@ -699,32 +722,57 @@ render_user_panel_open($user, 'trades');
             <div class="trade-room__stack">
               <div class="trade-room__grid">
                 <div class="trade-room__action">
-                  <h4>زمان ارسال شما</h4>
-                  <?php $myDate = $isA ? ($trade['user_a_shipping_date'] ?? '') : ($trade['user_b_shipping_date'] ?? ''); ?>
-                  <?php $myTime = $isA ? ($trade['user_a_shipping_time'] ?? '') : ($trade['user_b_shipping_time'] ?? ''); ?>
-                  <?php if ($myDate && $myTime): ?>
-                    <p>برای ارسال شما زمان ثبت شده است.</p>
-                    <span class="trade-room__pill trade-room__pill--success"><?= h($myDate) ?> · <?= h($myTime) ?></span>
+                  <h4>زمان و روش ارسال شما</h4>
+                  <?php
+                    $myDate   = $isA ? ($trade['user_a_shipping_date'] ?? '') : ($trade['user_b_shipping_date'] ?? '');
+                    $myTime   = $isA ? ($trade['user_a_shipping_time'] ?? '') : ($trade['user_b_shipping_time'] ?? '');
+                    $myMethod = $isA ? ($trade['user_a_shipping_method'] ?? '') : ($trade['user_b_shipping_method'] ?? '');
+                  ?>
+                  <?php if ($myDate && $myTime && $myMethod): ?>
+                    <p>اطلاعات ارسال شما ثبت شده است.</p>
+                    <span class="trade-room__pill trade-room__pill--success"><?= persian_date($myDate) ?> · <?= h(substr($myTime, 0, 5)) ?></span>
+                    <div class="fs-sm mt-2" style="color:var(--text-muted)">روش: <?= h(shipping_label($myMethod)) ?></div>
                   <?php else: ?>
                     <form method="POST" class="trade-room__stack">
                       <?= csrf_field() ?>
                       <input type="hidden" name="action" value="set_shipping">
-                      <input type="date" name="shipping_date" class="form-control" required>
-                      <input type="time" name="shipping_time" class="form-control" required>
-                      <button type="submit" class="btn btn-primary">ثبت زمان ارسال</button>
+                      <div class="form-group">
+                        <label class="form-label">تاریخ ارسال (شمسی)</label>
+                        <input type="text" name="shipping_date" class="form-control jalali-date-input"
+                               data-jdp data-jdp-only-date placeholder="۱۴۰۴/۰۴/۲۳" autocomplete="off" required>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">ساعت ارسال</label>
+                        <input type="time" name="shipping_time" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">روش ارسال</label>
+                        <select name="shipping_method" class="form-control" required>
+                          <option value="">انتخاب کنید</option>
+                          <option value="in_person">تحویل حضوری</option>
+                          <option value="post">پست</option>
+                          <option value="tipax">تیپاکس</option>
+                          <option value="courier">پیک</option>
+                        </select>
+                      </div>
+                      <button type="submit" class="btn btn-primary">ثبت زمان و روش ارسال</button>
                     </form>
                   <?php endif; ?>
                 </div>
 
                 <div class="trade-room__action">
-                  <h4>زمان ارسال طرف مقابل</h4>
-                  <?php $theirDate = $isA ? ($trade['user_b_shipping_date'] ?? '') : ($trade['user_a_shipping_date'] ?? ''); ?>
-                  <?php $theirTime = $isA ? ($trade['user_b_shipping_time'] ?? '') : ($trade['user_a_shipping_time'] ?? ''); ?>
-                  <?php if ($theirDate && $theirTime): ?>
-                    <p>زمان ارسال طرف مقابل مشخص شده است.</p>
-                    <span class="trade-room__pill trade-room__pill--success"><?= h($theirDate) ?> · <?= h($theirTime) ?></span>
+                  <h4>زمان و روش ارسال طرف مقابل</h4>
+                  <?php
+                    $theirDate   = $isA ? ($trade['user_b_shipping_date'] ?? '') : ($trade['user_a_shipping_date'] ?? '');
+                    $theirTime   = $isA ? ($trade['user_b_shipping_time'] ?? '') : ($trade['user_a_shipping_time'] ?? '');
+                    $theirMethod = $isA ? ($trade['user_b_shipping_method'] ?? '') : ($trade['user_a_shipping_method'] ?? '');
+                  ?>
+                  <?php if ($theirDate && $theirTime && $theirMethod): ?>
+                    <p>اطلاعات ارسال طرف مقابل مشخص شده است.</p>
+                    <span class="trade-room__pill trade-room__pill--success"><?= persian_date($theirDate) ?> · <?= h(substr($theirTime, 0, 5)) ?></span>
+                    <div class="fs-sm mt-2" style="color:var(--text-muted)">روش: <?= h(shipping_label($theirMethod)) ?></div>
                   <?php else: ?>
-                    <div class="trade-room__notice">هنوز طرف مقابل زمان ارسال خودش را ثبت نکرده است.</div>
+                    <div class="trade-room__notice">هنوز طرف مقابل زمان و روش ارسال خودش را ثبت نکرده است.</div>
                   <?php endif; ?>
                 </div>
               </div>
@@ -947,7 +995,11 @@ render_user_panel_open($user, 'trades');
         <div class="trade-room__subcard">
           <div class="trade-room__subcard-title">روش ارسال</div>
           <div class="trade-room__muted" style="margin-bottom:8px;"><?= h($summaryShippingMethod) ?></div>
-          <div class="trade-room__pill trade-room__pill--warning" style="font-size:.75rem;">پیک فوری</div>
+          <?php if ($shippingReady): ?>
+          <div class="trade-room__pill trade-room__pill--success" style="font-size:.75rem;"><?= h(shipping_label((string)($isA ? ($trade['user_a_shipping_method'] ?? '') : ($trade['user_b_shipping_method'] ?? '')))) ?></div>
+          <?php else: ?>
+          <div class="trade-room__pill trade-room__pill--warning" style="font-size:.75rem;">در انتظار</div>
+          <?php endif; ?>
         </div>
         <div class="trade-room__subcard">
           <div class="trade-room__subcard-title">روش تسویه</div>
@@ -962,24 +1014,20 @@ render_user_panel_open($user, 'trades');
 <?php render_user_panel_close(); ?>
 <?php render_panel_scripts(); ?>
 
-<!-- Persian (Jalali) Date Picker (Vanilla JS) -->
-<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.4/dist/jalaali.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fa.js"></script>
+<!-- Persian (Jalali) Date Picker -->
+<link rel="stylesheet" href="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css">
+<script src="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize Flatpickr with Persian locale
-  const dateInputs = document.querySelectorAll('input[name="shipping_date"]');
-  dateInputs.forEach(function(input) {
-    flatpickr(input, {
-      locale: 'fa',
-      dateFormat: 'Y-m-d',
-      altInput: true,
-      altFormat: 'j F Y',
-      altInputClass: 'form-control'
+  if (typeof jalaliDatepicker !== 'undefined') {
+    jalaliDatepicker.startWatch({
+      minDate: 'today',
+      time: false,
+      autoHide: true,
+      separatorChars: { date: '/' },
+      zIndex: 9999,
     });
-  });
+  }
 });
 </script>
 <?php render_footer(); ?>

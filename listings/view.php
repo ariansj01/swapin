@@ -63,7 +63,7 @@ $myOffer = $user ? DB::fetch(
 
 // User's active listings for offer
 $myListings = $user ? DB::fetchAll(
-    'SELECT l.id, l.title, i.filename AS thumb
+    'SELECT l.id, l.title, l.condition, l.estimated_value, i.filename AS thumb
      FROM listings l
      LEFT JOIN listing_images i ON i.listing_id = l.id AND i.is_primary = 1
      WHERE l.user_id = ? AND l.status = "active" AND l.review_status = "approved" AND l.id != ?
@@ -107,7 +107,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $offerType = clean($_POST['offer_type'] ?? 'message');
             $offerListingId = (int)($_POST['offer_listing_id'] ?? 0) ?: null;
             $message        = clean($_POST['message'] ?? '');
-
+            $creditDirection = clean($_POST['credit_direction'] ?? 'none');
+            $creditAmount    = (float)preg_replace('/[^\d.]/', '', (string)($_POST['credit_amount'] ?? '0'));
+            $offerCredit     = 0.0;
+            if ($creditDirection === 'pay' && $creditAmount > 0) {
+                $offerCredit = $creditAmount;
+            } elseif ($creditDirection === 'receive' && $creditAmount > 0) {
+                $offerCredit = -$creditAmount;
+            }
 
             if ($offerType === 'item') {
                 if (!$myListings) {
@@ -133,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     'listing_id'       => $id,
                     'from_user_id'     => $user['id'],
                     'offer_listing_id' => $offerListingId,
-
+                    'offer_credit'     => $offerCredit,
                     'message'          => $message ?: null,
                     'status'           => 'pending',
                 ]);
@@ -192,6 +199,15 @@ $listingUrl = APP_URL . '/listings/view?id=' . $id;
 $ogImage    = $images ? UPLOAD_URL . $images[0]['filename'] : LOGO_URL;
 $metaDesc   = mb_strimwidth(strip_tags($listing['description']), 0, 160, '…');
 
+$wantChips = array_values(array_filter(array_map(
+    'trim',
+    preg_split('/[,،]+/u', (string)($listing['want_in_return'] ?? ''))
+)));
+$tradeAccepted = $user && $listing['trade_id']
+    && ((int)$user['id'] === (int)$listing['user_a_id'] || (int)$user['id'] === (int)$listing['user_b_id']);
+$canOfferMobile = !$isOwner && $listing['status'] === 'active' && !$myOffer && !$tradeAccepted;
+$loginRedirect = APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $id);
+
 render_head($listing['title'], $metaDesc, [
     'canonical' => $listingUrl,
     'og_type'   => 'product',
@@ -208,6 +224,7 @@ render_head($listing['title'], $metaDesc, [
 ]);
 render_navbar($user);
 ?>
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-view-mobile.css">
 
 <?php if (isset($_GET['pending']) || $reviewStatus === 'pending'): ?>
 <div class="alert alert-warning" style="border-radius:0;border-inline-start:0;border-inline-end:0">
@@ -222,7 +239,269 @@ render_navbar($user);
 </div>
 <?php endif; ?>
 
-<main id="main-content" class="section-sm">
+<!-- ── Mobile layout ─────────────────────────────────────────────────────── -->
+<main id="main-content" class="lv-mobile" data-listing-id="<?= $id ?>">
+
+  <?php if ($offerError): ?>
+  <div class="lv-alert-mobile lv-alert-mobile--error"><i class="bi bi-exclamation-circle"></i> <?= h($offerError) ?></div>
+  <?php endif; ?>
+  <?php if ($offerSuccess): ?>
+  <div class="lv-alert-mobile lv-alert-mobile--success"><i class="bi bi-check-circle"></i> <?= h($offerSuccess) ?></div>
+  <?php endif; ?>
+
+  <!-- Gallery -->
+  <div class="lv-gallery" aria-label="گالری تصاویر">
+    <div class="lv-gallery__toolbar">
+      <button type="button" class="lv-gallery__btn lv-gallery__btn--back" aria-label="بازگشت">
+        <i class="bi bi-arrow-right"></i>
+      </button>
+      <div class="lv-gallery__actions">
+        <button type="button" id="lv-share-btn" class="lv-gallery__btn" data-title="<?= h($listing['title']) ?>" aria-label="اشتراک‌گذاری">
+          <i class="bi bi-share"></i>
+        </button>
+        <button type="button"
+                class="lv-gallery__btn <?= $isSaved ? 'lv-gallery__btn--saved' : '' ?>"
+                data-save-toggle="<?= $isSaved ? 'true' : 'false' ?>"
+                data-listing-id="<?= $id ?>"
+                aria-label="<?= $isSaved ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها' ?>">
+          <i class="bi bi-<?= $isSaved ? 'heart-fill' : 'heart' ?>"></i>
+        </button>
+      </div>
+    </div>
+
+    <?php if ($images): ?>
+    <div class="lv-gallery__track">
+      <?php foreach ($images as $img): ?>
+      <div class="lv-gallery__slide">
+        <img src="<?= UPLOAD_URL . h($img['filename']) ?>" alt="<?= h($listing['title']) ?>" loading="lazy">
+      </div>
+      <?php endforeach; ?>
+    </div>
+    <?php if (count($images) > 1): ?>
+    <div class="lv-gallery__counter" aria-live="polite">۱ از <?= count($images) ?></div>
+    <?php endif; ?>
+    <?php else: ?>
+    <div class="lv-gallery__empty"><i class="bi bi-image"></i></div>
+    <?php endif; ?>
+  </div>
+
+  <div class="lv-body">
+    <h1 class="lv-title"><?= h($listing['title']) ?></h1>
+
+    <div class="lv-price-row">
+      <?php if ((float)$listing['estimated_value'] > 0): ?>
+      <div>
+        <span class="lv-price-label">ارزش تقریبی</span>
+        <span class="lv-price"><?= fmt_credit((float)$listing['estimated_value']) ?></span>
+      </div>
+      <?php endif; ?>
+      <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
+      <span class="lv-badge-swap"><i class="bi bi-arrow-left-right"></i> امکان معاوضه</span>
+      <?php endif; ?>
+    </div>
+
+    <!-- Seller -->
+    <div class="lv-seller">
+      <div class="lv-seller__avatar"><?= strtoupper(substr($listing['seller_name'], 0, 1)) ?></div>
+      <div class="lv-seller__info">
+        <div class="lv-seller__name"><?= h($listing['seller_name']) ?></div>
+        <div class="lv-seller__meta">
+          <?php if ($listing['seller_city']): ?><span><?= h($listing['seller_city']) ?></span><?php endif; ?>
+          <span><?= timeago($listing['created_at']) ?></span>
+        </div>
+      </div>
+      <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-seller__link" aria-label="پروفایل فروشنده">
+        <i class="bi bi-chevron-left"></i>
+      </a>
+    </div>
+
+    <!-- Description -->
+    <section class="lv-section">
+      <h2 class="lv-section__title">درباره کالا</h2>
+      <div class="lv-section__card">
+        <p class="lv-desc is-collapsed"><?= h($listing['description']) ?></p>
+        <button type="button" class="lv-read-more">مشاهده بیشتر <i class="bi bi-chevron-down"></i></button>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="lv-section">
+      <h2 class="lv-section__title">ویژگی‌های کالا</h2>
+      <div class="lv-chips">
+        <span class="lv-chip"><?= condition_label($listing['condition']) ?></span>
+        <span class="lv-chip"><i class="bi bi-tag"></i> <?= h($listing['cat_name']) ?></span>
+        <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
+        <span class="lv-chip lv-chip--gold"><i class="bi bi-arrow-left-right"></i> معاوضه</span>
+        <?php endif; ?>
+        <?php if (!empty($listing['inspection_status']) && $listing['inspection_status'] !== 'none'): ?>
+        <span class="lv-chip"><i class="bi bi-search"></i> <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?></span>
+        <?php endif; ?>
+        <?php if ($listing['city']): ?>
+        <span class="lv-chip"><i class="bi bi-geo-alt"></i> <?= h($listing['city']) ?></span>
+        <?php endif; ?>
+      </div>
+    </section>
+
+    <!-- Wants -->
+    <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($listing['want_in_return'])): ?>
+    <section class="lv-want-section">
+      <h2 class="lv-section__title">در ازای این کالا به دنبال چه چیزی است؟</h2>
+      <div class="lv-chips">
+        <?php if ($wantChips): ?>
+          <?php foreach ($wantChips as $chip): ?>
+          <span class="lv-chip lv-chip--gold"><?= h($chip) ?></span>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <span class="lv-chip lv-chip--gold"><?= h($listing['want_in_return']) ?></span>
+        <?php endif; ?>
+      </div>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($isOwner): ?>
+    <section class="lv-section">
+      <div class="lv-section__card">
+        <p class="fs-sm mb-3" style="color:var(--text-muted)"><i class="bi bi-info-circle"></i> این آگهی متعلق به شماست.</p>
+        <a href="<?= APP_URL ?>/listings/edit?id=<?= $id ?>" class="btn btn-outline w-100 mb-2"><i class="bi bi-pencil"></i> ویرایش</a>
+        <a href="<?= APP_URL ?>/listings/offers?id=<?= $id ?>" class="btn btn-primary w-100"><i class="bi bi-inbox"></i> پیشنهادها</a>
+      </div>
+    </section>
+    <?php endif; ?>
+  </div>
+
+  <?php if ($related): ?>
+  <section class="lv-related" aria-label="آگهی‌های مشابه">
+    <h2 class="lv-section__title" style="padding-inline:16px">آگهی‌های مشابه</h2>
+    <div class="listings-grid">
+      <?php foreach ($related as $l): ?>
+      <?php include __DIR__ . '/../includes/listing_card.php'; ?>
+      <?php endforeach; ?>
+    </div>
+  </section>
+  <?php endif; ?>
+
+  <!-- Bottom bar -->
+  <?php if ($canOfferMobile): ?>
+  <div class="lv-bottom-bar">
+    <?php if (!$user): ?>
+    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" data-login-href="<?= h($loginRedirect) ?>">
+      <i class="bi bi-send"></i> ارسال پیشنهاد
+    </button>
+    <?php elseif ($myListings): ?>
+    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer">
+      <i class="bi bi-send"></i> ارسال پیشنهاد
+    </button>
+    <?php else: ?>
+    <a href="<?= APP_URL ?>/listings/create.php" class="lv-bottom-bar__btn" style="text-decoration:none">
+      <i class="bi bi-plus-circle"></i> ثبت کالا برای پیشنهاد
+    </a>
+    <?php endif; ?>
+  </div>
+  <?php elseif ($myOffer): ?>
+  <div class="lv-bottom-bar">
+    <div class="lv-bottom-bar__status"><i class="bi bi-check-circle"></i> پیشنهاد شما در انتظار پاسخ فروشنده است</div>
+  </div>
+  <?php elseif ($tradeAccepted): ?>
+  <div class="lv-bottom-bar">
+    <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="lv-bottom-bar__btn" style="text-decoration:none">
+      <i class="bi bi-arrow-left-right"></i> مشاهده معامله
+    </a>
+  </div>
+  <?php endif; ?>
+</main>
+
+<!-- Offer sheet modal -->
+<div class="lv-sheet" id="lv-offer-sheet" role="dialog" aria-modal="true" aria-labelledby="lv-sheet-title">
+  <div class="lv-sheet__backdrop"></div>
+  <div class="lv-sheet__panel">
+    <div class="lv-sheet__header">
+      <div class="lv-sheet__header-top">
+        <button type="button" class="lv-sheet__close" aria-label="بستن">&times;</button>
+        <h2 class="lv-sheet__title" id="lv-sheet-title">ارسال پیشنهاد برای <?= h($listing['seller_name']) ?></h2>
+      </div>
+      <p class="lv-sheet__subtitle">شما در ازای این کالا چه پیشنهادی دارید؟</p>
+    </div>
+
+    <form method="POST" id="lv-offer-form" class="lv-sheet__form">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="make_offer">
+      <input type="hidden" name="offer_type" value="item">
+      <input type="hidden" name="credit_amount" value="">
+
+      <div class="lv-sheet__body">
+        <div class="lv-sheet__section">
+          <h3 class="lv-sheet__section-title">انتخاب کالای پیشنهادی</h3>
+          <?php if ($myListings): ?>
+          <div class="lv-offer-items">
+            <?php foreach ($myListings as $i => $ml): ?>
+            <label class="lv-offer-item<?= $i === 0 ? ' is-selected' : '' ?>" data-listing-id="<?= $ml['id'] ?>">
+              <input type="radio" class="lv-offer-item__radio" name="offer_listing_id"
+                     value="<?= $ml['id'] ?>" <?= $i === 0 ? 'checked' : '' ?>>
+              <?php if ($ml['thumb']): ?>
+              <img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt="" class="lv-offer-item__thumb">
+              <?php else: ?>
+              <div class="lv-offer-item__thumb lv-offer-item__thumb--empty"><i class="bi bi-image"></i></div>
+              <?php endif; ?>
+              <div class="lv-offer-item__info">
+                <div class="lv-offer-item__title"><?= h($ml['title']) ?></div>
+                <div class="lv-offer-item__meta">
+                  <span><?= condition_label($ml['condition']) ?></span>
+                  <?php if ((float)$ml['estimated_value'] > 0): ?>
+                  <span class="lv-offer-item__price"> · <?= fmt_credit((float)$ml['estimated_value']) ?></span>
+                  <?php endif; ?>
+                </div>
+              </div>
+            </label>
+            <?php endforeach; ?>
+          </div>
+          <?php else: ?>
+          <div class="lv-empty-offer">
+            <p><i class="bi bi-box-seam"></i> برای ارسال پیشنهاد، ابتدا یک کالا ثبت کنید.</p>
+            <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">ثبت کالا</a>
+          </div>
+          <?php endif; ?>
+        </div>
+
+        <div class="lv-sheet__section">
+          <h3 class="lv-sheet__section-title">آیا مایل به پرداخت یا دریافت اختلاف قیمت هستید؟</h3>
+          <div class="lv-radio-group">
+            <div class="lv-radio-option">
+              <input type="radio" name="credit_direction" id="lv-credit-pay" value="pay">
+              <label for="lv-credit-pay">پرداخت می‌کنم</label>
+            </div>
+            <div class="lv-radio-option">
+              <input type="radio" name="credit_direction" id="lv-credit-receive" value="receive">
+              <label for="lv-credit-receive">دریافت می‌کنم</label>
+            </div>
+            <div class="lv-radio-option">
+              <input type="radio" name="credit_direction" id="lv-credit-none" value="none" checked>
+              <label for="lv-credit-none">بدون اختلاف قیمت</label>
+            </div>
+          </div>
+          <div class="lv-credit-amount">
+            <input type="text" class="form-control" id="lv-credit-amount" inputmode="numeric"
+                   placeholder="مبلغ به تومان" autocomplete="off">
+            <p class="lv-credit-amount__hint">مبلغ اختلاف قیمت را وارد کنید</p>
+          </div>
+        </div>
+
+        <div class="lv-sheet__section">
+          <h3 class="lv-sheet__section-title">توضیحات (اختیاری)</h3>
+          <textarea class="lv-sheet__textarea" name="message" rows="4"
+                    placeholder="پیام خود را برای فروشنده بنویسید..."></textarea>
+        </div>
+      </div>
+
+      <div class="lv-sheet__footer">
+        <button type="submit" class="lv-sheet__submit" <?= $myListings ? '' : 'disabled' ?>>
+          <i class="bi bi-send"></i> ارسال پیشنهاد
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<main id="main-content-desktop" class="section-sm lv-desktop">
   <div class="container">
 
     <!-- Breadcrumb -->
@@ -665,5 +944,18 @@ document.getElementById('share-listing-btn')?.addEventListener('click', function
   }
 });
 </script>
+<?php if ($offerError && ($_POST['action'] ?? '') === 'make_offer' && ($_POST['offer_type'] ?? '') === 'item'): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.matchMedia('(max-width: 768px)').matches) return;
+  var sheet = document.getElementById('lv-offer-sheet');
+  if (sheet) {
+    sheet.classList.add('is-open');
+    document.body.classList.add('lv-modal-open');
+  }
+});
+</script>
+<?php endif; ?>
+<script src="<?= APP_URL ?>/src/js/listing-view-mobile.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-view-mobile.js') ?>"></script>
 
 <?php render_footer(); ?>

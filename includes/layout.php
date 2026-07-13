@@ -179,7 +179,7 @@ HTML;
           <a href="{$url}/listings/my" class="dropdown-item"><i class="bi bi-grid"></i> آگهی‌های من</a>
           <a href="{$url}/listings/saved" class="dropdown-item"><i class="bi bi-heart"></i> علاقه‌مندی‌ها</a>
           <a href="{$url}/support" class="dropdown-item"><i class="bi bi-headset"></i> پشتیبانی</a>
-          <a href="{$url}/trades" class="dropdown-item"><i class="bi bi-arrow-left-right"></i> معاملات من</a>
+          <a href="{$url}/trades" class="dropdown-item"><i class="bi bi-arrow-left-right"></i> اتاق امن معاملات</a>
           <a href="{$url}/wallet" class="dropdown-item"><i class="bi bi-wallet2"></i> کیف پول</a>
           <a href="{$url}/subscription" class="dropdown-item"><i class="bi bi-gem"></i> اشتراک</a>
           <a href="{$url}/profile/edit" class="dropdown-item"><i class="bi bi-shield-check"></i> احراز هویت</a>

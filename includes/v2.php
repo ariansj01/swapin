@@ -300,56 +300,52 @@ function accept_trade_offer(int $offerId, int $ownerId, string $message): array 
     return ['trade_id' => $tradeId];
 }
 
-function pay_trade_platform_fee(int $tradeId): array {
-    $trade = DB::fetch(
-        'SELECT t.*, la.estimated_value AS listing_a_value, lb.estimated_value AS listing_b_value
-         FROM trades t
-         JOIN listings la ON la.id = t.listing_a_id
-         LEFT JOIN listings lb ON lb.id = t.listing_b_id
-         WHERE t.id = ?',
-        [$tradeId]
-    );
-    if (!$trade) {
-        return ['error' => 'معامله یافت نشد.'];
+function trade_user_fee_amount(array $trade, bool $isUserA): float {
+    $value = $isUserA
+        ? (float)($trade['listing_a_val'] ?? $trade['listing_a_value'] ?? 0)
+        : (float)($trade['listing_b_val'] ?? $trade['listing_b_value'] ?? 0);
+    return $value * PLATFORM_FEE_RATE;
+}
+
+function trade_user_fee_paid(array $trade, bool $isUserA): bool {
+    $col = $isUserA ? 'user_a_fee_paid' : 'user_b_fee_paid';
+    if (!empty($trade[$col])) {
+        return true;
     }
-    if (!empty($trade['fee_paid'])) {
-        return ['ok' => true];
+    // معاملات قدیمی: قبل از ستون‌های جداگانه فقط fee_paid داشتند
+    return !empty($trade['fee_paid'])
+        && empty($trade['user_a_fee_paid'])
+        && empty($trade['user_b_fee_paid']);
+}
+
+function trade_fees_fully_paid(array $trade): bool {
+    return trade_user_fee_paid($trade, true) && trade_user_fee_paid($trade, false);
+}
+
+function trade_shipping_fully_scheduled(array $trade): bool {
+    $aReady = !empty($trade['user_a_shipping_date'])
+        && !empty($trade['user_a_shipping_time'])
+        && !empty($trade['user_a_shipping_method']);
+    $bReady = !empty($trade['user_b_shipping_date'])
+        && !empty($trade['user_b_shipping_time'])
+        && !empty($trade['user_b_shipping_method']);
+    return $aReady && $bReady;
+}
+
+function maybe_advance_trade_after_fees(int $tradeId): void {
+    $trade = DB::fetch('SELECT * FROM trades WHERE id = ?', [$tradeId]);
+    if (!$trade || !trade_fees_fully_paid($trade)) {
+        return;
     }
 
-    $valueA = (float)($trade['listing_a_value'] ?? 0);
-    $valueB = (float)($trade['listing_b_value'] ?? 0);
-    $feeA   = $valueA * PLATFORM_FEE_RATE;
-    $feeB   = $valueB * PLATFORM_FEE_RATE;
-
-    $userA = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$trade['user_a_id']]);
-    $userB = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$trade['user_b_id']]);
-
-    $userABalance = (float)($userA['credit_balance'] ?? 0);
-    $userBBalance = (float)($userB['credit_balance'] ?? 0);
-
-    if ($userABalance < $feeA) {
-        return [
-            'error'           => 'موجودی کیف پول شما برای پرداخت کارمزد کافی نیست. لطفاً ' . fmt_credit($feeA - $userABalance) . ' به کیف پول خود اضافه کنید.',
-            'user_id'         => (int)$trade['user_a_id'],
-            'required_amount' => $feeA - $userABalance,
-        ];
-    }
-    if ($userBBalance < $feeB) {
-        return ['error' => 'موجودی کیف پول طرف مقابل برای پرداخت کارمزد کافی نیست.'];
+    if (empty($trade['fee_paid'])) {
+        DB::query('UPDATE trades SET fee_paid = 1, step = 2 WHERE id = ?', [$tradeId]);
     }
 
-    credit_transact((int)$trade['user_a_id'], 'fee', -$feeA, 'کارمزد پلتفرم برای معامله #' . $tradeId, [
-        'ref_type' => 'trade',
-        'ref_id'   => $tradeId,
-        'trade_id' => $tradeId,
-    ]);
-    credit_transact((int)$trade['user_b_id'], 'fee', -$feeB, 'کارمزد پلتفرم برای معامله #' . $tradeId, [
-        'ref_type' => 'trade',
-        'ref_id'   => $tradeId,
-        'trade_id' => $tradeId,
-    ]);
-
-    DB::query('UPDATE trades SET fee_paid = 1, step = 2 WHERE id = ?', [$tradeId]);
+    if (!empty($trade['diff_paid'])) {
+        create_trade_contract($tradeId);
+        return;
+    }
 
     $creditDiff = (float)($trade['credit_diff'] ?? 0);
     if ($creditDiff > 0) {
@@ -374,8 +370,82 @@ function pay_trade_platform_fee(int $tradeId): array {
     }
 
     create_trade_contract($tradeId);
+}
+
+function pay_trade_user_fee(int $tradeId, int $userId): array {
+    $trade = DB::fetch(
+        'SELECT t.*, la.estimated_value AS listing_a_value, lb.estimated_value AS listing_b_value
+         FROM trades t
+         JOIN listings la ON la.id = t.listing_a_id
+         LEFT JOIN listings lb ON lb.id = t.listing_b_id
+         WHERE t.id = ?',
+        [$tradeId]
+    );
+    if (!$trade) {
+        return ['error' => 'معامله یافت نشد.'];
+    }
+
+    $isUserA = (int)$trade['user_a_id'] === $userId;
+    $isUserB = (int)$trade['user_b_id'] === $userId;
+    if (!$isUserA && !$isUserB) {
+        return ['error' => 'دسترسی به این معامله ندارید.'];
+    }
+
+    if (trade_user_fee_paid($trade, $isUserA)) {
+        return ['ok' => true, 'already_paid' => true];
+    }
+
+    $fee = trade_user_fee_amount($trade, $isUserA);
+
+    if ($fee <= 0) {
+        if ($isUserA) {
+            DB::query('UPDATE trades SET user_a_fee_paid = 1 WHERE id = ?', [$tradeId]);
+        } else {
+            DB::query('UPDATE trades SET user_b_fee_paid = 1 WHERE id = ?', [$tradeId]);
+        }
+        maybe_advance_trade_after_fees($tradeId);
+        return ['ok' => true];
+    }
+
+    $payer = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$userId]);
+    $balance = (float)($payer['credit_balance'] ?? 0);
+
+    if ($balance < $fee) {
+        return [
+            'error'           => 'موجودی کیف پول شما برای پرداخت کارمزد کافی نیست. لطفاً ' . fmt_credit($fee - $balance) . ' به کیف پول خود اضافه کنید.',
+            'user_id'         => $userId,
+            'required_amount' => $fee - $balance,
+        ];
+    }
+
+    credit_transact($userId, 'fee', -$fee, 'کارمزد پلتفرم برای معامله #' . $tradeId, [
+        'ref_type' => 'trade',
+        'ref_id'   => $tradeId,
+        'trade_id' => $tradeId,
+    ]);
+
+    if ($isUserA) {
+        DB::query('UPDATE trades SET user_a_fee_paid = 1 WHERE id = ?', [$tradeId]);
+    } else {
+        DB::query('UPDATE trades SET user_b_fee_paid = 1 WHERE id = ?', [$tradeId]);
+    }
+
+    maybe_advance_trade_after_fees($tradeId);
 
     return ['ok' => true];
+}
+
+/** @deprecated Use pay_trade_user_fee() — kept for backward compatibility */
+function pay_trade_platform_fee(int $tradeId): array {
+    $trade = DB::fetch('SELECT user_a_id, user_b_id FROM trades WHERE id = ?', [$tradeId]);
+    if (!$trade) {
+        return ['error' => 'معامله یافت نشد.'];
+    }
+    $resultA = pay_trade_user_fee($tradeId, (int)$trade['user_a_id']);
+    if (isset($resultA['error'])) {
+        return $resultA;
+    }
+    return pay_trade_user_fee($tradeId, (int)$trade['user_b_id']);
 }
 
 function request_bnpl(int $tradeId, int $userId, float $amount, int $months = 3): array {

@@ -28,8 +28,18 @@ try {
     if (!in_array('fee_paid', $tradesCols)) {
         DB::query("ALTER TABLE `trades` ADD COLUMN `fee_paid` TINYINT(1) NOT NULL DEFAULT 0 AFTER `step`");
     }
+    if (!in_array('user_a_fee_paid', $tradesCols)) {
+        DB::query("ALTER TABLE `trades` ADD COLUMN `user_a_fee_paid` TINYINT(1) NOT NULL DEFAULT 0 AFTER `fee_paid`");
+    }
+    if (!in_array('user_b_fee_paid', $tradesCols)) {
+        DB::query("ALTER TABLE `trades` ADD COLUMN `user_b_fee_paid` TINYINT(1) NOT NULL DEFAULT 0 AFTER `user_a_fee_paid`");
+    }
+    if (in_array('fee_paid', $tradesCols)) {
+        DB::query("UPDATE `trades` SET `user_a_fee_paid` = 1, `user_b_fee_paid` = 1 WHERE `fee_paid` = 1 AND (`user_a_fee_paid` = 0 OR `user_b_fee_paid` = 0)");
+    }
     if (!in_array('diff_paid', $tradesCols)) {
-        DB::query("ALTER TABLE `trades` ADD COLUMN `diff_paid` TINYINT(1) NOT NULL DEFAULT 0 AFTER `fee_paid`");
+        $afterFeeCol = in_array('user_b_fee_paid', $tradesCols) ? 'user_b_fee_paid' : 'fee_paid';
+        DB::query("ALTER TABLE `trades` ADD COLUMN `diff_paid` TINYINT(1) NOT NULL DEFAULT 0 AFTER `{$afterFeeCol}`");
     }
     if (!in_array('shipping_method', $tradesCols)) {
         DB::query("ALTER TABLE `trades` MODIFY COLUMN `shipping_method` ENUM('in_person','post','tipax','courier','other') COLLATE utf8mb4_unicode_ci DEFAULT NULL");
@@ -45,6 +55,12 @@ try {
     }
     if (!in_array('user_b_shipping_time', $tradesCols)) {
         DB::query("ALTER TABLE `trades` ADD COLUMN `user_b_shipping_time` TIME DEFAULT NULL AFTER `user_b_shipping_date`");
+    }
+    if (!in_array('user_a_shipping_method', $tradesCols)) {
+        DB::query("ALTER TABLE `trades` ADD COLUMN `user_a_shipping_method` ENUM('in_person','post','tipax','courier') COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `user_b_shipping_time`");
+    }
+    if (!in_array('user_b_shipping_method', $tradesCols)) {
+        DB::query("ALTER TABLE `trades` ADD COLUMN `user_b_shipping_method` ENUM('in_person','post','tipax','courier') COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `user_a_shipping_method`");
     }
     if (!in_array('proposed_shipping_date', $tradesCols)) {
         DB::query("ALTER TABLE `trades` ADD COLUMN `proposed_shipping_date` DATE DEFAULT NULL AFTER `user_b_shipping_time`");
