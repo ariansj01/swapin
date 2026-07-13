@@ -97,7 +97,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
 
 function render_admin_footer(): void {
     $url = APP_URL;
-    echo "<script src=\"{$url}/src/js/app.js\"></script></body></html>";
+    echo "<script src=\"{$url}/src/js/app.js?v=" . filemtime(__DIR__ . '/../src/js/app.js') . "\"></script></body></html>";
 }
 
 function admin_flash(): array {

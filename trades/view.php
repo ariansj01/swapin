@@ -420,22 +420,22 @@ render_user_panel_open($user, 'trades');
     </div> -->
   </header>
 
-  <section class="trade-room__status-banner">
-    <i class="bi bi-arrow-left-right"></i>
-    <span>معامله در حال انجام</span>
-  </section>
-
   <!-- Parties Header moved up -->
   <section class="trade-room__card" style="margin-bottom: var(--sp-4);">
-    <div class="trade-room__parties">
-      <div class="trade-room__party">
-        <div class="trade-room__avatar"><?= h(mb_substr($user['name'], 0, 1)) ?></div>
+    <div class="trade-room__parties" style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center;">
+      <div class="trade-room__party" style="text-align: right;">
+        <div class="trade-room__avatar" style="margin-left: auto; margin-right: 0;"><?= h(mb_substr($user['name'], 0, 1)) ?></div>
         <div class="trade-room__party-name">شما</div>
         <div class="trade-room__party-meta"><?= h($user['city'] ?? 'شهر نامشخص') ?></div>
       </div>
 
-      <div class="trade-room__party">
-        <div class="trade-room__avatar"><?= h(mb_substr($otherName, 0, 1)) ?></div>
+      <section class="trade-room__status-banner">
+        <i class="bi bi-arrow-left-right"></i>
+        <span>معامله در حال انجام</span>
+      </section>
+
+      <div class="trade-room__party" style="text-align: left;">
+        <div class="trade-room__avatar" style="margin-right: auto; margin-left: 0;"><?= h(mb_substr($otherName, 0, 1)) ?></div>
         <div class="trade-room__party-name"><?= h($otherName) ?></div>
         <div class="trade-room__party-meta">طرف مقابل</div>
       </div>

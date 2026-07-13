@@ -442,7 +442,7 @@ function render_footer(): void {
 HTML;
     render_support_widget($user);
     echo <<<HTML
-<script src="{$url}/src/js/app.js"></script>
+<script src="{$url}/src/js/app.js?v=<?= filemtime(__DIR__ . '/../src/js/app.js') ?>"></script>
 </body>
 </html>
 HTML;
