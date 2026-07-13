@@ -220,12 +220,15 @@ function get_step_status(int $stepId, array $trade, array $contract, bool $hasRe
 
     if ($stepId === 1 || $stepId === 2) return 'done';
     if ($stepId === 3) return $feePaid ? 'done' : 'current';
-    if ($stepId === 4) return $diffPaid ? 'done' : ($feePaid ? 'current' : 'locked');
-    if ($stepId === 5) return $contractSigned ? 'done' : (($feePaid && $diffPaid) ? 'current' : 'locked');
+    if ($stepId === 4) return $contractSigned ? 'done' : ($feePaid ? 'current' : 'locked');
+    if ($stepId === 5) {
+        global $amountToPay;
+        if ($amountToPay <= 0) return 'done';
+        return $diffPaid ? 'done' : ($contractSigned ? 'current' : 'locked');
+    }
     if ($stepId === 6) return $shippingReady ? 'done' : ($contractSigned ? 'current' : 'locked');
-    if ($stepId === 7) return $trackingReady ? 'done' : ($shippingReady ? 'current' : 'locked');
-    if ($stepId === 8) return $received ? 'done' : ($trackingReady ? 'current' : 'locked');
-    if ($stepId === 9) return ($completed && $hasReview) ? 'done' : ($received ? 'current' : 'locked');
+    if ($stepId === 7) return $received ? 'done' : ($shippingReady ? 'current' : 'locked');
+    if ($stepId === 8) return ($completed && $hasReview) ? 'done' : ($received ? 'current' : 'locked');
     return 'locked';
 }
 
@@ -239,19 +242,27 @@ function get_trade_flow_tab(array $trade, array $contract, bool $hasReview): str
     $received       = !empty($trade['user_a_received']) && !empty($trade['user_b_received']);
     $completed      = ($trade['status'] ?? '') === 'completed';
 
-    if (!$feePaid || !$diffPaid || !$contractSigned) {
+    global $amountToPay;
+
+    if (!$feePaid) {
+        return 'fee';
+    }
+    if (!$contractSigned) {
         return 'contract';
+    }
+    if ($amountToPay > 0 && !$diffPaid) {
+        return 'diff';
     }
     if (!$shippingReady || !$trackingReady) {
         return 'shipping';
     }
-    if (!$received || !$completed) {
+    if (!$received) {
         return 'details';
     }
     if (!$hasReview) {
-        return 'rating';
+        return 'final';
     }
-    return 'status';
+    return 'chat';
 }
 
 $hasReview       = (bool)$myReview;
@@ -299,24 +310,25 @@ $summaryPaymentMethod = $amountToPay > 0
     : 'بدون اختلاف قیمت';
 
 $tabLabels = [
-    'chat'     => 'ارتباط',
-    'contract' => 'قرارداد',
+    'chat'     => 'چت',
+    'fee'      => 'پرداخت کارمزد',
+    'contract' => 'تایید قرارداد',
+    'diff'     => 'پرداخت اختلاف قیمت',
     'shipping' => 'ارسال',
-    'details'  => 'تحویل',
-    'status'   => 'وضعیت معامله',
-    'rating'   => 'امتیازدهی',
+    'details'  => 'دریافت',
+    'final'    => 'تایید نهایی و ثبت نظر',
 ];
 
 // Timeline items mapped to tabs
 $timelineItems = [
-    ['id' => 1, 'title' => 'ثبت پیشنهاد', 'tab' => 'status', 'note' => 'شروع اتاق امن معامله'],
-    ['id' => 2, 'title' => 'پذیرش پیشنهاد', 'tab' => 'status', 'note' => 'هر دو طرف وارد جریان امن شده‌اند'],
-    ['id' => 3, 'title' => 'پرداخت کارمزد', 'tab' => 'contract', 'note' => 'وضعیت کارمزد پلتفرم'],
-    ['id' => 4, 'title' => 'تسویه اختلاف قیمت', 'tab' => 'contract', 'note' => 'در صورت نیاز به مابه‌التفاوت'],
-    ['id' => 5, 'title' => 'قرارداد', 'tab' => 'contract', 'note' => 'امضای دیجیتال هر دو طرف'],
-    ['id' => 6, 'title' => 'ارسال کالا', 'tab' => 'shipping', 'note' => 'زمان ارسال و کد رهگیری'],
-    ['id' => 7, 'title' => 'تحویل کالا', 'tab' => 'details', 'note' => 'دریافت کالا توسط طرفین'],
-    ['id' => 9, 'title' => 'تایید نهایی', 'tab' => 'status', 'note' => 'ثبت نظر و بسته شدن معامله'],
+    ['id' => 1, 'title' => 'ثبت پیشنهاد', 'tab' => 'chat', 'date' => null],
+    ['id' => 2, 'title' => 'پذیرش پیشنهاد', 'tab' => 'chat', 'date' => null],
+    ['id' => 3, 'title' => 'پرداخت کارمزد', 'tab' => 'fee', 'date' => null],
+    ['id' => 4, 'title' => 'تایید قرارداد', 'tab' => 'contract', 'date' => null],
+    ['id' => 5, 'title' => 'پرداخت اختلاف قیمت', 'tab' => 'diff', 'date' => null],
+    ['id' => 6, 'title' => 'ارسال', 'tab' => 'shipping', 'date' => null],
+    ['id' => 7, 'title' => 'دریافت', 'tab' => 'details', 'date' => null],
+    ['id' => 8, 'title' => 'تایید نهایی و ثبت نظر', 'tab' => 'final', 'date' => null],
 ];
 
 render_head('اتاق امن معامله #' . $tradeId, 'اتاق امن معامله و مدیریت مرحله‌به‌مرحله تبادل', [
@@ -395,13 +407,12 @@ render_user_panel_open($user, 'trades');
               <div class="trade-room__timeline-body">
                 <div class="trade-room__timeline-title">
                   <?= h($item['title']) ?>
-                  <?php if ($stepStatus === 'current'): ?>
-                    <span class="trade-room__pill trade-room__pill--warning">مرحله فعال</span>
-                  <?php elseif ($stepStatus === 'done'): ?>
-                    <span class="trade-room__pill trade-room__pill--success">تکمیل شد</span>
+                </div>
+                <div class="trade-room__timeline-note">
+                  <?php if ($stepStatus === 'done' && $item['date']): ?>
+                    <?= persian_date($item['date']) ?>
                   <?php endif; ?>
                 </div>
-                <div class="trade-room__timeline-note"><?= h($item['note']) ?></div>
               </div>
             </a>
           <?php endforeach; ?>
@@ -500,45 +511,28 @@ render_user_panel_open($user, 'trades');
             </button>
           </div>
 
+        <?php elseif ($tab === 'fee'): ?>
+          <h3 class="trade-room__card-title">
+            <i class="bi bi-credit-card"></i>
+            پرداخت کارمزد
+          </h3>
+          <div class="trade-room__action">
+            <h4>وضعیت کارمزد پلتفرم</h4>
+            <?php if ($trade['fee_paid']): ?>
+              <p>کارمزد پلتفرم با موفقیت پرداخت شده است.</p>
+              <span class="trade-room__pill trade-room__pill--success">کارمزد پرداخت شده</span>
+            <?php else: ?>
+              <p>این مرحله باید قبل از ادامه معامله تکمیل شود.</p>
+              <div class="trade-room__notice">کارمزد هنوز پرداخت نشده است. این مرحله از جریان پذیرش پیشنهاد باید تکمیل شود.</div>
+            <?php endif; ?>
+          </div>
+
         <?php elseif ($tab === 'contract'): ?>
           <h3 class="trade-room__card-title">
             <i class="bi bi-file-earmark-text"></i>
-            قرارداد و پرداخت
+            تایید قرارداد
           </h3>
-          <div class="trade-room__grid">
-            <div class="trade-room__action">
-              <h4>کارمزد پلتفرم</h4>
-              <p>این مرحله باید قبل از ادامه معامله تکمیل شود.</p>
-              <?php if ($trade['fee_paid']): ?>
-                <span class="trade-room__pill trade-room__pill--success">کارمزد پرداخت شده</span>
-              <?php else: ?>
-                <div class="trade-room__notice">کارمزد هنوز پرداخت نشده است. این مرحله از جریان پذیرش پیشنهاد باید تکمیل شود.</div>
-              <?php endif; ?>
-            </div>
-
-            <div class="trade-room__action">
-              <h4>اختلاف قیمت</h4>
-              <?php if ($amountToPay <= 0): ?>
-                <p>برای این معامله اختلاف قیمت در نظر گرفته نشده است.</p>
-                <span class="trade-room__pill trade-room__pill--success">نیازی نیست</span>
-              <?php elseif ($trade['diff_paid']): ?>
-                <p>مابه‌التفاوت این معامله با موفقیت در امانت سواپین ثبت شده است.</p>
-                <span class="trade-room__pill trade-room__pill--success">پرداخت شده</span>
-              <?php elseif ($iOwe): ?>
-                <p>شما باید مبلغ <strong><?= fmt_credit($amountToPay) ?></strong> را برای ادامه معامله پرداخت کنید.</p>
-                <form method="POST">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="action" value="pay_diff">
-                  <button type="submit" class="btn btn-accent w-100">پرداخت اختلاف قیمت</button>
-                </form>
-              <?php else: ?>
-                <p>در حال انتظار برای پرداخت اختلاف قیمت توسط طرف مقابل هستیم.</p>
-                <span class="trade-room__pill trade-room__pill--warning">در انتظار</span>
-              <?php endif; ?>
-            </div>
-          </div>
-
-          <div class="trade-room__action" style="margin-top:16px;">
+          <div class="trade-room__action">
             <h4>امضای قرارداد</h4>
             <p>هر دو طرف باید قرارداد را امضا کنند تا تب ارسال فعال شود.</p>
             <div class="trade-room__meta-box">
@@ -566,14 +560,40 @@ render_user_panel_open($user, 'trades');
             <?php endif; ?>
           </div>
 
+        <?php elseif ($tab === 'diff'): ?>
+          <h3 class="trade-room__card-title">
+            <i class="bi bi-cash"></i>
+            پرداخت اختلاف قیمت
+          </h3>
+          <div class="trade-room__action">
+            <h4>اختلاف قیمت</h4>
+            <?php if ($amountToPay <= 0): ?>
+              <p>برای این معامله اختلاف قیمت در نظر گرفته نشده است.</p>
+              <span class="trade-room__pill trade-room__pill--success">نیازی نیست</span>
+            <?php elseif ($trade['diff_paid']): ?>
+              <p>مابه‌التفاوت این معامله با موفقیت در امانت سواپین ثبت شده است.</p>
+              <span class="trade-room__pill trade-room__pill--success">پرداخت شده</span>
+            <?php elseif ($iOwe): ?>
+              <p>شما باید مبلغ <strong><?= fmt_credit($amountToPay) ?></strong> را برای ادامه معامله پرداخت کنید.</p>
+              <form method="POST">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="pay_diff">
+                <button type="submit" class="btn btn-accent w-100">پرداخت اختلاف قیمت</button>
+              </form>
+            <?php else: ?>
+              <p>در حال انتظار برای پرداخت اختلاف قیمت توسط طرف مقابل هستیم.</p>
+              <span class="trade-room__pill trade-room__pill--warning">در انتظار</span>
+            <?php endif; ?>
+          </div>
+
         <?php elseif ($tab === 'shipping'): ?>
           <h3 class="trade-room__card-title">
             <i class="bi bi-truck"></i>
-            ارسال، زمان‌بندی و رهگیری
+            ارسال
           </h3>
 
           <?php if (!$contractSigned): ?>
-            <div class="trade-room__notice">ابتدا از تب «قرارداد» امضای هر دو طرف و پرداخت‌ها را تکمیل کنید.</div>
+            <div class="trade-room__notice">ابتدا از تب «تایید قرارداد» امضای هر دو طرف را تکمیل کنید.</div>
           <?php else: ?>
             <div class="trade-room__stack">
               <div class="trade-room__grid">
@@ -667,7 +687,7 @@ render_user_panel_open($user, 'trades');
         <?php elseif ($tab === 'details'): ?>
           <h3 class="trade-room__card-title">
             <i class="bi bi-box-seam"></i>
-            تحویل و تایید نهایی
+            دریافت
           </h3>
 
           <?php if ($trackingMine === '' || $trackingTheirs === ''): ?>
@@ -697,32 +717,26 @@ render_user_panel_open($user, 'trades');
                 <?php endif; ?>
               </div>
             </div>
-
-            <div class="trade-room__action" style="margin-top:16px;">
-              <h4>تایید نهایی معامله</h4>
-              <?php if (!$receivedAll): ?>
-                <div class="trade-room__notice">بعد از تایید دریافت توسط هر دو طرف، این مرحله فعال می‌شود.</div>
-              <?php elseif ($completedTrade): ?>
-                <span class="trade-room__pill trade-room__pill--success">معامله با موفقیت نهایی شده است</span>
-              <?php else: ?>
-                <p>با تایید نهایی، معامله بسته می‌شود و سپرده آزاد خواهد شد.</p>
-                <form method="POST">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="action" value="confirm_trade">
-                  <button type="submit" class="btn btn-accent">تایید نهایی معامله</button>
-                </form>
-              <?php endif; ?>
-            </div>
           <?php endif; ?>
 
-        <?php elseif ($tab === 'rating'): ?>
+        <?php elseif ($tab === 'final'): ?>
           <h3 class="trade-room__card-title">
-            <i class="bi bi-star"></i>
-            امتیازدهی
+            <i class="bi bi-check-circle"></i>
+            تایید نهایی و ثبت نظر
           </h3>
 
-          <?php if (!$completedTrade): ?>
-            <div class="trade-room__notice">بعد از پایان معامله، این تب برای ثبت امتیاز فعال می‌شود.</div>
+          <?php if (!$receivedAll): ?>
+            <div class="trade-room__notice">ابتدا از تب «دریافت» تایید دریافت توسط هر دو طرف را تکمیل کنید.</div>
+          <?php elseif (!$completedTrade): ?>
+            <div class="trade-room__action" style="margin-bottom: 20px;">
+              <h4>تایید نهایی معامله</h4>
+              <p>با تایید نهایی، معامله بسته می‌شود و سپرده آزاد خواهد شد.</p>
+              <form method="POST">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="confirm_trade">
+                <button type="submit" class="btn btn-accent">تایید نهایی معامله</button>
+              </form>
+            </div>
           <?php elseif ($hasReview): ?>
             <div class="trade-room__notice">امتیاز شما قبلاً ثبت شده است. ممنون از بازخوردتان.</div>
           <?php else: ?>
@@ -734,22 +748,22 @@ render_user_panel_open($user, 'trades');
               <div>
                 <label class="form-label">امتیاز به معامله</label>
                 <select name="trade_rating" class="form-control" required>
-                  <option value="5">5</option>
-                  <option value="4">4</option>
-                  <option value="3">3</option>
-                  <option value="2">2</option>
-                  <option value="1">1</option>
+                  <option value="5">⭐⭐⭐⭐⭐ 5</option>
+                  <option value="4">⭐⭐⭐⭐ 4</option>
+                  <option value="3">⭐⭐⭐ 3</option>
+                  <option value="2">⭐⭐ 2</option>
+                  <option value="1">⭐ 1</option>
                 </select>
               </div>
 
               <div>
                 <label class="form-label">امتیاز به طرف مقابل</label>
                 <select name="user_rating" class="form-control" required>
-                  <option value="5">5</option>
-                  <option value="4">4</option>
-                  <option value="3">3</option>
-                  <option value="2">2</option>
-                  <option value="1">1</option>
+                  <option value="5">⭐⭐⭐⭐⭐ 5</option>
+                  <option value="4">⭐⭐⭐⭐ 4</option>
+                  <option value="3">⭐⭐⭐ 3</option>
+                  <option value="2">⭐⭐ 2</option>
+                  <option value="1">⭐ 1</option>
                 </select>
               </div>
 
@@ -761,53 +775,6 @@ render_user_panel_open($user, 'trades');
               <button type="submit" class="btn btn-primary">ثبت امتیاز</button>
             </form>
           <?php endif; ?>
-
-        <?php else: ?>
-          <h3 class="trade-room__card-title">
-            <i class="bi bi-activity"></i>
-            وضعیت معامله
-          </h3>
-          <div class="trade-room__action">
-            <h4>مرحله پیشنهادی بعد</h4>
-            <p>برای ادامه این معامله، الان بهتر است تب «<?= h($tabLabels[$recommendedTab]) ?>» را تکمیل کنید.</p>
-            <div class="trade-room__cta-row">
-              <a href="?id=<?= $tradeId ?>&tab=<?= h($recommendedTab) ?>" class="btn btn-primary">رفتن به مرحله بعد</a>
-            </div>
-          </div>
-
-          <div class="trade-room__grid" style="margin-top:16px;">
-            <div class="trade-room__action">
-              <h4>وضعیت کلی</h4>
-              <div class="trade-room__meta-box">
-                <div class="trade-room__meta-line">
-                  <span>قرارداد</span>
-                  <span><?= $contractSigned ? 'امضا شده' : 'در انتظار' ?></span>
-                </div>
-                <div class="trade-room__meta-line">
-                  <span>ارسال و رهگیری</span>
-                  <span><?= ($trackingMine !== '' && $trackingTheirs !== '') ? 'تکمیل شده' : 'در جریان' ?></span>
-                </div>
-                <div class="trade-room__meta-line">
-                  <span>تایید دریافت</span>
-                  <span><?= $receivedAll ? 'تکمیل شده' : 'در انتظار' ?></span>
-                </div>
-                <div class="trade-room__meta-line">
-                  <span>پایان معامله</span>
-                  <span><?= $completedTrade ? 'نهایی شده' : 'باز' ?></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="trade-room__action">
-              <h4>راهنمای جریان</h4>
-              <p>منطق صفحه به این صورت است که تایم‌لاین فقط وضعیت را نشان می‌دهد و هر تب، عملیات همان مرحله را در خود دارد.</p>
-              <div class="trade-room__cta-row">
-                <a href="?id=<?= $tradeId ?>&tab=contract" class="btn btn-outline">تب قرارداد</a>
-                <a href="?id=<?= $tradeId ?>&tab=shipping" class="btn btn-outline">تب ارسال</a>
-                <a href="?id=<?= $tradeId ?>&tab=details" class="btn btn-outline">تب تحویل</a>
-              </div>
-            </div>
-          </div>
         <?php endif; ?>
       </section>
     </div>
