@@ -505,14 +505,6 @@ render_user_panel_open($user, 'trades');
     </div>
   </header>
 
-  <!-- Mobile Tab Selector Button -->
-  <div class="trade-room__mobile-tab-btn-container">
-    <button type="button" class="trade-room__mobile-tab-btn" id="openMobileTabsModal">
-      <i class="bi bi-list"></i>
-      <?= h($tabLabels[$tab]) ?>
-    </button>
-  </div>
-
   <!-- Parties Header moved up -->
   <section class="trade-room__card" style="margin-bottom: var(--sp-4);">
     <div class="trade-room__parties" style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center;">
@@ -585,7 +577,11 @@ render_user_panel_open($user, 'trades');
           <?php foreach ($timelineItems as $item): ?>
             <?php $stepStatus = get_step_status($item['id'], $trade, $contract, $hasReview); ?>
             <?php $itemDate = get_step_datetime($item['id'], $trade, $contract, $hasReview); ?>
+            <?php if ($stepStatus === 'current'): ?>
             <a href="?id=<?= $tradeId ?>&tab=<?= h($item['tab']) ?>" class="trade-room__timeline-item trade-room__timeline-item--<?= $stepStatus ?>" style="text-decoration: none; display: block;">
+            <?php else: ?>
+            <div class="trade-room__timeline-item trade-room__timeline-item--<?= $stepStatus ?> trade-room__timeline-item--readonly">
+            <?php endif; ?>
               <div class="trade-room__timeline-dot"></div>
               <div class="trade-room__timeline-body">
                 <div class="trade-room__timeline-title">
@@ -595,7 +591,11 @@ render_user_panel_open($user, 'trades');
                   <div class="trade-room__timeline-note"><?= persian_datetime($itemDate) ?></div>
                 <?php endif; ?>
               </div>
+            <?php if ($stepStatus === 'current'): ?>
             </a>
+            <?php else: ?>
+            </div>
+            <?php endif; ?>
           <?php endforeach; ?>
         </div>
       </section>
@@ -1086,11 +1086,12 @@ render_user_panel_open($user, 'trades');
       <?php if (empty($receivedOffers)): ?>
         <div class="trade-room__chat-empty">هنوز پیشنهادی نیست</div>
       <?php else: ?>
+        <div class="trade-room__offers-grid">
         <?php foreach ($receivedOffers as $offer):
           $statusColors = ['pending' => 'warning', 'accepted' => 'success', 'rejected' => 'danger', 'cancelled' => 'info', 'completed' => 'success'];
           $statusColor = $statusColors[$offer['status']] ?? 'info';
         ?>
-          <div class="trade-room__card" style="margin-bottom: var(--sp-4);">
+          <div class="trade-room__card trade-room__offer-card">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap;">
               <div style="flex:1;min-width:0;">
                 <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3);">
@@ -1145,7 +1146,7 @@ render_user_panel_open($user, 'trades');
               </div>
 
               <?php if ($offer['status'] === 'pending'): ?>
-                <div style="width:100%;min-width:280px;max-width:420px">
+                <div class="trade-room__offer-actions">
                   <form method="POST" class="mb-3" action="<?= APP_URL ?>/trades">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="accept">
@@ -1186,28 +1187,8 @@ render_user_panel_open($user, 'trades');
             </div>
           </div>
         <?php endforeach; ?>
+        </div>
       <?php endif; ?>
-    </div>
-  </div>
-</div>
-
-<!-- Mobile Tabs Modal -->
-<div class="trade-room__modal-overlay" id="mobileTabsModal">
-  <div class="trade-room__modal trade-room__modal--full">
-    <div class="trade-room__modal-header">
-      <h2 class="trade-room__modal-title">مراحل معامله</h2>
-      <button type="button" class="trade-room__modal-close" data-close-modal="mobileTabsModal">
-        <i class="bi bi-x-lg"></i>
-      </button>
-    </div>
-    <div class="trade-room__modal-body">
-      <div class="trade-room__mobile-tabs-list">
-        <?php foreach ($tabLabels as $tabKey => $label): ?>
-          <a href="?id=<?= $tradeId ?>&tab=<?= h($tabKey) ?>" class="trade-room__mobile-tab <?= $tab === $tabKey ? 'trade-room__mobile-tab--active' : '' ?>">
-            <?= h($label) ?>
-          </a>
-        <?php endforeach; ?>
-      </div>
     </div>
   </div>
 </div>
@@ -1233,7 +1214,11 @@ render_user_panel_open($user, 'trades');
             $stepClass .= ' trade-room__mobile-step--active';
           }
         ?>
+          <?php if ($stepStatus === 'current'): ?>
           <a href="?id=<?= $tradeId ?>&tab=<?= h($item['tab']) ?>" class="<?= $stepClass ?>">
+          <?php else: ?>
+          <div class="<?= $stepClass ?> trade-room__mobile-step--readonly">
+          <?php endif; ?>
             <div class="trade-room__mobile-step-dot">
               <?php if ($stepStatus === 'done'): ?>
                 <i class="bi bi-check-lg"></i>
@@ -1248,7 +1233,11 @@ render_user_panel_open($user, 'trades');
                 <div class="trade-room__muted" style="font-size:0.75rem;margin-top:2px;"><?= persian_datetime($itemDate) ?></div>
               <?php endif; ?>
             </div>
+          <?php if ($stepStatus === 'current'): ?>
           </a>
+          <?php else: ?>
+          </div>
+          <?php endif; ?>
         <?php endforeach; ?>
       </div>
     </div>
@@ -1278,11 +1267,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const openOffersBtn = document.getElementById('openOffersModal');
   if (openOffersBtn) {
     openOffersBtn.addEventListener('click', () => openModal('offersModal'));
-  }
-
-  const openMobileTabsBtn = document.getElementById('openMobileTabsModal');
-  if (openMobileTabsBtn) {
-    openMobileTabsBtn.addEventListener('click', () => openModal('mobileTabsModal'));
   }
 
   const openMobileStepsBtn = document.getElementById('openMobileStepsModal');

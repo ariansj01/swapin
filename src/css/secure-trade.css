@@ -1174,6 +1174,7 @@
 .trade-room__timeline-item--current .trade-room__timeline-dot {
   background: #FFC107;
   box-shadow: 0 0 0 4px rgba(255,193,7,.18);
+  animation: trade-room-step-dot-pulse 1.9s ease-in-out infinite;
 }
 
 .trade-room__timeline-body {
@@ -1195,6 +1196,27 @@
 
 .trade-room__timeline-item--current .trade-room__timeline-title {
   color: #B45309;
+}
+
+.trade-room__timeline-item--current .trade-room__timeline-body {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.32);
+  border-radius: 12px;
+  padding: 10px 12px 10px 28px;
+}
+
+.trade-room__timeline-item--done .trade-room__timeline-body,
+.trade-room__timeline-item--locked .trade-room__timeline-body {
+  opacity: 0.92;
+}
+
+@keyframes trade-room-step-dot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 193, 7, 0.08);
+  }
 }
 
 .trade-room__timeline-note {
@@ -1400,13 +1422,28 @@
   padding: 12px;
 }
 
+.trade-room__offers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.trade-room__offer-card {
+  margin-bottom: 0;
+}
+
+.trade-room__offer-actions {
+  width: 100%;
+}
+
 /* Mobile Steps Button */
 .trade-room__mobile-steps-btn-container {
   display: none;
   padding: 0 16px 16px;
 }
 .trade-room__mobile-steps-btn {
-  width: 100%;
+  width: auto;
+  min-width: 168px;
   padding: 14px 16px;
   border-radius: 12px;
   border: none;
@@ -1420,26 +1457,18 @@
   gap: 8px;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+  animation: trade-room-step-pulse 1.9s ease-in-out infinite;
 }
 
-/* Mobile Tab Button */
-.trade-room__mobile-tab-btn-container {
-  display: none;
-  padding: 12px 16px;
-}
-.trade-room__mobile-tab-btn {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--st-border);
-  background: var(--st-card-bg);
-  color: var(--st-primary);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
+@keyframes trade-room-step-pulse {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.24);
+  }
+  50% {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(255, 193, 7, 0.34);
+  }
 }
 
 /* Modal Styles */
@@ -1507,13 +1536,11 @@
   padding: 16px;
   overflow-y: auto;
 }
-.trade-room__mobile-tabs-list,
 .trade-room__mobile-steps-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.trade-room__mobile-tab,
 .trade-room__mobile-step {
   padding: 16px;
   border-radius: 12px;
@@ -1527,15 +1554,19 @@
   align-items: center;
   gap: 12px;
 }
-.trade-room__mobile-tab--active,
 .trade-room__mobile-step--active {
-  background: var(--st-primary);
-  color: white;
-  border-color: var(--st-primary);
+  background: rgba(255, 193, 7, 0.12);
+  color: #8a5b00;
+  border-color: rgba(255, 193, 7, 0.55);
+  animation: trade-room-step-pulse 1.9s ease-in-out infinite;
 }
 .trade-room__mobile-step--done {
   border-color: var(--st-success);
   background: var(--st-success-light);
+}
+.trade-room__mobile-step--readonly,
+.trade-room__timeline-item--readonly {
+  cursor: default;
 }
 .trade-room__mobile-step-dot {
   width: 24px;
@@ -1553,8 +1584,8 @@
   color: white;
 }
 .trade-room__mobile-step--active .trade-room__mobile-step-dot {
-  background: var(--st-primary);
-  color: white;
+  background: var(--st-accent);
+  color: var(--st-primary);
 }
 
 /* Responsive Styles */
@@ -1597,14 +1628,14 @@
   .trade-room__mobile-steps-btn-container {
     display: block;
   }
+  .trade-room__offers-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
   .trade-room__tabs {
     display: none;
-  }
-  .trade-room__mobile-tab-btn-container {
-    display: block;
   }
   .trade-room__hero-right {
     gap: 8px;
@@ -1621,6 +1652,9 @@
   }
   .trade-room__summary-row {
     grid-template-columns: 1fr;
+  }
+  .trade-room__mobile-steps-btn {
+    width: 100%;
   }
 }
 
