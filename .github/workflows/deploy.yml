@@ -34,7 +34,7 @@ jobs:
             fi
 
             [ -d storage ] && chmod -R 775 storage
-            [ -d uploads ] && chmod -R 775 uploads
+            [ -d uploads ] && sudo chmod -R 775 uploads
 
             sudo systemctl reload php8.4-fpm
             sudo systemctl reload nginx
