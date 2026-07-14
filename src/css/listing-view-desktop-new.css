@@ -239,6 +239,14 @@
   font-size: 0.75rem;
   color: var(--lv-muted);
 }
+.lv-seller-name-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.lv-seller-name-link:hover {
+  color: var(--lv-navy);
+}
 .lv-seller-badges {
   display: flex;
   flex-wrap: wrap;

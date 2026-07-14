@@ -315,7 +315,7 @@ render_navbar($user);
     <div class="lv-seller">
       <?= avatar_html($listing['seller_avatar'] ?? null, $listing['seller_name'], 'md') ?>
       <div class="lv-seller__info">
-        <div class="lv-seller__name"><?= h($listing['seller_name']) ?></div>
+        <div class="lv-seller__name"><a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-seller-name-link"><?= h($listing['seller_name']) ?></a></div>
         <div class="lv-seller__meta">
           <?php if ($listing['seller_city']): ?><span><?= h($listing['seller_city']) ?></span><?php endif; ?>
           <span><?= timeago($listing['created_at']) ?></span>

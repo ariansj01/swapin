@@ -3,11 +3,14 @@
  * Simple .env file loader
  */
 function load_env(string $path): void {
-    if (!file_exists($path)) {
+    if (!file_exists($path) || !is_readable($path)) {
         return;
     }
     
-    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $lines = @file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return;
+    }
     foreach ($lines as $line) {
         $line = trim($line);
         if (str_starts_with($line, '#') || strpos($line, '=') === false) {

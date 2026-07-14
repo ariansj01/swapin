@@ -1206,19 +1206,17 @@ render_user_panel_open($user, 'trades');
       <div class="trade-room__mobile-steps-list">
         <?php foreach ($timelineItems as $index => $item):
           $stepStatus = get_step_status($item['id'], $trade, $contract, $hasReview);
-          $isActive = $item['tab'] === $tab;
+          $isCurrent = $stepStatus === 'current';
           $stepClass = 'trade-room__mobile-step';
           if ($stepStatus === 'done') {
-            $stepClass .= ' trade-room__mobile-step--done';
-          } elseif ($isActive || $stepStatus === 'current') {
+            $stepClass .= ' trade-room__mobile-step--done trade-room__mobile-step--readonly';
+          } elseif ($isCurrent) {
             $stepClass .= ' trade-room__mobile-step--active';
+          } else {
+            $stepClass .= ' trade-room__mobile-step--readonly';
           }
         ?>
-          <?php if ($stepStatus === 'current'): ?>
-          <a href="?id=<?= $tradeId ?>&tab=<?= h($item['tab']) ?>" class="<?= $stepClass ?>">
-          <?php else: ?>
-          <div class="<?= $stepClass ?> trade-room__mobile-step--readonly">
-          <?php endif; ?>
+          <button type="button" class="<?= $stepClass ?>" data-step-tab="<?= h($item['tab']) ?>" <?= $isCurrent ? '' : 'disabled' ?>>
             <div class="trade-room__mobile-step-dot">
               <?php if ($stepStatus === 'done'): ?>
                 <i class="bi bi-check-lg"></i>
@@ -1233,12 +1231,26 @@ render_user_panel_open($user, 'trades');
                 <div class="trade-room__muted" style="font-size:0.75rem;margin-top:2px;"><?= persian_datetime($itemDate) ?></div>
               <?php endif; ?>
             </div>
-          <?php if ($stepStatus === 'current'): ?>
-          </a>
-          <?php else: ?>
-          </div>
-          <?php endif; ?>
+          </button>
         <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step Detail Modal -->
+<div class="trade-room__modal-overlay" id="mobileStepDetailModal">
+  <div class="trade-room__modal trade-room__modal--full">
+    <div class="trade-room__modal-header">
+      <h2 class="trade-room__modal-title">مرحله معامله</h2>
+      <button type="button" class="trade-room__modal-close" data-close-modal="mobileStepDetailModal">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="trade-room__modal-body">
+      <div id="mobileStepDetailContent"></div>
+      <div style="margin-top:18px;text-align:right;">
+        <button type="button" class="btn btn-outline" data-close-modal="mobileStepDetailModal">بستن</button>
       </div>
     </div>
   </div>
@@ -1272,6 +1284,32 @@ document.addEventListener('DOMContentLoaded', function() {
   const openMobileStepsBtn = document.getElementById('openMobileStepsModal');
   if (openMobileStepsBtn) {
     openMobileStepsBtn.addEventListener('click', () => openModal('mobileStepsModal'));
+  }
+
+  document.querySelectorAll('.trade-room__mobile-step[data-step-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-step-tab');
+      if (!tab) return;
+      const params = new URLSearchParams(window.location.search);
+      params.set('tab', tab);
+      params.set('mobile_step', '1');
+      window.location.search = params.toString();
+    });
+  });
+
+  const mobileStepDetailModal = document.getElementById('mobileStepDetailModal');
+  const mobileStepDetailContent = document.getElementById('mobileStepDetailContent');
+  if (mobileStepDetailModal && mobileStepDetailContent) {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mobile_step') === '1') {
+      const panel = document.querySelector('.trade-room__panel');
+      if (panel) {
+        mobileStepDetailContent.innerHTML = panel.innerHTML;
+      }
+      openModal('mobileStepDetailModal');
+      params.delete('mobile_step');
+      window.history.replaceState(null, '', window.location.pathname + '?' + params.toString());
+    }
   }
 
   // Close buttons

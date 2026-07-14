@@ -584,6 +584,9 @@ function store_uploaded_image(array $file, string $prefix, string $destDir): ?st
         @chmod($destDir, 0775);
     }
     if (!is_writable($destDir)) {
+        @chmod($destDir, 0777);
+    }
+    if (!is_writable($destDir)) {
         if (function_exists('swapin_debug_log')) {
             swapin_debug_log('upload-dir-not-writable', ['dir' => $destDir]);
         }

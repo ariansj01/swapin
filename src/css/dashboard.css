@@ -950,7 +950,7 @@
     width: 50vw;
     max-width: 50vw;
     z-index: 150;
-    transform: translateX(100%);
+    transform: translateX(200%);
     transition: transform .3s;
     border-radius: 0;
     max-height: none;
