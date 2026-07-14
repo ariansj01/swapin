@@ -606,6 +606,10 @@ p { color: var(--text-secondary); line-height: 1.6; }
   text-align: center;
 }
 
+.login-input-tall {
+  min-height: 66px;
+}
+
 .form-control:focus {
   border-color: var(--primary-light);
   box-shadow: 0 0 0 3px rgba(7,26,51,.12);

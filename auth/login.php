@@ -179,7 +179,7 @@ render_navbar(null);
           <input type="hidden" name="action" value="send_otp">
           <div class="form-group">
             <label class="form-label">شماره تلفن</label>
-            <input type="tel" class="form-control" name="phone" placeholder="09123456789"
+            <input type="tel" class="form-control login-input-tall" name="phone" placeholder="09123456789"
                    autocomplete="tel" inputmode="numeric" maxlength="11" pattern="09[0-9]{9}" required autofocus
                    value="<?= isset($_POST['phone']) ? h($_POST['phone']) : '' ?>">
           </div>
