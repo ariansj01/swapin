@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/dashboard_layout.php';
 
 $user   = require_auth();
 $errors = [];
@@ -50,18 +51,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 render_head('ویرایش پروفایل و KYC');
+render_panel_styles();
 render_navbar($user);
+render_user_panel_open($user, 'settings');
 ?>
 
-<div class="section-sm">
-  <div class="container-md">
-
-    <div class="mb-6">
-      <a href="<?= APP_URL ?>/profile.php" style="color:var(--text-muted);font-size:.875rem">
-        <i class="bi bi-arrow-right"></i> بازگشت به پروفایل
+  <div class="dash-panel settings-layout">
+    <?php render_panel_page_header('پروفایل و KYC', 'برای فروش و دریافت پرداخت، احراز هویت را تکمیل کنید'); ?>
+    <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px">
+      <a href="<?= APP_URL ?>/dashboard" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-right"></i> بازگشت
       </a>
-      <h2 class="mt-3">پروفایل و KYC</h2>
-      <p style="color:var(--text-muted)">برای فروش و دریافت پرداخت، احراز هویت را تکمیل کنید</p>
     </div>
 
     <?php if ($success): ?>
@@ -69,8 +69,7 @@ render_navbar($user);
     <?php endif; ?>
 
     <!-- KYC Status -->
-    <div class="card mb-6">
-      <div class="card-body d-flex align-center gap-4" style="flex-wrap:wrap">
+    <div class="settings-kyc-bar">
         <div style="font-size:2rem;color:var(--primary-light)"><i class="bi bi-shield-check"></i></div>
         <div style="flex:1">
           <div class="fw-700">وضعیت KYC</div>
@@ -90,10 +89,9 @@ render_navbar($user);
         <?php if ($kyc === 'approved'): ?>
         <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> فروشنده تأیید‌شده</span>
         <?php endif; ?>
-      </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6);align-items:start">
+    <div class="settings-grid">
 
       <!-- Profile -->
       <div class="card">
@@ -177,7 +175,7 @@ render_navbar($user);
 
     </div>
   </div>
-</div>
+<?php render_user_panel_close(); ?>
 
 <script>
 document.getElementById('seller-type').addEventListener('change', function() {
@@ -185,4 +183,5 @@ document.getElementById('seller-type').addEventListener('change', function() {
 });
 </script>
 
+<?php render_panel_scripts(); ?>
 <?php render_footer(); ?>

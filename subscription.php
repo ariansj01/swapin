@@ -31,13 +31,12 @@ render_navbar($user);
 ?>
 
 <?php render_user_panel_open($user, 'subscription'); ?>
-  <div class="container">
-
-    <div class="mb-6 text-center">
-      <h2>پلن‌های اشتراک</h2>
-      <p style="color:var(--text-muted);max-width:520px;margin:var(--sp-3) auto 0">
-        آگهی بیشتر، اعتبار بالا بردن، گزارش‌ها و ابزارهای کسب‌وکار را فعال کنید
-      </p>
+  <div class="dash-panel">
+    <?php render_panel_page_header('پلن‌های اشتراک', 'آگهی بیشتر، اعتبار بالا بردن و ابزارهای کسب‌وکار'); ?>
+    <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px">
+      <a href="<?= APP_URL ?>/dashboard" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-right"></i> بازگشت
+      </a>
     </div>
 
     <?php if ($success): ?><div class="alert alert-success mb-5"><i class="bi bi-check-circle"></i> <?= h($success) ?></div><?php endif; ?>

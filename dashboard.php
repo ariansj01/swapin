@@ -47,7 +47,7 @@ $sentOffers = (int)(DB::fetch(
 $recentTx = $dashboardNeedsMigration
     ? []
     : DB::fetchAll(
-        'SELECT * FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5',
+        'SELECT * FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 3',
         [$uid]
     );
 
@@ -59,18 +59,7 @@ $recentListings = DB::fetchAll(
     [$uid]
 );
 
-// Top-performing active listing for performance card
-$perfListing = DB::fetch(
-    'SELECT l.*,
-            (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb,
-            (SELECT COUNT(*) FROM saved_listings WHERE listing_id = l.id) AS saved_count,
-            (SELECT COUNT(*) FROM trade_offers WHERE listing_id = l.id) AS offers_count
-     FROM listings l
-     WHERE l.user_id = ? AND l.status = "active"
-     ORDER BY l.views DESC, l.updated_at DESC
-     LIMIT 1',
-    [$uid]
-);
+// Top-performing active listing for performance card — removed from dashboard UI
 
 // Incoming offers (on my listings)
 $incomingOffers = [];
@@ -155,57 +144,37 @@ render_navbar($user);
 <?php endif; ?>
 
 <?php render_user_panel_open($user, 'dashboard'); ?>
-  <div class="container">
-
-    <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-6);flex-wrap:wrap;gap:var(--sp-3)">
-      <div>
-        <h1 style="font-size:1.5rem;margin:0">خوش آمدید، <?= h(explode(' ', $user['name'])[0]) ?>!</h1>
-        <p style="color:var(--text-muted)">خلاصه‌ای از وضعیت حساب شما ·
-          <a href="#swap-matches" style="font-weight:600">پیشنهادهای معاوضه ↓</a>
-        </p>
-      </div>
-      <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">
+  <div class="dash-panel">
+    <?php render_panel_page_header('سلام، ' . explode(' ', $user['name'])[0] . '!', 'خلاصه حساب شما و میان‌برهای سریع', APP_URL . '/', 'بازگشت به خانه'); ?>
+    <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px">
+      <a href="<?= APP_URL ?>" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-right"></i> بازگشت
+      </a>
+      <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
-    </header>
+    </div>
 
-    <!-- Stats Row -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-8)">
+    <!-- Stats -->
+    <div class="dash-stat-grid" style="grid-template-columns: repeat(4, 1fr);">
       <?php
-      $stats = [
-        ['wallet2',          fmt_num($user['credit_balance']) . ' ' . CREDIT_UNIT, 'موجودی اعتبار',   'primary', APP_URL . '/wallet'],
-        ['grid',             $myListingsCount,                                    'آگهی‌های فعال',  'info',    APP_URL . '/listings/my'],
-        ['inbox',            $pendingOffers,                                      'پیشنهادهای در انتظار',   $pendingOffers > 0 ? 'warning' : 'info', APP_URL . '/trades?tab=received'],
-        ['arrow-left-right', $completedTrades,                                    'معاوضه‌های انجام‌شده', 'success', APP_URL . '/trades'],
-        ['send',             $sentOffers,                                         'پیشنهادهای ارسالی',      'info',    APP_URL . '/trades?tab=offers'],
+      $statIcons = [
+        ['wallet2', 'primary', fmt_num($user['credit_balance']) . ' ' . CREDIT_UNIT, 'موجودی', APP_URL . '/wallet'],
+        ['grid', 'info', fmt_num($myListingsCount), 'آگهی فعال', APP_URL . '/listings/my'],
+        ['inbox', $pendingOffers > 0 ? 'warning' : 'info', fmt_num($pendingOffers), 'پیشنهاد در انتظار', APP_URL . '/trades?tab=received'],
+        ['arrow-left-right', 'success', fmt_num($completedTrades), 'معامله انجام‌شده', APP_URL . '/trades'],
       ];
-      foreach ($stats as [$icon, $val, $label, $color, $link]):
+      foreach ($statIcons as [$icon, $color, $val, $label, $link]):
       ?>
-      <a href="<?= $link ?>" style="text-decoration:none">
-        <div class="card" style="border-<?= in_array($color, ['warning']) && (int)$val > 0 ? 'top' : 'left' ?>:3px solid var(--<?= $color ?>)">
-          <div class="card-body" style="padding:var(--sp-4)">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-2)">
-              <i class="bi bi-<?= $icon ?>" style="font-size:1.25rem;color:var(--<?= $color ?>)"></i>
-              <?php if (is_numeric($val) && (int)$val > 0 && in_array($color, ['warning', 'danger'])): ?>
-              <span class="badge badge-<?= $color ?>"><?= $val ?></span>
-              <?php endif; ?>
-            </div>
-            <div style="font-size:1.5rem;font-weight:800;color:var(--text-primary)"><?= $val ?></div>
-            <div class="fs-sm" style="color:var(--text-muted)"><?= $label ?></div>
-          </div>
-        </div>
+      <a href="<?= $link ?>" class="dash-stat">
+        <span class="dash-stat__icon dash-stat__icon--<?= $color ?>"><i class="bi bi-<?= $icon ?>"></i></span>
+        <span>
+          <div class="dash-stat__value"><?= $val ?></div>
+          <div class="dash-stat__label"><?= h($label) ?></div>
+        </span>
       </a>
       <?php endforeach; ?>
     </div>
-
-    <?php if ($perfListing): ?>
-    <div class="mb-8">
-      <?php
-      $perfListing['link_url'] = APP_URL . '/listings/promote?id=' . (int)$perfListing['id'];
-      include __DIR__ . '/includes/listing_performance_card.php';
-      ?>
-    </div>
-    <?php endif; ?>
 
     <!-- ── Match Hub (AI Matching Engine) ─────────────────────────────── -->
     <div id="swap-matches" class="match-hub mb-8" data-ai-match="1">
@@ -388,10 +357,10 @@ render_navbar($user);
         <?php endif; ?>
 
         <!-- My Listings -->
-        <div class="card mb-6">
-          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-grid" style="color:var(--primary)"></i> آگهی‌های فعال من</h3>
-            <a href="<?= APP_URL ?>/listings/my" class="fs-sm">مشاهده همه</a>
+        <div class="dash-panel-card mb-6">
+          <div class="dash-panel-card__head">
+            <h3><i class="bi bi-grid" style="color:var(--primary)"></i> آگهی‌های فعال من</h3>
+            <a href="<?= APP_URL ?>/listings/my">مشاهده همه</a>
           </div>
           <?php if (empty($recentListings)): ?>
           <div class="card-body">
@@ -403,40 +372,31 @@ render_navbar($user);
             </div>
           </div>
           <?php else: ?>
-          <?php foreach ($recentListings as $listing): ?>
-          <a href="<?= APP_URL ?>/listings/view?id=<?= $listing['id'] ?>"
-             style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:background .15s;cursor:pointer"
-             onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-            <?php if ($listing['thumb']): ?>
-            <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="<?= h($listing['title']) ?>"
-                 style="width:52px;height:52px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0">
-            <?php else: ?>
-            <div style="width:52px;height:52px;border-radius:var(--radius-md);background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="bi bi-image" style="color:var(--text-muted)"></i>
-            </div>
-            <?php endif; ?>
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                <?= h($listing['title']) ?>
-              </div>
-              <div class="fs-xs" style="color:var(--text-muted)">
-                <?php if ($listing['offer_count'] > 0): ?>
-                <span style="color:var(--warning);font-weight:600"><i class="bi bi-inbox"></i> <?= fmt_num($listing['offer_count']) ?> پیشنهاد</span>
-                <?php else: ?>
-                ثبت شده <?= persian_date($listing['created_at']) ?>
-                <?php endif; ?>
-              </div>
-            </div>
-            <div style="display:flex;gap:var(--sp-2)" onclick="event.preventDefault();event.stopPropagation()">
-              <?php if ($listing['offer_count'] > 0): ?>
-              <a href="<?= APP_URL ?>/trades?tab=received" class="btn btn-accent btn-sm">
-                <i class="bi bi-inbox"></i> پیشنهادها
+          <div style="padding:14px 18px">
+            <div class="dash-listings-grid">
+              <?php foreach ($recentListings as $listing): ?>
+              <a href="<?= APP_URL ?>/listings/view?id=<?= $listing['id'] ?>" class="dash-listing-card">
+                <div class="dash-listing-card__thumb">
+                  <?php if ($listing['thumb']): ?>
+                  <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="<?= h($listing['title']) ?>">
+                  <?php else: ?>
+                  <div class="dash-listing-card__thumb--empty"><i class="bi bi-image"></i></div>
+                  <?php endif; ?>
+                </div>
+                <div class="dash-listing-card__body">
+                  <p class="dash-listing-card__title"><?= h($listing['title']) ?></p>
+                  <p class="dash-listing-card__meta">
+                    <?php if ($listing['offer_count'] > 0): ?>
+                    <span style="color:var(--warning);font-weight:600"><i class="bi bi-inbox"></i> <?= fmt_num($listing['offer_count']) ?> پیشنهاد</span>
+                    <?php else: ?>
+                    <?= persian_date($listing['created_at']) ?>
+                    <?php endif; ?>
+                  </p>
+                </div>
               </a>
-              <?php endif; ?>
-              <span class="btn btn-ghost btn-sm">مشاهده</span>
+              <?php endforeach; ?>
             </div>
-          </a>
-          <?php endforeach; ?>
+          </div>
           <?php endif; ?>
         </div>
 
@@ -459,18 +419,19 @@ render_navbar($user);
         </div>
 
         <!-- Transaction History -->
-        <div class="card">
-          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="margin:0;font-size:1rem">تراکنش‌های اخیر</h3>
-            <a href="<?= APP_URL ?>/wallet" class="fs-sm">مشاهده همه</a>
+        <div class="dash-panel-card">
+          <div class="dash-panel-card__head">
+            <h3>تراکنش‌های اخیر</h3>
+            <a href="<?= APP_URL ?>/wallet" class="btn btn-outline btn-sm" style="font-size:.75rem;padding:6px 12px;">مشاهده همه</a>
           </div>
           <?php if (empty($recentTx)): ?>
-          <div class="card-body" style="text-align:center;color:var(--text-muted);font-size:.875rem;padding:var(--sp-8)">
+          <div style="text-align:center;color:var(--text-muted);font-size:.875rem;padding:var(--sp-8)">
             <i class="bi bi-clock-history" style="font-size:2rem;opacity:.3;display:block;margin-bottom:var(--sp-3)"></i>
             هنوز تراکنشی ثبت نشده
           </div>
           <?php else: ?>
-          <?php foreach ($recentTx as $tx): ?>
+          <div class="dash-tx-list">
+          <?php foreach (array_slice($recentTx, 0, 3) as $tx): ?>
           <?php
             $isPos = $tx['amount'] >= 0;
             $typeLabels = [
@@ -483,22 +444,23 @@ render_navbar($user);
             ];
             [$txIcon, $txLabel, $txColor] = $typeLabels[$tx['type']] ?? ['circle', 'تراکنش', 'info'];
           ?>
-          <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-5);border-bottom:1px solid var(--border)">
-            <div style="width:34px;height:34px;border-radius:50%;background:var(--<?= $txColor ?>-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="bi bi-<?= $txIcon ?>" style="color:var(--<?= $txColor ?>)"></i>
+          <div class="dash-tx-item">
+            <div class="dash-tx-item__icon" style="background:var(--<?= $txColor ?>-bg);color:var(--<?= $txColor ?>)">
+              <i class="bi bi-<?= $txIcon ?>"></i>
             </div>
-            <div style="flex:1">
-              <div style="font-weight:600;font-size:.875rem"><?= $txLabel ?></div>
+            <div class="dash-tx-item__body">
+              <div class="dash-tx-item__label"><?= $txLabel ?></div>
               <?php if ($tx['note']): ?>
-              <div class="fs-xs" style="color:var(--text-muted)"><?= h(mb_strimwidth($tx['note'], 0, 40, '…')) ?></div>
+              <div class="dash-tx-item__note"><?= h(mb_strimwidth($tx['note'], 0, 40, '…')) ?></div>
               <?php endif; ?>
-              <div class="fs-xs" style="color:var(--text-muted)"><?= date('M j, g:ia', strtotime($tx['created_at'])) ?></div>
             </div>
-            <div style="font-weight:700;font-size:.9375rem;color:var(--<?= $isPos ? 'success' : 'danger' ?>)">
+            <div style="font-weight:700;font-size:.875rem;color:var(--<?= $isPos ? 'success' : 'danger' ?>)">
               <?= $isPos ? '+' : '' ?><?= fmt_num($tx['amount']) ?>
             </div>
           </div>
           <?php endforeach; ?>
+          </div>
+          <a href="<?= APP_URL ?>/wallet" class="dash-tx-more">نمایش بیشتر ←</a>
           <?php endif; ?>
         </div>
 

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/dashboard_layout.php';
 
 $user   = require_auth();
 $errors = [];
@@ -36,11 +37,18 @@ $statusLabels = support_status_labels();
 render_head('پشتیبانی سواَپین | تیکت‌ها', 'ثبت تیکت و پیگیری درخواست‌های پشتیبانی سواَپین.', [
     'canonical' => APP_URL . '/support',
 ]);
+render_panel_styles();
 render_navbar($user);
+render_user_panel_open($user, 'support');
 ?>
 
-<main id="main-content" class="section-sm">
-  <div class="container-sm">
+  <div class="dash-panel">
+    <?php render_panel_page_header('پشتیبانی', 'ثبت تیکت، گزارش خطا و پیگیری پاسخ‌ها'); ?>
+    <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px">
+      <a href="<?= APP_URL ?>/dashboard" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-right"></i> بازگشت
+      </a>
+    </div>
 
     <div style="text-align:center;padding:var(--sp-6) 0 var(--sp-5)">
       <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:var(--primary);margin-bottom:var(--sp-3)">
@@ -127,6 +135,6 @@ render_navbar($user);
     <?php endif; ?>
 
   </div>
-</main>
-
+<?php render_user_panel_close(); ?>
+<?php render_panel_scripts(); ?>
 <?php render_footer(); ?>

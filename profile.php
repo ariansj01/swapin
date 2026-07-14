@@ -56,102 +56,94 @@ $reviews = DB::fetchAll(
 $swapScore = compute_swap_score($profileId);
 
 render_head(h($profile['name']) . ' — پروفایل');
+render_panel_styles();
 render_navbar($currentUser);
 ?>
 
 <div class="section-sm">
   <div class="container">
+    <div style="margin-bottom:24px">
+      <a href="<?= APP_URL ?>/dashboard" class="btn btn-outline btn-sm"><i class="bi bi-arrow-right"></i> بازگشت</a>
+    </div>
+    
+    <div class="profile-compact">
+      <section class="profile-compact__hero">
+        <div class="profile-compact__top">
+          <div><?= avatar_html($profile['avatar'] ?? null, $profile['name'], 'xl') ?></div>
 
-    <!-- Profile Hero Card -->
-    <div class="card profile-hero mb-6">
-      <div class="profile-hero__cover"></div>
-      <div class="profile-hero__body">
-        <div class="profile-hero__top">
-          <div class="profile-hero__avatar-wrap">
-            <?= avatar_html($profile['avatar'] ?? null, $profile['name'], 'xl') ?>
-          </div>
-
-          <div class="profile-hero__info">
-            <h1 class="profile-hero__name"><?= h($profile['name']) ?></h1>
-            <div class="profile-hero__meta">
+          <div style="flex:1">
+            <h1 class="dash-page-head__title" style="margin-bottom:8px"><?= h($profile['name']) ?></h1>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
               <?php if ($profile['city']): ?>
-              <span class="profile-hero__city"><i class="bi bi-geo-alt"></i> <?= h($profile['city']) ?></span>
+              <span class="badge badge-primary"><i class="bi bi-geo-alt"></i> <?= h($profile['city']) ?></span>
               <?php endif; ?>
               <?php if ($profile['verification_level'] >= 2): ?>
-              <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأیید‌شده</span>
+              <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
               <?php endif; ?>
               <?php if (($profile['kyc_status'] ?? 'none') === 'approved'): ?>
-              <span class="badge badge-success"><i class="bi bi-shield-check"></i> KYC تأیید‌شده</span>
+              <span class="badge badge-success"><i class="bi bi-shield-check"></i> KYC تأییدشده</span>
               <?php endif; ?>
               <?php if (($profile['subscription_plan'] ?? 'none') !== 'none'): ?>
               <span class="badge badge-warning"><i class="bi bi-gem"></i> <?= ucfirst($profile['subscription_plan']) ?></span>
               <?php endif; ?>
             </div>
             <?php if ($profile['bio']): ?>
-            <p class="profile-hero__bio"><?= nl2br(h($profile['bio'])) ?></p>
+            <p class="dash-page-head__sub" style="margin:0;max-width:620px;line-height:1.9"><?= nl2br(h($profile['bio'])) ?></p>
+            <?php else: ?>
+            <p class="dash-page-head__sub" style="margin:0">پروفایل کاربری در سواپین</p>
             <?php endif; ?>
           </div>
 
-          <div class="profile-hero__actions">
+          <div style="display:flex;flex-direction:column;gap:10px">
             <?php if ($isOwnProfile): ?>
-            <a href="<?= APP_URL ?>/profile/edit" class="btn btn-outline">
-              <i class="bi bi-pencil"></i> ویرایش پروفایل
-            </a>
-            <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">
-              <i class="bi bi-plus-lg"></i> ثبت آگهی
-            </a>
+            <a href="<?= APP_URL ?>/profile/edit" class="btn btn-outline"><i class="bi bi-pencil"></i> ویرایش پروفایل</a>
+            <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> ثبت آگهی</a>
             <?php elseif (!$currentUser): ?>
             <a href="<?= APP_URL ?>/auth/login" class="btn btn-primary">ورود</a>
             <?php endif; ?>
           </div>
         </div>
 
-        <div class="profile-hero__stats">
-          <?php if ($profile['rating'] > 0): ?>
-          <div class="profile-hero__stat">
-            <span class="profile-hero__stat-value"><?= fmt_num((float)$profile['rating'], 1) ?></span>
-            <span class="profile-hero__stat-label">امتیاز (<?= fmt_num($reviewCount) ?>)</span>
-          </div>
-          <?php endif; ?>
-          <div class="profile-hero__stat">
-            <span class="profile-hero__stat-value"><?= fmt_num($tradeCount) ?></span>
-            <span class="profile-hero__stat-label">معامله انجام‌شده</span>
-          </div>
-          <div class="profile-hero__stat">
-            <span class="profile-hero__stat-value"><?= fmt_num($listingCount) ?></span>
-            <span class="profile-hero__stat-label">آگهی فعال</span>
-          </div>
-          <div class="profile-hero__stat">
-            <span class="profile-hero__stat-value" style="font-size:1rem"><?= persian_date($profile['created_at']) ?></span>
-            <span class="profile-hero__stat-label">عضو از</span>
-          </div>
-        </div>
-
-        <div class="profile-hero__score swap-score-card">
-          <div class="swap-score-card__header">
-            <span class="swap-score-card__label">Swap Score</span>
-            <span class="swap-score-card__value"><?= fmt_num($swapScore['score']) ?><small>/100</small></span>
-          </div>
-          <div class="swap-score-card__bar">
-            <div class="swap-score-card__fill" style="width:<?= $swapScore['score'] ?>%"></div>
-          </div>
-          <div class="swap-score-card__status"><?= h($swapScore['label']) ?></div>
-          <div class="swap-score-card__breakdown">
-            <?php foreach ($swapScore['breakdown'] as $item): ?>
-            <div class="swap-score-card__item">
-              <span><?= h($item['label']) ?></span>
-              <span><?= fmt_num((int)$item['points']) ?> / <?= fmt_num((int)$item['max']) ?></span>
+        <!-- Stats and Score in same row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px">
+          <div class="profile-compact__stats">
+            <?php if ($profile['rating'] > 0): ?>
+            <div class="profile-compact__stat">
+              <div style="font-size:1.25rem;font-weight:800;color:var(--dash-navy)"><?= fmt_num((float)$profile['rating'], 1) ?></div>
+              <div style="font-size:.75rem;color:var(--text-muted)">امتیاز (<?= fmt_num($reviewCount) ?>)</div>
             </div>
-            <?php endforeach; ?>
+            <?php endif; ?>
+            <div class="profile-compact__stat">
+              <div style="font-size:1.25rem;font-weight:800;color:var(--dash-navy)"><?= fmt_num($tradeCount) ?></div>
+              <div style="font-size:.75rem;color:var(--text-muted)">معامله</div>
+            </div>
+            <div class="profile-compact__stat">
+              <div style="font-size:1.25rem;font-weight:800;color:var(--dash-navy)"><?= fmt_num($listingCount) ?></div>
+              <div style="font-size:.75rem;color:var(--text-muted)">آگهی</div>
+            </div>
+            <div class="profile-compact__stat">
+              <div style="font-size:1rem;font-weight:800;color:var(--dash-navy)"><?= persian_date($profile['created_at']) ?></div>
+              <div style="font-size:.75rem;color:var(--text-muted)">عضو از</div>
+            </div>
+          </div>
+
+          <div class="profile-compact__score">
+            <div class="profile-compact__score-main">
+              <div class="profile-compact__score-ring" style="--pct: <?= (int)$swapScore['score'] ?>">
+                <span><?= fmt_num((int)$swapScore['score']) ?></span>
+              </div>
+              <div>
+                <div class="dash-page-head__title" style="font-size:1rem;margin-bottom:4px">Swap Score</div>
+                <div class="dash-page-head__sub" style="margin:0 0 6px"><?= h($swapScore['label']) ?></div>
+                <div class="badge badge-warning"><i class="bi bi-stars"></i> وضعیت اعتماد</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:var(--sp-6);align-items:start">
-
-      <!-- Listings -->
-      <div>
+      <div class="profile-compact__grid">
+        <div>
         <h3 class="mb-4">آگهی‌های فعال (<?= fmt_num($listingCount) ?>)</h3>
         <?php if (empty($listings)): ?>
         <div class="empty-state" style="padding:var(--sp-10) 0">
@@ -181,7 +173,6 @@ render_navbar($currentUser);
         <?php endif; ?>
       </div>
 
-      <!-- Reviews sidebar -->
       <div>
         <div class="card">
           <div class="card-header">
@@ -215,9 +206,8 @@ render_navbar($currentUser);
           <?php endif; ?>
         </div>
       </div>
-
+      </div>
     </div>
-
   </div>
 </div>
 

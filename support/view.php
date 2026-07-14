@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/dashboard_layout.php';
 
 $user = require_auth();
 $id   = (int)($_GET['id'] ?? 0);
@@ -42,15 +43,13 @@ $catLabels    = support_category_labels();
 $statusLabels = support_status_labels();
 
 render_head('تیکت #' . $id, h($ticket['subject']));
+render_panel_styles();
 render_navbar($user);
+render_user_panel_open($user, 'support');
 ?>
 
-<main id="main-content" class="section-sm">
-  <div class="container-sm">
-
-    <nav style="font-size:.875rem;margin-bottom:var(--sp-4)">
-      <a href="<?= APP_URL ?>/support"><i class="bi bi-arrow-right"></i> بازگشت به پشتیبانی</a>
-    </nav>
+  <div class="dash-panel">
+    <?php render_panel_page_header('جزئیات تیکت', h($ticket['subject']), APP_URL . '/support', 'بازگشت به پشتیبانی'); ?>
 
     <?php if (isset($_GET['created'])): ?>
     <div class="alert alert-success mb-5"><i class="bi bi-check-circle"></i> تیکت شما ثبت شد. به‌زودی پاسخ می‌دهیم.</div>
@@ -100,6 +99,6 @@ render_navbar($user);
     <?php endif; ?>
 
   </div>
-</main>
-
+<?php render_user_panel_close(); ?>
+<?php render_panel_scripts(); ?>
 <?php render_footer(); ?>

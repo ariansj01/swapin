@@ -225,6 +225,7 @@ render_head($listing['title'], $metaDesc, [
 render_navbar($user);
 ?>
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-view-mobile.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-view-mobile.css') ?>">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-view-desktop-new.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-view-desktop-new.css') ?>">
 
 <?php if (isset($_GET['pending']) || $reviewStatus === 'pending'): ?>
 <div class="alert alert-warning" style="border-radius:0;border-inline-start:0;border-inline-end:0">
@@ -501,442 +502,296 @@ render_navbar($user);
   </div>
 </div>
 
-<main id="main-content-desktop" class="section-sm lv-desktop">
+<main id="main-content-desktop" class="lv-desktop">
   <div class="container">
-
-    <!-- Breadcrumb -->
-    <nav aria-label="مسیر صفحه" style="font-size:.875rem;color:var(--text-muted);margin-bottom:var(--sp-5)">
-      <ol style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);list-style:none;margin:0;padding:0">
-        <li><a href="<?= APP_URL ?>/">خانه</a></li>
-        <li aria-hidden="true"><i class="bi bi-chevron-left" style="font-size:.7rem"></i></li>
-        <li><a href="<?= APP_URL ?>/?cat=<?= h($listing['cat_slug']) ?>"><?= h($listing['cat_name']) ?></a></li>
-        <li aria-hidden="true"><i class="bi bi-chevron-left" style="font-size:.7rem"></i></li>
-        <li aria-current="page"><?= h(mb_strimwidth($listing['title'], 0, 40, '…')) ?></li>
-      </ol>
+    <nav class="lv-breadcrumb" aria-label="مسیر صفحه">
+      <a href="<?= APP_URL ?>/">خانه</a>
+      <i class="bi bi-chevron-left"></i>
+      <a href="<?= APP_URL ?>/?cat=<?= h($listing['cat_slug']) ?>"><?= h($listing['cat_name']) ?></a>
+      <i class="bi bi-chevron-left"></i>
+      <span><?= h(mb_strimwidth($listing['title'], 0, 40, '…')) ?></span>
     </nav>
 
-    <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--sp-8);align-items:start">
-
-      <!-- ── Left: Listing Content ─────────────────────────────────── -->
-      <article>
-        <!-- Image Gallery -->
-        <?php if ($images): ?>
-        <figure class="listing-gallery__main is-loading" style="margin-bottom:var(--sp-5)">
-          <div class="skeleton skeleton-block skeleton-block--hero" aria-hidden="true"></div>
-          <img id="main-img" src="<?= UPLOAD_URL . h($images[0]['filename']) ?>"
-               alt="<?= h($listing['title']) ?>"
-               style="width:100%;max-height:480px;object-fit:cover;display:block;border-radius:var(--radius-lg)">
-        </figure>
-        <?php if (count($images) > 1): ?>
-        <nav aria-label="تصاویر آگهی" style="display:flex;gap:var(--sp-3);overflow-x:auto;margin-bottom:var(--sp-5)">
-          <?php foreach ($images as $i => $img): ?>
-          <img src="<?= UPLOAD_URL . h($img['filename']) ?>"
-               alt="تصویر <?= $i+1 ?>"
-               onclick="document.getElementById('main-img').src=this.src;document.querySelectorAll('.thumb-img').forEach(t=>t.style.outline='none');this.style.outline='2.5px solid var(--primary)'"
-               class="thumb-img"
-               style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-md);cursor:pointer;flex-shrink:0;<?= $i===0 ? 'outline:2.5px solid var(--primary)' : '' ?>">
-          <?php endforeach; ?>
-        </nav>
-        <?php endif; ?>
-        <?php else: ?>
-        <figure style="background:var(--bg);border-radius:var(--radius-lg);height:280px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:3rem;margin-bottom:var(--sp-5)" aria-label="بدون تصویر">
-          <i class="bi bi-image" aria-hidden="true"></i>
-        </figure>
-        <?php endif; ?>
-
-        <!-- Listing Details -->
-        <div class="card mb-5">
-          <div class="card-body">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4)">
-              <div>
-                <h1 style="font-size:1.5rem;margin-bottom:var(--sp-2)"><?= h($listing['title']) ?></h1>
-                <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;align-items:center">
-                  <span class="badge badge-<?= ['new'=>'success','like_new'=>'success','good'=>'info','fair'=>'warning','poor'=>'danger'][$listing['condition']] ?>">
-                    <?= condition_label($listing['condition']) ?>
-                  </span>
-                  <span class="badge badge-primary"><i class="bi bi-tag"></i> <?= h($listing['cat_name']) ?></span>
-                  <span class="badge badge-gold"><i class="bi bi-arrow-left-right"></i> معاوضه</span>
-                  <?php if (!empty($listing['inspection_status']) && $listing['inspection_status'] !== 'none'): ?>
-                  <span class="badge badge-warning"><i class="bi bi-search"></i> <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?></span>
-                  <?php endif; ?>
-                  <?= listing_promotion_badges_html($listing) ?>
-                  <?php if ($listing['city']): ?>
-                  <span style="font-size:.875rem;color:var(--text-muted)"><i class="bi bi-geo-alt"></i> <?= h($listing['city']) ?></span>
-                  <?php endif; ?>
-                  <span style="font-size:.8125rem;color:var(--text-muted)"><i class="bi bi-clock"></i> <?= timeago($listing['created_at']) ?></span>
-                  <span style="font-size:.8125rem;color:var(--text-muted)"><i class="bi bi-eye"></i> <?= number_format($listing['views']) ?> بازدید</span>
-                </div>
-              </div>
-              <?php if ($listing['estimated_value'] > 0): ?>
-              <div style="text-align:left;flex-shrink:0">
-                <div style="font-size:.75rem;color:var(--text-muted)">ارزش تقریبی</div>
-                <div style="font-size:1.5rem;font-weight:800;color:var(--accent-dark)"><?= fmt_credit((float)$listing['estimated_value']) ?></div>
-              </div>
-              <?php endif; ?>
-            </div>
+    <div class="lv-main-grid">
+      <div class="lv-left-col">
+        <section class="lv-gallery-section">
+          <div class="lv-gallery-main">
+            <?php if ($images): ?>
+            <img id="lv-main-img" src="<?= UPLOAD_URL . h($images[0]['filename']) ?>" alt="<?= h($listing['title']) ?>">
+            <?php else: ?>
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--lv-muted);font-size:3rem"><i class="bi bi-image"></i></div>
+            <?php endif; ?>
           </div>
-        </div>
-
-        <!-- Description -->
-        <div class="card mb-5">
-          <div class="card-header"><h3 style="margin:0;font-size:1rem">توضیحات</h3></div>
-          <div class="card-body">
-            <p style="white-space:pre-wrap;line-height:1.7"><?= h($listing['description']) ?></p>
+          <?php if ($images && count($images) > 1): ?>
+          <div class="lv-gallery-thumbs" aria-label="تصاویر آگهی">
+            <?php foreach ($images as $i => $img): ?>
+            <img src="<?= UPLOAD_URL . h($img['filename']) ?>"
+                 alt="تصویر <?= $i + 1 ?>"
+                 class="lv-gallery-thumb<?= $i === 0 ? ' active' : '' ?>"
+                 onclick="document.getElementById('lv-main-img').src=this.src;document.querySelectorAll('.lv-gallery-thumb').forEach(function(t){t.classList.remove('active')});this.classList.add('active')">
+            <?php endforeach; ?>
           </div>
-        </div>
+          <?php endif; ?>
+        </section>
 
-        <!-- What Seller Wants -->
-        <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
-        <div class="card mb-5" style="border-color:rgba(0,174,239,.25);background:rgba(0,174,239,.02)">
-          <div class="card-header" style="border-color:rgba(0,174,239,.2)">
-            <div style="display:flex;align-items:center;gap:var(--sp-3)">
-              <div style="width:36px;height:36px;background:var(--gradient-brand);border-radius:50%;display:flex;align-items:center;justify-content:center">
-                <i class="bi bi-arrow-left-right" style="color:#fff"></i>
-              </div>
-              <div>
-                <h3 style="margin:0;font-size:1rem">در ازای آن می‌خواهد</h3>
-                <div class="fs-xs" style="color:var(--text-muted)">
-                  <?= ['item'=>'به دنبال یک کالا','service'=>'به دنبال یک خدمت','credit'=>'به دنبال اعتبار ' . CREDIT_UNIT,'any'=>'به هر نوع معامله‌ای باز است'][$listing['want_type']] ?>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="card-body">
-            <p style="font-size:1.0625rem;font-weight:500;line-height:1.6"><?= h($listing['want_in_return']) ?></p>
-          </div>
-        </div>
-        <?php endif; ?>
+        <section class="lv-details-section">
+          <h1 class="lv-title"><?= h($listing['title']) ?></h1>
 
-        <!-- Related Listings -->
+          <div class="lv-meta-top">
+            <span class="lv-chip lv-chip--primary"><i class="bi bi-tag"></i> <?= h($listing['cat_name']) ?></span>
+            <span class="lv-chip lv-chip--success"><i class="bi bi-check-circle"></i> <?= condition_label($listing['condition']) ?></span>
+            <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
+            <span class="lv-chip lv-chip--gold"><i class="bi bi-arrow-left-right"></i> قابل معاوضه</span>
+            <?php endif; ?>
+            <?php if (!empty($listing['inspection_status']) && $listing['inspection_status'] !== 'none'): ?>
+            <span class="lv-chip lv-chip--info"><i class="bi bi-search"></i> <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?></span>
+            <?php endif; ?>
+            <?php if ($listing['city']): ?>
+            <span class="lv-chip lv-chip--primary"><i class="bi bi-geo-alt"></i> <?= h($listing['city']) ?></span>
+            <?php endif; ?>
+            <span class="lv-chip lv-chip--primary"><i class="bi bi-eye"></i> <?= fmt_num((int)$listing['views']) ?> بازدید</span>
+            <span class="lv-chip lv-chip--primary"><i class="bi bi-clock"></i> <?= timeago($listing['created_at']) ?></span>
+          </div>
+
+          <?php if ((float)$listing['estimated_value'] > 0): ?>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <span style="font-size:.8125rem;color:var(--lv-muted)">ارزش تقریبی</span>
+            <strong style="font-size:1.35rem;color:var(--lv-navy)"><?= fmt_credit((float)$listing['estimated_value']) ?></strong>
+          </div>
+          <?php endif; ?>
+
+          <div class="lv-divider"></div>
+          <h3 class="lv-section-title">توضیحات</h3>
+          <div class="lv-description"><?= nl2br(h($listing['description'])) ?></div>
+
+          <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($listing['want_in_return'])): ?>
+          <div class="lv-divider"></div>
+          <div class="lv-wants">
+            <div class="lv-wants-label"><i class="bi bi-stars"></i> در ازای این کالا به دنبال چه چیزی است؟</div>
+            <p class="lv-wants-text"><?= h($listing['want_in_return']) ?></p>
+          </div>
+          <?php endif; ?>
+        </section>
+
         <?php if ($related): ?>
-        <section aria-label="آگهی‌های مشابه">
-        <h3 class="mb-4">آگهی‌های مشابه</h3>
-        <div class="listings-grid">
-          <?php foreach ($related as $l): ?>
-          <?php include __DIR__ . '/../includes/listing_card.php'; ?>
-          <?php endforeach; ?>
-        </div>
+        <section class="lv-related-section" aria-label="آگهی‌های مشابه">
+          <h3 class="lv-related-title">آگهی‌های مشابه</h3>
+          <div class="listings-grid">
+            <?php foreach ($related as $l): ?>
+            <?php include __DIR__ . '/../includes/listing_card.php'; ?>
+            <?php endforeach; ?>
+          </div>
         </section>
         <?php endif; ?>
-      </article>
+      </div>
 
-      <!-- ── Right: Sidebar ─────────────────────────────────────────── -->
-      <aside style="position:sticky;top:80px" aria-label="اطلاعات فروشنده و اقدامات">
-
-        <!-- Seller Card -->
-        <div class="card mb-4">
-          <div class="card-body">
-            <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-4)">
-              <?= avatar_html($listing['seller_avatar'] ?? null, $listing['seller_name'], 'md') ?>
-              <div>
-                <div style="font-weight:700"><?= h($listing['seller_name']) ?></div>
+      <aside class="lv-right-col" aria-label="اطلاعات فروشنده و اقدامات">
+        <section class="lv-seller-card">
+          <div class="lv-seller-header">
+            <div class="lv-seller-avatar"><?= h(mb_substr($listing['seller_name'], 0, 1)) ?></div>
+            <div class="lv-seller-info">
+              <h3 class="lv-seller-name"><?= h($listing['seller_name']) ?></h3>
+              <div class="lv-seller-meta">
                 <?php if ($listing['seller_city']): ?>
-                <div class="fs-sm" style="color:var(--text-muted)"><i class="bi bi-geo-alt"></i> <?= h($listing['seller_city']) ?></div>
+                <span><i class="bi bi-geo-alt"></i> <?= h($listing['seller_city']) ?></span>
                 <?php endif; ?>
+                <span><i class="bi bi-calendar3"></i> عضو از <?= persian_date($listing['seller_since']) ?></span>
               </div>
-              <?php if ($listing['verification_level'] >= 2): ?>
-              <span class="badge badge-success" style="margin-inline-start:auto"><i class="bi bi-patch-check"></i> تأیید‌شده</span>
-              <?php endif; ?>
             </div>
-            <div style="display:flex;gap:var(--sp-4);font-size:.875rem;color:var(--text-secondary);margin-bottom:var(--sp-3);flex-wrap:wrap">
-              <?php if ($listing['seller_rating'] > 0): ?>
-              <span><i class="bi bi-star-fill" style="color:var(--accent)"></i> <?= number_format((float)$listing['seller_rating'], 1) ?> (<?= $listing['seller_rating_count'] ?>)</span>
-              <?php endif; ?>
-              <span><i class="bi bi-shield-check" style="color:var(--accent-dark)"></i>نمره سواَپین: <?= $sellerSwapScore['score'] ?>/100</span>
-              <span><i class="bi bi-calendar3"></i> از <?= persian_date($listing['seller_since']) ?></span>
-            </div>
-            <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="btn btn-outline w-100 btn-sm">مشاهده پروفایل</a>
           </div>
-        </div>
 
-        <!-- Action Card -->
+          <div class="lv-seller-badges">
+            <?php if ($listing['verification_level'] >= 2): ?>
+            <span class="lv-chip lv-chip--success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
+            <?php endif; ?>
+            <?php if ($listing['seller_rating'] > 0): ?>
+            <span class="lv-chip lv-chip--gold"><i class="bi bi-star-fill"></i> <?= fmt_num((float)$listing['seller_rating'], 1) ?></span>
+            <?php endif; ?>
+            <span class="lv-chip lv-chip--info"><i class="bi bi-star"></i> <?= fmt_num((int)$sellerSwapScore['score']) ?></span>
+          </div>
+
+          <div class="lv-seller-stats">
+            <div class="lv-stat-item">
+              <div class="lv-stat-value"><?= fmt_num((int)$listing['seller_rating_count']) ?></div>
+              <div class="lv-stat-label">نظرات</div>
+            </div>
+            <div class="lv-stat-item">
+              <div class="lv-stat-value"><?= $listing['seller_rating'] > 0 ? fmt_num((float)$listing['seller_rating'], 1) : '---' ?></div>
+              <div class="lv-stat-label">امتیاز</div>
+            </div>
+          </div>
+
+          <div class="lv-seller-actions">
+            <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-btn lv-btn--primary">
+              <i class="bi bi-person"></i> مشاهده پروفایل
+            </a>
+          </div>
+        </section>
+
         <?php if ($isOwner): ?>
-        <div class="card mb-4">
-          <div class="card-body">
-            <div class="alert alert-info mb-4" style="font-size:.875rem">
-              <i class="bi bi-info-circle"></i> این آگهی متعلق به شماست.
-            </div>
-            <a href="<?= APP_URL ?>/listings/edit?id=<?= $id ?>" class="btn btn-outline w-100 mb-3">
-              <i class="bi bi-pencil"></i> ویرایش آگهی
-            </a>
-            <a href="<?= APP_URL ?>/listings/promote?id=<?= $id ?>" class="btn btn-accent w-100 mb-3">
-              <i class="bi bi-rocket"></i> ارتقای آگهی
-            </a>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-gear"></i> مدیریت آگهی</h3>
+          <div class="lv-seller-actions">
+            <a href="<?= APP_URL ?>/listings/edit?id=<?= $id ?>" class="lv-btn lv-btn--outline"><i class="bi bi-pencil"></i> ویرایش آگهی</a>
+            <a href="<?= APP_URL ?>/listings/promote?id=<?= $id ?>" class="lv-btn lv-btn--outline"><i class="bi bi-rocket"></i> ارتقای آگهی</a>
             <?php if (($listing['inspection_status'] ?? 'none') === 'none'): ?>
-            <form method="POST" class="mb-3" onsubmit="return confirm('بازرسی کارشناس با هزینه <?= fmt_credit(INSPECTION_KBC) ?> درخواست شود؟')">
-            <?= csrf_field() ?>
+            <form method="POST" onsubmit="return confirm('بازرسی کارشناس با هزینه <?= fmt_credit(INSPECTION_KBC) ?> درخواست شود؟')">
+              <?= csrf_field() ?>
               <input type="hidden" name="action" value="request_inspection">
-              <button type="submit" class="btn btn-outline w-100">
-                <i class="bi bi-search"></i> درخواست بازرسی کارشناس
-              </button>
+              <button type="submit" class="lv-btn lv-btn--outline"><i class="bi bi-search"></i> درخواست بازرسی</button>
             </form>
-            <?php else: ?>
-            <div class="alert alert-info mb-3 fs-sm">
-              <i class="bi bi-search"></i> بازرسی: <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?>
-            </div>
             <?php endif; ?>
-            <a href="<?= APP_URL ?>/listings/offers?id=<?= $id ?>" class="btn btn-primary w-100">
-              <i class="bi bi-inbox"></i> مشاهده پیشنهادها
-            </a>
+            <a href="<?= APP_URL ?>/listings/offers?id=<?= $id ?>" class="lv-btn lv-btn--primary"><i class="bi bi-inbox"></i> مشاهده پیشنهادها</a>
           </div>
-        </div>
- <?php endif; ?>
-        <?php if ($listing['status'] === 'traded' && $isOwner): ?>
-        <div class="card mb-4">
-          <div class="card-body">
-            <div class="alert alert-success" style="font-size:.875rem">
-              <i class="bi bi-check-circle"></i> پیشنهاد برای این آگهی پذیرفته شده و معامله در جریان است.
-              <?php if ($listing['trade_id']): ?>
-                <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="alert-link">مشاهده جزئیات معامله</a>
+        </section>
+        <?php elseif ($tradeAccepted): ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-check-circle"></i> وضعیت پیشنهاد</h3>
+          <div class="alert alert-success" style="margin:0">
+            پیشنهاد شما پذیرفته شده است.
+            <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="alert-link">مشاهده معامله</a>
+          </div>
+        </section>
+        <?php elseif ($myOffer): ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-hourglass-split"></i> وضعیت پیشنهاد</h3>
+          <div class="alert alert-success" style="margin:0">پیشنهاد شما در انتظار پاسخ فروشنده است.</div>
+        </section>
+        <?php elseif ($listing['status'] !== 'active'): ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-exclamation-triangle"></i> وضعیت آگهی</h3>
+          <div class="alert alert-warning" style="margin:0">این آگهی فعلاً برای معامله در دسترس نیست.</div>
+        </section>
+        <?php else: ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-send"></i> ارسال پیشنهاد</h3>
+
+          <?php if (!$user): ?>
+          <p class="fs-sm mb-4" style="color:var(--text-muted)">برای ارسال پیشنهاد وارد شوید.</p>
+          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary">ورود برای پیشنهاد</a>
+          <?php else: ?>
+          <?php if ($offerError): ?>
+          <div class="alert alert-danger mb-4"><i class="bi bi-exclamation-circle"></i> <?= h($offerError) ?></div>
+          <?php endif; ?>
+          <?php if ($offerSuccess): ?>
+          <div class="alert alert-success mb-4"><i class="bi bi-check-circle"></i> <?= h($offerSuccess) ?></div>
+          <?php endif; ?>
+
+          <form method="POST" id="offer-form">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="make_offer">
+            <input type="hidden" name="offer_type" id="lv-offer-type-input" value="<?= $myListings ? 'item' : 'message' ?>">
+
+            <div class="lv-offer-types">
+              <button type="button" class="lv-offer-type<?= $myListings ? ' active' : '' ?>" data-type="item">
+                <div class="lv-offer-icon"><i class="bi bi-box-seam"></i></div>
+                <div class="lv-offer-type-info">
+                  <div class="lv-offer-type-title">کالا دارم</div>
+                  <p class="lv-offer-type-desc">یک کالای ثبت‌شده را برای معاوضه انتخاب کنید</p>
+                </div>
+              </button>
+              <button type="button" class="lv-offer-type<?= !$myListings ? ' active' : '' ?>" data-type="message">
+                <div class="lv-offer-icon"><i class="bi bi-chat-dots"></i></div>
+                <div class="lv-offer-type-info">
+                  <div class="lv-offer-type-title">فقط پیام می‌فرستم</div>
+                  <p class="lv-offer-type-desc">اگر کالایی ندارید، مستقیم پیام بگذارید</p>
+                </div>
+              </button>
+            </div>
+
+            <div id="lv-offer-item-section">
+              <?php if ($myListings): ?>
+              <select class="form-control lv-offer-select" name="offer_listing_id" id="offer-listing">
+                <option value="">یکی از کالاهای خود را انتخاب کنید</option>
+                <?php foreach ($myListings as $ml): ?>
+                <option value="<?= $ml['id'] ?>"><?= h(mb_strimwidth($ml['title'], 0, 50, '…')) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <?php else: ?>
+              <div class="alert alert-info mb-3">
+                <i class="bi bi-box-seam"></i> هنوز کالایی برای پیشنهاد ندارید.
+                <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm" style="margin-top:8px">ثبت کالا</a>
+              </div>
               <?php endif; ?>
             </div>
-          </div>
-        </div>
-        <?php elseif ($listing['status'] !== 'active'): ?>
-        <div class="card mb-4">
-          <div class="card-body">
-            <div class="alert alert-warning" style="font-size:.875rem">
-              <i class="bi bi-exclamation-triangle"></i> این آگهی دیگر برای معامله در دسترس نیست.
-            </div>
-          </div>
-        </div>
 
-        <?php else: ?>
-
-        <?php if (false && $canBuy && $user): ?>
-        <div class="card mb-4" style="border:2px solid var(--accent-dark)">
-          <div class="card-body text-center">
-            <div class="fs-sm" style="color:var(--text-muted)">خرید فوری</div>
-            <div style="font-size:1.75rem;font-weight:800;color:var(--accent-dark);margin:var(--sp-2) 0">
-              <?= number_format((float)$listing['sell_price'], 0) ?> تومان
-            </div>
-            <div class="fs-xs mb-4" style="color:var(--text-muted)">≈ <?= fmt_credit($buyKbc) ?> (در سپرده نگهداری می‌شود)</div>
-            <form method="POST" onsubmit="return confirm('خرید با ~<?= $buyKbc ?> <?= CREDIT_UNIT ?>؟')">
-            <?= csrf_field() ?>
-              <input type="hidden" name="action" value="buy_now">
-              <button type="submit" class="btn btn-accent w-100 btn-lg">
-                <i class="bi bi-cart-check"></i> خرید فوری
-              </button>
-            </form>
-          </div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Offer Form -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h3 style="margin:0;font-size:1rem"><i class="bi bi-send"></i> ارسال پیشنهاد</h3>
-          </div>
-          <div class="card-body">
-
-            <?php if (!$user): ?>
-            <p class="fs-sm mb-4" style="color:var(--text-muted)">برای ارسال پیشنهاد وارد شوید.</p>
-            <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode('/listings/view?id='.$id) ?>" class="btn btn-primary w-100">
-              ورود برای پیشنهاد
-            </a>
-
-            <?php elseif ($listing['trade_id'] && ($user['id'] == $listing['user_a_id'] || $user['id'] == $listing['user_b_id'])): ?>
-            <div class="alert alert-success mb-0">
-              <i class="bi bi-check-circle"></i>
-              <div>
-                <strong>پیشنهاد شما پذیرفته شد!</strong><br>
-                <span class="fs-sm">معامله در جریان است.</span>
-                <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="alert-link">مشاهده جزئیات معامله</a>
-              </div>
+            <div class="form-group" style="margin-top:12px">
+              <label class="form-label">پیام</label>
+              <textarea class="lv-offer-textarea" name="message" id="lv-offer-message" placeholder="در مورد پیشنهادتان کمی توضیح بدهید..."></textarea>
             </div>
 
-            <?php elseif ($myOffer): ?>
-            <div class="alert alert-success mb-0">
-              <i class="bi bi-check-circle"></i>
-              <div>
-                <strong>پیشنهاد در انتظار</strong><br>
-                <span class="fs-sm">در انتظار پاسخ فروشنده.</span>
-              </div>
-            </div>
-
-            <?php else: ?>
-            <?php if ($offerError): ?>
-            <div class="alert alert-danger mb-4"><i class="bi bi-exclamation-circle"></i> <?= h($offerError) ?></div>
-            <?php endif; ?>
-            <?php if ($offerSuccess): ?>
-            <div class="alert alert-success mb-4"><i class="bi bi-check-circle"></i> <?= h($offerSuccess) ?></div>
-            <?php endif; ?>
-
-            <form method="POST" id="offer-form">
-            <?= csrf_field() ?>
-              <input type="hidden" name="action" value="make_offer">
-
-              <div class="mb-4">
-                <label class="form-label fw-600 mb-3">نوع پیشنهاد خود را انتخاب کنید</label>
-
-                <div class="offer-type-grid" style="display:grid; gap:16px;">
-                <div class="card offer-type-card" id="has-item-card" style="border: 2px solid var(--primary);">
-                  <div class="card-body" style="padding:24px;">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                      <div style="width:56px; height:56px; border-radius:16px; background:var(--primary); display:flex; align-items:center; justify-content:center;">
-                        <i class="bi bi-box-seam" style="font-size:28px; color:white;"></i>
-                      </div>
-                      <div class="d-flex gap-2 align-items-center">
-                        <input type="radio" id="has-item" name="offer_type" value="item" class="mt-0" <?= $myListings ? 'checked' : '' ?>>
-                        <label for="has-item" class="fw-700 mb-0" style="font-size:1.0625rem;">کالا دارم</label>
-                      </div>
-                    </div>
-                    <?php if ($myListings): ?>
-                    <select class="form-control" name="offer_listing_id" id="offer-listing">
-                      <option value="">— یکی از کالاهای خود را انتخاب کنید —</option>
-                      <?php foreach ($myListings as $ml): ?>
-                      <option value="<?= $ml['id'] ?>"><?= h(mb_strimwidth($ml['title'], 0, 50, '…')) ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                    <?php else: ?>
-                    <div class="no-listings-notice" id="no-listings-notice">
-                      <p><i class="bi bi-box-seam"></i> شما کالایی ندارید</p>
-                      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> ثبت کالا
-                      </a>
-                    </div>
-                    <?php endif; ?>
-                  </div>
-                </div>
-
-                <div class="card offer-type-card" id="no-item-card" style="border: 2px solid var(--border);">
-                  <div class="card-body" style="padding:24px;">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                      <div style="width:56px; height:56px; border-radius:16px; background:var(--border); display:flex; align-items:center; justify-content:center;">
-                        <i class="bi bi-chat-dots" style="font-size:28px; color:var(--text-muted);"></i>
-                      </div>
-                      <div class="d-flex gap-2 align-items-center">
-                        <input type="radio" id="no-item" name="offer_type" value="message" class="mt-0" <?= !$myListings ? 'checked' : '' ?>>
-                        <label for="no-item" class="fw-700 mb-0" style="font-size:1.0625rem;">کالا ندارم</label>
-                      </div>
-                    </div>
-                    <p class="fs-sm mb-0" style="color:var(--text-muted);">فقط پیام برای فروشنده بفرستید</p>
-                  </div>
-                </div>
-                </div>
-              </div>
-
-
-
-              <div class="form-group mb-4">
-                <label class="form-label">پیام (الزامی)</label>
-                <textarea class="form-control" name="message" rows="3" required
-                          placeholder="درباره پیشنهاد خود توضیح دهید…"></textarea>
-              </div>
-
-              <button type="submit" class="btn btn-primary w-100 btn-lg">
-                <i class="bi bi-send"></i> ارسال پیشنهاد
-              </button>
-            </form>
-            <?php endif; ?>
-          </div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Save + Share -->
-        <div class="card">
-          <div class="card-body" style="display:flex;gap:var(--sp-3)">
-            <form method="POST" style="flex:1">
-            <?= csrf_field() ?>
-              <input type="hidden" name="action" value="save_listing">
-              <button type="submit" class="btn <?= $isSaved ? 'btn-danger' : 'btn-outline' ?> w-100 btn-sm">
-                <i class="bi bi-<?= $isSaved ? 'heart-fill' : 'heart' ?>"></i>
-                <?= $isSaved ? 'ذخیره شد' : 'ذخیره' ?>
-              </button>
-            </form>
-            <button type="button" id="share-listing-btn" data-title="<?= h($listing['title']) ?>"
-                    class="btn btn-ghost btn-sm" style="flex:1">
-              <i class="bi bi-share"></i> اشتراک
+            <button type="submit" class="lv-btn lv-btn--primary">
+              <i class="bi bi-send"></i> ارسال پیشنهاد
             </button>
-          </div>
-        </div>
+          </form>
+          <?php endif; ?>
+        </section>
+        <?php endif; ?>
 
+        <section class="lv-action-card">
+          <form method="POST" style="flex:1">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="save_listing">
+            <button type="submit" class="lv-action-btn<?= $isSaved ? ' saved' : '' ?>">
+              <i class="bi bi-<?= $isSaved ? 'heart-fill' : 'heart' ?>"></i>
+              <?= $isSaved ? 'ذخیره شده' : 'ذخیره' ?>
+            </button>
+          </form>
+          <button type="button" id="share-listing-btn" class="lv-action-btn">
+            <i class="bi bi-share"></i>
+            اشتراک
+          </button>
+        </section>
       </aside>
     </div>
-
   </div>
 </main>
 
 <script>
-// Highlight selected offer type
-function updateOfferTypeCards() {
-  const hasItem = document.getElementById('has-item')?.checked;
-  const hasCard = document.getElementById('has-item-card');
-  const noCard  = document.getElementById('no-item-card');
-  
-  if (!hasCard || !noCard) return;
-  
-  const hasIconDiv = hasCard.querySelector('.card-body > div > div:first-child');
-  const noIconDiv = noCard.querySelector('.card-body > div > div:first-child');
-  const hasIcon = hasIconDiv?.querySelector('i');
-  const noIcon = noIconDiv?.querySelector('i');
+const offerTypeInput = document.getElementById('lv-offer-type-input');
+const offerItemSection = document.getElementById('lv-offer-item-section');
+const offerTypeButtons = document.querySelectorAll('.lv-offer-type');
 
-  // Update has item card
-  hasCard.style.borderColor = hasItem ? 'var(--primary)' : 'var(--border)';
-  hasCard.style.background  = hasItem ? 'rgba(7, 26, 51, 0.03)' : '';
-  if (hasIconDiv) hasIconDiv.style.background = hasItem ? 'var(--primary)' : 'var(--border)';
-  if (hasIcon) hasIcon.style.color = hasItem ? 'white' : 'var(--text-muted)';
-  
-  // Update no item card
-  noCard.style.borderColor  = hasItem ? 'var(--border)' : 'var(--primary)';
-  noCard.style.background   = hasItem ? '' : 'rgba(7, 26, 51, 0.03)';
-  if (noIconDiv) noIconDiv.style.background = hasItem ? 'var(--border)' : 'var(--primary)';
-  if (noIcon) noIcon.style.color = hasItem ? 'var(--text-muted)' : 'white';
+function lvSetOfferType(type) {
+  if (!offerTypeInput) return;
+  offerTypeInput.value = type;
+  offerTypeButtons.forEach(function (button) {
+    button.classList.toggle('active', button.dataset.type === type);
+  });
+  if (offerItemSection) {
+    offerItemSection.style.display = type === 'item' ? '' : 'none';
+  }
 }
-// Make entire offer cards clickable
-document.getElementById('has-item-card')?.addEventListener('click', () => {
-  const radio = document.getElementById('has-item');
-  if (radio) {
-    radio.checked = true;
-    updateOfferTypeCards();
-  }
-});
-document.getElementById('no-item-card')?.addEventListener('click', () => {
-  const radio = document.getElementById('no-item');
-  if (radio) {
-    radio.checked = true;
-    updateOfferTypeCards();
-  }
+
+offerTypeButtons.forEach(function (button) {
+  button.addEventListener('click', function () {
+    lvSetOfferType(button.dataset.type || 'message');
+  });
 });
 
-document.querySelectorAll('input[name="offer_type"]').forEach(r => r.addEventListener('change', updateOfferTypeCards));
-updateOfferTypeCards();
+if (offerTypeInput) {
+  lvSetOfferType(offerTypeInput.value || 'message');
+}
 
-// Validate offer form
-document.getElementById('offer-form')?.addEventListener('submit', function(e) {
-      const offerType = document.querySelector('input[name="offer_type"]:checked')?.value || '';
-      const message = document.querySelector('textarea[name="message"]').value.trim();
-      const offerCredit = 0;
-      
-      // If "has item" is selected, require an item
-      if (offerType === 'item') {
-        const listingSelect = document.getElementById('offer-listing');
-        if (!listingSelect) {
-          e.preventDefault();
-          showToast('شما کالایی ندارید. ابتدا کالای خود را ثبت کنید.', 'error');
-          return;
-        }
-        const listing = listingSelect.value || '';
-        if (!listing) {
-          e.preventDefault();
-          showToast('لطفاً یکی از کالاهای خود را انتخاب کنید', 'error');
-          return;
-        }
-      }
-      
-      // If "no item" is selected, require either a message or offer credit
-      if (offerType === 'message') {
-        if (!message) {
-          e.preventDefault();
-          showToast('برای ارسال پیشنهاد بدون کالا، لطفاً پیامی وارد کنید.', 'error');
-          return;
-        }
-      }
+document.getElementById('offer-form')?.addEventListener('submit', function (e) {
+  const type = offerTypeInput?.value || 'message';
+  const message = document.getElementById('lv-offer-message')?.value.trim() || '';
+  if (type === 'item') {
+    const listing = document.getElementById('offer-listing');
+    if (!listing || !listing.value) {
+      e.preventDefault();
+      showToast('لطفاً یکی از کالاهای خود را انتخاب کنید.', 'error');
+      return;
+    }
+  }
+  if (type === 'message' && !message) {
+    e.preventDefault();
+    showToast('برای ارسال پیشنهاد بدون کالا، پیام لازم است.', 'error');
+  }
+});
 
-
-    });
 document.getElementById('share-listing-btn')?.addEventListener('click', function () {
-  const title = this.dataset.title || '';
+  const title = '<?= addslashes($listing['title']) ?>';
   if (navigator.share) {
     navigator.share({ title, url: location.href }).catch(() => {});
   } else {

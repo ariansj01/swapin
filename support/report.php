@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/dashboard_layout.php';
 
 $user    = auth_user();
 $success = false;
@@ -34,15 +35,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 render_head('گزارش خطا | سواَپین', 'گزارش مشکلات فنی سایت به تیم سواَپین', [
     'canonical' => APP_URL . '/support/report',
 ]);
+render_panel_styles();
 render_navbar($user);
+if ($user) {
+    render_user_panel_open($user, 'support');
+}
 ?>
 
+<?php if ($user): ?>
+  <div class="dash-panel">
+    <?php render_panel_page_header('گزارش خطا', 'جزئیات مشکل فنی را برای تیم فنی بفرستید', APP_URL . '/support', 'بازگشت به پشتیبانی'); ?>
+<?php else: ?>
 <main id="main-content" class="section-sm">
   <div class="container-sm">
 
     <nav style="font-size:.875rem;margin-bottom:var(--sp-4)">
       <a href="<?= APP_URL ?>/support"><i class="bi bi-arrow-right"></i> بازگشت به پشتیبانی</a>
     </nav>
+<?php endif; ?>
 
     <div style="text-align:center;padding:var(--sp-4) 0 var(--sp-5)">
       <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:var(--danger);margin-bottom:var(--sp-3)">
@@ -90,6 +100,11 @@ render_navbar($user);
     </div>
 
   </div>
+<?php if ($user): ?>
+<?php render_user_panel_close(); ?>
+<?php render_panel_scripts(); ?>
+<?php else: ?>
 </main>
+<?php endif; ?>
 
 <?php render_footer(); ?>

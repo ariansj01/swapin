@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/dashboard_layout.php';
 
 $user = require_auth();
 $uid  = $user['id'];
@@ -29,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deposit_amount'])) {
 
 // Pagination
 $page    = max(1, (int)($_GET['page'] ?? 1));
-$perPage = 20;
+$perPage = 8;
 $total   = (int)(DB::fetch('SELECT COUNT(*) AS c FROM wallet_transactions WHERE user_id = ?', [$uid])['c'] ?? 0);
 $pag     = paginate($total, $perPage, $page);
 
@@ -47,17 +48,17 @@ $totalSpent  = abs((float)(DB::fetch(
 )['s'] ?? 0));
 
 render_head('کیف پول من');
+render_panel_styles();
 render_navbar($user);
+render_user_panel_open($user, 'wallet');
 ?>
 
-<div class="section-sm">
-  <div class="container-md">
-
-    <div class="mb-6">
-      <a href="<?= APP_URL ?>/dashboard.php" style="color:var(--text-muted);font-size:.875rem">
-        <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
+  <div class="dash-panel">
+    <?php render_panel_page_header('کیف پول', 'مدیریت موجودی و تراکنش‌ها'); ?>
+    <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px">
+      <a href="<?= APP_URL ?>/dashboard" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-right"></i> بازگشت
       </a>
-      <h2 class="mt-3">کیف پول من</h2>
     </div>
 
     <?php if ($success): ?>
@@ -142,16 +143,18 @@ render_navbar($user);
 
           <!-- Pagination -->
           <?php if ($pag['pages'] > 1): ?>
-          <div class="card-footer" style="display:flex;justify-content:center;gap:var(--sp-2)">
-            <?php if ($pag['has_prev']): ?>
-            <a href="?page=<?= $page-1 ?>" class="btn btn-outline btn-sm"><i class="bi bi-chevron-right"></i></a>
-            <?php endif; ?>
+          <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center;gap:var(--sp-2);flex-wrap:wrap">
             <span style="display:flex;align-items:center;font-size:.875rem;color:var(--text-muted)">
               صفحه <?= $page ?> از <?= $pag['pages'] ?>
             </span>
-            <?php if ($pag['has_next']): ?>
-            <a href="?page=<?= $page+1 ?>" class="btn btn-outline btn-sm"><i class="bi bi-chevron-left"></i></a>
-            <?php endif; ?>
+            <div style="display:flex;gap:var(--sp-2)">
+              <?php if ($pag['has_prev']): ?>
+              <a href="?page=<?= $page-1 ?>" class="btn btn-outline btn-sm"><i class="bi bi-chevron-right"></i> قبلی</a>
+              <?php endif; ?>
+              <?php if ($pag['has_next']): ?>
+              <a href="?page=<?= $page+1 ?>" class="btn btn-outline btn-sm">نمایش بیشتر <i class="bi bi-chevron-left"></i></a>
+              <?php endif; ?>
+            </div>
           </div>
           <?php endif; ?>
 
@@ -239,7 +242,7 @@ render_navbar($user);
     </div>
 
   </div>
-</div>
+<?php render_user_panel_close(); ?>
 
 <script>
 // Auto-open deposit form if action=deposit
@@ -249,4 +252,5 @@ document.querySelector('[name=deposit_amount]')?.focus();
 <?php endif; ?>
 </script>
 
+<?php render_panel_scripts(); ?>
 <?php render_footer(); ?>

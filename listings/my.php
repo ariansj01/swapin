@@ -91,20 +91,21 @@ render_navbar($user);
 render_user_panel_open($user, 'my');
 ?>
 
-  <div class="container">
-
-    <!-- Page header -->
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-4);margin-bottom:var(--sp-6)">
-      <div>
-        <a href="<?= APP_URL ?>/dashboard.php" style="color:var(--text-muted);font-size:.875rem">
-          <i class="bi bi-arrow-right"></i> داشبورد
-        </a>
-        <h2 class="mt-3" style="margin-bottom:4px">آگهی‌های من</h2>
-        <p style="color:var(--text-muted);margin:0">مدیریت همه آگهی‌های تعویض شما</p>
+  <div class="dash-panel">
+    <div class="dash-page-head">
+      <div class="dash-page-head__start">
+        <a href="<?= APP_URL ?>/dashboard" class="dash-back-btn"><i class="bi bi-arrow-right"></i> بازگشت</a>
+        <h1 class="dash-page-head__title">آگهی‌های من</h1>
+        <p class="dash-page-head__sub">مدیریت همه آگهی‌های تعویض شما</p>
       </div>
-      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> آگهی جدید
-      </a>
+      <div class="dash-page-head__actions">
+        <a href="<?= APP_URL ?>" class="btn btn-outline btn-sm">
+          <i class="bi bi-house"></i> خانه
+        </a>
+        <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">
+          <i class="bi bi-plus-lg"></i> آگهی جدید
+        </a>
+      </div>
     </div>
 
     <?php if (isset($_GET['promoted'])): ?>
@@ -125,30 +126,15 @@ render_user_panel_open($user, 'my');
     </div>
     <?php endif; ?>
 
-    <!-- Summary stat cards -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3);margin-bottom:var(--sp-6)">
+    <!-- Tab pills -->
+    <div class="my-tab-pills">
       <?php foreach ($tabMeta as $s => $meta): ?>
-      <a href="?tab=<?= $s ?>" style="text-decoration:none">
-        <div class="card" style="border-top:3px solid var(--<?= $meta['color'] ?>);padding:var(--sp-4);text-align:center;transition:box-shadow var(--duration);<?= $tab === $s ? 'box-shadow:var(--shadow-md)' : '' ?>">
-          <div style="font-size:1.75rem;font-weight:800;color:var(--<?= $meta['color'] ?>)"><?= $counts[$s] ?></div>
-          <div class="fs-xs" style="color:var(--text-muted);margin-top:2px">
-            <i class="bi <?= $meta['icon'] ?>"></i> <?= $meta['label'] ?>
-          </div>
-        </div>
-      </a>
-      <?php endforeach; ?>
-    </div>
-
-    <!-- Tab strip -->
-    <div class="tabs mb-6">
-      <?php foreach ($tabMeta as $s => $meta): ?>
-      <button class="tab-btn <?= $tab === $s ? 'active' : '' ?>"
-              onclick="location.href='?tab=<?= $s ?>'">
+      <a href="?tab=<?= $s ?>" class="my-tab-pill <?= $tab === $s ? 'is-active' : '' ?>">
         <?= $meta['label'] ?>
         <?php if ($counts[$s] > 0): ?>
-        <span class="badge badge-<?= $meta['color'] ?>" style="margin-inline-start:var(--sp-2)"><?= $counts[$s] ?></span>
+        <span class="badge badge-<?= $meta['color'] ?>"><?= fmt_num($counts[$s]) ?></span>
         <?php endif; ?>
-      </button>
+      </a>
       <?php endforeach; ?>
     </div>
 
@@ -177,152 +163,55 @@ render_user_panel_open($user, 'my');
 
     <?php else: ?>
 
-    <!-- Listings list -->
-    <div class="card" style="overflow:hidden">
-      <?php foreach ($listings as $idx => $l):
-        $hasPending  = $l['pending_offers'] > 0;
-        $borderStyle = $hasPending ? 'border-inline-start:3px solid var(--warning);' : '';
+    <!-- Listings card grid -->
+    <div class="my-listings-grid">
+      <?php foreach ($listings as $l):
+        $hasPending = $l['pending_offers'] > 0;
+        $sc = ['active'=>'success','traded'=>'info','expired'=>'warning','deleted'=>'danger'][$l['status']] ?? 'info';
       ?>
-      <div style="display:flex;align-items:flex-start;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);position:relative;cursor:pointer;transition:background .15s;<?= $idx > 0 ? 'border-top:1px solid var(--border);' : '' ?><?= $borderStyle ?>"
-           onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-
-        <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>"
-           style="position:absolute;inset:0;z-index:1;border-radius:0"
-           aria-label="مشاهده آگهی <?= h($l['title']) ?>"></a>
-
-        <!-- Thumbnail -->
-        <div style="width:80px;height:72px;flex-shrink:0;border-radius:var(--radius-md);overflow:hidden;background:var(--bg);border:1px solid var(--border)">
+      <article class="my-listing-card <?= $hasPending ? 'my-listing-card--pending' : '' ?>">
+        <div class="my-listing-card__media">
+          <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>" class="my-listing-card__media-link" aria-label="<?= h($l['title']) ?>"></a>
           <?php if ($l['thumb']): ?>
-          <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>"
-               style="width:100%;height:100%;object-fit:cover">
+          <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>">
           <?php else: ?>
-          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;opacity:.3;color:var(--text-muted)">
-            <i class="bi bi-image"></i>
-          </div>
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;opacity:.25;color:var(--text-muted)"><i class="bi bi-image"></i></div>
           <?php endif; ?>
-        </div>
-
-        <!-- Body -->
-        <div style="flex:1;min-width:0;position:relative;z-index:0">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap">
-            <div style="min-width:0;flex:1">
-              <div style="font-weight:700;font-size:1rem;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                <?= h($l['title']) ?>
-              </div>
-              <div class="fs-xs" style="color:var(--text-muted);margin-top:var(--sp-1);display:flex;gap:var(--sp-3);flex-wrap:wrap">
-                <span><i class="<?= h($l['cat_icon']) ?>"></i> <?= h($l['cat_name']) ?></span>
-                <?php if ($l['city']): ?>
-                <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?></span>
-                <?php endif; ?>
-                <span><i class="bi bi-eye"></i> <?= fmt_num((int)$l['views']) ?> بازدید</span>
-                <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
-              </div>
-            </div>
-            <?php $sc = ['active'=>'success','traded'=>'info','expired'=>'warning','deleted'=>'danger'][$l['status']] ?? 'info'; ?>
-            <span class="badge badge-<?= $sc ?>" style="flex-shrink:0"><?= $statusLabels[$l['status']] ?? $l['status'] ?></span>
-            <?php if (($l['review_status'] ?? 'approved') === 'pending'): ?>
-            <span class="badge badge-warning" style="flex-shrink:0">در انتظار تأیید</span>
-            <?php elseif (($l['review_status'] ?? '') === 'rejected'): ?>
-            <span class="badge badge-danger" style="flex-shrink:0">رد شده</span>
-            <?php endif; ?>
+          <div class="my-listing-card__badges">
+            <span class="badge badge-<?= $sc ?>"><?= $statusLabels[$l['status']] ?? $l['status'] ?></span>
+            <?php if ($hasPending): ?><span class="badge badge-warning"><?= fmt_num($l['pending_offers']) ?> جدید</span><?php endif; ?>
           </div>
-
-          <div style="display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;margin-top:var(--sp-3)">
-            <span class="badge badge-<?= $condColors[$l['condition']] ?? 'info' ?>">
-              <?= condition_label($l['condition']) ?>
-            </span>
-            <?php if ($l['estimated_value'] > 0): ?>
-            <span style="font-size:.875rem;font-weight:700;color:var(--primary)">
-              ~<?= fmt_credit((float)$l['estimated_value']) ?>
-            </span>
-            <?php endif; ?>
-            <span class="fs-sm" style="color:var(--text-secondary)">
-              <i class="bi bi-arrow-left-right"></i>
-              <?= h(listing_mode_label($l['listing_mode'] ?? 'swap')) ?>
-              · می‌خواهد: <strong><?= want_type_label($l['want_type']) ?></strong>
-            </span>
-            <?php if (listing_is_featured($l)): ?>
-            <span class="badge badge-warning"><i class="bi bi-star-fill"></i> ویژه</span>
-            <?php endif; ?>
-            <?php if (listing_is_bumped($l)): ?>
-            <span class="badge badge-info"><i class="bi bi-arrow-up-circle-fill"></i> بالا برده</span>
-            <?php endif; ?>
+        </div>
+        <div class="my-listing-card__body">
+          <h3 class="my-listing-card__title"><?= h($l['title']) ?></h3>
+          <div class="my-listing-card__meta">
+            <span><i class="<?= h($l['cat_icon']) ?>"></i> <?= h($l['cat_name']) ?></span>
+            <?php if ($l['city']): ?><span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?></span><?php endif; ?>
+            <span><i class="bi bi-eye"></i> <?= fmt_num((int)$l['views']) ?></span>
+          </div>
+          <?php if ($l['estimated_value'] > 0): ?>
+          <div style="font-size:.8125rem;font-weight:700;color:var(--primary)">~<?= fmt_credit((float)$l['estimated_value']) ?></div>
+          <?php endif; ?>
+          <p class="my-listing-card__want">"<?= h(mb_strimwidth($l['want_in_return'], 0, 60, '…')) ?>"</p>
+          <div class="my-listing-card__actions">
+            <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>" class="btn btn-ghost btn-sm" title="مشاهده"><i class="bi bi-eye"></i></a>
+            <?php if ($l['status'] === 'active'): ?>
+            <a href="<?= APP_URL ?>/listings/edit.php?id=<?= $l['id'] ?>" class="btn btn-outline btn-sm" title="ویرایش"><i class="bi bi-pencil"></i></a>
+            <a href="<?= APP_URL ?>/listings/promote.php?id=<?= $l['id'] ?>" class="btn btn-accent btn-sm" title="ارتقا"><i class="bi bi-rocket"></i></a>
             <?php if ($l['total_offers'] > 0): ?>
-            <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $l['id'] ?>"
-               style="position:relative;z-index:2;font-size:.875rem;font-weight:600;text-decoration:none;color:<?= $hasPending ? 'var(--warning)' : 'var(--text-muted)' ?>">
-              <i class="bi bi-inbox"></i> <?= fmt_num($l['total_offers']) ?> پیشنهاد
-              <?php if ($hasPending): ?>
-              <span class="badge badge-warning" style="margin-inline-start:2px"><?= fmt_num($l['pending_offers']) ?> جدید</span>
-              <?php endif; ?>
-            </a>
+            <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $l['id'] ?>" class="btn btn-<?= $hasPending ? 'accent' : 'ghost' ?> btn-sm"><i class="bi bi-inbox"></i></a>
+            <?php endif; ?>
+            <?php elseif (in_array($l['status'], ['traded', 'expired'])): ?>
+            <form method="POST" style="display:inline" onsubmit="return confirm('دوباره فعال شود؟')">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="reactivate">
+              <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
+              <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-arrow-counterclockwise"></i></button>
+            </form>
             <?php endif; ?>
           </div>
-
-          <div class="fs-sm" style="color:var(--text-muted);margin-top:var(--sp-2);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-            "<?= h(mb_strimwidth($l['want_in_return'], 0, 100, '…')) ?>"
-          </div>
         </div>
-
-        <!-- Actions -->
-        <div style="display:flex;flex-direction:row;gap:var(--sp-4);align-items:center;flex-shrink:0;position:relative;z-index:2">
-
-          <a href="<?= APP_URL ?>/listings/view.php?id=<?= $l['id'] ?>"
-             class="btn btn-ghost btn-sm" title="مشاهده"><i class="bi bi-eye"></i></a>
-
-          <?php if ($l['status'] === 'active'): ?>
-
-          <a href="<?= APP_URL ?>/listings/edit.php?id=<?= $l['id'] ?>"
-             class="btn btn-outline btn-sm" title="ویرایش"><i class="bi bi-pencil"></i></a>
-
-          <a href="<?= APP_URL ?>/listings/promote.php?id=<?= $l['id'] ?>"
-             class="btn btn-accent btn-sm" title="ارتقا"><i class="bi bi-rocket"></i></a>
-
-          <?php if ($l['total_offers'] > 0): ?>
-          <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $l['id'] ?>"
-             class="btn btn-<?= $hasPending ? 'accent' : 'ghost' ?> btn-sm" title="پیشنهادها">
-            <i class="bi bi-inbox"></i>
-            <?php if ($hasPending): ?>
-            <span class="badge badge-warning" style="margin-inline-start:2px;font-size:.65rem"><?= $l['pending_offers'] ?></span>
-            <?php endif; ?>
-          </a>
-          <?php endif; ?>
-
-          <form method="POST" style="display:contents"
-                onsubmit="return confirm('«<?= addslashes($l['title']) ?>» به‌عنوان معامله‌شده علامت بخورد؟')">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action"     value="mark_traded">
-            <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
-            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--success)" title="علامت معامله‌شده">
-              <i class="bi bi-check2-circle"></i>
-            </button>
-          </form>
-
-          <form method="POST" style="display:contents"
-                onsubmit="return confirm('«<?= addslashes($l['title']) ?>» حذف شود؟ دیگر در نتایج جستجو نمایش داده نمی‌شود.')">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action"     value="delete">
-            <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
-            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger)" title="حذف">
-              <i class="bi bi-trash3"></i>
-            </button>
-          </form>
-
-          <?php elseif (in_array($l['status'], ['traded', 'expired'])): ?>
-
-          <form method="POST" style="display:contents"
-                onsubmit="return confirm('«<?= addslashes($l['title']) ?>» دوباره فعال شود؟ در بازار دوباره نمایش داده می‌شود.')">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action"     value="reactivate">
-            <input type="hidden" name="listing_id" value="<?= $l['id'] ?>">
-            <button type="submit" class="btn btn-outline btn-sm">
-              <i class="bi bi-arrow-counterclockwise"></i> فعال‌سازی مجدد
-            </button>
-          </form>
-
-          <?php endif; ?>
-        </div>
-
-      </div>
+      </article>
       <?php endforeach; ?>
     </div>
 

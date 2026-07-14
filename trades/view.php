@@ -428,34 +428,26 @@ render_user_panel_open($user, 'trades');
 <div class="trade-room">
   <!-- New Header -->
   <header class="trade-room__hero">
-    
+    <div class="trade-room__hero-left">
+      <a href="<?= APP_URL ?>/trades" class="trade-room__back">
+        <i class="bi bi-arrow-right"></i>
+        بازگشت
+      </a>
+    </div>
     <div class="trade-room__hero-center">
       <h1>اتاق امن معامله #<?= $tradeId ?></h1>
       <p>لطفاً مراحل معامله را فقط از طریق این اتاق دنبال کنید.</p>
     </div>
     <div class="trade-room__hero-right">
-      <a href="#" class="trade-room__hero-btn">
+      <a href="<?= APP_URL ?>/fraud-prevention" class="trade-room__hero-btn">
         <i class="bi bi-question-circle"></i>
         راهنمای معامله
       </a>
-      <a href="#" class="trade-room__hero-btn">
+      <a href="<?= APP_URL ?>/support/report?url=<?= urlencode(APP_URL . '/trades/view?id=' . $tradeId) ?>" class="trade-room__hero-btn">
         <i class="bi bi-exclamation-triangle"></i>
         گزارش مشکل
       </a>
     </div>
-    <!-- <div class="trade-room__hero-right">
-      <a href="<?= APP_URL ?>/trades" class="trade-room__back">
-        <i class="bi bi-arrow-right"></i>
-        بازگشت
-      </a>
-      <div class="trade-room__hero-user">
-        <div class="trade-room__avatar"><?= h(mb_substr($user['name'], 0, 1)) ?></div>
-        <div>
-          <div class="trade-room__hero-user-name"><?= h($user['name']) ?></div>
-          <div class="trade-room__hero-user-meta">حساب کاربری شما</div>
-        </div>
-      </div>
-    </div> -->
   </header>
 
   <!-- Parties Header moved up -->

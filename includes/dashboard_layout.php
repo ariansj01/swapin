@@ -1,42 +1,15 @@
 <?php
 // User panel sidebar — uses standard site header/footer from layout.php
 
+require_once __DIR__ . '/panel_nav.php';
+
 function render_panel_styles(): void {
     echo '<link rel="stylesheet" href="' . APP_URL . '/src/css/dashboard.css">' . "\n";
 }
 
-function panel_nav_counts(array $user): array {
-    $uid = (int)$user['id'];
-    return [
-        'offers' => (int)(DB::fetch(
-            'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "pending"',
-            [$uid]
-        )['c'] ?? 0),
-    ];
-}
-
 function render_user_panel_open(array $user, string $active, array $navOverrides = []): void {
-    $url    = APP_URL;
-    $counts = panel_nav_counts($user);
-    $latestPromotableListing = DB::fetch(
-        'SELECT id FROM listings WHERE user_id = ? AND status = "active" ORDER BY updated_at DESC, id DESC LIMIT 1',
-        [(int)$user['id']]
-    );
-    $promoteHref = $latestPromotableListing
-        ? $url . '/listings/promote.php?id=' . (int)$latestPromotableListing['id']
-        : $url . '/listings/my.php';
-
-    $nav = [
-        'dashboard' => [$url . '/dashboard', 'داشبورد', 'bi-speedometer2', 0],
-        'my'        => [$url . '/listings/my', 'آگهی‌های من', 'bi-grid', 0],
-        'promote'   => [$promoteHref, 'ارتقای آگهی', 'bi-rocket-takeoff', 0],
-        'saved'     => [$url . '/listings/saved', 'علاقه‌مندی‌ها', 'bi-heart', 0],
-        'trades'    => [$url . '/trades', 'اتاق معامله', 'bi-shield-lock', $counts['offers']],
-        'wallet'    => [$url . '/wallet', 'کیف پول', 'bi-wallet2', 0],
-        'subscription' => [$url . '/subscription', 'اشتراک', 'bi-gem', 0],
-        'settings'  => [$url . '/profile/edit', 'تنظیمات', 'bi-gear', 0],
-        'support'   => [$url . '/support', 'پشتیبانی', 'bi-headset', 0],
-    ];
+    $url  = APP_URL;
+    $nav  = panel_nav_items($user);
 
     foreach ($navOverrides as $key => $href) {
         if (isset($nav[$key])) {
@@ -53,17 +26,28 @@ function render_user_panel_open(array $user, string $active, array $navOverrides
     foreach ($nav as $key => [$href, $label, $icon, $badge]) {
         $cls = $active === $key ? ' dash-sidebar__link--active' : '';
         $badgeHtml = $badge > 0
-            ? '<span class="dash-sidebar__badge">' . $badge . '</span>'
+            ? '<span class="dash-sidebar__badge">' . fmt_num($badge) . '</span>'
             : '';
         echo "<a href=\"{$href}\" class=\"dash-sidebar__link{$cls}\">";
         echo "<i class=\"bi {$icon}\"></i><span>{$label}</span>{$badgeHtml}</a>";
     }
 
     echo '</nav>';
+
+    $logoutCsrf = csrf_field();
+    echo <<<HTML
+<form method="POST" action="{$url}/auth/logout" class="dash-sidebar__logout">
+  {$logoutCsrf}
+  <button type="submit" class="dash-sidebar__link dash-sidebar__link--logout">
+    <i class="bi bi-box-arrow-right"></i><span>خروج</span>
+  </button>
+</form>
+HTML;
+
     echo '<div class="dash-sidebar__pro">';
     echo '<div class="dash-sidebar__pro-icon"><i class="bi bi-gem"></i></div>';
     echo '<strong>اشتراک حرفه‌ای</strong>';
-    echo '<p>آگهی نامحدود + گزارش پیشرفته</p>';
+    echo '<p>آگهی بیشتر + گزارش پیشرفته</p>';
     echo "<a href=\"{$url}/subscription\" class=\"dash-sidebar__pro-btn\">مشاهده پلن‌ها</a>";
     echo '</div></aside>';
 
@@ -72,6 +56,19 @@ function render_user_panel_open(array $user, string $active, array $navOverrides
     echo '<i class="bi bi-layout-sidebar-inset"></i> منوی پنل';
     echo '</button>';
     echo '<main class="dash-main" id="main-content">';
+}
+
+function render_panel_page_header(string $title, string $subtitle = '', string|false $backUrl = '', string $backLabel = 'بازگشت'): void {
+    $sub = $subtitle !== '' ? '<p class="dash-page-head__sub">' . h($subtitle) . '</p>' : '';
+    $backHtml = '';
+    if ($backUrl !== false) {
+        $back = ($backUrl === '') ? APP_URL . '/dashboard' : $backUrl;
+        $backHtml = '<a href="' . h($back) . '" class="dash-back-btn"><i class="bi bi-arrow-right"></i> ' . h($backLabel) . '</a>';
+    }
+    echo '<div class="dash-page-head"><div class="dash-page-head__start">';
+    echo $backHtml;
+    echo '<h1 class="dash-page-head__title">' . h($title) . '</h1>' . $sub;
+    echo '</div></div>';
 }
 
 function render_user_panel_close(): void {

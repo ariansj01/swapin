@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/dashboard_layout.php';
 
 $user = require_auth();
 $page = max(1, (int)($_GET['page'] ?? 1));
@@ -30,18 +31,17 @@ $listings = DB::fetchAll(
 );
 
 render_head('علاقه‌مندی‌ها', 'آگهی‌های ذخیره‌شده شما در ' . APP_NAME, ['canonical' => APP_URL . '/listings/saved']);
+render_panel_styles();
 render_navbar($user);
+render_user_panel_open($user, 'saved');
 ?>
 
-<main id="main-content" class="section-sm">
-  <div class="container">
-
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-4);margin-bottom:var(--sp-6)">
-      <div>
-        <h1 style="font-size:1.5rem;margin:0 0 var(--sp-2)"><i class="bi bi-heart-fill" style="color:var(--danger)"></i> علاقه‌مندی‌ها</h1>
-        <p style="color:var(--text-muted);margin:0"><?= number_format($total) ?> آگهی ذخیره شده</p>
-      </div>
-      <a href="<?= APP_URL ?>/" class="btn btn-outline"><i class="bi bi-search"></i> مرور آگهی‌ها</a>
+  <div class="dash-panel">
+    <?php render_panel_page_header('علاقه‌مندی‌ها', fmt_num($total) . ' آگهی ذخیره شده'); ?>
+    <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px">
+      <a href="<?= APP_URL ?>/dashboard" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-right"></i> بازگشت
+      </a>
     </div>
 
     <?php if (empty($listings)): ?>
@@ -72,6 +72,6 @@ render_navbar($user);
     <?php endif; ?>
 
   </div>
-</main>
-
+<?php render_user_panel_close(); ?>
+<?php render_panel_scripts(); ?>
 <?php render_footer(); ?>

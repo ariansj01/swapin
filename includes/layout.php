@@ -64,6 +64,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 {$keywords}{$jsonLd}<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{$url}/src/css/fonts.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
 <link rel="icon" type="image/x-icon" href="{$url}/src/img/fav_icon/favicon.ico">
@@ -87,6 +88,7 @@ HTML;
 }
 
 function render_navbar(?array $user = null): void {
+    require_once __DIR__ . '/panel_nav.php';
     $url        = APP_URL;
     $logoUrl    = APP_URL . '/src/img/swapin-light-png.png';
     $appName    = APP_NAME;
@@ -167,23 +169,12 @@ HTML;
           <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
         <div class="dropdown-menu" id="user-menu">
-          <a href="{$url}/dashboard" class="dropdown-item"><i class="bi bi-speedometer2"></i> داشبورد</a>
 HTML;
-        if (is_store_seller($user)) {
-            echo <<<HTML
-          <a href="{$url}/store" class="dropdown-item"><i class="bi bi-shop"></i> پنل فروشگاه</a>
-HTML;
+        foreach (panel_nav_items($user) as [$href, $label, $icon, $badge]) {
+            echo "<a href=\"{$href}\" class=\"dropdown-item\"><i class=\"bi {$icon}\"></i> " . h($label) . "</a>";
         }
         echo <<<HTML
-          <a href="{$url}/listings/my" class="dropdown-item"><i class="bi bi-grid"></i> آگهی‌های من</a>
-          <a href="{$url}/listings/saved" class="dropdown-item"><i class="bi bi-heart"></i> علاقه‌مندی‌ها</a>
-          <a href="{$url}/support" class="dropdown-item"><i class="bi bi-headset"></i> پشتیبانی</a>
-          <a href="{$url}/trades" class="dropdown-item"><i class="bi bi-arrow-left-right"></i> اتاق امن معاملات</a>
-          <a href="{$url}/wallet" class="dropdown-item"><i class="bi bi-wallet2"></i> کیف پول</a>
-          <a href="{$url}/subscription" class="dropdown-item"><i class="bi bi-gem"></i> اشتراک</a>
-          <a href="{$url}/profile/edit" class="dropdown-item"><i class="bi bi-shield-check"></i> احراز هویت</a>
           <div class="dropdown-divider"></div>
-          <a href="{$url}/profile" class="dropdown-item"><i class="bi bi-person"></i> پروفایل</a>
 HTML;
         $logoutCsrf = csrf_field();
         echo <<<HTML
