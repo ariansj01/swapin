@@ -474,6 +474,7 @@ render_user_panel_open($user, 'trades');
           <?php foreach ($allTrades as $t):
             $otherName = ((int)$t['user_a_id'] === $uid) ? $t['user_b_name'] : $t['user_a_name'];
             $listingTitle = ((int)$t['user_a_id'] === $uid) ? $t['listing_a_title'] : $t['listing_b_title'];
+            $listingTitle = $listingTitle ?? 'تسویه اعتباری';
           ?>
             <option value="<?= $t['id'] ?>" <?= $t['id'] == $tradeId ? 'selected' : '' ?>>
               معامله با <?= h($otherName) ?> - <?= h(mb_substr($listingTitle, 0, 30)) ?>
@@ -533,6 +534,14 @@ render_user_panel_open($user, 'trades');
       </div>
     </div>
   </section>
+
+  <!-- Mobile Steps Button -->
+  <div class="trade-room__mobile-steps-btn-container">
+    <button type="button" class="trade-room__mobile-steps-btn" id="openMobileStepsModal">
+      <i class="bi bi-list-check"></i>
+      مراحل معامله
+    </button>
+  </div>
 
   <!-- Alerts -->
   <?php if (isset($_GET['accepted'])): ?>
@@ -1020,47 +1029,46 @@ render_user_panel_open($user, 'trades');
         </div>
       </section>
 
-      <!-- Price Difference -->
-      <section class="trade-room__card">
-        <h3 class="trade-room__card-title">
-          <i class="bi bi-cash"></i>
-          اختلاف قیمت
-        </h3>
-        <div class="st-diff">
-          <div class="st-diff__amount"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'ندارد' ?></div>
-          <div class="st-diff__label">اختلاف قیمت</div>
-        </div>
-        <div class="trade-room__subcard">
-          <div class="trade-room__subcard-title">وضعیت تسویه اختلاف قیمت</div>
-          <div class="st-status-row">
-            <span class="st-status-row__label">اختلاف قیمت</span>
-            <span class="trade-room__pill <?= $trade['diff_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
-              <?= $trade['diff_paid'] ? 'پرداخت شده' : 'در انتظار' ?>
-            </span>
+      <!-- Summary Rows -->
+      <div class="trade-room__summary-row">
+        <!-- Price Difference Card -->
+        <section class="trade-room__summary-card">
+          <h4 style="margin:0 0 8px;font-size:0.9rem;font-weight:700;color:var(--st-primary);">
+            <i class="bi bi-cash"></i> اختلاف قیمت
+          </h4>
+          <div style="font-size:1.25rem;font-weight:800;color:var(--st-primary);margin-bottom:8px;"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'ندارد' ?></div>
+          <div class="trade-room__pill <?= $trade['diff_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>" style="font-size:0.75rem;">
+            <?= $trade['diff_paid'] ? 'پرداخت شده' : 'در انتظار' ?>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="trade-room__card">
-        <h3 class="trade-room__card-title">
-          <i class="bi bi-gear-wide-connected"></i>
-          ارسال و تسویه
-        </h3>
-        <div class="trade-room__subcard">
-          <div class="trade-room__subcard-title">روش ارسال</div>
-          <div class="trade-room__muted" style="margin-bottom:8px;"><?= h($summaryShippingMethod) ?></div>
+        <!-- Shipping Card -->
+        <section class="trade-room__summary-card">
+          <h4 style="margin:0 0 8px;font-size:0.9rem;font-weight:700;color:var(--st-primary);">
+            <i class="bi bi-truck"></i> ارسال
+          </h4>
+          <div class="trade-room__muted" style="font-size:0.85rem;margin-bottom:8px;"><?= h($summaryShippingMethod) ?></div>
           <?php if ($shippingReady): ?>
-          <div class="trade-room__pill trade-room__pill--success" style="font-size:.75rem;"><?= h(shipping_label((string)($isA ? ($trade['user_a_shipping_method'] ?? '') : ($trade['user_b_shipping_method'] ?? '')))) ?></div>
+          <div class="trade-room__pill trade-room__pill--success" style="font-size:0.75rem;"><?= h(shipping_label((string)($isA ? ($trade['user_a_shipping_method'] ?? '') : ($trade['user_b_shipping_method'] ?? '')))) ?></div>
           <?php else: ?>
-          <div class="trade-room__pill trade-room__pill--warning" style="font-size:.75rem;">در انتظار</div>
+          <div class="trade-room__pill trade-room__pill--warning" style="font-size:0.75rem;">در انتظار</div>
           <?php endif; ?>
-        </div>
-        <div class="trade-room__subcard">
-          <div class="trade-room__subcard-title">روش تسویه</div>
-          <div class="trade-room__muted" style="margin-bottom:8px;"><?= h($summaryPaymentMethod) ?></div>
-          <div class="trade-room__pill trade-room__pill--success" style="font-size:.75rem;">کیف پول امن</div>
-        </div>
-      </section>
+        </section>
+      </div>
+
+      <div class="trade-room__summary-row">
+        <!-- Settlement Card -->
+        <section class="trade-room__summary-card">
+          <h4 style="margin:0 0 8px;font-size:0.9rem;font-weight:700;color:var(--st-primary);">
+            <i class="bi bi-shield-lock"></i> تسویه
+          </h4>
+          <div class="trade-room__muted" style="font-size:0.85rem;margin-bottom:8px;"><?= h($summaryPaymentMethod) ?></div>
+          <div class="trade-room__pill trade-room__pill--success" style="font-size:0.75rem;">کیف پول امن</div>
+        </section>
+
+        <!-- Empty column to balance grid -->
+        <div style="display:none;"></div>
+      </div>
     </aside>
   </div>
 </div>
@@ -1204,6 +1212,49 @@ render_user_panel_open($user, 'trades');
   </div>
 </div>
 
+<!-- Mobile Steps Modal -->
+<div class="trade-room__modal-overlay" id="mobileStepsModal">
+  <div class="trade-room__modal trade-room__modal--full">
+    <div class="trade-room__modal-header">
+      <h2 class="trade-room__modal-title">مراحل معامله</h2>
+      <button type="button" class="trade-room__modal-close" data-close-modal="mobileStepsModal">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="trade-room__modal-body">
+      <div class="trade-room__mobile-steps-list">
+        <?php foreach ($timelineItems as $index => $item):
+          $stepStatus = get_step_status($item['id'], $trade, $contract, $hasReview);
+          $isActive = $item['tab'] === $tab;
+          $stepClass = 'trade-room__mobile-step';
+          if ($stepStatus === 'done') {
+            $stepClass .= ' trade-room__mobile-step--done';
+          } elseif ($isActive || $stepStatus === 'current') {
+            $stepClass .= ' trade-room__mobile-step--active';
+          }
+        ?>
+          <a href="?id=<?= $tradeId ?>&tab=<?= h($item['tab']) ?>" class="<?= $stepClass ?>">
+            <div class="trade-room__mobile-step-dot">
+              <?php if ($stepStatus === 'done'): ?>
+                <i class="bi bi-check-lg"></i>
+              <?php else: ?>
+                <?= $index + 1 ?>
+              <?php endif; ?>
+            </div>
+            <div>
+              <div style="font-weight:800;"><?= h($item['title']) ?></div>
+              <?php $itemDate = get_step_datetime($item['id'], $trade, $contract, $hasReview); ?>
+              <?php if ($itemDate): ?>
+                <div class="trade-room__muted" style="font-size:0.75rem;margin-top:2px;"><?= persian_datetime($itemDate) ?></div>
+              <?php endif; ?>
+            </div>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Modal handlers
@@ -1232,6 +1283,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const openMobileTabsBtn = document.getElementById('openMobileTabsModal');
   if (openMobileTabsBtn) {
     openMobileTabsBtn.addEventListener('click', () => openModal('mobileTabsModal'));
+  }
+
+  const openMobileStepsBtn = document.getElementById('openMobileStepsModal');
+  if (openMobileStepsBtn) {
+    openMobileStepsBtn.addEventListener('click', () => openModal('mobileStepsModal'));
   }
 
   // Close buttons
