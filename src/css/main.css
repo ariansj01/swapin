@@ -108,7 +108,7 @@ h4 { font-size: 1.0625rem; }
 p { color: var(--text-secondary); line-height: 1.6; }
 
 /* ── 3. Layout ─────────────────────────────────────────────────────────── */
-.container    { max-width: var(--container);    margin: 0 auto; padding: 0 var(--sp-5); }
+.container    { max-width: 85%;    margin: 0 auto; padding: 0 var(--sp-5); }
 .container-md { max-width: var(--container-md); margin: 0 auto; padding: 0 var(--sp-5); }
 .container-sm { max-width: var(--container-sm); margin: 0 auto; padding: 0 var(--sp-5); }
 
@@ -596,6 +596,14 @@ p { color: var(--text-secondary); line-height: 1.6; }
   outline: none;
   transition: border-color var(--duration), box-shadow var(--duration);
   line-height: 1.5;
+  min-height: 52px;
+}
+
+.login-code-input {
+  min-height: 66px;
+  font-size: 1.4rem;
+  letter-spacing: .24em;
+  text-align: center;
 }
 
 .form-control:focus {

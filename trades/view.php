@@ -616,10 +616,20 @@ render_user_panel_open($user, 'trades');
     <div class="trade-room__content">
 
       <!-- Tabs -->
+      <?php $tabIcons = [
+        'chat'     => 'bi-chat-dots',
+        'fee'      => 'bi-credit-card',
+        'contract' => 'bi-file-earmark-text',
+        'diff'     => 'bi-cash',
+        'shipping' => 'bi-truck',
+        'details'  => 'bi-box-seam',
+        'final'    => 'bi-check-circle',
+      ]; ?>
       <nav class="trade-room__tabs" aria-label="مراحل معامله">
         <?php foreach ($tabLabels as $tabKey => $label): ?>
           <a href="?id=<?= $tradeId ?>&tab=<?= h($tabKey) ?>" class="trade-room__tab <?= $tab === $tabKey ? 'trade-room__tab--active' : '' ?>">
-            <?= h($label) ?>
+            <i class="bi <?= $tabIcons[$tabKey] ?? 'bi-circle' ?> trade-room__tab-icon"></i>
+            <span><?= h($label) ?></span>
           </a>
         <?php endforeach; ?>
       </nav>
@@ -993,7 +1003,7 @@ render_user_panel_open($user, 'trades');
 
     <!-- Left Column: Details (30% width) -->
     <aside class="trade-room__details-column">
-      <section class="trade-room__card">
+      <section class="trade-room__card trade-room__card--compact">
         <h3 class="trade-room__card-title">
           <i class="bi bi-receipt"></i>
           جزئیات معامله
@@ -1029,46 +1039,52 @@ render_user_panel_open($user, 'trades');
         </div>
       </section>
 
-      <!-- Summary Rows -->
-      <div class="trade-room__summary-row">
-        <!-- Price Difference Card -->
-        <section class="trade-room__summary-card">
-          <h4 style="margin:0 0 8px;font-size:0.9rem;font-weight:700;color:var(--st-primary);">
-            <i class="bi bi-cash"></i> اختلاف قیمت
-          </h4>
-          <div style="font-size:1.25rem;font-weight:800;color:var(--st-primary);margin-bottom:8px;"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'ندارد' ?></div>
-          <div class="trade-room__pill <?= $trade['diff_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>" style="font-size:0.75rem;">
+      <section class="trade-room__summary-card trade-room__summary-card--wide">
+        <h4 class="trade-room__summary-head">
+          <i class="bi bi-cash"></i> اختلاف قیمت
+        </h4>
+        <div class="trade-room__summary-line">
+          <span class="trade-room__summary-label">مبلغ</span>
+          <span class="trade-room__summary-value"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'بدون اختلاف' ?></span>
+        </div>
+        <div class="trade-room__summary-line">
+          <span class="trade-room__summary-label">وضعیت</span>
+          <span class="trade-room__pill <?= $trade['diff_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
             <?= $trade['diff_paid'] ? 'پرداخت شده' : 'در انتظار' ?>
-          </div>
-        </section>
+          </span>
+        </div>
+      </section>
 
-        <!-- Shipping Card -->
-        <section class="trade-room__summary-card">
-          <h4 style="margin:0 0 8px;font-size:0.9rem;font-weight:700;color:var(--st-primary);">
-            <i class="bi bi-truck"></i> ارسال
-          </h4>
-          <div class="trade-room__muted" style="font-size:0.85rem;margin-bottom:8px;"><?= h($summaryShippingMethod) ?></div>
-          <?php if ($shippingReady): ?>
-          <div class="trade-room__pill trade-room__pill--success" style="font-size:0.75rem;"><?= h(shipping_label((string)($isA ? ($trade['user_a_shipping_method'] ?? '') : ($trade['user_b_shipping_method'] ?? '')))) ?></div>
-          <?php else: ?>
-          <div class="trade-room__pill trade-room__pill--warning" style="font-size:0.75rem;">در انتظار</div>
-          <?php endif; ?>
-        </section>
-      </div>
+      <section class="trade-room__summary-card trade-room__summary-card--wide">
+        <h4 class="trade-room__summary-head">
+          <i class="bi bi-credit-card"></i> کارمزد پلتفرم
+        </h4>
+        <div class="trade-room__meta-line trade-room__meta-line--compact">
+          <span><?= h($trade['user_a_name']) ?></span>
+          <span class="trade-room__pill <?= trade_user_fee_paid($trade, true) ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
+            <?= trade_user_fee_paid($trade, true) ? 'پرداخت شده' : 'در انتظار' ?>
+          </span>
+        </div>
+        <div class="trade-room__meta-line trade-room__meta-line--compact">
+          <span><?= h($trade['user_b_name']) ?></span>
+          <span class="trade-room__pill <?= trade_user_fee_paid($trade, false) ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
+            <?= trade_user_fee_paid($trade, false) ? 'پرداخت شده' : 'در انتظار' ?>
+          </span>
+        </div>
+      </section>
 
-      <div class="trade-room__summary-row">
-        <!-- Settlement Card -->
-        <section class="trade-room__summary-card">
-          <h4 style="margin:0 0 8px;font-size:0.9rem;font-weight:700;color:var(--st-primary);">
-            <i class="bi bi-shield-lock"></i> تسویه
-          </h4>
-          <div class="trade-room__muted" style="font-size:0.85rem;margin-bottom:8px;"><?= h($summaryPaymentMethod) ?></div>
-          <div class="trade-room__pill trade-room__pill--success" style="font-size:0.75rem;">کیف پول امن</div>
-        </section>
-
-        <!-- Empty column to balance grid -->
-        <div style="display:none;"></div>
-      </div>
+      <section class="trade-room__summary-card trade-room__summary-card--wide">
+        <h4 class="trade-room__summary-head">
+          <i class="bi bi-cash-stack"></i> وضعیت پرداخت اختلاف قیمت
+        </h4>
+        <?php if ($amountToPay <= 0): ?>
+          <div class="trade-room__summary-note">برای این معامله اختلاف قیمت محاسبه نشده است.</div>
+        <?php elseif ($trade['diff_paid']): ?>
+          <div class="trade-room__summary-note">اختلاف قیمت از قبل پرداخت شده است.</div>
+        <?php else: ?>
+          <div class="trade-room__summary-note">هنوز اختلاف قیمت پرداخت نشده است.</div>
+        <?php endif; ?>
+      </section>
     </aside>
   </div>
 </div>

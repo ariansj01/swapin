@@ -106,13 +106,13 @@ render_navbar($user);
     <?php endif; ?>
 
     <div class="card mb-6">
-      <div class="card-body" style="padding:var(--sp-7)">
+      <div class="card-body" style="padding:var(--sp-8);max-width:760px;margin:0 auto">
         <form method="POST" id="contact-form" novalidate
               data-emailjs="<?= $useEmailJs ? '1' : '0' ?>"
               data-api-url="<?= h(APP_URL . '/api/contact.php') ?>">
           <?= csrf_field() ?>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
-            <div class="form-group">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4)">
+            <div class="form-group" style="margin-bottom:0">
               <label class="form-label" for="name">نام شما <span class="required">*</span></label>
               <input type="text" id="name" name="name"
                      class="form-control <?= isset($errors['name']) ? 'is-invalid' : '' ?>"
@@ -132,7 +132,7 @@ render_navbar($user);
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom:var(--sp-4)">
             <label class="form-label" for="subject">موضوع <span class="required">*</span></label>
             <input type="text" id="subject" name="subject"
                    class="form-control <?= isset($errors['subject']) ? 'is-invalid' : '' ?>"
@@ -142,7 +142,7 @@ render_navbar($user);
             <?php endif; ?>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom:var(--sp-4)">
             <label class="form-label" for="message">پیام <span class="required">*</span></label>
             <textarea id="message" name="message" rows="6"
                       class="form-control <?= isset($errors['message']) ? 'is-invalid' : '' ?>"

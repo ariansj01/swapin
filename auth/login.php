@@ -151,7 +151,7 @@ render_navbar(null);
 
 <div style="min-height:calc(100vh - 130px);display:flex;align-items:center;padding:var(--sp-8) 0">
   <div class="container-sm">
-    <div class="card" style="max-width:440px;margin:0 auto">
+    <div class="card" style="max-width:440px;margin:0 auto;min-height:440px;">
       <div class="card-body" style="padding:var(--sp-8)">
 
         <div class="text-center mb-8">
@@ -195,13 +195,13 @@ render_navbar(null);
           </p>
           <div class="form-group">
             <label class="form-label">کد تأیید</label>
-            <input type="text" class="form-control" name="code" placeholder="000000"
+            <input type="text" class="form-control login-code-input" name="code" placeholder="000000"
                    inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code"
-                   style="font-size:1.5rem;letter-spacing:.3em;text-align:center" required autofocus>
+                   required autofocus>
           </div>
           <button type="submit" class="btn btn-primary w-100 btn-lg">تأیید و ادامه</button>
           <p class="text-center fs-sm mt-6" style="color:var(--text-muted)" id="resendArea">
-            دریافت نکردید؟ 
+            دریافت نکردید؟
             <a href="?step=phone<?= $redir ? '&redirect=' . urlencode($redir) : '' ?>" id="resendLink">ارسال مجدد کد</a>
           </p>
         </form>

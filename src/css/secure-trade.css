@@ -790,7 +790,7 @@
 
 .trade-room__layout {
   display: grid;
-  grid-template-columns: 20% 45% 33%;
+  grid-template-columns: 17% 55% 26%;
   gap: 12px;
   align-items: start;
 }
@@ -891,9 +891,10 @@
 }
 
 .trade-room__product-card {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 12px;
+  align-items: center;
   background: #fff;
   border: 1px solid #ECEFF5;
   border-radius: 14px;
@@ -908,7 +909,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 10px 0;
+  margin: 12px 0;
 }
 
 .trade-room__swap-divider-icon {
@@ -925,9 +926,9 @@
 }
 
 .trade-room__product-thumb {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
   object-fit: cover;
   background: #e5e7eb;
   display: flex;
@@ -936,8 +937,12 @@
   color: #9ca3af;
 }
 
+.trade-room__product-thumb + div {
+  min-width: 0;
+}
+
 .trade-room__product-title {
-  font-size: .9rem;
+  font-size: .92rem;
   font-weight: 800;
   color: #081B45;
 }
@@ -945,16 +950,64 @@
 .trade-room__product-meta {
   font-size: .78rem;
   color: #6b7280;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .trade-room__summary-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.trade-room__summary-card {
+  background: var(--st-card-bg);
+  border-radius: 14px;
+  border: 1px solid var(--st-border);
+  padding: 14px;
+}
+
+.trade-room__summary-card--wide {
+  width: 100%;
+}
+
+.trade-room__summary-head {
+  margin: 0 0 10px;
+  font-size: .95rem;
+  font-weight: 800;
+  color: #081B45;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trade-room__summary-line {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px dashed #E5E7EB;
+  border-top: 1px solid #F1F5F9;
+}
+
+.trade-room__summary-note {
+  font-size: .85rem;
+  color: #475569;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+
+.trade-room__meta-line--compact {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid #F1F5F9;
+  font-size: .875rem;
+}
+
+.trade-room__meta-line--compact:first-of-type {
+  border-top: 0;
 }
 
 .trade-room__summary-row:last-child {
@@ -1013,31 +1066,32 @@
 .trade-room__tab {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 10px;
   flex: 0 0 auto;
-  min-width: 136px;
+  min-width: 130px;
   min-height: 44px;
-  padding: 9px 12px;
-  border-radius: 12px;
-  border: 1px solid #ECEFF5;
-  background: #fff;
+  padding: 8px 10px;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
   color: #4b5563;
   text-decoration: none;
   font-size: .875rem;
   font-weight: 700;
-  transition: transform .2s, border-color .2s, box-shadow .2s;
+  transition: color .2s;
 }
 
 .trade-room__tab:hover {
-  transform: translateY(-2px);
-  border-color: #D1D5DB;
+  color: #081B45;
 }
 
 .trade-room__tab--active {
   color: #081B45;
-  border-color: #081B45;
-  box-shadow: 0 8px 20px rgba(8,27,69,.08);
+}
+
+.trade-room__tab-icon {
+  font-size: 1.1rem;
 }
 
 .trade-room__panel {
@@ -1133,13 +1187,13 @@
 
 .trade-room__timeline {
   position: relative;
-  padding-inline-start: 24px;
+  padding-inline-start: 40px;
 }
 
 .trade-room__timeline::before {
   content: "";
   position: absolute;
-  inset-inline-start: 8px;
+  inset-inline-start: 24px;
   top: 8px;
   bottom: 8px;
   width: 2px;
@@ -1408,18 +1462,18 @@
   flex: 1; /* Makes cards take available space */
 }
 
-/* Summary cards layout: side by side */
+/* Summary cards layout: full width stack */
 .trade-room__summary-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   margin-bottom: 12px;
 }
 .trade-room__summary-card {
   background: var(--st-card-bg);
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--st-border);
-  padding: 12px;
+  padding: 14px;
 }
 
 .trade-room__offers-grid {

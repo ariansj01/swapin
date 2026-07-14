@@ -181,10 +181,9 @@ render_navbar($user);
 
       <label for="want-filter" class="visually-hidden">نوع مبادله</label>
       <select class="form-control" id="want-filter" name="want" style="width:auto;min-width:150px;height:50px">
-        <option value="">خدمات اعتبار کالا با کالا</option>
-        <option value="item"    <?= $wantType === 'item'    ? 'selected' : '' ?>>کالا در برابر کالا</option>
-        <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات می‌خواهد</option>
-        <option value="credit"  <?= $wantType === 'credit'  ? 'selected' : '' ?>>اعتبار می‌خواهد</option>
+        <option value="item"    <?= $wantType === 'item'    ? 'selected' : '' ?>>کالا با کالا</option>
+        <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
+        <option value="credit"  <?= $wantType === 'credit'  ? 'selected' : '' ?>>اعتبار</option>
       </select>
 
       <label for="sort-filter" class="visually-hidden">مرتب‌سازی</label>
