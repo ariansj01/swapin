@@ -489,26 +489,76 @@ function paginate(int $total, int $perPage, int $page): array {
 }
 
 function validate_uploaded_image(array $file): ?array {
-    if ($file['error'] !== UPLOAD_ERR_OK) {
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
         return null;
     }
     $maxSize = 5 * 1024 * 1024;
-    if ($file['size'] > $maxSize) {
+    if (($file['size'] ?? 0) > $maxSize || empty($file['tmp_name']) || !is_file($file['tmp_name'])) {
         return null;
     }
 
-    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-    $mime    = mime_content_type($file['tmp_name']);
-    if (!isset($allowed[$mime])) {
-        return null;
+    $allowed = [
+        'image/jpeg' => 'jpg',
+        'image/jpg'  => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif',
+    ];
+    $extMap = [
+        'jpg'  => 'jpg',
+        'jpeg' => 'jpg',
+        'png'  => 'png',
+        'webp' => 'webp',
+        'gif'  => 'gif',
+    ];
+
+    $mime = null;
+    if (function_exists('finfo_open')) {
+        $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo) {
+            $detected = @finfo_file($finfo, $file['tmp_name']);
+            if (is_string($detected) && $detected !== '') {
+                $mime = strtolower(trim($detected));
+            }
+            @finfo_close($finfo);
+        }
+    }
+
+    if (!$mime && function_exists('mime_content_type')) {
+        $detected = @mime_content_type($file['tmp_name']);
+        if (is_string($detected) && $detected !== '') {
+            $mime = strtolower(trim($detected));
+        }
     }
 
     $info = @getimagesize($file['tmp_name']);
+    $imageMime = is_array($info) && !empty($info['mime'])
+        ? strtolower((string)$info['mime'])
+        : null;
+    if (!$mime && $imageMime) {
+        $mime = $imageMime;
+    }
+
+    $originalExt = strtolower((string)pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION));
+    $normalizedExt = $extMap[$originalExt] ?? null;
+    $normalizedMime = $mime && isset($allowed[$mime]) ? $mime : null;
+    if (!$normalizedMime && $imageMime && isset($allowed[$imageMime])) {
+        $normalizedMime = $imageMime;
+    }
+
+    if ($normalizedMime) {
+        $ext = $allowed[$normalizedMime];
+    } elseif ($normalizedExt && $imageMime) {
+        $ext = $normalizedExt;
+    } else {
+        return null;
+    }
+
     if ($info === false) {
         return null;
     }
 
-    return ['ext' => $allowed[$mime], 'mime' => $mime];
+    return ['ext' => $ext, 'mime' => $normalizedMime ?: ($imageMime ?: 'image/' . $ext)];
 }
 
 function store_uploaded_image(array $file, string $prefix, string $destDir): ?string {

@@ -192,7 +192,7 @@
 }
 
 .user-panel__inner {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 var(--sp-6) var(--sp-8);
   display: grid;
@@ -1426,7 +1426,9 @@
   box-shadow: var(--dash-shadow);
 }
 .my-listing-card--pending {
-  border-inline-start: 3px solid var(--warning);
+  border: 2px solid var(--dash-gold);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+  background-color: var(--dash-gold-bg);
 }
 
 .my-listing-card__media {

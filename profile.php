@@ -9,10 +9,16 @@ if (!$profileId) {
     header('Location: ' . APP_URL . '/'); exit;
 }
 
+$usersCols = db_table_columns('users');
+$selectCols = ['id', 'name', 'email', 'city', 'bio', 'avatar', 'rating', 'rating_count', 'verification_level', 'credit_balance', 'created_at'];
+
+if (in_array('kyc_status', $usersCols)) $selectCols[] = 'kyc_status';
+if (in_array('seller_type', $usersCols)) $selectCols[] = 'seller_type';
+if (in_array('store_name', $usersCols)) $selectCols[] = 'store_name';
+if (in_array('subscription_plan', $usersCols)) $selectCols[] = 'subscription_plan';
+
 $profile = DB::fetch(
-    'SELECT id, name, email, city, bio, avatar, rating, rating_count, verification_level,
-            credit_balance, created_at, kyc_status, seller_type, store_name, subscription_plan
-     FROM users WHERE id = ? AND is_active = 1',
+    'SELECT ' . implode(', ', $selectCols) . ' FROM users WHERE id = ? AND is_active = 1',
     [$profileId]
 );
 
@@ -80,10 +86,10 @@ render_navbar($currentUser);
               <?php if ($profile['verification_level'] >= 2): ?>
               <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
               <?php endif; ?>
-              <?php if (($profile['kyc_status'] ?? 'none') === 'approved'): ?>
+              <?php if (array_key_exists('kyc_status', $profile) && $profile['kyc_status'] === 'approved'): ?>
               <span class="badge badge-success"><i class="bi bi-shield-check"></i> KYC تأییدشده</span>
               <?php endif; ?>
-              <?php if (($profile['subscription_plan'] ?? 'none') !== 'none'): ?>
+              <?php if (array_key_exists('subscription_plan', $profile) && $profile['subscription_plan'] !== 'none'): ?>
               <span class="badge badge-warning"><i class="bi bi-gem"></i> <?= ucfirst($profile['subscription_plan']) ?></span>
               <?php endif; ?>
             </div>

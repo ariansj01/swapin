@@ -289,6 +289,19 @@ render_navbar($user);
   <div class="lv-body">
     <h1 class="lv-title"><?= h($listing['title']) ?></h1>
 
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.875rem;color:var(--text-muted);">
+      <span>فروشنده:</span>
+      <strong style="color:var(--dash-navy);"><?= h($listing['seller_name']) ?></strong>
+      <?php if ($listing['seller_city']): ?>
+      <span>(<?= h($listing['seller_city']) ?>)</span>
+      <?php endif; ?>
+      <?php if ($listing['verification_level'] >= 2): ?>
+      <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
+      <?php endif; ?>
+      <?php if ($listing['seller_rating'] > 0): ?>
+      <span class="badge badge-primary"><i class="bi bi-star-fill"></i> <?= fmt_num((float)$listing['seller_rating'], 1) ?></span>
+      <?php endif; ?>
+    </div>
     <div class="lv-price-row">
       <?php if ((float)$listing['estimated_value'] > 0): ?>
       <div>
@@ -346,7 +359,7 @@ render_navbar($user);
     <!-- Wants -->
     <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($listing['want_in_return'])): ?>
     <section class="lv-want-section">
-      <h2 class="lv-section__title">در ازای این کالا به دنبال چه چیزی هست؟ <?= h($listing['seller_name']) ?></h2>
+      <h2 class="lv-section__title"><?= h($listing['seller_name']) ?> در ازای این کالا به دنبال چه چیزی هست؟</h2>
       <div class="lv-chips">
         <?php if ($wantChips): ?>
           <?php foreach ($wantChips as $chip): ?>
@@ -553,6 +566,19 @@ render_navbar($user);
             <span class="lv-chip lv-chip--primary"><i class="bi bi-clock"></i> <?= timeago($listing['created_at']) ?></span>
           </div>
 
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.875rem;color:var(--text-muted);">
+            <span>فروشنده:</span>
+            <strong style="color:var(--dash-navy);"><?= h($listing['seller_name']) ?></strong>
+            <?php if ($listing['seller_city']): ?>
+            <span>(<?= h($listing['seller_city']) ?>)</span>
+            <?php endif; ?>
+            <?php if ($listing['verification_level'] >= 2): ?>
+            <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
+            <?php endif; ?>
+            <?php if ($listing['seller_rating'] > 0): ?>
+            <span class="badge badge-primary"><i class="bi bi-star-fill"></i> <?= fmt_num((float)$listing['seller_rating'], 1) ?></span>
+            <?php endif; ?>
+          </div>
           <?php if ((float)$listing['estimated_value'] > 0): ?>
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
             <span style="font-size:.8125rem;color:var(--lv-muted)">ارزش تقریبی</span>
@@ -567,7 +593,7 @@ render_navbar($user);
           <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($listing['want_in_return'])): ?>
           <div class="lv-divider"></div>
           <div class="lv-wants">
-            <div class="lv-wants-label"><i class="bi bi-stars"></i> در ازای این کالا به دنبال چه چیزی است؟</div>
+            <div class="lv-wants-label"><i class="bi bi-stars"></i> <?= h($listing['seller_name']) ?> در ازای این کالا به دنبال چه چیزی است؟</div>
             <p class="lv-wants-text"><?= h($listing['want_in_return']) ?></p>
           </div>
           <?php endif; ?>

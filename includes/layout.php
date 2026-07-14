@@ -3,6 +3,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/content_manager.php';
 require_once __DIR__ . '/seo.php';
+require_once __DIR__ . '/dashboard_layout.php';
 
 function render_head(string $title = '', string $desc = '', array $seo = []): void {
     $t         = $title ? h($title) . ' — ' . APP_NAME : APP_NAME . ' — بازار تعویض هوشمند';

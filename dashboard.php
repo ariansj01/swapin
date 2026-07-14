@@ -88,7 +88,7 @@ $triangularSwaps   = [];
 
 if (!$dashboardNeedsMigration) {
     try {
-        $aiMatchData       = ai_match_listings_cached($uid, null, false, 8);
+        $aiMatchData       = ai_match_listings_cached($uid, null, false, 3);
         $swapMatches       = $aiMatchData['matches'];
         $aiMatchSource     = $aiMatchData['source'];
         $userListingsMatch = DB::fetchAll(
@@ -220,7 +220,7 @@ render_navbar($user);
             </div>
             <div id="ai-match-list" style="display:flex;flex-direction:column;gap:var(--sp-3)">
             <?php if ($swapMatches): ?>
-              <?php foreach ($swapMatches as $m): ?>
+              <?php foreach (array_slice($swapMatches, 0, 3) as $m): ?>
               <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>" class="match-row" data-listing-id="<?= (int)$m['listing_id'] ?>">
                 <div class="match-row__score"><?= (int)$m['match_score'] ?>٪</div>
                 <div class="match-row__body">
