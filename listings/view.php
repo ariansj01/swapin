@@ -346,7 +346,7 @@ render_navbar($user);
     <!-- Wants -->
     <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($listing['want_in_return'])): ?>
     <section class="lv-want-section">
-      <h2 class="lv-section__title">در ازای این کالا به دنبال چه چیزی است؟</h2>
+      <h2 class="lv-section__title">در ازای این کالا به دنبال چه چیزی هست؟ <?= h($listing['seller_name']) ?></h2>
       <div class="lv-chips">
         <?php if ($wantChips): ?>
           <?php foreach ($wantChips as $chip): ?>
@@ -610,7 +610,7 @@ render_navbar($user);
             <span class="lv-chip lv-chip--info"><i class="bi bi-star"></i> <?= fmt_num((int)$sellerSwapScore['score']) ?></span>
           </div>
 
-          <div class="lv-seller-stats">
+          <div class="lv-seller-stats" style="display: none;">
             <div class="lv-stat-item">
               <div class="lv-stat-value"><?= fmt_num((int)$listing['seller_rating_count']) ?></div>
               <div class="lv-stat-label">نظرات</div>

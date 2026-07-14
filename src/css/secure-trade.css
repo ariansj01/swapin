@@ -788,7 +788,7 @@
 
 .trade-room__layout {
   display: grid;
-  grid-template-columns: 22% 32% 46%;
+  grid-template-columns: 20% 45% 33%;
   gap: 12px;
   align-items: start;
 }
