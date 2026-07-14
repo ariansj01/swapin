@@ -34,8 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     elseif (!filter_var($vals['email'], FILTER_VALIDATE_EMAIL))
         $errors['email'] = 'لطفاً یک آدرس ایمیل معتبر وارد کنید';
 
-    if (!$vals['city'] || mb_strlen($vals['city']) < 2)
-        $errors['city'] = 'شهر الزامی است (حداقل ۲ کاراکتر)';
+    if (!$vals['city'] || !in_array($vals['city'], iran_cities(), true))
+        $errors['city'] = 'لطفاً شهر را از فهرست انتخاب کنید';
 
     // Check email uniqueness
     if ($vals['email'] && !isset($errors['email'])) {
@@ -118,9 +118,10 @@ render_navbar(null);
 
           <div class="form-group">
             <label class="form-label" for="city">شهر <span class="required">*</span></label>
-            <input type="text" class="form-control <?= isset($errors['city']) ? 'is-invalid' : '' ?>"
-                   id="city" name="city" value="<?= h($vals['city']) ?>"
-                   placeholder="شهر شما" autocomplete="address-level2" required>
+            <select id="city" name="city" class="form-control <?= isset($errors['city']) ? 'is-invalid' : '' ?>" required>
+              <option value="">انتخاب شهر</option>
+              <?= render_city_options($vals['city']) ?>
+            </select>
             <?php if (isset($errors['city'])): ?>
             <div class="invalid-feedback"><?= h($errors['city']) ?></div>
             <?php endif; ?>

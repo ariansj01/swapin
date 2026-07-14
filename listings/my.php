@@ -92,20 +92,14 @@ render_user_panel_open($user, 'my');
 ?>
 
   <div class="dash-panel">
-    <div class="dash-page-head">
-      <div class="dash-page-head__start">
-        <a href="<?= APP_URL ?>/dashboard" class="dash-back-btn"><i class="bi bi-arrow-right"></i> بازگشت</a>
-        <h1 class="dash-page-head__title">آگهی‌های من</h1>
-        <p class="dash-page-head__sub">مدیریت همه آگهی‌های تعویض شما</p>
-      </div>
-      <div class="dash-page-head__actions">
-        <a href="<?= APP_URL ?>" class="btn btn-outline btn-sm">
-          <i class="bi bi-house"></i> خانه
-        </a>
-        <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">
-          <i class="bi bi-plus-lg"></i> آگهی جدید
-        </a>
-      </div>
+    <?php render_panel_page_header('آگهی‌های من', 'مدیریت همه آگهی‌های تعویض شما'); ?>
+    <div class="dash-page-head__actions">
+      <a href="<?= APP_URL ?>" class="btn btn-outline btn-sm">
+        <i class="bi bi-house"></i> خانه
+      </a>
+      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> آگهی جدید
+      </a>
     </div>
 
     <?php if (isset($_GET['promoted'])): ?>

@@ -205,6 +205,8 @@ try {
     swapin_debug_log('migration_error', ['message' => $e->getMessage()]);
 }
 
+auto_expire_listings();
+
 function swapin_debug_log(string $message, array $context = []): void {
     $parts = ['[swapin-debug]', '[req:' . SWAPIN_REQUEST_ID . ']', $message];
     if (!empty($context)) {
@@ -332,6 +334,46 @@ function db_has_table(string $table): bool {
     } catch (Throwable) {
         return false;
     }
+}
+
+function iran_cities(): array {
+    return array_values(array_unique([
+        'تهران', 'مشهد', 'اصفهان', 'کرج', 'شیراز', 'تبریز', 'قم', 'اهواز',
+        'کرمانشاه', 'ارومیه', 'رشت', 'یزد', 'کرمان', 'همدان', 'ساری',
+        'اراک', 'زاهدان', 'سنندج', 'بندرعباس', 'بابلسر', 'قزوین', 'بوشهر',
+        'زنجان', 'گرگان', 'خرم‌آباد', 'شهرکرد', 'بیرجند', 'گرمسار', 'اسلام‌شهر',
+        'ملارد', 'دزفول', 'سمنان', 'بابل', 'رودهن', 'بنه', 'نیشابور', 'رفسنجان',
+        'سبزوار', 'قائن', 'کاشان', 'خمین', 'شوشتر',
+        'آمل', 'نکا', 'بهبهان', 'مرودشت', 'بجنورد', 'خرمشهر',
+        'مشکین‌شهر', 'میبد', 'نور', 'پاکدشت', 'شاهین‌شهر',
+        'نادر شهر', 'آبادان', 'سلماس', 'ملایر', 'دشتی'
+    ]));
+}
+
+function render_city_options(string $selected = ''): string {
+    $options = '';
+    $cities = iran_cities();
+    foreach ($cities as $city) {
+        $selectedAttr = $city === $selected ? ' selected' : '';
+        $options .= '<option value="' . h($city) . '"' . $selectedAttr . '>' . h($city) . '</option>';
+    }
+    if ($selected !== '' && !in_array($selected, $cities, true)) {
+        $options = '<option value="' . h($selected) . '" selected>' . h($selected) . '</option>' . $options;
+    }
+    return $options;
+}
+
+function auto_expire_listings(): int {
+    if (!db_has_table('listings')) {
+        return 0;
+    }
+
+    $stmt = DB::query(
+        "UPDATE listings
+         SET status = 'expired', updated_at = NOW()
+         WHERE status = 'active' AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)"
+    );
+    return $stmt->rowCount();
 }
 
 function db_filter_row(string $table, array $data): array {

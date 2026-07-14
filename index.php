@@ -90,7 +90,7 @@ $listings = DB::fetchAll(
     [...$params, LISTINGS_PER_PAGE, $pag['offset']]
 );
 
-$cities = DB::fetchAll("SELECT DISTINCT city FROM listings WHERE city IS NOT NULL AND city != '' ORDER BY city LIMIT 30");
+$cities = iran_cities();
 
 $homeMetaTitle = swapin_content_get('home_meta_title');
 $homeMetaDesc  = swapin_content_get('home_meta_desc');
@@ -174,9 +174,7 @@ render_navbar($user);
       <label for="city-filter" class="visually-hidden">شهر</label>
       <select class="form-control" id="city-filter" name="city" style="width:auto;min-width:140px;height:50px">
         <option value="">همه شهرها</option>
-        <?php foreach ($cities as $c): ?>
-        <option value="<?= h($c['city']) ?>" <?= $city === $c['city'] ? 'selected' : '' ?>><?= h($c['city']) ?></option>
-        <?php endforeach; ?>
+        <?= render_city_options($city) ?>
       </select>
 
       <label for="want-filter" class="visually-hidden">نوع مبادله</label>

@@ -4,6 +4,16 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $user = require_auth();
 $errors = [];
+$vals = [
+    'title'           => '',
+    'description'     => '',
+    'category_id'     => 0,
+    'condition'       => 'good',
+    'city'            => '',
+    'want_categories' => [],
+    'want_description' => '',
+    'estimated_value' => 0,
+];
 
 // Category data
 $categories = DB::fetchAll(
@@ -49,6 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($vals['title']) > 200) $errors['title'] = 'عنوان باید کمتر از ۲۰۰ کاراکتر باشد';
     if (!$vals['category_id']) $errors['category_id'] = 'لطفا دسته‌بندی را انتخاب کنید';
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
+    if ($vals['city'] && !in_array($vals['city'], iran_cities(), true)) {
+        $errors['city'] = 'لطفاً شهر را از فهرست انتخاب کنید';
+    }
 
     if (empty($errors)) {
         $hasImageUpload = false;
@@ -246,9 +259,14 @@ render_navbar($user);
           </div>
 
           <div class="wizard-form-group">
-            <label class="wizard-form-label">شهر</label>
-            <input type="text" name="city" id="step3-city" class="wizard-form-input"
-                   value="<?= h($user['city'] ?? '') ?>" placeholder="شهر شما">
+            <label class="wizard-form-label" for="step3-city">شهر</label>
+            <select name="city" id="step3-city" class="wizard-form-select <?= isset($errors['city']) ? 'is-invalid' : '' ?>">
+              <option value="">انتخاب شهر</option>
+              <?= render_city_options($vals['city']) ?>
+            </select>
+            <?php if (isset($errors['city'])): ?>
+            <div class="invalid-feedback"><?= h($errors['city']) ?></div>
+            <?php endif; ?>
           </div>
         </div>
 

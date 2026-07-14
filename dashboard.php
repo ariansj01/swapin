@@ -43,6 +43,8 @@ $sentOffers = (int)(DB::fetch(
     'SELECT COUNT(*) AS c FROM trade_offers WHERE from_user_id = ? AND status = "pending"', [$uid]
 )['c'] ?? 0);
 
+$expiredListingsCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "expired"', [$uid])['c'] ?? 0);
+
 // Recent wallet transactions
 $recentTx = $dashboardNeedsMigration
     ? []
@@ -119,6 +121,18 @@ render_navbar($user);
   <div class="container">
     <i class="bi bi-stars"></i>
     <strong>به <?= APP_NAME ?> خوش آمدید!</strong> مبلغ <strong><?= fmt_num(WELCOME_BONUS) ?> <?= CREDIT_UNIT ?></strong> به عنوان پاداش خوش‌آمدگویی به کیف پول شما اضافه شد. با ثبت اولین آگهی شروع کنید!
+  </div>
+</div>
+<?php endif; ?>
+
+<?php if ($expiredListingsCount > 0): ?>
+<div class="alert alert-warning" style="border-radius:0;border-left:0;border-right:0" id="expired-listings-alert">
+  <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
+    <i class="bi bi-clock-history"></i>
+    <span><?= fmt_num($expiredListingsCount) ?> آگهی شما به‌دلیل سپری شدن ۳۰ روز منقضی شده است. برای بازگردانی آنها به تب «منقضی» بروید.</span>
+    <button type="button" class="btn btn-ghost btn-sm" style="margin-inline-start:auto" onclick="this.closest('.alert')?.remove()">
+      <i class="bi bi-x-lg"></i> بستن
+    </button>
   </div>
 </div>
 <?php endif; ?>

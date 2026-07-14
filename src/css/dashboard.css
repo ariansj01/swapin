@@ -1184,7 +1184,7 @@
 /* ── Panel page shell (shared across dashboard pages) ───────────────── */
 .dash-main .container,
 .dash-main .dash-panel {
-  max-width: 960px;
+  max-width: 82%;
   margin: 0 auto;
   padding: 0;
 }

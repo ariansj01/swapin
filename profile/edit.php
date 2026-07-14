@@ -107,8 +107,11 @@ render_user_panel_open($user, 'settings');
               <?php if (isset($errors['name'])): ?><div class="invalid-feedback"><?= h($errors['name']) ?></div><?php endif; ?>
             </div>
             <div class="form-group">
-              <label class="form-label">شهر</label>
-              <input type="text" name="city" class="form-control" value="<?= h($user['city'] ?? '') ?>">
+              <label class="form-label" for="city">شهر</label>
+              <select id="city" name="city" class="form-control">
+                <option value="">انتخاب شهر</option>
+                <?= render_city_options($user['city'] ?? '') ?>
+              </select>
             </div>
             <div class="form-group">
               <label class="form-label">بیو</label>

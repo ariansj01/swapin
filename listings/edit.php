@@ -77,6 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['listing_mode'] = 'حالت آگهی نامعتبر است.';
     if (in_array($vals['listing_mode'], ['sell','both'], true) && $vals['sell_price'] <= 0)
         $errors['sell_price'] = 'قیمت فروش الزامی است.';
+    if ($vals['city'] && !in_array($vals['city'], iran_cities(), true))
+        $errors['city'] = 'لطفاً شهر را از فهرست انتخاب کنید.';
 
     $contentErrors = validate_listing_content([
         'title'           => $vals['title'],
@@ -270,8 +272,13 @@ render_navbar($user);
             </div>
             <div class="form-group">
               <label class="form-label" for="city">شهر</label>
-              <input type="text" class="form-control" id="city" name="city"
-                     value="<?= h($vals['city']) ?>" placeholder="شهر شما">
+              <select id="city" name="city" class="form-control <?= isset($errors['city']) ? 'is-invalid' : '' ?>">
+                <option value="">انتخاب شهر</option>
+                <?= render_city_options($vals['city']) ?>
+              </select>
+              <?php if (isset($errors['city'])): ?>
+              <div class="invalid-feedback"><?= h($errors['city']) ?></div>
+              <?php endif; ?>
             </div>
           </div>
 

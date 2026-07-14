@@ -180,7 +180,7 @@ render_navbar($currentUser);
       </div>
 
       <div>
-        <div class="card">
+        <div class="card" style="margin-top: 40px;">
           <div class="card-header">
             <h3 style="margin:0;font-size:1rem"><i class="bi bi-star-fill" style="color:var(--accent)"></i> نظرات (<?= fmt_num($reviewCount) ?>)</h3>
           </div>

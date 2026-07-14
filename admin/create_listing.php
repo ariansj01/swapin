@@ -207,7 +207,10 @@ ob_start();
 
     <div class="form-group">
       <label class="form-label" for="city">شهر</label>
-      <input type="text" id="city" name="city" class="form-control" value="<?= h($vals['city']) ?>">
+      <select id="city" name="city" class="form-control">
+        <option value="">انتخاب شهر</option>
+        <?= render_city_options($vals['city']) ?>
+      </select>
     </div>
   </div>
 
