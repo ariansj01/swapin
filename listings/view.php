@@ -652,7 +652,7 @@ render_navbar($user);
           <h3 class="lv-offer-title"><i class="bi bi-send"></i> ارسال پیشنهاد</h3>
 
           <?php if (!$user): ?>
-          <p class="fs-sm mb-4" style="color:var(--text-muted)">برای ارسال پیشنهاد وارد شوید.</p>
+          <p class="fs-sm mb-4" style="color:var(--text-muted)">برای ارسال پیشنهاد وارد شوید. 11</p>
           <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary">ورود برای پیشنهاد</a>
           <?php else: ?>
           <?php if ($offerError): ?>
