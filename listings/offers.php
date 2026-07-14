@@ -133,7 +133,7 @@ render_navbar($user);
     </div>
     <?php else: ?>
 
-    <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:var(--sp-4);align-items:stretch">
       <?php foreach ($offers as $offer):
         $statusColors = ['pending' => 'warning', 'accepted' => 'success', 'rejected' => 'danger', 'cancelled' => 'info', 'completed' => 'success'];
         $statusColor  = $statusColors[$offer['status']] ?? 'info';

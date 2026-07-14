@@ -298,9 +298,6 @@ render_navbar($user);
       <?php if ($listing['verification_level'] >= 2): ?>
       <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
       <?php endif; ?>
-      <?php if ($listing['seller_rating'] > 0): ?>
-      <span class="badge badge-primary"><i class="bi bi-star-fill"></i> <?= fmt_num((float)$listing['seller_rating'], 1) ?></span>
-      <?php endif; ?>
     </div>
     <div class="lv-price-row">
       <?php if ((float)$listing['estimated_value'] > 0): ?>
@@ -322,6 +319,10 @@ render_navbar($user);
         <div class="lv-seller__meta">
           <?php if ($listing['seller_city']): ?><span><?= h($listing['seller_city']) ?></span><?php endif; ?>
           <span><?= timeago($listing['created_at']) ?></span>
+          <?php if ($listing['seller_rating'] > 0): ?>
+          <span class="lv-chip lv-chip--gold"><i class="bi bi-star-fill"></i> <?= fmt_num((float)$listing['seller_rating'], 1) ?></span>
+          <?php endif; ?>
+          <span class="lv-chip lv-chip--info"><i class="bi bi-star"></i> <?= fmt_num((int)$sellerSwapScore['score']) ?></span>
         </div>
       </div>
       <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-seller__link" aria-label="پروفایل فروشنده">
@@ -612,48 +613,6 @@ render_navbar($user);
       </div>
 
       <aside class="lv-right-col" aria-label="اطلاعات فروشنده و اقدامات">
-        <section class="lv-seller-card">
-          <div class="lv-seller-header">
-            <div class="lv-seller-avatar"><?= h(mb_substr($listing['seller_name'], 0, 1)) ?></div>
-            <div class="lv-seller-info">
-              <h3 class="lv-seller-name"><?= h($listing['seller_name']) ?></h3>
-              <div class="lv-seller-meta">
-                <?php if ($listing['seller_city']): ?>
-                <span><i class="bi bi-geo-alt"></i> <?= h($listing['seller_city']) ?></span>
-                <?php endif; ?>
-                <span><i class="bi bi-calendar3"></i> عضو از <?= persian_date($listing['seller_since']) ?></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="lv-seller-badges">
-            <?php if ($listing['verification_level'] >= 2): ?>
-            <span class="lv-chip lv-chip--success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
-            <?php endif; ?>
-            <?php if ($listing['seller_rating'] > 0): ?>
-            <span class="lv-chip lv-chip--gold"><i class="bi bi-star-fill"></i> <?= fmt_num((float)$listing['seller_rating'], 1) ?></span>
-            <?php endif; ?>
-            <span class="lv-chip lv-chip--info"><i class="bi bi-star"></i> <?= fmt_num((int)$sellerSwapScore['score']) ?></span>
-          </div>
-
-          <div class="lv-seller-stats" style="display: none;">
-            <div class="lv-stat-item">
-              <div class="lv-stat-value"><?= fmt_num((int)$listing['seller_rating_count']) ?></div>
-              <div class="lv-stat-label">نظرات</div>
-            </div>
-            <div class="lv-stat-item">
-              <div class="lv-stat-value"><?= $listing['seller_rating'] > 0 ? fmt_num((float)$listing['seller_rating'], 1) : '---' ?></div>
-              <div class="lv-stat-label">امتیاز</div>
-            </div>
-          </div>
-
-          <div class="lv-seller-actions">
-            <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-btn lv-btn--primary">
-              <i class="bi bi-person"></i> مشاهده پروفایل
-            </a>
-          </div>
-        </section>
-
         <?php if ($isOwner): ?>
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-gear"></i> مدیریت آگهی</h3>

@@ -1564,9 +1564,19 @@
   border-color: var(--st-success);
   background: var(--st-success-light);
 }
-.trade-room__mobile-step--readonly,
+.trade-room__mobile-step--readonly {
+  cursor: not-allowed;
+  opacity: 0.88;
+  pointer-events: none;
+}
+.trade-room__mobile-step--readonly .trade-room__mobile-step-dot {
+  background: var(--st-border);
+  color: var(--st-primary);
+}
 .trade-room__timeline-item--readonly {
   cursor: default;
+  pointer-events: none;
+  opacity: 0.92;
 }
 .trade-room__mobile-step-dot {
   width: 24px;
