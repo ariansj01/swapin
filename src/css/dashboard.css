@@ -1670,10 +1670,20 @@
 }
 
 @media (max-width: 768px) {
+  .dash-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  #swap-matches > div { grid-template-columns: 1fr; }
   .profile-compact__top { grid-template-columns: 1fr; text-align: center; }
   .profile-compact__score { grid-template-columns: 1fr; }
   .profile-compact__grid { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }
   .my-listings-grid { grid-template-columns: 1fr; }
+  .dash-page-head__actions { width: 100%; }
+  .dash-page-head__actions a,
+  .dash-page-head__actions .btn { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .dash-stat-grid { grid-template-columns: 1fr; }
+  .dash-stat { width: 100%; }
 }
 

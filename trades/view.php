@@ -416,6 +416,35 @@ $timelineItems = [
     ['id' => 8, 'title' => 'تایید نهایی و ثبت نظر', 'tab' => 'final', 'date' => null],
 ];
 
+// Fetch all user's trades for dropdown
+$allTrades = DB::fetchAll(
+    'SELECT t.id, t.status,
+        ua.name as user_a_name, ub.name as user_b_name,
+        la.title as listing_a_title, lb.title as listing_b_title
+     FROM trades t
+     JOIN users ua ON ua.id = t.user_a_id
+     JOIN users ub ON ub.id = t.user_b_id
+     JOIN listings la ON la.id = t.listing_a_id
+     LEFT JOIN listings lb ON lb.id = t.listing_b_id
+     WHERE t.user_a_id = ? OR t.user_b_id = ?
+     ORDER BY t.created_at DESC',
+    [$uid, $uid]
+);
+
+// Fetch received offers for modal
+$receivedOffers = DB::fetchAll(
+    'SELECT o.*, l.title AS listing_title, u.name AS from_name, u.avatar AS from_avatar,
+        ol.title AS offer_listing_title,
+        (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb
+     FROM trade_offers o
+     JOIN listings l ON l.id = o.listing_id
+     JOIN users u ON u.id = o.from_user_id
+     LEFT JOIN listings ol ON ol.id = o.offer_listing_id
+     WHERE l.user_id = ?
+     ORDER BY o.status = "pending" DESC, o.created_at DESC',
+    [$uid]
+);
+
 render_head('اتاق امن معامله #' . $tradeId, 'اتاق امن معامله و مدیریت مرحله‌به‌مرحله تبادل', [
     'robots' => 'noindex, nofollow',
 ]);
@@ -439,16 +468,49 @@ render_user_panel_open($user, 'trades');
       <p>لطفاً مراحل معامله را فقط از طریق این اتاق دنبال کنید.</p>
     </div>
     <div class="trade-room__hero-right">
+      <!-- Trade Selector Dropdown -->
+      <div class="trade-room__dropdown">
+        <select class="trade-room__select" onchange="window.location.href='?id='+this.value">
+          <?php foreach ($allTrades as $t):
+            $otherName = ((int)$t['user_a_id'] === $uid) ? $t['user_b_name'] : $t['user_a_name'];
+            $listingTitle = ((int)$t['user_a_id'] === $uid) ? $t['listing_a_title'] : $t['listing_b_title'];
+          ?>
+            <option value="<?= $t['id'] ?>" <?= $t['id'] == $tradeId ? 'selected' : '' ?>>
+              معامله با <?= h($otherName) ?> - <?= h(mb_substr($listingTitle, 0, 30)) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <!-- Offers Button -->
+      <button type="button" class="trade-room__hero-btn" id="openOffersModal">
+        <i class="bi bi-inbox"></i>
+        پیشنهادها
+        <?php
+          $pendingCount = 0;
+          foreach ($receivedOffers as $o) {
+            if ($o['status'] === 'pending') $pendingCount++;
+          }
+          if ($pendingCount > 0):
+        ?>
+          <span class="trade-room__badge"><?= $pendingCount ?></span>
+        <?php endif; ?>
+      </button>
+
       <a href="<?= APP_URL ?>/fraud-prevention" class="trade-room__hero-btn">
         <i class="bi bi-question-circle"></i>
         راهنمای معامله
       </a>
-      <a href="<?= APP_URL ?>/support/report?url=<?= urlencode(APP_URL . '/trades/view?id=' . $tradeId) ?>" class="trade-room__hero-btn">
-        <i class="bi bi-exclamation-triangle"></i>
-        گزارش مشکل
-      </a>
     </div>
   </header>
+
+  <!-- Mobile Tab Selector Button -->
+  <div class="trade-room__mobile-tab-btn-container">
+    <button type="button" class="trade-room__mobile-tab-btn" id="openMobileTabsModal">
+      <i class="bi bi-list"></i>
+      <?= h($tabLabels[$tab]) ?>
+    </button>
+  </div>
 
   <!-- Parties Header moved up -->
   <section class="trade-room__card" style="margin-bottom: var(--sp-4);">
@@ -1002,6 +1064,193 @@ render_user_panel_open($user, 'trades');
     </aside>
   </div>
 </div>
+
+<!-- Offers Modal -->
+<div class="trade-room__modal-overlay" id="offersModal">
+  <div class="trade-room__modal trade-room__modal--full">
+    <div class="trade-room__modal-header">
+      <h2 class="trade-room__modal-title">پیشنهادها</h2>
+      <button type="button" class="trade-room__modal-close" data-close-modal="offersModal">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="trade-room__modal-body">
+      <?php if (empty($receivedOffers)): ?>
+        <div class="trade-room__chat-empty">هنوز پیشنهادی نیست</div>
+      <?php else: ?>
+        <?php foreach ($receivedOffers as $offer):
+          $statusColors = ['pending' => 'warning', 'accepted' => 'success', 'rejected' => 'danger', 'cancelled' => 'info', 'completed' => 'success'];
+          $statusColor = $statusColors[$offer['status']] ?? 'info';
+        ?>
+          <div class="trade-room__card" style="margin-bottom: var(--sp-4);">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3);">
+                  <?= avatar_html($offer['from_avatar'] ?? null, $offer['from_name'], 'md') ?>
+                  <div>
+                    <div style="font-weight:700;font-size:1.0625rem"><?= h($offer['from_name']) ?></div>
+                    <?php
+                      $avgRating = DB::fetch('SELECT AVG(rating) as avg_r FROM reviews WHERE to_user_id = ?', [$offer['from_user_id']])['avg_r'] ?? 0;
+                      if ($avgRating > 0):
+                    ?>
+                    <div class="fs-xs" style="color:var(--accent-dark)">
+                      <i class="bi bi-star-fill"></i> <?= number_format((float)$avgRating, 1) ?>
+                    </div>
+                    <?php endif; ?>
+                  </div>
+                  <span class="trade-room__pill trade-room__pill--<?= $statusColor ?> fs-xs" style="margin-inline-start:auto"><?= offer_status_label($offer['status']) ?></span>
+                </div>
+
+                <div class="fs-sm mb-2" style="color:var(--text-muted)">
+                  برای: <strong><?= h($offer['listing_title'] ?? '') ?></strong>
+                </div>
+
+                <?php if ($offer['offer_listing_title'] || (float)$offer['offer_credit'] > 0): ?>
+                  <div style="background:rgba(0,174,239,.04);border:1px solid rgba(0,174,239,.15);border-radius:var(--radius-md);padding:var(--sp-4);margin-bottom:var(--sp-3);">
+                    <div class="fs-xs" style="color:var(--text-muted);margin-bottom:var(--sp-2)">پیشنهاد:</div>
+                    <?php if ($offer['offer_listing_title']): ?>
+                      <div style="display:flex;align-items:center;gap:var(--sp-3);">
+                        <?php if ($offer['offer_listing_thumb'] ?? false): ?>
+                          <img src="<?= UPLOAD_URL . h($offer['offer_listing_thumb']) ?>" alt="<?= h($offer['offer_listing_title']) ?>" style="width:60px;height:60px;border-radius:var(--radius-md);object-fit:cover">
+                        <?php endif; ?>
+                        <div style="font-weight:600"><i class="bi bi-box"></i> <?= h($offer['offer_listing_title']) ?></div>
+                      </div>
+                    <?php endif; ?>
+                    <?php if ((float)$offer['offer_credit'] > 0): ?>
+                      <div class="fs-md mt-2" style="color:var(--primary);font-weight:700">
+                        <i class="bi bi-wallet2"></i> + <?= fmt_credit((float)$offer['offer_credit']) ?>
+                      </div>
+                    <?php endif; ?>
+                  </div>
+                <?php endif; ?>
+
+                <?php if ($offer['message']): ?>
+                  <div style="background:var(--bg);border-radius:var(--radius-md);padding:var(--sp-4);font-size:.9375rem;color:var(--text-secondary)">
+                    <div class="fs-xs mb-2" style="color:var(--text-muted)">پیام پیشنهاد‌دهنده:</div>
+                    "<?= h($offer['message']) ?>"
+                  </div>
+                <?php endif; ?>
+
+                <div class="fs-xs mt-4" style="color:var(--text-muted)">
+                  <i class="bi bi-clock"></i> <?= persian_datetime($offer['created_at']) ?>
+                </div>
+              </div>
+
+              <?php if ($offer['status'] === 'pending'): ?>
+                <div style="width:100%;min-width:280px;max-width:420px">
+                  <form method="POST" class="mb-3" action="<?= APP_URL ?>/trades">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="accept">
+                    <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
+                    <div class="form-group">
+                      <label class="form-label">پیام پذیرش:</label>
+                      <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                      <i class="bi bi-check-lg"></i> پذیرش
+                    </button>
+                  </form>
+                  <form method="POST" action="<?= APP_URL ?>/trades">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="reject">
+                    <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
+                    <div class="form-group">
+                      <label class="form-label">پیام رد:</label>
+                      <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: متشکرم، اما این بار نمی‌تونم."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-ghost w-100" style="color:var(--danger)">
+                      <i class="bi bi-x-lg"></i> رد
+                    </button>
+                  </form>
+                </div>
+              <?php elseif ($offer['status'] === 'accepted'): ?>
+                <?php
+                  $relatedTrade = DB::fetch('SELECT id FROM trades WHERE offer_id = ? LIMIT 1', [$offer['id']]);
+                  if ($relatedTrade):
+                ?>
+                  <div style="width:100%">
+                    <a href="<?= APP_URL ?>/trades/view.php?id=<?= (int)$relatedTrade['id'] ?>" class="btn btn-primary w-100">
+                      <i class="bi bi-shield-lock"></i> ورود به اتاق معامله
+                    </a>
+                  </div>
+                <?php endif; ?>
+              <?php endif; ?>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Tabs Modal -->
+<div class="trade-room__modal-overlay" id="mobileTabsModal">
+  <div class="trade-room__modal trade-room__modal--full">
+    <div class="trade-room__modal-header">
+      <h2 class="trade-room__modal-title">مراحل معامله</h2>
+      <button type="button" class="trade-room__modal-close" data-close-modal="mobileTabsModal">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="trade-room__modal-body">
+      <div class="trade-room__mobile-tabs-list">
+        <?php foreach ($tabLabels as $tabKey => $label): ?>
+          <a href="?id=<?= $tradeId ?>&tab=<?= h($tabKey) ?>" class="trade-room__mobile-tab <?= $tab === $tabKey ? 'trade-room__mobile-tab--active' : '' ?>">
+            <?= h($label) ?>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Modal handlers
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('trade-room__modal-overlay--open');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('trade-room__modal-overlay--open');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Open buttons
+  const openOffersBtn = document.getElementById('openOffersModal');
+  if (openOffersBtn) {
+    openOffersBtn.addEventListener('click', () => openModal('offersModal'));
+  }
+
+  const openMobileTabsBtn = document.getElementById('openMobileTabsModal');
+  if (openMobileTabsBtn) {
+    openMobileTabsBtn.addEventListener('click', () => openModal('mobileTabsModal'));
+  }
+
+  // Close buttons
+  document.querySelectorAll('[data-close-modal]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      closeModal(e.currentTarget.getAttribute('data-close-modal'));
+    });
+  });
+
+  // Close on overlay click
+  document.querySelectorAll('.trade-room__modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModal(overlay.id);
+      }
+    });
+  });
+});
+</script>
 
 <?php render_user_panel_close(); ?>
 <?php render_panel_scripts(); ?>

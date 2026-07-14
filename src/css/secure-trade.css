@@ -7,6 +7,8 @@
   --st-accent-light: #FFF8E1;
   --st-success: #16a34a;
   --st-success-light: #dcfce7;
+  --st-danger: #dc2626;
+  --st-warning: #d97706;
   --st-border: #ECEFF5;
   --st-page-bg: #F7F8FC;
   --st-card-bg: #ffffff;
@@ -1338,4 +1340,206 @@
   border: 1px solid #E2E8F0;
   color: #475569;
   font-size: .875rem;
+}
+
+/* New Header Styles */
+.trade-room__dropdown {
+  display: inline-block;
+}
+.trade-room__select {
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--st-border);
+  background: var(--st-card-bg);
+  color: var(--st-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+.trade-room__select:focus {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 2px;
+}
+.trade-room__badge {
+  background: var(--st-danger);
+  color: white;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+/* Mobile Tab Button */
+.trade-room__mobile-tab-btn-container {
+  display: none;
+  padding: 12px 16px;
+}
+.trade-room__mobile-tab-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--st-border);
+  background: var(--st-card-bg);
+  color: var(--st-primary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* Modal Styles */
+.trade-room__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.trade-room__modal-overlay--open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.trade-room__modal {
+  background: var(--st-page-bg);
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s;
+  border-radius: 24px 24px 0 0;
+}
+.trade-room__modal-overlay--open .trade-room__modal {
+  transform: translateY(0);
+}
+.trade-room__modal--full {
+  max-width: 100%;
+  max-height: 100vh;
+  border-radius: 0;
+}
+.trade-room__modal-header {
+  background: var(--st-card-bg);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--st-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.trade-room__modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--st-primary);
+}
+.trade-room__modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--st-primary);
+  cursor: pointer;
+  padding: 8px;
+}
+.trade-room__modal-body {
+  padding: 16px;
+  overflow-y: auto;
+}
+.trade-room__mobile-tabs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trade-room__mobile-tab {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--st-card-bg);
+  border: 1px solid var(--st-border);
+  color: var(--st-primary);
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+.trade-room__mobile-tab--active {
+  background: var(--st-primary);
+  color: white;
+  border-color: var(--st-primary);
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+  .trade-room__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .trade-room__details-column {
+    order: 3;
+  }
+  .trade-room__content {
+    order: 2;
+  }
+  .trade-room__timeline-column {
+    order: 1;
+    position: static;
+  }
+}
+
+@media (max-width: 992px) {
+  .trade-room__hero {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    text-align: center;
+  }
+  .trade-room__hero-left,
+  .trade-room__hero-right {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .trade-room__parties {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .trade-room__tabs {
+    display: none;
+  }
+  .trade-room__mobile-tab-btn-container {
+    display: block;
+  }
+  .trade-room__hero-right {
+    gap: 8px;
+  }
+  .trade-room__hero-btn {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+  .trade-room__dropdown {
+    width: 100%;
+  }
+  .trade-room__select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .trade-room__hero {
+    padding: 16px;
+  }
+  .trade-room__composer {
+    grid-template-columns: 1fr;
+  }
+  .trade-room__composer-tools {
+    order: 2;
+  }
 }

@@ -5,6 +5,13 @@ require_once __DIR__ . '/includes/layout.php';
 $user = require_auth();
 $uid  = $user['id'];
 
+// Auto redirect to latest trade
+$latestTrade = DB::fetch("SELECT id FROM trades WHERE user_a_id = ? OR user_b_id = ? ORDER BY created_at DESC LIMIT 1", [$uid, $uid]);
+if ($latestTrade) {
+    header('Location: ' . APP_URL . '/trades/view.php?id=' . $latestTrade['id']);
+    exit;
+}
+
 $tab = clean($_GET['tab'] ?? 'active');
 if ($tab === 'sent') {
     $tab = 'offers';
