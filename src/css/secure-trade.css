@@ -1748,7 +1748,7 @@
 .box-trade-room__layout {
   max-width: 1450px;
   margin: 0 auto;
-  /* padding: 24px; */
+  padding: 0 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
@@ -1760,6 +1760,7 @@
   border-radius: 16px;
   padding: 20px;
   border: 1px solid #ECEFF5;
+  min-width: 0; /* Prevent overflow */
 }
 
 .box-trade-room__title {
@@ -1855,7 +1856,7 @@
   opacity: 1;
 }
 
-/* Responsive for mobile */
+/* Responsive for small screens (tablets, mobile) */
 @media (max-width: 992px) {
   .box-trade-room__layout {
     overflow-x: auto;
@@ -1863,7 +1864,7 @@
     -ms-overflow-style: none;
     display: flex;
     gap: 24px;
-    padding-bottom: 8px;
+    padding: 0 12px 8px 12px;
   }
 
   .box-trade-room__layout::-webkit-scrollbar {
@@ -1876,12 +1877,6 @@
     max-width: 90%;
   }
 
-  .box-trade-room__cards {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
   .box-trade-room__cards {
     overflow-x: auto;
     scrollbar-width: none;
@@ -1897,5 +1892,16 @@
 
   .box-trade-room__card {
     flex: 0 0 85%;
+  }
+}
+
+@media (max-width: 768px) {
+  .pay-metod,
+  .send-metod {
+    flex: 0 0 95%;
+    max-width: 95%;
+  }
+  .box-trade-room__card {
+    flex: 0 0 88%;
   }
 }

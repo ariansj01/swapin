@@ -157,7 +157,13 @@ render_navbar(null);
         <div class="text-center mb-8">
           <img src="<?= LOGO_URL ?>" alt="<?= APP_NAME ?>" class="brand-logo" style="height:56px;margin:0 auto var(--sp-4)">
           <h2>ورود / ثبت‌نام</h2>
-          <p style="color:var(--text-muted);margin-top:var(--sp-2)">شماره تلفن خود را وارد کنید</p>
+          <p style="color:var(--text-muted);margin-top:var(--sp-2)">
+            <?php if ($step === 'phone'): ?>
+              شماره تلفن خود را وارد کنید
+            <?php else: ?>
+              کد تأیید را وارد کنید
+            <?php endif; ?>
+          </p>
         </div>
 
         <?php if ($error): ?>
@@ -192,7 +198,7 @@ render_navbar(null);
           <input type="hidden" name="action" value="verify_otp">
           <div class="form-group">
             <label class="form-label">کد تأیید</label>
-            <input type="text" class="form-control login-code-input login-input-tall" name="code" placeholder="000000"
+            <input type="text" class="form-control login-input-tall login-code-input" name="code" placeholder="000000"
                    inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code"
                    required autofocus>
             <p class="form-hint">
