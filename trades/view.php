@@ -686,7 +686,7 @@ render_user_panel_open($user, 'trades');
           </div>
 
         <?php elseif ($tab === 'fee'): ?>
-          <h3 class="trade-room__card-title">
+          <h3 class="trade-room__card-title"> 
             <i class="bi bi-credit-card"></i>
             پرداخت کارمزد
           </h3>
@@ -1045,18 +1045,12 @@ render_user_panel_open($user, 'trades');
 
       <section class="trade-room__summary-card trade-room__summary-card--wide">
         <h4 class="trade-room__summary-head">
-          <!-- <i class="bi bi-cash"></i> -->
            اختلاف قیمت
         </h4>
-        <div class="trade-room__summary-line">
-          <span class="trade-room__summary-label"></span>
-          <span class="trade-room__summary-value"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'بدون اختلاف' ?></span>
-        </div>
       </section>
 
       <section class="trade-room__summary-card trade-room__summary-card--wide">
         <h4 class="trade-room__summary-head">
-          <!-- <i class="bi bi-cash"></i> -->
           کارمزد سواپین(هرطرف)
         </h4>
         <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
