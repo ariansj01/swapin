@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (contract_fully_signed($tradeId)) {
                 DB::query('UPDATE trades SET step = 5 WHERE id = ?', [$tradeId]);
             }
-        } else {
+        } else { 
             $error = 'امضای قرارداد ممکن نشد.';
         }
     } elseif ($action === 'set_shipping') {
