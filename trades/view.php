@@ -69,6 +69,26 @@ $myReview = DB::fetch(
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
     $action = clean($_POST['action'] ?? '');
+    
+    if ($action === 'select_payment_method') {
+        $paymentMethod = clean($_POST['payment_method'] ?? '');
+        if (in_array($paymentMethod, ['in_person', 'bnpl', 'cash'], true)) {
+            DB::update('trades', [
+                'selected_payment_method' => $paymentMethod,
+            ], 'id = ?', [$tradeId]);
+            $success = 'روش پرداخت با موفقیت انتخاب شد.';
+            $trade = fetch_trade_room($tradeId, $uid) ?? $trade;
+        }
+    } elseif ($action === 'select_shipping_method') {
+        $shippingMethod = clean($_POST['shipping_method'] ?? '');
+        if (in_array($shippingMethod, ['courier', 'post', 'swapin_secure'], true)) {
+            DB::update('trades', [
+                'selected_shipping_method' => $shippingMethod,
+            ], 'id = ?', [$tradeId]);
+            $success = 'روش ارسال با موفقیت انتخاب شد.';
+            $trade = fetch_trade_room($tradeId, $uid) ?? $trade;
+        }
+    }
 
     if ($action === 'send_message') {
         $body = clean($_POST['body'] ?? '');
@@ -96,13 +116,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = 'کارمزد شما با موفقیت پرداخت شد.';
         }
     } elseif ($action === 'pay_diff' && !(int)$trade['diff_paid']) {
-        $myBalance = (float)($user['credit_balance'] ?? 0);
-        if ($myBalance < $amountToPay) {
-            $_SESSION['error'] = 'موجودی کیف پول شما کافی نیست. مبلغ موردنیاز: ' . fmt_credit($amountToPay - $myBalance);
-        } else {
-            escrow_hold($tradeId, $uid, $amountToPay, 'سپرده مابه‌التفاوت معامله #' . $tradeId);
+        $selectedPaymentMethod = $trade['selected_payment_method'] ?? '';
+        if (empty($selectedPaymentMethod)) {
+            $error = 'لطفاً ابتدا روش پرداخت را انتخاب کنید.';
+        } elseif ($selectedPaymentMethod === 'in_person') {
+            // Payment in person, just mark it as paid without deducting from wallet
             DB::query('UPDATE trades SET diff_paid = 1, step = 4 WHERE id = ?', [$tradeId]);
-            $success = 'اختلاف قیمت با موفقیت پرداخت شد.';
+            $success = 'روش پرداخت در محل انتخاب شد. اختلاف قیمت هنگام تحویل کالا پرداخت خواهد شد.';
+        } else {
+            // Cash or BNPL, deduct from wallet
+            $myBalance = (float)($user['credit_balance'] ?? 0);
+            if ($myBalance < $amountToPay) {
+                $_SESSION['error'] = 'موجودی کیف پول شما کافی نیست. مبلغ موردنیاز: ' . fmt_credit($amountToPay - $myBalance);
+            } else {
+                escrow_hold($tradeId, $uid, $amountToPay, 'سپرده مابه‌التفاوت معامله #' . $tradeId);
+                DB::query('UPDATE trades SET diff_paid = 1, step = 4 WHERE id = ?', [$tradeId]);
+                $success = 'اختلاف قیمت با موفقیت پرداخت شد.';
+            }
         }
     } elseif ($action === 'sign_contract') {
         if (!trade_fees_fully_paid($trade)) {
@@ -1100,35 +1130,111 @@ render_user_panel_open($user, 'trades');
     </aside>
   </div>
   <div class="box-trade-room__layout">
-    <div class="pay-metod">
-      <div class="cart-1">
-       <h3> پرداخت در محل</h3>
-        <p>هنگام تحویل کالا</p>
+    <form method="POST" class="pay-metod" id="paymentMethodForm">
+      <input type="hidden" name="action" value="select_payment_method">
+      <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+      <h3 class="box-trade-room__title">تسویه اختلاف قیمت</h3>
+      <div class="box-trade-room__cards">
+        <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'in_person' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="payment_method" value="in_person" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'in_person' ? 'checked' : '' ?>>
+          <div class="box-trade-room__card-icon">
+            <i class="bi bi-handbag"></i>
+          </div>
+          <div class="box-trade-room__card-content">
+            <h4>پرداخت در محل</h4>
+            <p>هنگام تحویل کالا</p>
+          </div>
+          <div class="box-trade-room__card-check">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+        </label>
+        <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'bnpl' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="payment_method" value="bnpl" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'bnpl' ? 'checked' : '' ?>>
+          <div class="box-trade-room__card-icon">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+          <div class="box-trade-room__card-content">
+            <h4>پرداخت اقساط BNPL</h4>
+            <p>پرداخت در 4 قسط</p>
+          </div>
+          <div class="box-trade-room__card-check">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+        </label>
+        <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'cash' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="payment_method" value="cash" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'cash' ? 'checked' : '' ?>>
+          <div class="box-trade-room__card-icon">
+            <i class="bi bi-wallet2"></i>
+          </div>
+          <div class="box-trade-room__card-content">
+            <h4>پرداخت نقدی</h4>
+            <p>کم کردن از کیف پول</p>
+          </div>
+          <div class="box-trade-room__card-check">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+        </label>
       </div>
-      <div class="cart-2">
-        <h3>برداخت اقساط bnpl</h3>
-        <p>پرداخت در 4 قسط</p>
+    </form>
+    <form method="POST" class="send-metod" id="shippingMethodForm">
+      <input type="hidden" name="action" value="select_shipping_method">
+      <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+      <h3 class="box-trade-room__title">روش ارسال</h3>
+      <div class="box-trade-room__cards">
+        <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'courier' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="shipping_method" value="courier" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'courier' ? 'checked' : '' ?>>
+          <div class="box-trade-room__card-icon">
+            <i class="bi bi-motorcycle"></i>
+          </div>
+          <div class="box-trade-room__card-content">
+            <h4>پیک فوری</h4>
+            <p>ارسال سریع درون شهری</p>
+          </div>
+          <div class="box-trade-room__card-check">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+        </label>
+        <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'post' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="shipping_method" value="post" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'post' ? 'checked' : '' ?>>
+          <div class="box-trade-room__card-icon">
+            <i class="bi bi-envelope-paper"></i>
+          </div>
+          <div class="box-trade-room__card-content">
+            <h4>پست پیشتاز</h4>
+            <p>ارسال به سراسر کشور</p>
+          </div>
+          <div class="box-trade-room__card-check">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+        </label>
+        <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'swapin_secure' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="shipping_method" value="swapin_secure" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'swapin_secure' ? 'checked' : '' ?>>
+          <div class="box-trade-room__card-icon">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <div class="box-trade-room__card-content">
+            <h4>ارسال امن سواپین</h4>
+            <p>ارسال با ضمانت کامل</p>
+          </div>
+          <div class="box-trade-room__card-check">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+        </label>
       </div>
-      <div class="cart-3">
-        <h3>پرداخت نقدی</h3>
-        <p>پرداخت در 4 قسط</p>
-      </div>
-    </div>
-    <div class="send-metod">
-      <div class="cart-1">
-       <h3>ارسال با پست</h3>
-        <p>ارسال با پست پیشتاز</p>
-      </div>
-      <div class="cart-2">
-        <h3>ارسل تیپاکس</h3>
-        <p>ارسال 2 روزه</p>
-      </div>
-      <div class="cart-3">
-        <h3>ارسال درون شهری</h3>
-        <p>ارسال با پیک درون شهری</p>
-      </div>
-    </div>
+    </form>
   </div>
+  
+  <script>
+    // Auto-submit when payment method is selected
+    document.getElementById('paymentMethodForm').addEventListener('change', function() {
+      this.submit();
+    });
+    
+    // Auto-submit when shipping method is selected
+    document.getElementById('shippingMethodForm').addEventListener('change', function() {
+      this.submit();
+    });
+  </script>
 </div>
 
 <!-- Offers Modal -->
