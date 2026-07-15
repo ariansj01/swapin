@@ -92,14 +92,14 @@ render_user_panel_open($user, 'my');
 ?>
 
   <div class="dash-panel">
-    <span class="badge badge-warning">آگهی شما بعد از ۱۵ روز دیگر منقضی میشود</span>
+    <span class="badge badge-warning">آ</span>
     <?php render_panel_page_header('آگهی‌های من', 'مدیریت همه آگهی‌های تعویض شما'); ?>
     <div class="dash-page-head__actions">
       <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
     </div>
-
+    <div class="alert alert-warning mb-5"><i class="bi bi-rocket"></i> آگهی شما بعد از ۱۵ روز دیگر منقضی میشود</div>
     <?php if (isset($_GET['promoted'])): ?>
     <div class="alert alert-success mb-5"><i class="bi bi-rocket"></i> آگهی با موفقیت ارتقا یافت!</div>
     <?php endif; ?>
