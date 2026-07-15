@@ -1129,14 +1129,23 @@ render_user_panel_open($user, 'trades');
       </section>
     </aside>
   </div>
+  <?php
+    // Determine if payment method can be changed
+    $feePaid = trade_fees_fully_paid($trade);
+    $diffPaid = !empty($trade['diff_paid']);
+    $contractSigned = !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
+    $shippingReady = trade_shipping_fully_scheduled($trade);
+    $canChangePayment = !$diffPaid && $contractSigned && $amountToPay > 0;
+    $canChangeShipping = !$shippingReady && $contractSigned;
+  ?>
   <div class="box-trade-room__layout">
-    <form method="POST" class="pay-metod" id="paymentMethodForm">
+    <form method="POST" class="pay-metod" id="paymentMethodForm" <?= !$canChangePayment ? 'style="pointer-events: none; opacity: 0.7;"' : '' ?>>
       <input type="hidden" name="action" value="select_payment_method">
-      <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+      <?= csrf_field() ?>
       <h3 class="box-trade-room__title">تسویه اختلاف قیمت</h3>
       <div class="box-trade-room__cards">
         <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'in_person' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="payment_method" value="in_person" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'in_person' ? 'checked' : '' ?>>
+          <input type="radio" name="payment_method" value="in_person" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'in_person' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-handbag"></i>
           </div>
@@ -1149,7 +1158,7 @@ render_user_panel_open($user, 'trades');
           </div>
         </label>
         <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'bnpl' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="payment_method" value="bnpl" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'bnpl' ? 'checked' : '' ?>>
+          <input type="radio" name="payment_method" value="bnpl" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'bnpl' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-calendar-check"></i>
           </div>
@@ -1162,7 +1171,7 @@ render_user_panel_open($user, 'trades');
           </div>
         </label>
         <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'cash' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="payment_method" value="cash" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'cash' ? 'checked' : '' ?>>
+          <input type="radio" name="payment_method" value="cash" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'cash' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-wallet2"></i>
           </div>
@@ -1176,13 +1185,13 @@ render_user_panel_open($user, 'trades');
         </label>
       </div>
     </form>
-    <form method="POST" class="send-metod" id="shippingMethodForm">
+    <form method="POST" class="send-metod" id="shippingMethodForm" <?= !$canChangeShipping ? 'style="pointer-events: none; opacity: 0.7;"' : '' ?>>
       <input type="hidden" name="action" value="select_shipping_method">
-      <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+      <?= csrf_field() ?>
       <h3 class="box-trade-room__title">روش ارسال</h3>
       <div class="box-trade-room__cards">
         <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'courier' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="shipping_method" value="courier" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'courier' ? 'checked' : '' ?>>
+          <input type="radio" name="shipping_method" value="courier" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'courier' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-motorcycle"></i>
           </div>
@@ -1195,7 +1204,7 @@ render_user_panel_open($user, 'trades');
           </div>
         </label>
         <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'post' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="shipping_method" value="post" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'post' ? 'checked' : '' ?>>
+          <input type="radio" name="shipping_method" value="post" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'post' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-envelope-paper"></i>
           </div>
@@ -1208,7 +1217,7 @@ render_user_panel_open($user, 'trades');
           </div>
         </label>
         <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'swapin_secure' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="shipping_method" value="swapin_secure" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'swapin_secure' ? 'checked' : '' ?>>
+          <input type="radio" name="shipping_method" value="swapin_secure" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'swapin_secure' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-shield-check"></i>
           </div>

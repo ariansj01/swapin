@@ -1748,7 +1748,7 @@
 .box-trade-room__layout {
   max-width: 1450px;
   margin: 0 auto;
-  padding: 24px;
+  /* padding: 24px; */
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
@@ -1767,6 +1767,7 @@
   font-size: 1rem;
   font-weight: 900;
   color: #081B45;
+  text-align: center;
 }
 
 .box-trade-room__cards {
@@ -1780,7 +1781,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 16px;
+  padding: 20px 10px;
   border-radius: 16px;
   border: 2px solid #ECEFF5;
   background: #fff;
