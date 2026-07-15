@@ -1047,6 +1047,10 @@ render_user_panel_open($user, 'trades');
         <h4 class="trade-room__summary-head">
            اختلاف قیمت
         </h4>
+         <div class="trade-room__summary-line">
+          <span class="trade-room__summary-label"></span>
+          <span class="trade-room__summary-value"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'بدون اختلاف' ?></span>
+        </div>
       </section>
 
       <section class="trade-room__summary-card trade-room__summary-card--wide">
@@ -1094,6 +1098,36 @@ render_user_panel_open($user, 'trades');
         <?php endif; ?>
       </section>
     </aside>
+  </div>
+  <div class="box-trade-room__layout">
+    <div class="pay-metod">
+      <div class="cart-1">
+       <h3> پرداخت در محل</h3>
+        <p>هنگام تحویل کالا</p>
+      </div>
+      <div class="cart-2">
+        <h3>برداخت اقساط bnpl</h3>
+        <p>پرداخت در 4 قسط</p>
+      </div>
+      <div class="cart-3">
+        <h3>پرداخت نقدی</h3>
+        <p>پرداخت در 4 قسط</p>
+      </div>
+    </div>
+    <div class="send-metod">
+      <div class="cart-1">
+       <h3>ارسال با پست</h3>
+        <p>ارسال با پست پیشتاز</p>
+      </div>
+      <div class="cart-2">
+        <h3>ارسل تیپاکس</h3>
+        <p>ارسال 2 روزه</p>
+      </div>
+      <div class="cart-3">
+        <h3>ارسال درون شهری</h3>
+        <p>ارسال با پیک درون شهری</p>
+      </div>
+    </div>
   </div>
 </div>
 
