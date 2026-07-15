@@ -161,9 +161,6 @@ render_navbar($user);
   <div class="dash-panel">
     <?php render_panel_page_header('سلام، ' . explode(' ', $user['name'])[0] . '!', 'خلاصه حساب شما و میان‌برهای سریع', APP_URL . '/', 'بازگشت به خانه'); ?>
     <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px">
-      <a href="<?= APP_URL ?>" class="btn btn-outline btn-sm">
-        <i class="bi bi-arrow-right"></i> بازگشت
-      </a>
       <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>

@@ -689,6 +689,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  background: #fff;
 }
 
 .trade-room__hero {
@@ -699,7 +700,6 @@
   background: #fff;
   border: 1px solid #ECEFF5;
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(15,23,42,.05);
   padding: 14px 18px;
 }
 
@@ -775,16 +775,16 @@
 }
 
 .trade-room__status-banner {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
   gap: 10px;
   align-self: center;
   padding: 10px 16px;
   border-radius: 999px;
-  background: #FFF8E1;
-  color: #B45309;
-  font-size: .9rem;
+  color: #16a34a;
+  font-size: 1rem;
   font-weight: 800;
 }
 
@@ -812,15 +812,16 @@
 
 .trade-room__card {
   background: #fff;
-  border: 1px solid #ECEFF5;
+  border-bottom: 1px solid #ECEFF5;
   border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(15,23,42,.04);
+  /* box-shadow: 0 4px 16px rgba(15,23,42,.04); */
   padding: 12px 14px;
 }
 
 .trade-room__card-title {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   margin: 0 0 14px;
   color: #081B45;
@@ -909,20 +910,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 12px 0;
+  margin: -15px 0;
 }
 
 .trade-room__swap-divider-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 50px;
+  height: px;
   border-radius: 50%;
-  background: #FFF8E1;
-  color: #B45309;
+  background: #FFF;
   font-size: 1.15rem;
-  box-shadow: 0 8px 20px rgba(255,193,7,.18);
+  border: 2px solid;
 }
 
 .trade-room__product-thumb {
@@ -979,6 +979,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  justify-content: end;
 }
 
 .trade-room__summary-line {
@@ -1057,10 +1058,9 @@
 
 .trade-room__tabs {
   display: flex;
-  gap: 10px;
-  overflow-x: auto;
+  gap: 25px;
   padding-bottom: 2px;
-  scrollbar-width: thin;
+  border-bottom: 1px solid #E5E7EB;
 }
 
 .trade-room__tab {
@@ -1079,7 +1079,8 @@
   text-decoration: none;
   font-size: .875rem;
   font-weight: 700;
-  transition: color .2s;
+  transition: color .2s, border-color .2s;
+  border-bottom: 2px solid transparent;
 }
 
 .trade-room__tab:hover {
@@ -1088,6 +1089,7 @@
 
 .trade-room__tab--active {
   color: #081B45;
+  border-bottom-color: #081B45;
 }
 
 .trade-room__tab-icon {
@@ -1187,14 +1189,14 @@
 
 .trade-room__timeline {
   position: relative;
-  padding-inline-start: 40px;
+  /* padding-inline-start: 40px; */
 }
 
 .trade-room__timeline::before {
   content: "";
   position: absolute;
-  inset-inline-start: 24px;
-  top: 8px;
+  inset-inline-start: 178px;
+  top: 0px;
   bottom: 8px;
   width: 2px;
   background: #E5E7EB;
@@ -1211,7 +1213,7 @@
 
 .trade-room__timeline-dot {
   position: absolute;
-  inset-inline-start: -1px;
+  inset-inline-start: 170px;
   top: 2px;
   width: 18px;
   height: 18px;
@@ -1247,7 +1249,9 @@
 .trade-room__timeline-item--done .trade-room__timeline-title {
   color: #15803d;
 }
-
+.trade-room__timeline-item--current{
+  width: 85%;
+}
 .trade-room__timeline-item--current .trade-room__timeline-title {
   color: #B45309;
 }
@@ -1457,7 +1461,6 @@
   gap: 16px;
 }
 .trade-room__timeline-card,
-.trade-room__card,
 .trade-room__panel {
   flex: 1; /* Makes cards take available space */
 }

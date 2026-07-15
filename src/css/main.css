@@ -599,15 +599,15 @@ p { color: var(--text-secondary); line-height: 1.6; }
   min-height: 52px;
 }
 
-.login-code-input {
-  min-height: 66px;
-  font-size: 1.4rem;
-  letter-spacing: .24em;
-  text-align: center;
+.login-code-input,
+.login-input-tall {
+    min-height: 66px;
 }
 
-.login-input-tall {
-  min-height: 66px;
+.login-code-input {
+    font-size: 1.4rem;
+    letter-spacing: .24em;
+    text-align: center;
 }
 
 .form-control:focus {

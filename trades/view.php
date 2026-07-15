@@ -506,23 +506,27 @@ render_user_panel_open($user, 'trades');
   </header>
 
   <!-- Parties Header moved up -->
-  <section class="trade-room__card" style="margin-bottom: var(--sp-4);">
-    <div class="trade-room__parties" style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center;">
-      <div class="trade-room__party" style="text-align: right;">
-        <div class="trade-room__avatar" style="margin-right: 0;"><?= h(mb_substr($user['name'], 0, 1)) ?></div>
-        <div class="trade-room__party-name">شما</div>
-        <div class="trade-room__party-meta"><?= h($user['city'] ?? 'شهر نامشخص') ?></div>
+  <section class="trade-room__card" style="margin-bottom: var(--sp-4);display: flex;justify-content: center;">
+    <div class="trade-room__parties" style="display: grid; grid-template-columns: 37% 15% 30%; gap: 20px;align-items: center;width: 100%;">
+      <div class="trade-room__party" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <div class="trade-room__avatar" style="margin: 0;"><?= h(mb_substr($user['name'], 0, 1)) ?></div>
+        <div style="text-align: right;">
+          <div class="trade-room__party-name">شما</div>
+          <div class="trade-room__party-meta"><?= h($user['city'] ?? 'شهر نامشخص') ?></div>
+        </div>
       </div>
 
       <section class="trade-room__status-banner">
-        <i class="bi bi-arrow-left-right"></i>
+        <i class="bi bi-arrow-left-right" style="font-size: 37px; color: #081B45;"></i>
         <span>معامله در حال انجام</span>
       </section>
 
-      <div class="trade-room__party" style="text-align: left;">
-        <div class="trade-room__avatar" style="margin-left: 0;"><?= h(mb_substr($otherName, 0, 1)) ?></div>
-        <div class="trade-room__party-name"><?= h($otherName) ?></div>
-        <div class="trade-room__party-meta">طرف مقابل</div>
+      <div class="trade-room__party" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <div style="text-align: left;">
+          <div class="trade-room__party-name"><?= h($otherName) ?></div>
+          <div class="trade-room__party-meta">طرف مقابل</div>
+        </div>
+        <div class="trade-room__avatar" style="margin: 0;"><?= h(mb_substr($otherName, 0, 1)) ?></div>
       </div>
     </div>
   </section>
@@ -570,7 +574,7 @@ render_user_panel_open($user, 'trades');
     <aside class="trade-room__timeline-column">
       <section class="trade-room__timeline-card">
         <h3 class="trade-room__card-title">
-          <i class="bi bi-list-check"></i>
+          <!-- <i class="bi bi-list-check"></i> -->
           وضعیت معامله
         </h3>
         <div class="trade-room__timeline">
@@ -1005,12 +1009,12 @@ render_user_panel_open($user, 'trades');
     <aside class="trade-room__details-column">
       <section class="trade-room__card trade-room__card--compact">
         <h3 class="trade-room__card-title">
-          <i class="bi bi-receipt"></i>
+          <!-- <i class="bi bi-receipt"></i> -->
           جزئیات معامله
         </h3>
 
         <!-- Products -->
-        <div class="trade-room__product-card">
+        <div class="trade-room__product-card" style="margin-top: 41px;">
           <?php if ($myProduct['img']): ?>
             <img src="<?= h($myProduct['img']) ?>" alt="<?= h($myProduct['title']) ?>" class="trade-room__product-thumb">
           <?php else: ?>
@@ -1041,31 +1045,41 @@ render_user_panel_open($user, 'trades');
 
       <section class="trade-room__summary-card trade-room__summary-card--wide">
         <h4 class="trade-room__summary-head">
-          <i class="bi bi-cash"></i> اختلاف قیمت
+          <!-- <i class="bi bi-cash"></i> -->
+           اختلاف قیمت
         </h4>
         <div class="trade-room__summary-line">
-          <span class="trade-room__summary-label">مبلغ</span>
+          <span class="trade-room__summary-label"></span>
           <span class="trade-room__summary-value"><?= $amountToPay > 0 ? fmt_credit($amountToPay) : 'بدون اختلاف' ?></span>
-        </div>
-        <div class="trade-room__summary-line">
-          <span class="trade-room__summary-label">وضعیت</span>
-          <span class="trade-room__pill <?= $trade['diff_paid'] ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
-            <?= $trade['diff_paid'] ? 'پرداخت شده' : 'در انتظار' ?>
-          </span>
         </div>
       </section>
 
       <section class="trade-room__summary-card trade-room__summary-card--wide">
         <h4 class="trade-room__summary-head">
-          <i class="bi bi-credit-card"></i> کارمزد پلتفرم
+          <!-- <i class="bi bi-cash"></i> -->
+          کارمزد سواپین(هرطرف)
         </h4>
-        <div class="trade-room__meta-line trade-room__meta-line--compact">
+        <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
+          <span><?= h($trade['user_a_name']) ?></span>
+          <span class="trade-room__summary-value"><?= fmt_credit($feeA) ?></span>
+        </div>
+        <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
+          <span><?= h($trade['user_b_name']) ?></span>
+          <span class="trade-room__summary-value"><?= fmt_credit($feeB) ?></span>
+        </div>
+      </section>
+
+      <section class="trade-room__summary-card trade-room__summary-card--wide">
+        <h4 class="trade-room__summary-head">
+         وضعیت پرداخت کارمزد
+        </h4>
+        <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
           <span><?= h($trade['user_a_name']) ?></span>
           <span class="trade-room__pill <?= trade_user_fee_paid($trade, true) ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
             <?= trade_user_fee_paid($trade, true) ? 'پرداخت شده' : 'در انتظار' ?>
           </span>
         </div>
-        <div class="trade-room__meta-line trade-room__meta-line--compact">
+        <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
           <span><?= h($trade['user_b_name']) ?></span>
           <span class="trade-room__pill <?= trade_user_fee_paid($trade, false) ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
             <?= trade_user_fee_paid($trade, false) ? 'پرداخت شده' : 'در انتظار' ?>

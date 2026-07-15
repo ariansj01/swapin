@@ -569,7 +569,7 @@ render_navbar($user);
 
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.875rem;color:var(--text-muted);">
             <span>فروشنده:</span>
-            <strong style="color:var(--dash-navy);"><?= h($listing['seller_name']) ?></strong>
+            <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" style="color:var(--dash-navy);text-decoration:none;font-weight:bold;"><?= h($listing['seller_name']) ?></a>
             <?php if ($listing['seller_city']): ?>
             <span>(<?= h($listing['seller_city']) ?>)</span>
             <?php endif; ?>
