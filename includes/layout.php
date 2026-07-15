@@ -216,6 +216,17 @@ HTML;
     }
     if (!$loggedIn) {
         echo "<a href=\"{$url}/auth/login\" class=\"mobile-drawer__link\"><i class=\"bi bi-box-arrow-in-right\"></i> ورود / ثبت‌نام</a>";
+    } else {
+        echo "<div class=\"mobile-drawer__divider\"></div>";
+        $logoutCsrf = csrf_field();
+        echo <<<HTML
+          <form method="POST" action="{$url}/auth/logout" style="margin:0">
+            {$logoutCsrf}
+            <button type="submit" class="mobile-drawer__link" style="color:var(--danger);width:100%;border:0;background:none;text-align:inherit;cursor:pointer;font:inherit">
+              <i class="bi bi-box-arrow-right"></i> خروج
+            </button>
+          </form>
+HTML;
     }
     echo <<<HTML
   </nav>

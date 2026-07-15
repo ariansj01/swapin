@@ -170,6 +170,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
   color: #fff;
   white-space: nowrap;
   text-decoration: none;
+  margin-top: 10px;
 }
 
 .navbar-brand:hover { color: var(--accent); }
@@ -369,6 +370,12 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
 .mobile-drawer__link:hover { background: var(--bg); color: var(--primary); }
 
+.mobile-drawer__divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--sp-3) 0;
+}
+
 .mobile-bottom-nav {
   display: none;
   position: fixed;
@@ -462,6 +469,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
     grid-row: 1;
     justify-self: start;
     margin-inline-start: 0;
+    margin-top: -30px;
   }
 
   .navbar-actions .btn.hide-desktop { display: none !important; }
@@ -1954,6 +1962,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 @media (max-width: 480px) {
+  .container{
+    width: 100%;
+  }
   .container, .container-md, .container-sm { padding: 0 var(--sp-4); }
   .card-body { padding: var(--sp-4); }
   .section-sm { padding: var(--sp-6) 0 var(--sp-10); }

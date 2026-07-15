@@ -126,25 +126,25 @@ render_user_panel_open($user, 'settings');
       <div class="card">
         <div class="card-header"><h3 style="margin:0;font-size:1rem">احراز هویت (KYC)</h3></div>
         <div class="card-body">
-          <form method="POST" enctype="multipart/form-data">
+          <form method="POST" enctype="multipart/form-data" style="display: flex; flex-wrap: wrap; gap: 20px;">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="kyc">
 
-            <div class="form-group">
+            <div class="form-group" style="width: 45%;">
               <label class="form-label">کد ملی <span class="required">*</span></label>
               <input type="text" name="national_id" class="form-control <?= isset($errors['national_id']) ? 'is-invalid' : '' ?>"
                      value="<?= h($user['national_id'] ?? '') ?>" maxlength="10" pattern="\d{10}" placeholder="0123456789">
               <?php if (isset($errors['national_id'])): ?><div class="invalid-feedback"><?= h($errors['national_id']) ?></div><?php endif; ?>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="width: 45%;">
               <label class="form-label">حساب بانکی / شبا <span class="required">*</span></label>
               <input type="text" name="bank_account" class="form-control <?= isset($errors['bank_account']) ? 'is-invalid' : '' ?>"
                      value="<?= h($user['bank_account'] ?? '') ?>" placeholder="IR120000000000000000000000">
               <?php if (isset($errors['bank_account'])): ?><div class="invalid-feedback"><?= h($errors['bank_account']) ?></div><?php endif; ?>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="width: 45%;">
               <label class="form-label">نوع فروشنده</label>
               <select name="seller_type" class="form-control" id="seller-type">
                 <option value="personal" <?= ($user['seller_type'] ?? 'personal') === 'personal' ? 'selected' : '' ?>>شخصی</option>

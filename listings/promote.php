@@ -361,13 +361,13 @@ ob_start();
         </div>
       </div>
 
-      <div class="promote-card promote-support">
+      <!-- <div class="promote-card promote-support">
         <h4>نیاز به راهنمایی دارید؟</h4>
         <p>تیم پشتیبانی سواپین آماده کمک به شما در انتخاب بهترین پلن ارتقا است.</p>
         <a href="<?= APP_URL ?>/support" class="promote-support__btn">
           <i class="bi bi-headset"></i> تماس با پشتیبانی
         </a>
-      </div>
+      </div> -->
     </div>
   </div>
 

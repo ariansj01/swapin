@@ -80,7 +80,7 @@ render_user_panel_open($user, 'support');
       <div class="card-body">
         <form method="POST" novalidate>
           <?= csrf_field() ?>
-          <div class="form-group">
+          <div class="form-group" style="width: 50%;">
             <label class="form-label" for="category">دسته‌بندی</label>
             <select id="category" name="category" class="form-control">
               <?php foreach ($catLabels as $k => $v): ?>
@@ -88,7 +88,7 @@ render_user_panel_open($user, 'support');
               <?php endforeach; ?>
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="width: 50%;">
             <label class="form-label" for="subject">موضوع <span class="required">*</span></label>
             <input type="text" id="subject" name="subject" class="form-control <?= isset($errors['subject']) ? 'is-invalid' : '' ?>"
                    value="<?= h($_POST['subject'] ?? '') ?>" placeholder="خلاصه مشکل یا سؤال" required>

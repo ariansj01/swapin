@@ -1232,6 +1232,7 @@
   flex-shrink: 0;
   align-items: center;
   margin-bottom: 20px;
+  display: none;
 }
 
 /* Minimal stat chips */

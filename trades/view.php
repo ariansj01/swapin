@@ -1113,7 +1113,7 @@ render_user_panel_open($user, 'trades');
         <?php if ($amountToPay <= 0): ?>
           <div class="trade-room__summary-note">برای این معامله اختلاف قیمت محاسبه نشده است.</div>
         <?php elseif ($trade['diff_paid']): ?>
-          <div class="trade-room__summary-note">اختلاف قیمت از قبل پرداخت شده است.</div>
+          <div class="trade-room__summary-note" style="color: #16a34a;">اختلاف قیمت از قبل پرداخت شده است.</div>
         <?php else: ?>
           <div class="trade-room__summary-note">هنوز اختلاف قیمت پرداخت نشده است.</div>
         <?php endif; ?>
@@ -1130,7 +1130,7 @@ render_user_panel_open($user, 'trades');
     $canChangeShipping = !$shippingReady && $contractSigned;
   ?>
   <div class="box-trade-room__layout">
-    <form method="POST" class="pay-metod" id="paymentMethodForm" <?= !$canChangePayment ? 'style="pointer-events: none; opacity: 0.7;"' : '' ?>>
+    <form method="POST" class="pay-metod" id="paymentMethodForm" <?= !$canChangePayment ? 'data-disabled="true"' : '' ?>>
       <input type="hidden" name="action" value="select_payment_method">
       <?= csrf_field() ?>
       <h3 class="box-trade-room__title">تسویه اختلاف قیمت</h3>
@@ -1176,7 +1176,7 @@ render_user_panel_open($user, 'trades');
         </label>
       </div>
     </form>
-    <form method="POST" class="send-metod" id="shippingMethodForm" <?= !$canChangeShipping ? 'style="pointer-events: none; opacity: 0.7;"' : '' ?>>
+    <form method="POST" class="send-metod" id="shippingMethodForm" <?= !$canChangeShipping ? 'data-disabled="true"' : '' ?>>
       <input type="hidden" name="action" value="select_shipping_method">
       <?= csrf_field() ?>
       <h3 class="box-trade-room__title">روش ارسال</h3>
@@ -1227,11 +1227,17 @@ render_user_panel_open($user, 'trades');
   <script>
     // Auto-submit when payment method is selected
     document.getElementById('paymentMethodForm').addEventListener('change', function() {
+      if (this.hasAttribute('data-disabled') && this.getAttribute('data-disabled') === 'true') {
+        return;
+      }
       this.submit();
     });
     
     // Auto-submit when shipping method is selected
     document.getElementById('shippingMethodForm').addEventListener('change', function() {
+      if (this.hasAttribute('data-disabled') && this.getAttribute('data-disabled') === 'true') {
+        return;
+      }
       this.submit();
     });
   </script>
