@@ -241,8 +241,8 @@ $receivedOffers = DB::fetchAll(
      JOIN listings l ON l.id = o.listing_id
      JOIN users u ON u.id = o.from_user_id
      LEFT JOIN listings ol ON ol.id = o.offer_listing_id
-     WHERE l.user_id = ?
-     ORDER BY o.status = "pending" DESC, o.created_at DESC',
+     WHERE l.user_id = ? AND o.status = "pending"
+     ORDER BY o.created_at DESC',
     [$uid]
 );
 
