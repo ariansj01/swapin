@@ -1859,22 +1859,15 @@
 /* Responsive for small screens (tablets, mobile) */
 @media (max-width: 992px) {
   .box-trade-room__layout {
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    display: flex;
-    gap: 24px;
-    padding: 0 12px 8px 12px;
-  }
-
-  .box-trade-room__layout::-webkit-scrollbar {
-    display: none;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0 12px;
   }
 
   .pay-metod,
   .send-metod {
-    flex: 0 0 90%;
-    max-width: 90%;
+    width: 100%;
+    max-width: 100%;
   }
 
   .box-trade-room__cards {
@@ -1884,6 +1877,7 @@
     display: flex;
     gap: 12px;
     padding-bottom: 4px;
+    scroll-snap-type: x proximity;
   }
   
   .box-trade-room__cards::-webkit-scrollbar {
@@ -1891,17 +1885,18 @@
   }
 
   .box-trade-room__card {
-    flex: 0 0 85%;
+    flex: 0 0 min(280px, calc(100% - 24px));
+    scroll-snap-align: start;
   }
 }
 
 @media (max-width: 768px) {
   .pay-metod,
   .send-metod {
-    flex: 0 0 95%;
-    max-width: 95%;
+    padding: 16px;
   }
+
   .box-trade-room__card {
-    flex: 0 0 88%;
+    flex-basis: min(260px, calc(100% - 20px));
   }
 }
