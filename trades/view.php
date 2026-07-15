@@ -552,11 +552,11 @@ render_user_panel_open($user, 'trades');
       </section>
 
       <div class="trade-room__party" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <div class="trade-room__avatar" style="margin: 0;"><?= h(mb_substr($otherName, 0, 1)) ?></div>
         <div style="text-align: left;">
           <div class="trade-room__party-name"><?= h($otherName) ?></div>
           <div class="trade-room__party-meta">طرف مقابل</div>
         </div>
-        <div class="trade-room__avatar" style="margin: 0;"><?= h(mb_substr($otherName, 0, 1)) ?></div>
       </div>
     </div>
   </section>

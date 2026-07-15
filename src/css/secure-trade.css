@@ -1780,7 +1780,7 @@
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 5px;
   padding: 20px 10px;
   border-radius: 16px;
   border: 2px solid #ECEFF5;

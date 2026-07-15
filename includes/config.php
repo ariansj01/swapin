@@ -146,6 +146,12 @@ try {
     if (!in_array('user_b_received', $tradesColumns)) {
         DB::query('ALTER TABLE `trades` ADD COLUMN `user_b_received` TINYINT(1) NOT NULL DEFAULT 0 AFTER `user_a_received`');
     }
+    if (!in_array('selected_payment_method', $tradesColumns)) {
+        DB::query("ALTER TABLE `trades` ADD COLUMN `selected_payment_method` ENUM('in_person','bnpl','cash') DEFAULT NULL AFTER `user_b_received`");
+    }
+    if (!in_array('selected_shipping_method', $tradesColumns)) {
+        DB::query("ALTER TABLE `trades` ADD COLUMN `selected_shipping_method` ENUM('courier','post','swapin_secure') DEFAULT NULL AFTER `selected_payment_method`");
+    }
     
     // Create secure_room_messages table if it doesn't exist
     if (!db_has_table('secure_room_messages')) {

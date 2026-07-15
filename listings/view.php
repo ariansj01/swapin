@@ -273,7 +273,7 @@ render_navbar($user);
     <?php if ($images): ?>
     <div class="lv-gallery__track">
       <?php foreach ($images as $img): ?>
-      <div class="lv-gallery__slide">
+      <div class="lv-gallery__slide" style="cursor: zoom-in;" onclick="openImageLightbox('<?= UPLOAD_URL . h($img['filename']) ?>')">
         <img src="<?= UPLOAD_URL . h($img['filename']) ?>" alt="<?= h($listing['title']) ?>" loading="lazy">
       </div>
       <?php endforeach; ?>
@@ -529,7 +529,7 @@ render_navbar($user);
     <div class="lv-main-grid">
       <div class="lv-left-col">
         <section class="lv-gallery-section">
-          <div class="lv-gallery-main">
+          <div class="lv-gallery-main" style="cursor: zoom-in;" onclick="openImageLightbox(this.querySelector('img').src)">
             <?php if ($images): ?>
             <img id="lv-main-img" src="<?= UPLOAD_URL . h($images[0]['filename']) ?>" alt="<?= h($listing['title']) ?>">
             <?php else: ?>
@@ -542,7 +542,7 @@ render_navbar($user);
             <img src="<?= UPLOAD_URL . h($img['filename']) ?>"
                  alt="تصویر <?= $i + 1 ?>"
                  class="lv-gallery-thumb<?= $i === 0 ? ' active' : '' ?>"
-                 onclick="document.getElementById('lv-main-img').src=this.src;document.querySelectorAll('.lv-gallery-thumb').forEach(function(t){t.classList.remove('active')});this.classList.add('active')">
+                 onclick="event.stopPropagation();document.getElementById('lv-main-img').src='<?= UPLOAD_URL . h($img['filename']) ?>';document.querySelectorAll('.lv-gallery-thumb').forEach(function(t){t.classList.remove('active')});this.classList.add('active')">
             <?php endforeach; ?>
           </div>
           <?php endif; ?>
@@ -796,6 +796,36 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php endif; ?>
+<!-- Image Lightbox Modal -->
+<div id="image-lightbox" class="image-lightbox" onclick="closeImageLightbox()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;">
+  <button type="button" onclick="event.stopPropagation();closeImageLightbox()" style="position:absolute;top:20px;right:20px;background:none;border:none;color:white;font-size:2rem;cursor:pointer;">
+    <i class="bi bi-x-lg"></i>
+  </button>
+  <img id="lightbox-img" src="" style="max-width:90%;max-height:90%;object-fit:contain;">
+</div>
+
+<script>
+function openImageLightbox(imgSrc) {
+  const lightbox = document.getElementById('image-lightbox');
+  const img = document.getElementById('lightbox-img');
+  img.src = imgSrc;
+  lightbox.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeImageLightbox() {
+  const lightbox = document.getElementById('image-lightbox');
+  lightbox.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Close lightbox on escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeImageLightbox();
+  }
+});
+</script>
 <script src="<?= APP_URL ?>/src/js/listing-view-mobile.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-view-mobile.js') ?>"></script>
 
 <?php render_footer(); ?>
