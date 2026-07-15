@@ -148,15 +148,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'set_shipping') {
         $shippingDateInput = clean($_POST['shipping_date'] ?? '');
         $shippingTime      = clean($_POST['shipping_time'] ?? '');
-        $shippingMethod    = clean($_POST['shipping_method'] ?? '');
+        $shippingMethod    = $trade['selected_shipping_method'] ?? '';
         $shippingDate      = parse_shipping_date_input($shippingDateInput);
 
         if (!$shippingDate) {
             $error = 'تاریخ شمسی را به‌درستی وارد کنید (مثال: ۱۴۰۴/۰۴/۲۳).';
         } elseif (!$shippingTime) {
             $error = 'ساعت ارسال را وارد کنید.';
-        } elseif (!in_array($shippingMethod, ['in_person', 'post', 'tipax', 'courier'], true)) {
-            $error = 'روش ارسال را انتخاب کنید.';
+        } elseif (!in_array($shippingMethod, ['courier', 'post', 'swapin_secure'], true)) {
+            $error = 'ابتدا روش ارسال را از پایین صفحه انتخاب کنید.';
         } else {
             if ($isA) {
                 DB::update('trades', [
@@ -171,11 +171,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'user_b_shipping_method' => $shippingMethod,
                 ], 'id = ?', [$tradeId]);
             }
-            $success = 'زمان و روش ارسال ثبت شد.';
+            $success = 'زمان ارسال ثبت شد.';
             $trade = fetch_trade_room($tradeId, $uid) ?? $trade;
-            $aReady = !empty($trade['user_a_shipping_date']) && !empty($trade['user_a_shipping_time']) && !empty($trade['user_a_shipping_method']);
-            $bReady = !empty($trade['user_b_shipping_date']) && !empty($trade['user_b_shipping_time']) && !empty($trade['user_b_shipping_method']);
-            if ($aReady && $bReady) {
+            $aReady = !empty($trade['user_a_shipping_date']) && !empty($trade['user_a_shipping_time']);
+            $bReady = !empty($trade['user_b_shipping_date']) && !empty($trade['user_b_shipping_time']);
+            $shippingSelected = !empty($trade['selected_shipping_method']);
+            if ($aReady && $bReady && $shippingSelected) {
                 DB::query('UPDATE trades SET step = 6 WHERE id = ?', [$tradeId]);
             }
         }
@@ -841,28 +842,18 @@ render_user_panel_open($user, 'trades');
                     <div class="fs-sm mt-2" style="color:var(--text-muted)">روش: <?= h(shipping_label($myMethod)) ?></div>
                   <?php else: ?>
                     <form method="POST" class="trade-room__stack">
-                      <?= csrf_field() ?>
-                      <input type="hidden" name="action" value="set_shipping">
-                      <div class="form-group">
-                        <label class="form-label">تاریخ ارسال (شمسی)</label>
-                        <input type="text" name="shipping_date" class="form-control jalali-date-input"
-                               data-jdp data-jdp-only-date placeholder="۱۴۰۴/۰۴/۲۳" autocomplete="off" required>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">ساعت ارسال</label>
-                        <input type="time" name="shipping_time" class="form-control" required>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">روش ارسال</label>
-                        <select name="shipping_method" class="form-control" required>
-                          <option value="">انتخاب کنید</option>
-                          <option value="in_person">تحویل حضوری</option>
-                          <option value="post">پست</option>
-                          <option value="tipax">تیپاکس</option>
-                          <option value="courier">پیک</option>
-                        </select>
-                      </div>
-                      <button type="submit" class="btn btn-primary">ثبت زمان و روش ارسال</button>
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="action" value="set_shipping">
+                        <div class="form-group">
+                            <label class="form-label">تاریخ ارسال (شمسی)</label>
+                            <input type="text" name="shipping_date" class="form-control jalali-date-input"
+                                   data-jdp data-jdp-only-date placeholder="۱۴۰۴/۰۴/۲۳" autocomplete="off" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ساعت ارسال</label>
+                            <input type="time" name="shipping_time" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">ثبت زمان ارسال</button>
                     </form>
                   <?php endif; ?>
                 </div>

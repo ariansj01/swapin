@@ -19,7 +19,7 @@
 .secure-trade {
   background: var(--st-page-bg);
   min-height: 100vh;
-  font-family: 'Vazirmatn', -apple-system, sans-serif;
+  font-family: 'IRANSans', 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #1f2937;
 }
 
@@ -1488,7 +1488,7 @@
 
 .trade-room__offers-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -1858,7 +1858,22 @@
 /* Responsive for mobile */
 @media (max-width: 992px) {
   .box-trade-room__layout {
-    grid-template-columns: 1fr;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    display: flex;
+    gap: 24px;
+    padding-bottom: 8px;
+  }
+
+  .box-trade-room__layout::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pay-metod,
+  .send-metod {
+    flex: 0 0 90%;
+    max-width: 90%;
   }
 
   .box-trade-room__cards {

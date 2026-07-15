@@ -76,7 +76,7 @@ render_user_panel_open($user, 'wallet');
         <div class="wallet-card__label"><i class="bi bi-wallet2"></i> موجودی کل</div>
         <div class="wallet-card__balance"><?= number_format($user['credit_balance'], 0) ?></div>
         <div class="wallet-card__symbol"><?= CREDIT_UNIT ?> — اعتبار <?= APP_NAME ?></div>
-        <p style="font-size:.8125rem;opacity:.65;margin-top:var(--sp-2)">اعتبار کیف پول برای تعادل ارزش در معاملات استفاده می‌شود</p>
+        <p style="font-size:.8125rem; margin-top:var(--sp-2);color: #FFC107;">اعتبار کیف پول برای تعادل ارزش در معاملات استفاده می‌شود</p>
       </div>
 
       <div class="card">

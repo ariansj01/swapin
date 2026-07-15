@@ -129,7 +129,7 @@ render_navbar($user);
 <div class="alert alert-warning" style="border-radius:0;border-left:0;border-right:0" id="expired-listings-alert">
   <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
     <i class="bi bi-clock-history"></i>
-    <span><?= fmt_num($expiredListingsCount) ?> آگهی شما به‌دلیل سپری شدن ۳۰ روز منقضی شده است. برای بازگردانی آنها به تب «منقضی» بروید.</span>
+    <span><?= fmt_num($expiredListingsCount) ?> آگهی شما به‌دلیل سپری شدن ۱۵ روز منقضی شده است. برای بازگردانی آنها به تب «منقضی» بروید.</span>
     <button type="button" class="btn btn-ghost btn-sm" style="margin-inline-start:auto" onclick="this.closest('.alert')?.remove()">
       <i class="bi bi-x-lg"></i> بستن
     </button>

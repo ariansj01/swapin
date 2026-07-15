@@ -324,12 +324,11 @@ function trade_fees_fully_paid(array $trade): bool {
 
 function trade_shipping_fully_scheduled(array $trade): bool {
     $aReady = !empty($trade['user_a_shipping_date'])
-        && !empty($trade['user_a_shipping_time'])
-        && !empty($trade['user_a_shipping_method']);
+        && !empty($trade['user_a_shipping_time']);
     $bReady = !empty($trade['user_b_shipping_date'])
-        && !empty($trade['user_b_shipping_time'])
-        && !empty($trade['user_b_shipping_method']);
-    return $aReady && $bReady;
+        && !empty($trade['user_b_shipping_time']);
+    $shippingSelected = !empty($trade['selected_shipping_method']);
+    return $aReady && $bReady && $shippingSelected;
 }
 
 function maybe_advance_trade_after_fees(int $tradeId): void {

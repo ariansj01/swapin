@@ -1327,18 +1327,18 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   padding: var(--sp-2) var(--sp-4);
   border-radius: var(--radius-full);
   font-size: .8125rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--surface);
-  border: 1.5px solid var(--border);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
   white-space: nowrap;
   text-decoration: none;
   transition: all var(--duration) var(--ease);
 }
 .cat-pill:hover, .cat-pill.active {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
+  background: var(--accent);
+  color: var(--primary);
+  border-color: var(--accent);
 }
 
 /* ── 16. Filter Bar ────────────────────────────────────────────────────── */

@@ -190,14 +190,14 @@ render_navbar(null);
         <form method="POST">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="verify_otp">
-          <p class="mb-6" style="color:var(--text-secondary)">
-            کد ۶ رقمی به <strong><?= h($phone) ?></strong> ارسال شد
-          </p>
           <div class="form-group">
             <label class="form-label">کد تأیید</label>
-            <input type="text" class="form-control login-code-input" name="code" placeholder="000000"
+            <input type="text" class="form-control login-code-input login-input-tall" name="code" placeholder="000000"
                    inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code"
                    required autofocus>
+            <p class="form-hint">
+              کد ۶ رقمی به <strong><?= h($phone) ?></strong> ارسال شد
+            </p>
           </div>
           <button type="submit" class="btn btn-primary w-100 btn-lg">تأیید و ادامه</button>
           <p class="text-center fs-sm mt-6" style="color:var(--text-muted)" id="resendArea">

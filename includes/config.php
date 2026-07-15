@@ -436,7 +436,7 @@ function auto_expire_listings(): int {
     $stmt = DB::query(
         "UPDATE listings
          SET status = 'expired', updated_at = NOW()
-         WHERE status = 'active' AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)"
+         WHERE status = 'active' AND created_at < DATE_SUB(NOW(), INTERVAL 15 DAY)"
     );
     return $stmt->rowCount();
 }
