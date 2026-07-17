@@ -428,7 +428,7 @@ render_navbar($user);
           </div>
           <?php else: ?>
           <div class="dash-tx-list">
-          <?php foreach (array_slice($recentTx, 0, 3) as $tx): ?>
+          <?php foreach (array_slice($recentTx, 0, 4) as $tx): ?>
           <?php
             $isPos = $tx['amount'] >= 0;
             $typeLabels = [

@@ -264,7 +264,7 @@ ob_start();
           $isGold = !empty($plan['featured']);
           $cardCls = 'promote-plan' . ($isGold ? ' promote-plan--gold' : '');
           $durationValues = array_values($plan['durations']);
-          $baseDuration = reset($durationValues);
+          $baseDuration = max((int)reset($durationValues), 1);
       ?>
       <article class="<?= $cardCls ?>">
         <div class="promote-plan__header promote-plan__header--<?= h($plan['header']) ?>"></div>
@@ -290,7 +290,8 @@ ob_start();
             <label>مدت پلن</label>
             <select name="duration" class="form-control promote-duration-select" data-base-price="<?= h($plan['base_price']) ?>" data-plan-key="<?= h($key) ?>" style="text-align:center">
               <?php foreach ($plan['durations'] as $durationLabel => $durationHours): ?>
-                <option value="<?= h($durationHours) ?>" data-price-multiplier="<?= h($durationHours / $baseDuration) ?>"><?= h($durationLabel) ?></option>
+                <?php $durationPrice = (int)round($plan['base_price'] * ($durationHours / $baseDuration)); ?>
+                <option value="<?= h($durationHours) ?>" data-price="<?= h($durationPrice) ?>" data-price-multiplier="<?= h($durationHours / $baseDuration) ?>"><?= h($durationLabel) ?> - <?= h(fmt_credit($durationPrice)) ?></option>
               <?php endforeach; ?>
             </select>
           </div>

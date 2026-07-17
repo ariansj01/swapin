@@ -12,8 +12,11 @@ $vals = [
     'city'            => '',
     'want_categories' => [],
     'want_description' => '',
+    'custom_value'    => 0,
     'estimated_value' => 0,
 ];
+
+$suggestedValue = (int)($_POST['suggested_value'] ?? rand(10000000, 50000000));
 
 // Category data
 $categories = DB::fetchAll(
@@ -50,8 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'city'            => clean($_POST['city']            ?? ''),
         'want_categories' => $_POST['want_categories']       ?? [],
         'want_description' => clean($_POST['want_description'] ?? ''),
-        'estimated_value' => (int)($_POST['estimated_value'] ?? 0),
+        'custom_value'    => (int)($_POST['custom_value']    ?? 0),
+        'estimated_value' => 0,
     ];
+    $suggestedValue = (int)($_POST['suggested_value'] ?? $suggestedValue);
+    $vals['estimated_value'] = $vals['custom_value'] > 0 ? $vals['custom_value'] : $suggestedValue;
 
     // Validation
     $errors = [];
@@ -301,22 +307,29 @@ render_navbar($user);
         <!-- Step 6: Estimated Price -->
         <div class="wizard-step" data-step="6" id="step-6" style="display:none">
           <h2 class="wizard-step-title">قیمت تخمینی</h2>
-          <p class="wizard-step-subtitle">می‌توانید قیمت را تغییر دهید.</p>
+          <p class="wizard-step-subtitle">سیستم یک مبلغ پیشنهادی می‌دهد؛ اگر نخواستید، پایین‌تر قیمت دلخواه خودتان را وارد کنید.</p>
 
           <div class="price-estimate-card">
-            <p class="price-estimate-label">قیمت پیشنهادی</p>
+            <p class="price-estimate-label">قیمت پیشنهادی سیستم</p>
             <div class="wizard-form-group" style="margin-top: var(--wizard-gap)">
-              <input type="text" id="step6-price-input" class="wizard-form-input" 
-                     placeholder="قیمت به تومان"
-                     value="<?php
-                        // Dummy estimate for now; replace with real AI later
-                        $dummy = rand(10000000, 50000000);
-                        echo h(number_format($dummy));
-                     ?>">
-              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این قیمت صرفا تخمینی است و می‌توانید آن را تغییر دهید.</p>
+              <input type="text" id="step6-suggested-price-input" class="wizard-form-input"
+                     value="<?= h(number_format($suggestedValue)) ?>"
+                     readonly>
+              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این مبلغ فقط پیشنهاد سیستم است و در صورت خالی گذاشتن فیلد پایین، همین مقدار ثبت می‌شود.</p>
             </div>
           </div>
-          <input type="hidden" id="step6-estimated-value" name="estimated_value" value="<?= $dummy ?>">
+
+          <div class="wizard-form-group" style="margin-top: var(--wizard-gap)">
+            <label class="wizard-form-label" for="step6-custom-price-input">قیمت دلخواه شما</label>
+            <input type="text" id="step6-custom-price-input" class="wizard-form-input"
+                   placeholder="اگر قیمت دیگری مدنظر دارید وارد کنید"
+                   value="<?= $vals['custom_value'] > 0 ? h(number_format($vals['custom_value'])) : '' ?>">
+            <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این بخش اختیاری است.</p>
+          </div>
+
+          <input type="hidden" id="step6-suggested-value" name="suggested_value" value="<?= h($suggestedValue) ?>">
+          <input type="hidden" id="step6-custom-value" name="custom_value" value="<?= h($vals['custom_value']) ?>">
+          <input type="hidden" id="step6-estimated-value" name="estimated_value" value="<?= h($vals['estimated_value'] ?: $suggestedValue) ?>">
         </div>
 
         <!-- Step 7: Review -->
@@ -423,25 +436,26 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initStep6Price() {
-  const input = document.getElementById('step6-price-input');
-  const hiddenInput = document.getElementById('step6-estimated-value');
+  const customInput = document.getElementById('step6-custom-price-input');
+  const customHiddenInput = document.getElementById('step6-custom-value');
+  const selectedHiddenInput = document.getElementById('step6-estimated-value');
+  const suggestedHiddenInput = document.getElementById('step6-suggested-value');
   
-  if (!input || !hiddenInput) return;
+  if (!customInput || !customHiddenInput || !selectedHiddenInput || !suggestedHiddenInput) return;
   
   function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
-  
-  function parseNumber(str) {
-    return parseInt(str.replace(/,/g, ''), 10) || 0;
+
+  function syncPriceValue() {
+    const rawValue = customInput.value.replace(/[^\d]/g, '');
+    customInput.value = rawValue ? formatNumber(parseInt(rawValue, 10)) : '';
+    customHiddenInput.value = rawValue;
+    selectedHiddenInput.value = rawValue || suggestedHiddenInput.value;
   }
-  
-  input.addEventListener('input', () => {
-    const rawValue = input.value.replace(/[^\d]/g, '');
-    const formatted = formatNumber(parseInt(rawValue) || 0);
-    input.value = formatted;
-    hiddenInput.value = rawValue;
-  });
+
+  customInput.addEventListener('input', syncPriceValue);
+  syncPriceValue();
 }
 
 function initStep3Fields() {
@@ -680,7 +694,8 @@ function populateReview() {
   document.getElementById('step7-want-desc').textContent = document.getElementById('step5-description').value || 'نوشته نشده';
 
   // Step 6
-  document.getElementById('step7-price').textContent = document.getElementById('step6-price-input').value + ' تومان';
+  const finalPrice = document.getElementById('step6-estimated-value').value;
+  document.getElementById('step7-price').textContent = new Intl.NumberFormat('fa-IR').format(parseInt(finalPrice || '0', 10)) + ' تومان';
 
   // Step 2 images
   const imgGrid = document.getElementById('step7-images');

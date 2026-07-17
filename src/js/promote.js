@@ -16,30 +16,32 @@
   }
 
   document.querySelectorAll('.promote-duration-select').forEach((select) => {
-    select.addEventListener('change', function() {
-      const planKey = this.dataset.planKey;
-      const basePrice = parseInt(this.dataset.basePrice);
-      const selectedOption = this.options[this.selectedIndex];
-      const multiplier = parseFloat(selectedOption.dataset.priceMultiplier || 1);
-      const totalPrice = Math.round(basePrice * multiplier);
+    const updatePlanPrice = () => {
+      const planKey = select.dataset.planKey;
+      const basePrice = parseInt(select.dataset.basePrice || '0', 10);
+      const selectedOption = select.options[select.selectedIndex];
+      const multiplier = parseFloat(selectedOption.dataset.priceMultiplier || '1');
+      const explicitPrice = parseInt(selectedOption.dataset.price || '0', 10);
+      const totalPrice = explicitPrice > 0 ? explicitPrice : Math.round(basePrice * multiplier);
 
-      // Update price display
       const priceEl = document.getElementById('price-' + planKey);
       if (priceEl) {
-        priceEl.textContent = new Intl.NumberFormat('fa-IR').format(totalPrice) + ' تومان';
+        priceEl.textContent = formatPrice(totalPrice);
       }
 
-      // Update hidden field and form dataset
-      const planCard = this.closest('.promote-plan');
+      const planCard = select.closest('.promote-plan');
       if (planCard) {
         const form = planCard.querySelector('.promote-plan__form');
         if (form) {
-          form.dataset.planPrice = new Intl.NumberFormat('fa-IR').format(totalPrice) + ' تومان';
+          form.dataset.planPrice = formatPrice(totalPrice);
           const hiddenDuration = planCard.querySelector('.promote-selected-duration');
-          if (hiddenDuration) hiddenDuration.value = this.value;
+          if (hiddenDuration) hiddenDuration.value = select.value;
         }
       }
-    });
+    };
+
+    select.addEventListener('change', updatePlanPrice);
+    updatePlanPrice();
   });
 
   document.querySelectorAll('.promote-plan__form').forEach((form) => {
