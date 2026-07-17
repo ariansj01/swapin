@@ -62,9 +62,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <meta name="twitter:description" content="{$d}">
 <meta name="twitter:image" content="{$ogImage}">
 <meta name="theme-color" content="#0a2540">
-{$keywords}{$jsonLd}<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+{$keywords}{$jsonLd}
 <link rel="stylesheet" href="{$url}/src/css/fonts.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">

@@ -20,7 +20,7 @@
 .wizard-page {
   background: var(--wizard-page-bg);
   min-height: 100vh;
-  font-family: 'IRANSans', 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'IRANSans', sans-serif;
   color: var(--wizard-text);
   display: flex;
   flex-direction: column;

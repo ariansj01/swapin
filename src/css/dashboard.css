@@ -17,7 +17,7 @@
 
 .dashboard-body {
   background: var(--dash-page-bg);
-  font-family: 'IRANSans', 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'IRANSans', sans-serif;
   min-height: 100vh;
 }
 
