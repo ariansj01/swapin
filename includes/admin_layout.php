@@ -14,8 +14,7 @@ function render_admin_head(string $title = ''): void {
 <meta name="csrf-token" content="{$csrf}">
 <title>{$t}</title>
 <meta name="robots" content="noindex, nofollow">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{$url}/src/css/fonts.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
 <link rel="stylesheet" href="{$url}/src/css/admin.css">

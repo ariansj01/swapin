@@ -4,7 +4,7 @@
 @font-face {
   font-family: 'IRANSans';
   src: url('../fonts/iransans/Iranian Sans.ttf') format('truetype');
-  font-weight: normal;
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
@@ -12,12 +12,18 @@
 @font-face {
   font-family: 'IRANSans';
   src: url('../fonts/iransans/A Iranian Sans.ttf') format('truetype');
-  font-weight: bold;
+  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
-/* Apply font family to all elements */
-* {
-  font-family: 'IRANSans', sans-serif !important;
+html,
+body,
+button,
+input,
+select,
+textarea,
+option {
+  font-family: 'IRANSans', sans-serif;
+  font-variant-numeric: normal;
 }
