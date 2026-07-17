@@ -42,8 +42,8 @@ $plans = [
         'header'      => 'purple',
         'badge'       => null,
         'badge_class' => '',
-        'price'       => 50000,
-        'duration'    => '24 ساعت',
+        'base_price'  => 50000,
+        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
         'description' => 'آگهی در بالاترین جایگاه لیست قرار می‌گیرد',
     ],
     'featured' => [
@@ -53,8 +53,8 @@ $plans = [
         'header'      => 'orange',
         'badge'       => null,
         'badge_class' => '',
-        'price'       => 100000,
-        'duration'    => '7 روز',
+        'base_price'  => 100000,
+        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
         'description' => 'نمایش در بخش آگهی‌های ویژه با برچسب داغ',
     ],
     'vip' => [
@@ -64,8 +64,8 @@ $plans = [
         'header'      => 'violet',
         'badge'       => 'محبوب',
         'badge_class' => 'popular',
-        'price'       => 200000,
-        'duration'    => '14 روز',
+        'base_price'  => 200000,
+        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
         'description' => 'نمایش در صفحه اول، اولویت در نتایج جستجو',
     ],
     'targeted' => [
@@ -75,8 +75,8 @@ $plans = [
         'header'      => 'green',
         'badge'       => 'جدید',
         'badge_class' => 'new',
-        'price'       => 150000,
-        'duration'    => '7 روز',
+        'base_price'  => 150000,
+        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
         'description' => 'نمایش به مخاطبان مرتبط بر اساس شهر و دسته‌بندی',
     ],
     'ai' => [
@@ -86,8 +86,8 @@ $plans = [
         'header'      => 'blue',
         'badge'       => 'حرفه‌ای',
         'badge_class' => 'pro',
-        'price'       => 250000,
-        'duration'    => '7 روز',
+        'base_price'  => 250000,
+        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
         'description' => 'ارسال هوشمند آگهی به مخاطبان دقیقاً مرتبط',
     ],
     'gold' => [
@@ -97,20 +97,11 @@ $plans = [
         'header'      => 'gold',
         'badge'       => 'پیشنهاد ویژه',
         'badge_class' => 'special',
-        'price'       => 500000,
-        'duration'    => '14 روز',
+        'base_price'  => 500000,
+        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
         'description' => 'شامل تمام امکانات: بازدید بیشتر, داغ, ویژه, هدفمند و هوشمند',
         'featured'    => true,
     ],
-];
-
-$durationHours = [
-    'boost'    => 24,
-    'featured' => 24 * 7,
-    'vip'      => 24 * 14,
-    'targeted' => 24 * 7,
-    'ai'       => 24 * 7,
-    'gold'     => 24 * 14,
 ];
 
 $success = '';
@@ -121,11 +112,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     rate_limit_ip_or_fail('listing_promotion', 10, 3600);
 
     $plan = clean($_POST['plan'] ?? '');
+    $selectedDuration = (int)($_POST['duration'] ?? 24);
     if (!isset($plans[$plan])) {
         $error = 'پلن انتخاب‌شده نامعتبر است';
     } else {
         $planData = $plans[$plan];
-        $price    = $planData['price'];
+        // Check if selected duration is valid for this plan
+        $validDurations = array_values($planData['durations']);
+        if (!in_array($selectedDuration, $validDurations, true)) {
+            $selectedDuration = reset($validDurations);
+        }
+        // Calculate price proportional to duration (base price is for first duration)
+        $baseDuration = reset($validDurations);
+        $price = (int)($planData['base_price'] * ($selectedDuration / $baseDuration));
 
         if ((float)$user['credit_balance'] < $price) {
             $error = 'موجودی کیف پول شما کافی نیست. <a href="' . APP_URL . '/wallet">شارژ کیف پول</a>';
@@ -136,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'listing_id' => $listingId,
             ]);
 
-            $endsAt = date('Y-m-d H:i:s', time() + $durationHours[$plan] * 3600);
+            $endsAt = date('Y-m-d H:i:s', time() + $selectedDuration * 3600);
 
             DB::insert('listing_promotions', [
                 'listing_id'  => $listingId,
@@ -264,6 +263,8 @@ ob_start();
       <?php foreach ($plans as $key => $plan):
           $isGold = !empty($plan['featured']);
           $cardCls = 'promote-plan' . ($isGold ? ' promote-plan--gold' : '');
+          $durationValues = array_values($plan['durations']);
+          $baseDuration = reset($durationValues);
       ?>
       <article class="<?= $cardCls ?>">
         <div class="promote-plan__header promote-plan__header--<?= h($plan['header']) ?>"></div>
@@ -287,18 +288,21 @@ ob_start();
 
           <div class="promote-plan__duration">
             <label>مدت پلن</label>
-            <div style="padding: var(--sp-3); background: var(--bg-subtle); border-radius: var(--radius-sm); text-align: center; font-weight: 600;">
-              <?= h($plan['duration']) ?>
-            </div>
+            <select name="duration" class="form-control promote-duration-select" data-base-price="<?= h($plan['base_price']) ?>" data-plan-key="<?= h($key) ?>" style="text-align:center">
+              <?php foreach ($plan['durations'] as $durationLabel => $durationHours): ?>
+                <option value="<?= h($durationHours) ?>" data-price-multiplier="<?= h($durationHours / $baseDuration) ?>"><?= h($durationLabel) ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
 
-          <div class="promote-plan__price"><?= fmt_credit($plan['price']) ?></div>
+          <div class="promote-plan__price" id="price-<?= h($key) ?>"><?= fmt_credit($plan['base_price']) ?></div>
 
           <form method="POST" class="promote-plan__form"
                 data-plan-name="<?= h($plan['name']) ?>"
-                data-plan-price="<?= h(fmt_credit($plan['price'])) ?>">
+                data-plan-price="<?= h(fmt_credit($plan['base_price'])) ?>">
             <?= csrf_field() ?>
             <input type="hidden" name="plan" value="<?= h($key) ?>">
+            <input type="hidden" name="duration" class="promote-selected-duration" value="<?= h($baseDuration) ?>">
             <button type="submit" class="promote-plan__btn <?= $isGold ? 'promote-plan__btn--gold' : 'promote-plan__btn--default' ?>">
               <i class="bi bi-check2"></i> انتخاب
             </button>
@@ -360,14 +364,6 @@ ob_start();
           </div>
         </div>
       </div>
-
-      <!-- <div class="promote-card promote-support">
-        <h4>نیاز به راهنمایی دارید؟</h4>
-        <p>تیم پشتیبانی سواپین آماده کمک به شما در انتخاب بهترین پلن ارتقا است.</p>
-        <a href="<?= APP_URL ?>/support" class="promote-support__btn">
-          <i class="bi bi-headset"></i> تماس با پشتیبانی
-        </a>
-      </div> -->
     </div>
   </div>
 

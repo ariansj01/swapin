@@ -63,9 +63,19 @@ $recentListings = DB::fetchAll(
 
 // Top-performing active listing for performance card — removed from dashboard UI
 
-// Incoming offers (on my listings)
+// Incoming offers (on my listings) with pagination
+$offersPerPage = 3;
+$offersPage = max(1, (int)($_GET['offers_page'] ?? 1));
+$offersOffset = ($offersPage - 1) * $offersPerPage;
 $incomingOffers = [];
+$incomingOffersCount = 0;
 try {
+    $incomingOffersCount = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM trade_offers o
+         JOIN listings l ON l.id = o.listing_id
+         WHERE l.user_id = ? AND o.status = "pending"',
+        [$uid]
+    )['c'] ?? 0);
     $incomingOffers = DB::fetchAll(
         'SELECT o.*, l.title AS listing_title, u.name AS from_name,
                 ol.title AS offer_listing_title
@@ -74,10 +84,10 @@ try {
          JOIN users u ON u.id = o.from_user_id
          LEFT JOIN listings ol ON ol.id = o.offer_listing_id
          WHERE l.user_id = ? AND o.status = "pending"
-         ORDER BY o.created_at DESC LIMIT 5',
-        [$uid]
+         ORDER BY o.created_at DESC LIMIT ? OFFSET ?',
+        [$uid, $offersPerPage, $offersOffset]
     );
-    swapin_debug_log('dashboard-incoming-offers-ok', ['count' => count($incomingOffers)]);
+    swapin_debug_log('dashboard-incoming-offers-ok', ['count' => count($incomingOffers), 'total' => $incomingOffersCount]);
 } catch (Throwable $e) {
     swapin_debug_log('dashboard-incoming-offers-failed', ['message' => $e->getMessage(), 'line' => $e->getLine()]);
 }
@@ -214,7 +224,7 @@ render_navbar($user);
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr;gap:var(--sp-5);margin-top:var(--sp-5)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin-top:var(--sp-5)">
         <!-- 1:1 Swap matches -->
         <div class="card">
           <div class="card-header">
@@ -270,6 +280,71 @@ render_navbar($user);
             </div>
           </div>
         </div>
+
+        <!-- Incoming Offers -->
+        <div class="card">
+          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <h3 style="margin:0;font-size:1rem"><i class="bi bi-inbox" style="color:var(--primary)"></i> پیشنهادهای دریافتی</h3>
+            <span class="badge badge-warning"><?= fmt_num($incomingOffersCount) ?></span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <?php if ($incomingOffers): ?>
+              <?php foreach ($incomingOffers as $offer): ?>
+              <div style="padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-3)">
+                  <div style="flex:1;min-width:0">
+                    <div class="fs-sm fw-700"><?= h($offer['from_name']) ?> پیشنهاد داد برای:</div>
+                    <div style="font-size:.9375rem;font-weight:600;color:var(--primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                      <?= h($offer['listing_title']) ?>
+                    </div>
+                    <?php if ($offer['offer_listing_title']): ?>
+                    <div class="fs-sm" style="color:var(--text-secondary);margin-top:2px">
+                      <i class="bi bi-box"></i> کالای او: <?= h(mb_strimwidth($offer['offer_listing_title'], 0, 40, '…')) ?>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($offer['offer_credit'] > 0): ?>
+                    <div class="fs-sm" style="color:var(--primary);margin-top:2px">
+                      <i class="bi bi-wallet2"></i> + <?= fmt_credit((float)$offer['offer_credit']) ?>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($offer['message']): ?>
+                    <div class="fs-xs" style="color:var(--text-muted);margin-top:4px;font-style:italic">
+                      «<?= h(mb_strimwidth($offer['message'], 0, 80, '…')) ?>»
+                    </div>
+                    <?php endif; ?>
+                  </div>
+                  <div style="display:flex;gap:var(--sp-2);flex-shrink:0">
+                    <a href="<?= APP_URL ?>/trades?tab=received"
+                       class="btn btn-primary btn-sm">مدیریت</a>
+                  </div>
+                </div>
+              </div>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <div class="empty-state" style="padding:var(--sp-6) 0">
+                <i class="bi bi-inbox"></i>
+                <p class="fs-sm" style="color:var(--text-muted)">هنوز پیشنهادی دریافت نکردید</p>
+              </div>
+            <?php endif; ?>
+          </div>
+          <?php if ($incomingOffersCount > $offersPerPage): ?>
+          <div class="card-footer" style="display:flex;justify-content:space-between;gap:var(--sp-3);align-items:center">
+            <div>
+              <?php if ($offersPage > 1): ?>
+              <a href="?<?= http_build_query(array_merge($_GET, ['offers_page' => $offersPage - 1])) ?>" class="btn btn-outline btn-sm">قبلی</a>
+              <?php endif; ?>
+            </div>
+            <div class="fs-sm" style="color:var(--text-muted)">
+              صفحه <?= fmt_num($offersPage) ?> از <?= fmt_num(ceil($incomingOffersCount / $offersPerPage)) ?>
+            </div>
+            <div>
+              <?php if ($offersPage < ceil($incomingOffersCount / $offersPerPage)): ?>
+              <a href="?<?= http_build_query(array_merge($_GET, ['offers_page' => $offersPage + 1])) ?>" class="btn btn-outline btn-sm">بعدی</a>
+              <?php endif; ?>
+            </div>
+          </div>
+          <?php endif; ?>
+        </div>
       </div>
     </div>
 
@@ -277,50 +352,6 @@ render_navbar($user);
 
       <!-- ── Left Column ─────────────────────────────────────────── -->
       <div>
-
-        <!-- Incoming Offers -->
-        <?php if ($incomingOffers): ?>
-        <div class="card mb-6">
-          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-inbox" style="color:var(--primary)"></i> پیشنهادهای دریافتی</h3>
-            <span class="badge badge-warning"><?= count($incomingOffers) ?></span>
-          </div>
-          <?php foreach ($incomingOffers as $offer): ?>
-          <div style="padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-3)">
-              <div style="flex:1;min-width:0">
-                <div class="fs-sm fw-700"><?= h($offer['from_name']) ?> پیشنهاد داد برای:</div>
-                <div style="font-size:.9375rem;font-weight:600;color:var(--primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                  <?= h($offer['listing_title']) ?>
-                </div>
-                <?php if ($offer['offer_listing_title']): ?>
-                <div class="fs-sm" style="color:var(--text-secondary);margin-top:2px">
-                  <i class="bi bi-box"></i> کالای او: <?= h(mb_strimwidth($offer['offer_listing_title'], 0, 40, '…')) ?>
-                </div>
-                <?php endif; ?>
-                <?php if ($offer['offer_credit'] > 0): ?>
-                <div class="fs-sm" style="color:var(--primary);margin-top:2px">
-                  <i class="bi bi-wallet2"></i> + <?= fmt_credit((float)$offer['offer_credit']) ?>
-                </div>
-                <?php endif; ?>
-                <?php if ($offer['message']): ?>
-                <div class="fs-xs" style="color:var(--text-muted);margin-top:4px;font-style:italic">
-                  «<?= h(mb_strimwidth($offer['message'], 0, 80, '…')) ?>»
-                </div>
-                <?php endif; ?>
-              </div>
-              <div style="display:flex;gap:var(--sp-2);flex-shrink:0">
-                <a href="<?= APP_URL ?>/trades?tab=received"
-                   class="btn btn-primary btn-sm">مدیریت</a>
-              </div>
-            </div>
-          </div>
-          <?php endforeach; ?>
-          <div class="card-footer">
-            <a href="<?= APP_URL ?>/trades?tab=received" class="fs-sm">مشاهده همه پیشنهادها ←</a>
-          </div>
-        </div>
-        <?php endif; ?>
 
         <!-- My Listings -->
         <div class="dash-panel-card mb-6">

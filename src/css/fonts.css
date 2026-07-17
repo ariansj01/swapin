@@ -1,11 +1,9 @@
 /**
- * IRANSans — فایل‌های فونت را در src/fonts/iransans/ قرار دهید.
- * نام فایل‌های پیشنهادی:
- *   IRANSansWeb.woff2, IRANSansWeb_Bold.woff2, IRANSansWeb_Medium.woff2
+ * Iranian Sans — فایل‌های فونت در src/fonts/iransans/ قرار دارند.
  */
 @font-face {
   font-family: 'IRANSans';
-  src: url('../fonts/iransans/IRANSansWeb.woff2') format('woff2');
+  src: url('../fonts/iransans/Iranian Sans.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -13,24 +11,8 @@
 
 @font-face {
   font-family: 'IRANSans';
-  src: url('../fonts/iransans/IRANSansWeb_Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSans';
-  src: url('../fonts/iransans/IRANSansWeb_Bold.woff2') format('woff2');
+  src: url('../fonts/iransans/A Iranian Sans.ttf') format('truetype');
   font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSans';
-  src: url('../fonts/iransans/IRANSansWeb_Black.woff2') format('woff2');
-  font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
