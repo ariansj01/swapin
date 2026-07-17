@@ -20,7 +20,7 @@
 .wizard-page {
   background: var(--wizard-page-bg);
   min-height: 100vh;
-  font-family: 'IRANSans', sans-serif;
+  font-family: 'IRANSansX', sans-serif;
   color: var(--wizard-text);
   display: flex;
   flex-direction: column;

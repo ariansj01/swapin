@@ -1,21 +1,4 @@
-/**
- * Iranian Sans — فایل‌های فونت در src/fonts/iransans/ قرار دارند.
- */
-@font-face {
-  font-family: 'IRANSans';
-  src: url('../fonts/iransans/Iranian Sans.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSans';
-  src: url('../fonts/iransans/A Iranian Sans.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+@import url('../fonts/iransans/fontiran.css');
 
 html,
 body,
@@ -24,6 +7,8 @@ input,
 select,
 textarea,
 option {
-  font-family: 'IRANSans', sans-serif;
-  font-variant-numeric: normal;
+  font-family: 'IRANSansX', sans-serif;
+  -moz-font-feature-settings: "ss01";
+  -webkit-font-feature-settings: "ss01";
+  font-feature-settings: "ss01";
 }
