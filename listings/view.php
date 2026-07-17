@@ -531,7 +531,7 @@ render_navbar($user);
         <section class="lv-gallery-section">
           <div class="lv-gallery-main" style="cursor: zoom-in;" onclick="openImageLightbox(this.querySelector('img').src)">
             <?php if ($images): ?>
-            <img id="lv-main-img" src="<?= UPLOAD_URL . h($images[0]['filename']) ?>" alt="<?= h($listing['title']) ?>">
+            <img id="lv-main-img" src="<?= UPLOAD_URL . h($images[0]['filename']) ?>" alt="<?= h($listing['title']) ?>" style="object-fit: contain;">
             <?php else: ?>
             <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--lv-muted);font-size:3rem"><i class="bi bi-image"></i></div>
             <?php endif; ?>

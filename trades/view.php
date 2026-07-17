@@ -1213,8 +1213,8 @@ render_user_panel_open($user, 'trades');
             <i class="bi bi-shield-check"></i>
           </div>
           <div class="box-trade-room__card-content">
-            <h4>ارسال امن سواپین</h4>
-            <p>ارسال با ضمانت کامل</p>
+            <h4>تحویل حضوری(ارسال در محل)</h4>
+            <p>تحویل مستقیم در محل</p>
           </div>
           <div class="box-trade-room__card-check">
             <i class="bi bi-check-circle-fill"></i>

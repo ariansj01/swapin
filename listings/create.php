@@ -301,18 +301,20 @@ render_navbar($user);
         <!-- Step 6: Estimated Price -->
         <div class="wizard-step" data-step="6" id="step-6" style="display:none">
           <h2 class="wizard-step-title">قیمت تخمینی</h2>
-          <p class="wizard-step-subtitle">این قیمت صرفا تخمینی است.</p>
+          <p class="wizard-step-subtitle">می‌توانید قیمت را تغییر دهید.</p>
 
           <div class="price-estimate-card">
-            <p class="price-estimate-label">قیمت تخمینی</p>
-            <p class="price-estimate-value" id="step6-price">
-              <?php
-                // Dummy estimate for now; replace with real AI later
-                $dummy = rand(10000000, 50000000);
-                echo h(number_format($dummy)) . ' تومان';
-              ?>
-            </p>
-            <p class="price-estimate-note">این قیمت صرفا تخمینی است و ممکن است با قیمت نهایی متفاوت باشد.</p>
+            <p class="price-estimate-label">قیمت پیشنهادی</p>
+            <div class="wizard-form-group" style="margin-top: var(--wizard-gap)">
+              <input type="text" id="step6-price-input" class="wizard-form-input" 
+                     placeholder="قیمت به تومان"
+                     value="<?php
+                        // Dummy estimate for now; replace with real AI later
+                        $dummy = rand(10000000, 50000000);
+                        echo h(number_format($dummy));
+                     ?>">
+              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این قیمت صرفا تخمینی است و می‌توانید آن را تغییر دهید.</p>
+            </div>
           </div>
           <input type="hidden" id="step6-estimated-value" name="estimated_value" value="<?= $dummy ?>">
         </div>
@@ -416,8 +418,31 @@ document.addEventListener('DOMContentLoaded', () => {
   initStep1Counters();
   initStep2Upload();
   initStep3Fields();
+  initStep6Price();
   initWizardSubmit();
 });
+
+function initStep6Price() {
+  const input = document.getElementById('step6-price-input');
+  const hiddenInput = document.getElementById('step6-estimated-value');
+  
+  if (!input || !hiddenInput) return;
+  
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  
+  function parseNumber(str) {
+    return parseInt(str.replace(/,/g, ''), 10) || 0;
+  }
+  
+  input.addEventListener('input', () => {
+    const rawValue = input.value.replace(/[^\d]/g, '');
+    const formatted = formatNumber(parseInt(rawValue) || 0);
+    input.value = formatted;
+    hiddenInput.value = rawValue;
+  });
+}
 
 function initStep3Fields() {
   const catSelect = document.getElementById('step3-category');
@@ -655,7 +680,7 @@ function populateReview() {
   document.getElementById('step7-want-desc').textContent = document.getElementById('step5-description').value || 'نوشته نشده';
 
   // Step 6
-  document.getElementById('step7-price').textContent = document.getElementById('step6-price').textContent;
+  document.getElementById('step7-price').textContent = document.getElementById('step6-price-input').value + ' تومان';
 
   // Step 2 images
   const imgGrid = document.getElementById('step7-images');

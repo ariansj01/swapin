@@ -86,7 +86,6 @@ try {
 $swapMatches       = [];
 $aiMatchSource     = 'system';
 $userListingsMatch = [];
-$triangularSwaps   = [];
 
 if (!$dashboardNeedsMigration) {
     try {
@@ -97,7 +96,6 @@ if (!$dashboardNeedsMigration) {
             'SELECT id, title FROM listings WHERE user_id = ? AND status = "active" AND listing_mode IN ("swap","both") ORDER BY created_at DESC',
             [$uid]
         );
-        $triangularSwaps = find_triangular_swaps($uid, 3);
     } catch (Throwable $e) {
         $dashboardNeedsMigration = true;
         swapin_debug_log('dashboard-match-init-failed', [
@@ -129,7 +127,7 @@ render_navbar($user);
 <div class="alert alert-warning" style="border-radius:0;border-left:0;border-right:0" id="expired-listings-alert">
   <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
     <i class="bi bi-clock-history"></i>
-    <span><?= fmt_num($expiredListingsCount) ?> آگهی شما به‌دلیل سپری شدن ۱۵ روز منقضی شده است. برای بازگردانی آنها به تب «منقضی» بروید.</span>
+    <span><?= fmt_num($expiredListingsCount) ?> آگهی شما به‌دلیل سپری شدن ۳۰ روز منقضی شده است. برای بازگردانی آنها به تب «منقضی» بروید.</span>
     <button type="button" class="btn btn-ghost btn-sm" style="margin-inline-start:auto" onclick="this.closest('.alert')?.remove()">
       <i class="bi bi-x-lg"></i> بستن
     </button>
@@ -216,7 +214,7 @@ render_navbar($user);
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin-top:var(--sp-5)">
+      <div style="display:grid;grid-template-columns:1fr;gap:var(--sp-5);margin-top:var(--sp-5)">
         <!-- 1:1 Swap matches -->
         <div class="card">
           <div class="card-header">
@@ -270,49 +268,6 @@ render_navbar($user);
               </div>
             <?php endif; ?>
             </div>
-          </div>
-        </div>
-
-        <!-- 3-way swap -->
-        <div class="card" id="triangular-swaps">
-          <div class="card-header">
-            <h3 style="margin:0;font-size:1rem">
-              <i class="bi bi-diagram-3" style="color:var(--primary)"></i>
-              معاوضه سه‌طرفه
-            </h3>
-          </div>
-          <div class="card-body" style="display:flex;flex-direction:column;gap:var(--sp-4);min-height:160px">
-            <?php if ($triangularSwaps): ?>
-              <?php foreach ($triangularSwaps as $chain): ?>
-              <div class="triangle-chain">
-                <div class="triangle-chain__mine">
-                  <span class="fs-xs" style="color:var(--text-muted)">شما</span>
-                  <strong><?= h(mb_strimwidth($chain['mine']['title'], 0, 30, '…')) ?></strong>
-                </div>
-                <?php foreach ($chain['chain'] as $i => $step): ?>
-                <div class="triangle-chain__arrow"><i class="bi bi-arrow-left"></i></div>
-                <div class="triangle-chain__step">
-                  <span class="fs-xs" style="color:var(--text-muted)">نفر <?= $i + 1 ?>: <?= h($step['seller_name']) ?></span>
-                  <a href="<?= APP_URL ?>/listings/view?id=<?= $step['id'] ?>"><?= h(mb_strimwidth($step['title'], 0, 28, '…')) ?></a>
-                </div>
-                <?php endforeach; ?>
-                <div class="triangle-chain__arrow"><i class="bi bi-arrow-left"></i></div>
-                <div class="triangle-chain__back fs-xs" style="color:var(--success)">
-                  <i class="bi bi-check-circle"></i> به شما برمی‌گردد
-                </div>
-              </div>
-              <?php endforeach; ?>
-            <?php elseif ($myListingsCount === 0): ?>
-              <div class="empty-state" style="padding:var(--sp-6) 0">
-                <i class="bi bi-diagram-3"></i>
-                <p class="fs-sm" style="color:var(--text-muted)">با ثبت آگهی، زنجیره‌های سه‌نفره هم پیشنهاد می‌شود.</p>
-              </div>
-            <?php else: ?>
-              <div class="empty-state" style="padding:var(--sp-6) 0">
-                <i class="bi bi-diagram-3"></i>
-                <p class="fs-sm" style="color:var(--text-muted)">فعلاً زنجیره سه‌طرفه‌ای پیدا نشد. هرچه آگهی‌های بیشتری در سیستم باشد، شانس بیشتر است.</p>
-              </div>
-            <?php endif; ?>
           </div>
         </div>
       </div>

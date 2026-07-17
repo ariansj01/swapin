@@ -271,6 +271,7 @@ function shipping_label(string $method): string {
     'post'      => 'پست',
     'tipax'     => 'تیپاکس',
     'courier'   => 'پیک',
+    'swapin_secure' => 'تحویل حضوری (ارسال در محل)',
     default     => $method,
   };
 }

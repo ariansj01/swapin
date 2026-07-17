@@ -151,69 +151,71 @@ render_navbar(null);
 
 <div style="min-height:calc(100vh - 130px);display:flex;align-items:center;padding:var(--sp-8) 0">
   <div class="container-sm">
-    <div class="card" style="max-width:440px;margin:0 auto;min-height:440px;">
-      <div class="card-body" style="padding:var(--sp-8)">
+    <div class="card" style="max-width:440px;margin:0 auto;min-height:520px;">
+        <div class="card-body" style="padding:var(--sp-8); display:flex; flex-direction:column; min-height:520px;">
 
-        <div class="text-center mb-8">
-          <img src="<?= LOGO_URL ?>" alt="<?= APP_NAME ?>" class="brand-logo" style="height:56px;margin:0 auto var(--sp-4)">
-          <h2>ورود / ثبت‌نام</h2>
-          <p style="color:var(--text-muted);margin-top:var(--sp-2)">
-            <?php if ($step === 'phone'): ?>
+          <div class="text-center mb-8">
+            <img src="<?= LOGO_URL ?>" alt="<?= APP_NAME ?>" class="brand-logo" style="height:56px;margin:0 auto var(--sp-4)">
+            <h2>ورود / ثبت‌نام</h2>
+            <p style="color:var(--text-muted);margin-top:var(--sp-2)">
+              <?php if ($step === 'phone'): ?>
               شماره تلفن خود را وارد کنید
-            <?php else: ?>
+              <?php else: ?>
               کد تأیید را وارد کنید
-            <?php endif; ?>
-          </p>
-        </div>
-
-        <?php if ($error): ?>
-        <div class="alert alert-danger mb-6">
-          <i class="bi bi-exclamation-circle"></i> 
-          <?php if (strpos($error, 'کد تأیید شما:') !== false): ?>
-            <!-- Allow HTML for dev OTP display message -->
-            <?= $error ?>
-          <?php else: ?>
-            <?= h($error) ?>
-          <?php endif; ?>
-        </div>
-        <?php endif; ?>
-
-        <?php if ($step === 'phone'): ?>
-        <!-- Phone Entry -->
-        <form method="POST" id="phoneForm">
-          <?= csrf_field() ?>
-          <input type="hidden" name="action" value="send_otp">
-          <div class="form-group">
-            <label class="form-label">شماره تلفن</label>
-            <input type="tel" class="form-control login-input-tall" name="phone" placeholder="09123456789"
-                   autocomplete="tel" inputmode="numeric" maxlength="11" pattern="09[0-9]{9}" required autofocus
-                   value="<?= isset($_POST['phone']) ? h($_POST['phone']) : '' ?>"
-                   style="font-size: 1.4rem;"
-                   >
-          </div>
-          <button type="submit" class="btn btn-primary w-100 btn-lg" id="sendBtn">ارسال کد</button>
-        </form>
-        <?php elseif ($step === 'otp'): ?>
-        <!-- OTP Entry -->
-        <form method="POST">
-          <?= csrf_field() ?>
-          <input type="hidden" name="action" value="verify_otp">
-          <div class="form-group">
-            <label class="form-label">کد تأیید</label>
-            <input type="text" class="form-control login-input-tall login-code-input" name="code" placeholder="000000"
-                   inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code"
-                   required autofocus>
-            <p class="form-hint">
-              کد ۶ رقمی به <strong><?= h($phone) ?></strong> ارسال شد
+              <?php endif; ?>
             </p>
           </div>
-          <button type="submit" class="btn btn-primary w-100 btn-lg">تأیید و ادامه</button>
-          <p class="text-center fs-sm mt-6" style="color:var(--text-muted)" id="resendArea">
-            دریافت نکردید؟
-            <a href="?step=phone<?= $redir ? '&redirect=' . urlencode($redir) : '' ?>" id="resendLink">ارسال مجدد کد</a>
-          </p>
-        </form>
-        <?php endif; ?>
+
+          <?php if ($error): ?>
+          <div class="alert alert-danger mb-6">
+            <i class="bi bi-exclamation-circle"></i> 
+            <?php if (strpos($error, 'کد تأیید شما:') !== false): ?>
+            <!-- Allow HTML for dev OTP display message -->
+            <?= $error ?>
+            <?php else: ?>
+            <?= h($error) ?>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
+
+          <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:flex-start;">
+          <?php if ($step === 'phone'): ?>
+          <!-- Phone Entry -->
+          <form method="POST" id="phoneForm">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="send_otp">
+            <div class="form-group">
+              <label class="form-label">شماره تلفن</label>
+              <input type="tel" class="form-control login-input-tall" name="phone" placeholder="09123456789"
+                     autocomplete="tel" inputmode="numeric" maxlength="11" pattern="09[0-9]{9}" required autofocus
+                     value="<?= isset($_POST['phone']) ? h($_POST['phone']) : '' ?>"
+                     style="font-size: 1.4rem;"
+                     >
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg" id="sendBtn">ارسال کد</button>
+          </form>
+          <?php elseif ($step === 'otp'): ?>
+          <!-- OTP Entry -->
+          <form method="POST">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="verify_otp">
+            <div class="form-group">
+              <label class="form-label">کد تأیید</label>
+              <input type="text" class="form-control login-input-tall login-code-input" name="code" placeholder="000000"
+                     inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code"
+                     required autofocus>
+              <p class="form-hint">
+                کد ۶ رقمی به <strong><?= h($phone) ?></strong> ارسال شد
+              </p>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">تأیید و ادامه</button>
+            <p class="text-center fs-sm mt-6" style="color:var(--text-muted)" id="resendArea">
+              دریافت نکردید؟
+              <a href="?step=phone<?= $redir ? '&redirect=' . urlencode($redir) : '' ?>" id="resendLink">ارسال مجدد کد</a>
+            </p>
+          </form>
+          <?php endif; ?>
+          </div>
 
       </div>
     </div>

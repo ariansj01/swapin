@@ -74,7 +74,7 @@ render_user_panel_open($user, 'wallet');
       <!-- Main Wallet Card -->
       <div class="wallet-card">
         <div class="wallet-card__label"><i class="bi bi-wallet2"></i> موجودی کل</div>
-        <div class="wallet-card__balance"><?= number_format($user['credit_balance'], 0) ?></div>
+        <div class="wallet-card__balance"><?= persian_digits(number_format($user['credit_balance'], 0)) ?></div>
         <div class="wallet-card__symbol"><?= CREDIT_UNIT ?> — اعتبار <?= APP_NAME ?></div>
         <p style="font-size:.8125rem; margin-top:var(--sp-2);color: #FFC107;">اعتبار کیف پول برای تعادل ارزش در معاملات استفاده می‌شود</p>
       </div>
@@ -82,7 +82,7 @@ render_user_panel_open($user, 'wallet');
       <div class="card">
         <div class="card-body" style="text-align:center;padding:var(--sp-5)">
           <i class="bi bi-arrow-down-circle" style="font-size:1.5rem;color:var(--success);margin-bottom:var(--sp-2);display:block"></i>
-          <div style="font-size:1.25rem;font-weight:800;color:var(--success)"><?= number_format($totalEarned, 0) ?></div>
+          <div style="font-size:1.25rem;font-weight:800;color:var(--success)"><?= persian_digits(number_format($totalEarned, 0)) ?></div>
           <div class="fs-sm" style="color:var(--text-muted)">کل دریافتی</div>
         </div>
       </div>
@@ -90,7 +90,7 @@ render_user_panel_open($user, 'wallet');
       <div class="card">
         <div class="card-body" style="text-align:center;padding:var(--sp-5)">
           <i class="bi bi-arrow-up-circle" style="font-size:1.5rem;color:var(--danger);margin-bottom:var(--sp-2);display:block"></i>
-          <div style="font-size:1.25rem;font-weight:800;color:var(--danger)"><?= number_format($totalSpent, 0) ?></div>
+          <div style="font-size:1.25rem;font-weight:800;color:var(--danger)"><?= persian_digits(number_format($totalSpent, 0)) ?></div>
           <div class="fs-sm" style="color:var(--text-muted)">کل خرج‌شده</div>
         </div>
       </div>
@@ -222,10 +222,10 @@ render_user_panel_open($user, 'wallet');
           <div class="card-body" style="font-size:.875rem">
             <?php
             $howItems = [
-              ['stars',        'با ثبت‌نام ' . number_format(WELCOME_BONUS, 0) . ' ' . CREDIT_UNIT . ' هدیه خوش‌آمدگویی دریافت می‌کنید'],
+              ['stars',        'با ثبت‌نام ' . fmt_num(WELCOME_BONUS) . ' ' . CREDIT_UNIT . ' هدیه خوش‌آمدگویی دریافت می‌کنید'],
               ['arrow-down-circle', 'با معامله آگهی‌هایتان ' . CREDIT_UNIT . ' کسب کنید'],
               ['arrow-up-circle',   'برای افزودن ارزش به پیشنهادها ' . CREDIT_UNIT . ' خرج کنید'],
-              ['percent',      '۲٪ کارمزد پلتفرم روی هر معامله موفق (خودکار کسر می‌شود)'],
+              ['percent',      persian_digits('2') . '٪ کارمزد پلتفرم روی هر معامله موفق (خودکار کسر می‌شود)'],
               ['shield-check', 'اعتبارها هرگز منقضی نمی‌شوند'],
             ];
             foreach ($howItems as [$icon, $text]):

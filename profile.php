@@ -90,7 +90,11 @@ render_navbar($currentUser);
               <span class="badge badge-success"><i class="bi bi-shield-check"></i> KYC تأییدشده</span>
               <?php endif; ?>
               <?php if (array_key_exists('subscription_plan', $profile) && $profile['subscription_plan'] !== 'none'): ?>
-              <span class="badge badge-warning"><i class="bi bi-gem"></i> <?= ucfirst($profile['subscription_plan']) ?></span>
+              <span class="badge badge-warning"><i class="bi bi-gem"></i> <?= h([
+                'basic' => 'پایه',
+                'premium' => 'پریمیوم',
+                'gold' => 'طلایی'
+              ][$profile['subscription_plan']] ?? $profile['subscription_plan']) ?></span>
               <?php endif; ?>
             </div>
             <?php if ($profile['bio']): ?>
@@ -139,7 +143,7 @@ render_navbar($currentUser);
                 <span><?= fmt_num((int)$swapScore['score']) ?></span>
               </div>
               <div>
-                <div class="dash-page-head__title" style="font-size:1rem;margin-bottom:4px">Swap Score</div>
+                <div class="dash-page-head__title" style="font-size:1rem;margin-bottom:4px">امتیاز معاوضه</div>
                 <div class="dash-page-head__sub" style="margin:0 0 6px"><?= h($swapScore['label']) ?></div>
                 <div class="badge badge-warning"><i class="bi bi-stars"></i> وضعیت اعتماد</div>
               </div>

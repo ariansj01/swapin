@@ -125,9 +125,9 @@ function render_navbar(?array $user = null): void {
 <header class="site-header" role="banner">
 <nav class="navbar" aria-label="ناوبری اصلی">
   <div class="navbar-inner">
-    <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
+    <!-- <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
       <i class="bi bi-list"></i>
-    </button>
+    </button> -->
 
     <a href="{$url}/" class="navbar-brand">
       <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">

@@ -36,7 +36,7 @@ $planFeatures = [
 
 $plans = [
     'boost' => [
-        'name'        => 'Boost',
+        'name'        => 'بازدید بیشتر',
         'icon'        => 'bi-send',
         'color'       => 'purple',
         'header'      => 'purple',
@@ -47,7 +47,7 @@ $plans = [
         'description' => 'آگهی در بالاترین جایگاه لیست قرار می‌گیرد',
     ],
     'featured' => [
-        'name'        => 'HOT',
+        'name'        => 'داغ',
         'icon'        => 'bi-fire',
         'color'       => 'orange',
         'header'      => 'orange',
@@ -58,7 +58,7 @@ $plans = [
         'description' => 'نمایش در بخش آگهی‌های ویژه با برچسب داغ',
     ],
     'vip' => [
-        'name'        => 'VIP',
+        'name'        => 'ویژه',
         'icon'        => 'bi-award',
         'color'       => 'violet',
         'header'      => 'violet',
@@ -73,18 +73,18 @@ $plans = [
         'icon'        => 'bi-bullseye',
         'color'       => 'green',
         'header'      => 'green',
-        'badge'       => 'NEW',
+        'badge'       => 'جدید',
         'badge_class' => 'new',
         'price'       => 150000,
         'duration'    => '7 روز',
         'description' => 'نمایش به مخاطبان مرتبط بر اساس شهر و دسته‌بندی',
     ],
     'ai' => [
-        'name'        => 'تبلیغ هوشمند',
+        'name'        => 'هوشمند',
         'icon'        => 'bi-telegram',
         'color'       => 'blue',
         'header'      => 'blue',
-        'badge'       => 'PRO',
+        'badge'       => 'حرفه‌ای',
         'badge_class' => 'pro',
         'price'       => 250000,
         'duration'    => '7 روز',
@@ -99,7 +99,7 @@ $plans = [
         'badge_class' => 'special',
         'price'       => 500000,
         'duration'    => '14 روز',
-        'description' => 'شامل تمام امکانات: Boost, HOT, VIP, هدفمند و هوشمند',
+        'description' => 'شامل تمام امکانات: بازدید بیشتر, داغ, ویژه, هدفمند و هوشمند',
         'featured'    => true,
     ],
 ];
@@ -286,10 +286,10 @@ ob_start();
           <div class="promote-plan__divider"></div>
 
           <div class="promote-plan__duration">
-            <label>انتخاب مدت</label>
-            <select disabled aria-label="مدت پلن">
-              <option selected><?= h($plan['duration']) ?></option>
-            </select>
+            <label>مدت پلن</label>
+            <div style="padding: var(--sp-3); background: var(--bg-subtle); border-radius: var(--radius-sm); text-align: center; font-weight: 600;">
+              <?= h($plan['duration']) ?>
+            </div>
           </div>
 
           <div class="promote-plan__price"><?= fmt_credit($plan['price']) ?></div>

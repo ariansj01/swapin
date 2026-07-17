@@ -99,7 +99,7 @@ render_user_panel_open($user, 'my');
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
     </div>
-    <div class="alert alert-warning mb-5"><i class="bi bi-rocket"></i> آگهی شما بعد از ۱۵ روز دیگر منقضی میشود</div>
+    <div class="alert alert-warning mb-5"><i class="bi bi-rocket"></i> آگهی شما بعد از ۳۰ روز دیگر منقضی میشود</div>
     <?php if (isset($_GET['promoted'])): ?>
     <div class="alert alert-success mb-5"><i class="bi bi-rocket"></i> آگهی با موفقیت ارتقا یافت!</div>
     <?php endif; ?>
