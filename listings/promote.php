@@ -461,3 +461,4 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 render_panel_scripts(['src/js/promote.js']);
 render_footer();
+}

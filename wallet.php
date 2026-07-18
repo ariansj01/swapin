@@ -230,16 +230,7 @@ render_user_panel_open($user, 'wallet');
             </form>
           </div>
         </div>
-        <?php else: ?>
-        <div class="card mb-4">
-          <div class="card-body">
-            <div class="alert alert-info" style="margin:0">
-              <i class="bi bi-info-circle"></i>
-              واریز آنلاین از طریق درگاه پرداخت به‌زودی فعال می‌شود.
-            </div>
-          </div>
-        </div>
-        <?php endif; ?>
+
 
         <!-- How Credits Work -->
         <div class="card">
