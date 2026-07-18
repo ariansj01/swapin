@@ -183,6 +183,33 @@ render_navbar(null);
 
           <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:flex-start;">
           <?php if ($step === 'phone'): ?>
+          <?php if ($googleClientId !== ''): ?>
+          <form method="POST" action="<?= APP_URL ?>/auth/google-login.php" id="googleLoginForm">
+            <?= csrf_field() ?>
+            <?php if ($redir): ?>
+            <input type="hidden" name="redirect" value="<?= h($redir) ?>">
+            <?php endif; ?>
+            <input type="hidden" name="credential" id="googleCredentialInput" value="">
+          </form>
+
+          <div class="card" style="background:#fff;border:1px solid var(--border);box-shadow:none;margin-bottom:18px;">
+            <div class="card-body" style="padding:16px;">
+              <button type="button" class="btn btn-lg w-100" id="googleSigninTrigger" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1px solid var(--border);color:var(--text);">
+                <i class="bi bi-google" aria-hidden="true"></i>
+                <span>ورود با گوگل</span>
+              </button>
+              <p class="fs-sm text-center" style="color:var(--text-muted);margin:12px 0 0;">اگر نخواستید شماره وارد کنید، مستقیم با حساب گوگل ادامه دهید.</p>
+              <div id="googleWidgetFallback" style="display:none;justify-content:center;margin-top:12px;"></div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;margin:6px 0 18px;">
+            <span style="flex:1;height:1px;background:var(--border);"></span>
+            <span style="color:var(--text-muted);font-size:.92rem;">یا با شماره موبایل</span>
+            <span style="flex:1;height:1px;background:var(--border);"></span>
+          </div>
+          <?php endif; ?>
+
           <!-- Phone Entry -->
           <form method="POST" id="phoneForm">
             <?= csrf_field() ?>
@@ -197,41 +224,6 @@ render_navbar(null);
             </div>
             <button type="submit" class="btn btn-primary w-100 btn-lg" id="sendBtn">ارسال کد</button>
           </form>
-          <?php if ($googleClientId !== ''): ?>
-          <div style="display:flex;align-items:center;gap:12px;margin:24px 0 18px;">
-            <span style="flex:1;height:1px;background:var(--border);"></span>
-            <span style="color:var(--text-muted);font-size:.92rem;">یا</span>
-            <span style="flex:1;height:1px;background:var(--border);"></span>
-          </div>
-
-          <form method="POST" action="<?= APP_URL ?>/auth/google-login.php" id="googleLoginForm">
-            <?= csrf_field() ?>
-            <?php if ($redir): ?>
-            <input type="hidden" name="redirect" value="<?= h($redir) ?>">
-            <?php endif; ?>
-            <input type="hidden" name="credential" id="googleCredentialInput" value="">
-          </form>
-
-          <div class="card" style="background:#fff;border:1px solid var(--border);box-shadow:none;">
-            <div class="card-body" style="padding:16px;">
-              <p class="text-center fs-sm" style="color:var(--text-muted);margin-bottom:14px;">ورود سریع با حساب گوگل</p>
-              <div id="g_id_onload"
-                   data-client_id="<?= h($googleClientId) ?>"
-                   data-callback="handleGoogleCredential"
-                   data-auto_prompt="false"
-                   data-itp_support="true"></div>
-              <div class="g_id_signin"
-                   data-type="standard"
-                   data-shape="pill"
-                   data-theme="outline"
-                   data-text="signin_with"
-                   data-size="large"
-                   data-logo_alignment="right"
-                   data-width="376"></div>
-              <p class="fs-xs text-center" style="color:var(--text-muted);margin:14px 0 0;">با گوگل وارد شوید و اگر حسابی نداشته باشید، خودکار ساخته می‌شود.</p>
-            </div>
-          </div>
-          <?php endif; ?>
           <?php elseif ($step === 'otp'): ?>
           <!-- OTP Entry -->
           <form method="POST">
@@ -328,6 +320,18 @@ render_navbar(null);
         errorBox.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + message;
     }
 
+    let googleSigninReady = false;
+
+    function setGoogleSigninReady(isReady) {
+        const trigger = document.getElementById('googleSigninTrigger');
+        if (!trigger) {
+            return;
+        }
+        trigger.disabled = !isReady;
+        trigger.style.opacity = isReady ? '1' : '0.75';
+        trigger.style.cursor = isReady ? 'pointer' : 'wait';
+    }
+
     function handleGoogleCredential(response) {
         const credentialInput = document.getElementById('googleCredentialInput');
         const googleForm = document.getElementById('googleLoginForm');
@@ -340,6 +344,87 @@ render_navbar(null);
         credentialInput.value = response.credential;
         googleForm.submit();
     }
+
+    function initGoogleSignin(attempt = 0) {
+        if (googleSigninReady) {
+            return true;
+        }
+
+        if (!(window.google && google.accounts && google.accounts.id)) {
+            if (attempt < 12) {
+                window.setTimeout(function () {
+                    initGoogleSignin(attempt + 1);
+                }, 400);
+            }
+            return false;
+        }
+
+        google.accounts.id.initialize({
+            client_id: '<?= h($googleClientId) ?>',
+            callback: handleGoogleCredential,
+            auto_select: false,
+            itp_support: true,
+            cancel_on_tap_outside: false
+        });
+
+        const fallback = document.getElementById('googleWidgetFallback');
+        if (fallback) {
+            fallback.innerHTML = '';
+            google.accounts.id.renderButton(fallback, {
+                type: 'standard',
+                theme: 'outline',
+                size: 'large',
+                shape: 'pill',
+                text: 'signin_with',
+                logo_alignment: 'right',
+                width: 340
+            });
+        }
+
+        googleSigninReady = true;
+        setGoogleSigninReady(true);
+        return true;
+    }
+
+    const googleSigninTrigger = document.getElementById('googleSigninTrigger');
+    if (googleSigninTrigger) {
+        setGoogleSigninReady(false);
+        googleSigninTrigger.addEventListener('click', function () {
+            if (!initGoogleSignin()) {
+                showLoginError('دکمه گوگل هنوز آماده نشده است. چند ثانیه دیگر دوباره تلاش کنید.');
+                return;
+            }
+
+            const fallback = document.getElementById('googleWidgetFallback');
+            if (fallback) {
+                fallback.style.display = 'flex';
+            }
+
+            try {
+                google.accounts.id.prompt(function (notification) {
+                    if (!notification) {
+                        return;
+                    }
+                    if (
+                        (typeof notification.isNotDisplayed === 'function' && notification.isNotDisplayed()) ||
+                        (typeof notification.isSkippedMoment === 'function' && notification.isSkippedMoment())
+                    ) {
+                        if (fallback) {
+                            fallback.style.display = 'flex';
+                        }
+                    }
+                });
+            } catch (error) {
+                if (fallback) {
+                    fallback.style.display = 'flex';
+                }
+            }
+        });
+
+        initGoogleSignin();
+    }
+
+    window.handleGoogleCredential = handleGoogleCredential;
 </script>
 
 <?php render_footer(); ?>
