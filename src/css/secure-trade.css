@@ -1687,7 +1687,6 @@
     gap: 12px;
     text-align: center;
   }
-  .trade-room__hero-left,
   .trade-room__hero-right {
     justify-content: center;
     flex-wrap: wrap;

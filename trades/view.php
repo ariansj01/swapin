@@ -88,6 +88,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = 'روش ارسال با موفقیت انتخاب شد.';
             $trade = fetch_trade_room($tradeId, $uid) ?? $trade;
         }
+    } elseif ($action === 'update_shipping_status') {
+        $shippingStatus = clean($_POST['shipping_status'] ?? '');
+        $validStatuses = ['preparing', 'shipped', 'dispute'];
+        if (in_array($shippingStatus, $validStatuses, true)) {
+            if ($isA) {
+                DB::update('trades', ['user_a_shipping_status' => $shippingStatus], 'id = ?', [$tradeId]);
+            } else {
+                DB::update('trades', ['user_b_shipping_status' => $shippingStatus], 'id = ?', [$tradeId]);
+            }
+            $success = 'وضعیت ارسال با موفقیت به‌روزرسانی شد.';
+            $trade = fetch_trade_room($tradeId, $uid) ?? $trade;
+        }
     }
 
     if ($action === 'send_message') {
@@ -875,30 +887,40 @@ render_user_panel_open($user, 'trades');
                 </div>
               </div>
 
+              <?php
+                $statusLabels = [
+                    'preparing' => 'در حال آماده‌سازی ارسال',
+                    'shipped' => 'ارسال شده',
+                    'dispute' => 'اختلاف داوری'
+                ];
+              ?>
               <div class="trade-room__grid">
                 <div class="trade-room__action">
                   <h4>وضعیت ارسال شما</h4>
                   <?php if (!$shippingReady): ?>
                     <div class="trade-room__notice">بعد از ثبت زمان ارسال توسط هر دو طرف، این مرحله فعال می‌شود.</div>
-                  <?php elseif ($deliveredByMe): ?>
-                    <span class="trade-room__pill trade-room__pill--success">ارسال شما ثبت شده است</span>
                   <?php else: ?>
-                    <p>بعد از تحویل بسته به پست یا پیک، ارسال را ثبت کنید.</p>
-                    <form method="POST">
+                    <?php
+                      $myStatus = $isA ? ($trade['user_a_shipping_status'] ?? 'preparing') : ($trade['user_b_shipping_status'] ?? 'preparing');
+                    ?>
+                    <form method="POST" class="trade-room__stack">
                       <?= csrf_field() ?>
-                      <input type="hidden" name="action" value="mark_shipped">
-                      <button type="submit" class="btn btn-primary">کالا را ارسال کردم</button>
+                      <input type="hidden" name="action" value="update_shipping_status">
+                      <select name="shipping_status" class="form-control" onchange="this.form.submit()">
+                        <?php foreach ($statusLabels as $key => $label): ?>
+                          <option value="<?= $key ?>" <?= $myStatus === $key ? 'selected' : '' ?>><?= $label ?></option>
+                        <?php endforeach; ?>
+                      </select>
                     </form>
                   <?php endif; ?>
                 </div>
 
                 <div class="trade-room__action">
                   <h4>وضعیت ارسال طرف مقابل</h4>
-                  <?php if ($deliveredByThem): ?>
-                    <span class="trade-room__pill trade-room__pill--success">ارسال طرف مقابل ثبت شده است</span>
-                  <?php else: ?>
-                    <div class="trade-room__notice">هنوز ارسال طرف مقابل ثبت نشده است.</div>
-                  <?php endif; ?>
+                  <?php
+                    $theirStatus = $isA ? ($trade['user_b_shipping_status'] ?? 'preparing') : ($trade['user_a_shipping_status'] ?? 'preparing');
+                  ?>
+                  <span class="trade-room__pill trade-room__pill--success"><?= $statusLabels[$theirStatus] ?? 'در حال آماده‌سازی ارسال' ?></span>
                 </div>
               </div>
 

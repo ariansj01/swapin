@@ -948,6 +948,16 @@ function initSupportWidget() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Prevent back buttons from accidentally triggering other clicks
+  document.querySelectorAll('.dash-back-btn, .trade-room__back, .promote-back-link, .btn').forEach(btn => {
+    // Check if the button has a bi-arrow-right icon
+    if (btn.querySelector('i.bi-arrow-right') || (btn.querySelector('.bi-arrow-right'))) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+  });
+
   initDropdowns();
   initMobileNav();
   initNotifModal();

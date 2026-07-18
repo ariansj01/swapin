@@ -12,7 +12,12 @@
     document.body.classList.toggle('panel-sidebar-open', open);
   }
 
-  toggle.addEventListener('click', () => setSidebarOpen(!sidebar.classList.contains('is-open')));
+  toggle.addEventListener('click', (e) => {
+    // Only toggle if the click is on the toggle itself or its direct children
+    if (e.target === toggle || toggle.contains(e.target)) {
+      setSidebarOpen(!sidebar.classList.contains('is-open'));
+    }
+  });
   overlay?.addEventListener('click', () => setSidebarOpen(false));
 
   document.addEventListener('keydown', (e) => {

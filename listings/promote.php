@@ -119,11 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $planData = $plans[$plan];
         // Check if selected duration is valid for this plan
         $validDurations = array_values($planData['durations']);
+        $baseDuration = $validDurations[0];
         if (!in_array($selectedDuration, $validDurations, true)) {
-            $selectedDuration = reset($validDurations);
+            $selectedDuration = $baseDuration;
         }
-        // Calculate price proportional to duration (base price is for first duration)
-        $baseDuration = reset($validDurations);
         $price = (int)($planData['base_price'] * ($selectedDuration / $baseDuration));
 
         if ((float)$user['credit_balance'] < $price) {
@@ -264,7 +263,7 @@ ob_start();
           $isGold = !empty($plan['featured']);
           $cardCls = 'promote-plan' . ($isGold ? ' promote-plan--gold' : '');
           $durationValues = array_values($plan['durations']);
-          $baseDuration = max((int)reset($durationValues), 1);
+          $baseDuration = max((int)$durationValues[0], 1);
       ?>
       <article class="<?= $cardCls ?>">
         <div class="promote-plan__header promote-plan__header--<?= h($plan['header']) ?>"></div>

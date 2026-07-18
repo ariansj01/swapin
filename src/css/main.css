@@ -462,6 +462,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
   .navbar-brand .brand-logo {
     /* height: 100px; */
     width: 50%;
+    margin-right: 20px;
     /* margin-top: -30px; */
   }
 
@@ -470,7 +471,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
     grid-row: 1;
     justify-self: start;
     margin-inline-start: 0;
-    margin-top: -30px;
+    /* margin-top: -30px; */
   }
 
   .navbar-actions .btn.hide-desktop { display: none !important; }
@@ -1322,7 +1323,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* ── 15. Category Strip ────────────────────────────────────────────────── */
 .category-strip {
   display: flex;
-  gap: var(--sp-2);
+  gap: var(--sp-4);
   overflow-x: auto;
   scrollbar-width: none;
   padding-bottom: var(--sp-1);
@@ -1331,9 +1332,10 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .cat-pill {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
+  padding: var(--sp-1);
   border-radius: var(--radius-full);
   font-size: .8125rem;
   font-weight: 500;
@@ -1344,10 +1346,34 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   text-decoration: none;
   transition: all var(--duration) var(--ease);
 }
-.cat-pill:hover, .cat-pill.active {
-  background: var(--accent);
-  color: var(--primary);
-  border-color: var(--accent);
+
+.cat-pill__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #555770;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  transition: all var(--duration) var(--ease);
+}
+
+.cat-pill__label {
+  color: var(--text-muted);
+  transition: all var(--duration) var(--ease);
+}
+
+.cat-pill:hover .cat-pill__icon,
+.cat-pill.active .cat-pill__icon {
+  background: #FFD700;
+  color: #000;
+}
+
+.cat-pill:hover .cat-pill__label,
+.cat-pill.active .cat-pill__label {
+  color: var(--text-primary);
 }
 
 /* ── 16. Filter Bar ────────────────────────────────────────────────────── */
