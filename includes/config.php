@@ -914,3 +914,5 @@ if (!defined('AI_VALUATE_USER_WINDOW')) {
     define('AI_VALUATE_USER_WINDOW', 900);
 }
 require_once __DIR__ . '/ai.php';
+require_once __DIR__ . '/google_auth.php';
+require_once __DIR__ . '/sep_payment.php';
