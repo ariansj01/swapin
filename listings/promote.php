@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/dashboard_layout.php';
+require_once __DIR__ . '/../includes/sep_payment.php';
 
 $user = require_auth();
 $uid  = (int)$user['id'];
@@ -113,6 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $plan = clean($_POST['plan'] ?? '');
     $selectedDuration = (int)($_POST['duration'] ?? 24);
+    $paymentMethod = clean($_POST['payment_method'] ?? 'wallet'); // wallet or sep
+    
     if (!isset($plans[$plan])) {
         $error = 'پلن انتخاب‌شده نامعتبر است';
     } else {
@@ -125,25 +128,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $price = (int)($planData['base_price'] * ($selectedDuration / $baseDuration));
 
-        if ((float)$user['credit_balance'] < $price) {
-            $error = 'موجودی کیف پول شما کافی نیست. <a href="' . APP_URL . '/wallet">شارژ کیف پول</a>';
+        if ($paymentMethod === 'sep') {
+            // SEP payment
+            try {
+                $resNum = SEPPayment::generateResNum();
+                $meta = json_encode([
+                    'listing_id' => $listingId,
+                    'plan' => $plan,
+                    'duration_hours' => $selectedDuration,
+                ], JSON_UNESCAPED_UNICODE);
+                
+                DB::insert('payments', [
+                    'user_id' => $uid,
+                    'type' => 'listing_promotion',
+                    'amount' => $price,
+                    'res_num' => $resNum,
+                    'status' => 'pending',
+                    'meta' => $meta,
+                ]);
+                
+                $redirectUrl = APP_URL . '/payment_callback.php';
+                $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
+                
+                if ($tokenResult && isset($tokenResult['token'])) {
+                    echo SEPPayment::getPaymentForm($tokenResult['token']);
+                    exit;
+                } else {
+                    $error = 'خطا در اتصال به درگاه پرداخت';
+                }
+            } catch (Throwable $e) {
+                $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
+            }
         } else {
-            credit_transact($uid, 'fee', -$price, 'پرداخت برای پلن ' . $planData['name'], [
-                'ref_type'   => 'listing',
-                'ref_id'     => $listingId,
-                'listing_id' => $listingId,
-            ]);
+            // Wallet payment
+            if ((float)$user['credit_balance'] < $price) {
+                $error = 'موجودی کیف پول شما کافی نیست. <a href="' . APP_URL . '/wallet">شارژ کیف پول</a>';
+            } else {
+                credit_transact($uid, 'fee', -$price, 'پرداخت برای پلن ' . $planData['name'], [
+                    'ref_type'   => 'listing',
+                    'ref_id'     => $listingId,
+                    'listing_id' => $listingId,
+                ]);
 
-            $endsAt = date('Y-m-d H:i:s', time() + $selectedDuration * 3600);
+                $endsAt = date('Y-m-d H:i:s', time() + $selectedDuration * 3600);
 
-            DB::insert('listing_promotions', [
-                'listing_id'  => $listingId,
-                'user_id'     => $uid,
-                'plan'        => $plan,
-                'starts_at'   => date('Y-m-d H:i:s'),
-                'ends_at'     => $endsAt,
-                'amount_paid' => $price,
-            ]);
+                DB::insert('listing_promotions', [
+                    'listing_id'  => $listingId,
+                    'user_id'     => $uid,
+                    'plan'        => $plan,
+                    'starts_at'   => date('Y-m-d H:i:s'),
+                    'ends_at'     => $endsAt,
+                    'amount_paid' => $price,
+                ]);
 
             $updateData = [
                 'bump_until'     => $endsAt,
@@ -255,6 +291,29 @@ ob_start();
     </div>
   </div>
 
+  <!-- Payment Method -->
+  <div class="card mb-8" style="max-width:500px;margin:0 auto">
+    <div class="card-body">
+      <h4 style="margin-bottom:16px"><i class="bi bi-credit-card-2-front" style="color:var(--primary)"></i> روش پرداخت</h4>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <label style="cursor:pointer">
+          <input type="radio" name="payment_method" value="wallet" checked style="margin-left:8px">
+          <strong>پرداخت از کیف پول</strong>
+          <span style="color:var(--text-muted);font-size:0.9rem;margin-right:8px">
+            (موجودی فعلی: <?= fmt_credit((float)$user['credit_balance']) ?>)
+          </span>
+        </label>
+        <label style="cursor:pointer">
+          <input type="radio" name="payment_method" value="sep" style="margin-left:8px">
+          <strong>درگاه بانک سامان</strong>
+          <span style="color:var(--text-muted);font-size:0.9rem;margin-right:8px">
+            (پرداخت مستقیم از کارت بانکی)
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+
   <!-- Plans -->
   <section>
     <h2 class="promote-section-title">روش‌های ارتقای آگهی</h2>
@@ -303,6 +362,7 @@ ob_start();
             <?= csrf_field() ?>
             <input type="hidden" name="plan" value="<?= h($key) ?>">
             <input type="hidden" name="duration" class="promote-selected-duration" value="<?= h($baseDuration) ?>">
+            <input type="hidden" name="payment_method" value="wallet" class="payment-method-input">
             <button type="submit" class="promote-plan__btn <?= $isGold ? 'promote-plan__btn--gold' : 'promote-plan__btn--default' ?>">
               <i class="bi bi-check2"></i> انتخاب
             </button>
@@ -350,7 +410,7 @@ ob_start();
               <i class="bi bi-chevron-down"></i>
             </button>
             <div class="promote-accordion__body">
-              هزینه از موجودی کیف پول شما کسر می‌شود. در صورت کمبود موجودی، ابتدا کیف پول را شارژ کنید.
+              می‌توانید هزینه را از موجودی کیف پول پرداخت کنید یا مستقیماً از طریق درگاه بانک سامان پرداخت کنید.
             </div>
           </div>
           <div class="promote-accordion__item">
@@ -380,5 +440,24 @@ render_user_panel_open($user, 'promote', [
 ]);
 echo $content;
 render_user_panel_close();
+?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
+  const paymentMethodInputs = document.querySelectorAll('.payment-method-input');
+  
+  function updatePaymentMethod() {
+    const selectedValue = document.querySelector('input[name="payment_method"]:checked').value;
+    paymentMethodInputs.forEach(input => {
+      input.value = selectedValue;
+    });
+  }
+  
+  paymentMethodRadios.forEach(radio => {
+    radio.addEventListener('change', updatePaymentMethod);
+  });
+});
+</script>
+<?php
 render_panel_scripts(['src/js/promote.js']);
 render_footer();

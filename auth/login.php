@@ -6,11 +6,14 @@ if (auth_user()) {
     header('Location: ' . APP_URL . '/'); exit;
 }
 
-$error         = '';
+$error         = (string) ($_SESSION['auth_error'] ?? '');
+$googleClientId = google_client_id();
 $redir         = safe_redirect_path(clean($_GET['redirect'] ?? ''));
 $step          = $_GET['step'] ?? 'phone';
 $phone         = $_GET['phone'] ?? '';
 $cooldownSecs  = 0;
+
+unset($_SESSION['auth_error']);
 
 // Rate limits: 3 requests then 10min ban (600s), and 90s cooldown between requests
 define('MAX_OTP_REQUESTS', 3);
@@ -194,6 +197,41 @@ render_navbar(null);
             </div>
             <button type="submit" class="btn btn-primary w-100 btn-lg" id="sendBtn">ارسال کد</button>
           </form>
+          <?php if ($googleClientId !== ''): ?>
+          <div style="display:flex;align-items:center;gap:12px;margin:24px 0 18px;">
+            <span style="flex:1;height:1px;background:var(--border);"></span>
+            <span style="color:var(--text-muted);font-size:.92rem;">یا</span>
+            <span style="flex:1;height:1px;background:var(--border);"></span>
+          </div>
+
+          <form method="POST" action="<?= APP_URL ?>/auth/google-login.php" id="googleLoginForm">
+            <?= csrf_field() ?>
+            <?php if ($redir): ?>
+            <input type="hidden" name="redirect" value="<?= h($redir) ?>">
+            <?php endif; ?>
+            <input type="hidden" name="credential" id="googleCredentialInput" value="">
+          </form>
+
+          <div class="card" style="background:#fff;border:1px solid var(--border);box-shadow:none;">
+            <div class="card-body" style="padding:16px;">
+              <p class="text-center fs-sm" style="color:var(--text-muted);margin-bottom:14px;">ورود سریع با حساب گوگل</p>
+              <div id="g_id_onload"
+                   data-client_id="<?= h($googleClientId) ?>"
+                   data-callback="handleGoogleCredential"
+                   data-auto_prompt="false"
+                   data-itp_support="true"></div>
+              <div class="g_id_signin"
+                   data-type="standard"
+                   data-shape="pill"
+                   data-theme="outline"
+                   data-text="signin_with"
+                   data-size="large"
+                   data-logo_alignment="right"
+                   data-width="376"></div>
+              <p class="fs-xs text-center" style="color:var(--text-muted);margin:14px 0 0;">با گوگل وارد شوید و اگر حسابی نداشته باشید، خودکار ساخته می‌شود.</p>
+            </div>
+          </div>
+          <?php endif; ?>
           <?php elseif ($step === 'otp'): ?>
           <!-- OTP Entry -->
           <form method="POST">
@@ -222,6 +260,9 @@ render_navbar(null);
   </div>
 </div>
 
+<?php if ($googleClientId !== '' && $step === 'phone'): ?>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<?php endif; ?>
 <script>
 <?php if ($step === 'otp' && isset($_SESSION['last_otp_send'])): ?>
     let cooldownSeconds = <?= OTP_COOLDOWN_SECONDS - (time() - (int)$_SESSION['last_otp_send']) ?>;
@@ -272,6 +313,32 @@ render_navbar(null);
         codeInput.addEventListener('input', function () {
             this.value = normalizeDigits(this.value).replace(/\D+/g, '').slice(0, 6);
         });
+    }
+
+    function showLoginError(message) {
+        let errorBox = document.querySelector('.alert.alert-danger');
+        if (!errorBox) {
+            errorBox = document.createElement('div');
+            errorBox.className = 'alert alert-danger mb-6';
+            const target = document.querySelector('.text-center.mb-8');
+            if (target && target.parentNode) {
+                target.insertAdjacentElement('afterend', errorBox);
+            }
+        }
+        errorBox.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + message;
+    }
+
+    function handleGoogleCredential(response) {
+        const credentialInput = document.getElementById('googleCredentialInput');
+        const googleForm = document.getElementById('googleLoginForm');
+
+        if (!credentialInput || !googleForm || !response || !response.credential) {
+            showLoginError('ورود با گوگل کامل نشد. لطفاً دوباره تلاش کنید.');
+            return;
+        }
+
+        credentialInput.value = response.credential;
+        googleForm.submit();
     }
 </script>
 

@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/dashboard_layout.php';
+require_once __DIR__ . '/includes/sep_payment.php';
 
 $user = require_auth();
 $uid  = $user['id'];
@@ -10,21 +11,45 @@ $action  = clean($_GET['action'] ?? '');
 $success = '';
 $error   = '';
 
-// Handle deposit (mock IPG — development only)
+// Handle deposit (SEP Payment or mock IPG for dev)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deposit_amount'])) {
     csrf_verify_or_fail();
-    if (!WALLET_DEMO_DEPOSIT) {
-        $error = 'واریز آزمایشی در محیط production غیرفعال است.';
+    $paymentType = clean($_POST['payment_type'] ?? 'sep');
+    
+    $amount = (int)($_POST['deposit_amount'] ?? 0);
+    if ($amount < 1000 || $amount > 100000000) {
+        $error = 'مبلغ واریز باید بین ۱٬۰۰۰ تا ۱۰۰٬۰۰۰٬۰۰۰ ' . CREDIT_UNIT . ' باشد.';
     } else {
-    $amount = (float)($_POST['deposit_amount'] ?? 0);
-    if ($amount < 10 || $amount > 1000000) {
-        $error = 'مبلغ واریز باید بین ۱۰ تا ۱٬۰۰۰٬۰۰۰ ' . CREDIT_UNIT . ' باشد.';
-    } else {
-        credit_transact($uid, 'deposit', $amount, 'واریز دستی (درگاه آزمایشی)', ['ref_type' => 'external']);
-        // Reload user
-        $user    = DB::fetch('SELECT * FROM users WHERE id = ?', [$uid]);
-        $success = 'با موفقیت ' . fmt_credit($amount) . ' به کیف پول شما اضافه شد!';
-    }
+        if ($paymentType === 'demo' && WALLET_DEMO_DEPOSIT) {
+            // Demo mode
+            credit_transact($uid, 'deposit', $amount, 'واریز دستی (درگاه آزمایشی)', ['ref_type' => 'external']);
+            $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$uid]);
+            $success = 'با موفقیت ' . fmt_credit($amount) . ' به کیف پول شما اضافه شد!';
+        } else {
+            // SEP payment
+            try {
+                $resNum = SEPPayment::generateResNum();
+                DB::insert('payments', [
+                    'user_id' => $uid,
+                    'type' => 'wallet_topup',
+                    'amount' => $amount,
+                    'res_num' => $resNum,
+                    'status' => 'pending',
+                ]);
+                
+                $redirectUrl = APP_URL . '/payment_callback.php';
+                $tokenResult = SEPPayment::getToken($amount, $resNum, $redirectUrl, $user['phone'] ?? null);
+                
+                if ($tokenResult && isset($tokenResult['token'])) {
+                    echo SEPPayment::getPaymentForm($tokenResult['token']);
+                    exit;
+                } else {
+                    $error = 'خطا در اتصال به درگاه پرداخت';
+                }
+            } catch (Throwable $e) {
+                $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
+            }
+        }
     }
 }
 
@@ -165,8 +190,7 @@ render_user_panel_open($user, 'wallet');
       <!-- ── Deposit Sidebar ───────────────────────────────────── -->
       <div style="position:sticky;top:80px">
 
-        <?php if (WALLET_DEMO_DEPOSIT): ?>
-        <!-- Deposit Card (development / demo only) -->
+        <!-- Deposit Card -->
         <div class="card mb-4" id="deposit-form-card">
           <div class="card-header">
             <h3 style="margin:0;font-size:1.0625rem"><i class="bi bi-plus-circle" style="color:var(--primary)"></i> افزودن اعتبار</h3>
@@ -177,25 +201,28 @@ render_user_panel_open($user, 'wallet');
               <div class="form-group">
                 <label class="form-label">مبلغ (<?= CREDIT_UNIT ?>)</label>
                 <input type="number" class="form-control" name="deposit_amount"
-                       placeholder="مثلاً ۱۰۰" min="10" max="1000000" step="1" required>
+                       placeholder="مثلاً ۵۰٬۰۰۰" min="1000" max="100000000" step="1000" required>
               </div>
 
               <!-- Quick amounts -->
               <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-4)">
-                <?php foreach ([50, 100, 250, 500] as $amt): ?>
+                <?php foreach ([10000, 50000, 100000, 500000] as $amt): ?>
                 <button type="button" class="btn btn-outline btn-sm"
                         onclick="document.querySelector('[name=deposit_amount]').value=<?= $amt ?>">
-                  +<?= $amt ?>
+                  +<?= persian_digits(number_format($amt)) ?>
                 </button>
                 <?php endforeach; ?>
               </div>
 
-              <div class="alert alert-info" style="font-size:.8125rem;margin-bottom:var(--sp-4)">
-                <i class="bi bi-info-circle"></i>
-                <div>
-                  <strong>نسخه آزمایشی:</strong> این یک واریز شبیه‌سازی‌شده است. در نسخه نهایی به درگاه پرداخت هدایت می‌شوید.
-                </div>
+              <?php if (WALLET_DEMO_DEPOSIT): ?>
+              <div class="form-group">
+                <label class="form-label">نوع پرداخت</label>
+                <select name="payment_type" class="form-control">
+                  <option value="sep">درگاه بانک سامان (پرداخت واقعی)</option>
+                  <option value="demo">آزمایشی (بدون پرداخت)</option>
+                </select>
               </div>
+              <?php endif; ?>
 
               <button type="submit" class="btn btn-primary w-100">
                 <i class="bi bi-credit-card"></i> ادامه به پرداخت

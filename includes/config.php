@@ -85,6 +85,41 @@ try {
     if (!in_array('can_ship', $usersColumns)) {
         DB::query('ALTER TABLE `users` ADD COLUMN `can_ship` TINYINT(1) DEFAULT NULL AFTER `typical_value_range`');
     }
+    if (!in_array('google_id', $usersColumns)) {
+        DB::query('ALTER TABLE `users` ADD COLUMN `google_id` VARCHAR(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `email`');
+    }
+    if (!in_array('email_verified_at', $usersColumns)) {
+        DB::query('ALTER TABLE `users` ADD COLUMN `email_verified_at` DATETIME DEFAULT NULL AFTER `google_id`');
+    }
+    if (!db_has_index('users', 'uq_google_id')) {
+        DB::query('ALTER TABLE `users` ADD UNIQUE KEY `uq_google_id` (`google_id`)');
+    }
+    
+    // Create payments table for SEP gateway
+    if (!db_has_table('payments')) {
+        DB::query('
+            CREATE TABLE `payments` (
+                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `user_id` INT UNSIGNED NOT NULL,
+                `type` ENUM("wallet_topup","listing_promotion") COLLATE utf8mb4_unicode_ci NOT NULL,
+                `amount` DECIMAL(12,0) NOT NULL,
+                `res_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+                `ref_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `trace_no` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `state` VARCHAR(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `status` ENUM("pending","success","failed","canceled") COLLATE utf8mb4_unicode_ci DEFAULT "pending",
+                `gateway` VARCHAR(50) COLLATE utf8mb4_unicode_ci DEFAULT "sep",
+                `meta` JSON DEFAULT NULL,
+                `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uq_payments_resnum` (`res_num`),
+                KEY `idx_payments_user` (`user_id`),
+                KEY `idx_payments_refnum` (`ref_num`),
+                CONSTRAINT `fk_payments_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ');
+    }
     
     // Add new columns to trades table if they don't exist
     $tradesColumns = db_table_columns('trades');
@@ -337,6 +372,19 @@ function db_has_table(string $table): bool {
     $table = preg_replace('/[^a-z0-9_]/', '', $table);
     try {
         return (bool) DB::fetch("SHOW TABLES LIKE '$table'");
+    } catch (Throwable) {
+        return false;
+    }
+}
+
+function db_has_index(string $table, string $indexName): bool {
+    $table = preg_replace('/[^a-z0-9_]/', '', $table);
+    $indexName = preg_replace('/[^a-z0-9_]/', '', $indexName);
+    if ($table === '' || $indexName === '') {
+        return false;
+    }
+    try {
+        return (bool) DB::fetch("SHOW INDEX FROM `$table` WHERE Key_name = ?", [$indexName]);
     } catch (Throwable) {
         return false;
     }
@@ -740,6 +788,7 @@ require_once __DIR__ . '/listing_validator.php';
 require_once __DIR__ . '/v2.php';
 require_once __DIR__ . '/admin.php';
 require_once __DIR__ . '/support.php';
+require_once __DIR__ . '/google_auth.php';
 
 $vendorAutoload = __DIR__ . '/../vendor/autoload.php';
 if (is_readable($vendorAutoload)) {

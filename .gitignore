@@ -2,6 +2,7 @@
 includes/ai_secrets.php
 includes/mail_secrets.php
 includes/sms_secrets.php
+client_secret_*.json
 uploads/*
 !uploads/.gitkeep
 storage/rate_limit/*
