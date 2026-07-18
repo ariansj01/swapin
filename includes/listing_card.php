@@ -87,6 +87,13 @@ $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
       </div>
     </div>
 
+    <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
+      <div class="listing-card__value">
+        <span class="listing-card__value-label">ارزش تقریبی:</span>
+        <span class="listing-card__value-amount"><?= fmt_credit((float)$l['estimated_value']) ?></span>
+      </div>
+    <?php endif; ?>
+
     <?php if (!empty($l['want_in_return'])): ?>
     <div class="listing-card__exchange">
       <div class="listing-card__exchange-heading">نیازمند:</div>
