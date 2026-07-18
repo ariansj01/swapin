@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ((float)$user['credit_balance'] < $price) {
             $error = 'موجودی کیف پول شما کافی نیست. <a href="' . APP_URL . '/wallet">شارژ کیف پول</a>';
         } else {
-            credit_transact($uid, 'listing_promotion', -$price, 'پرداخت برای پلن ' . $planData['name'], [
+            credit_transact($uid, 'fee', -$price, 'پرداخت برای پلن ' . $planData['name'], [
                 'ref_type'   => 'listing',
                 'ref_id'     => $listingId,
                 'listing_id' => $listingId,
