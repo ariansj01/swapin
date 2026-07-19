@@ -101,7 +101,7 @@ try {
             CREATE TABLE `payments` (
                 `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
                 `user_id` INT UNSIGNED NOT NULL,
-                `type` ENUM("wallet_topup","listing_promotion") COLLATE utf8mb4_unicode_ci NOT NULL,
+                `type` ENUM("wallet_topup","listing_promotion","subscription_purchase") COLLATE utf8mb4_unicode_ci NOT NULL,
                 `amount` DECIMAL(12,0) NOT NULL,
                 `res_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
                 `ref_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
