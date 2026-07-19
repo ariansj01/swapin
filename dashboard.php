@@ -127,8 +127,8 @@ render_navbar($user);
 <?php if (isset($_GET['welcome'])): ?>
 <div class="alert alert-success" style="border-radius:0;border-left:0;border-right:0">
   <div class="container">
-    <i class="bi bi-stars"></i>
-    <strong>به <?= APP_NAME ?> خوش آمدید!</strong> مبلغ <strong><?= fmt_num(WELCOME_BONUS) ?> <?= CREDIT_UNIT ?></strong> به عنوان پاداش خوش‌آمدگویی به کیف پول شما اضافه شد. با ثبت اولین آگهی شروع کنید!
+    <!-- <i class="bi bi-stars"></i>
+    <strong>به <?= APP_NAME ?> خوش آمدید!</strong> مبلغ <strong><?= fmt_num(WELCOME_BONUS) ?> <?= CREDIT_UNIT ?></strong> به عنوان پاداش خوش‌آمدگویی به کیف پول شما اضافه شد. با ثبت اولین آگهی شروع کنید! -->
   </div>
 </div>
 <?php endif; ?>

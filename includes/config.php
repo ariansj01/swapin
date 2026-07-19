@@ -88,8 +88,14 @@ try {
     if (!in_array('google_id', $usersColumns)) {
         DB::query('ALTER TABLE `users` ADD COLUMN `google_id` VARCHAR(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `email`');
     }
+    if (!in_array('phone_verified_at', $usersColumns)) {
+        DB::query('ALTER TABLE `users` ADD COLUMN `phone_verified_at` DATETIME DEFAULT NULL AFTER `phone`');
+    }
     if (!in_array('email_verified_at', $usersColumns)) {
         DB::query('ALTER TABLE `users` ADD COLUMN `email_verified_at` DATETIME DEFAULT NULL AFTER `google_id`');
+    }
+    if (!in_array('phone_verified_at', $usersColumns)) {
+        DB::query('ALTER TABLE `users` ADD COLUMN `phone_verified_at` DATETIME DEFAULT NULL AFTER `phone`');
     }
     if (!db_has_index('users', 'uq_google_id')) {
         DB::query('ALTER TABLE `users` ADD UNIQUE KEY `uq_google_id` (`google_id`)');

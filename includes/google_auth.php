@@ -11,7 +11,7 @@ function google_auth_credentials_path(): string {
         return $cached = $envPath;
     }
 
-    $candidates = glob(dirname(__DIR__) . '/client_secret_*.apps.googleusercontent.com.json') ?: [];
+    $candidates = glob(dirname(__DIR__) . '/client_secret_*.json') ?: [];
     foreach ($candidates as $candidate) {
         if (is_readable($candidate)) {
             return $cached = $candidate;

@@ -33,6 +33,50 @@ if (!$profile) {
 
 $isOwnProfile = $currentUser && $currentUser['id'] == $profileId;
 
+// Handle Phone verification
+$phoneVerificationAction = $_GET['action'] ?? '';
+$phoneVerificationStep = $_GET['step'] ?? 'phone';
+$phoneVerificationError = '';
+$phoneVerificationSuccess = '';
+
+if ($isOwnProfile && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_action'])) {
+    csrf_verify_or_fail();
+    if ($_POST['form_action'] === 'send_otp') {
+        $phoneRaw = preg_replace('/\D+/', '', normalize_digits(clean($_POST['phone'] ?? '')));
+        if (!$phoneRaw || !preg_match('/^09[0-9]{9}$/', $phoneRaw)) {
+            $phoneVerificationError = 'لطفاً یک شماره تلفن معتبر وارد کنید.';
+        } else {
+            $phoneIntl = '+98' . substr($phoneRaw, 1);
+            $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            DB::query('DELETE FROM otp_codes WHERE phone = ?', [$phoneIntl]);
+            DB::query(
+                "INSERT INTO otp_codes (phone, code, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))",
+                [$phoneIntl, password_hash($code, PASSWORD_BCRYPT), OTP_EXPIRE]
+            );
+            send_otp_sms($phoneIntl, $code);
+            $_SESSION['otp_phone_intl'] = $phoneIntl;
+            header('Location: ' . APP_URL . '/profile.php?action=verify_phone&step=otp'); exit;
+        }
+    } elseif ($_POST['form_action'] === 'verify_otp') {
+        $phoneIntl = $_SESSION['otp_phone_intl'] ?? '';
+        $code  = preg_replace('/\D+/', '', normalize_digits(clean($_POST['code']  ?? '')));
+        $row = DB::fetch('SELECT * FROM otp_codes WHERE phone = ? AND used = 0 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1', [$phoneIntl]);
+        if ($row && password_verify($code, $row['code'])) {
+            DB::query('UPDATE otp_codes SET used = 1 WHERE id = ?', [$row['id']]);
+            DB::update('users', [
+                'phone' => $phoneIntl,
+                'phone_verified_at' => date('Y-m-d H:i:s'),
+                'verification_level' => max(1, (int)$currentUser['verification_level'])
+            ], 'id = ?', [$currentUser['id']]);
+            $phoneVerificationSuccess = 'شماره تلفن شما با موفقیت تایید شد.';
+            unset($_SESSION['otp_phone_intl']);
+            $currentUser = DB::fetch('SELECT * FROM users WHERE id = ?', [$currentUser['id']]); // Refresh user data
+        } else {
+            $phoneVerificationError = 'کد نامعتبر یا منقضی شده است.';
+        }
+    }
+}
+
 // Stats
 $listingCount  = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "active" AND review_status = "approved"', [$profileId])['c'] ?? 0);
 $tradeCount    = (int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE (user_a_id = ? OR user_b_id = ?) AND status = "completed"', [$profileId, $profileId])['c'] ?? 0);
@@ -113,6 +157,39 @@ render_navbar($currentUser);
             <?php endif; ?>
           </div>
         </div>
+
+        <?php if ($isOwnProfile && empty($currentUser['phone_verified_at'])): ?>
+        <div class="card mt-4" style="border-color: var(--warning);">
+            <div class="card-body">
+                <h4 class="card-title">تایید شماره تلفن</h4>
+                <?php if ($phoneVerificationError): ?><div class="alert alert-danger"><?= $phoneVerificationError ?></div><?php endif; ?>
+                <?php if ($phoneVerificationSuccess): ?><div class="alert alert-success"><?= $phoneVerificationSuccess ?></div><?php endif; ?>
+
+                <?php if ($phoneVerificationStep === 'phone'): ?>
+                <form method="POST" action="<?= APP_URL ?>/profile.php?action=verify_phone">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="form_action" value="send_otp">
+                    <div class="form-group">
+                        <label>برای ادامه، شماره تلفن خود را وارد و تایید کنید:</label>
+                        <input type="tel" name="phone" class="form-control" placeholder="09123456789" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">ارسال کد تایید</button>
+                </form>
+                <?php elseif ($phoneVerificationStep === 'otp'): ?>
+                <form method="POST" action="<?= APP_URL ?>/profile.php?action=verify_phone&step=otp">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="form_action" value="verify_otp">
+                    <div class="form-group">
+                        <label>کد ۶ رقمی ارسال شده را وارد کنید:</label>
+                        <input type="text" name="code" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">تایید کد</button>
+                    <a href="<?= APP_URL ?>/profile.php?action=verify_phone&step=phone" class="btn btn-link">ارسال مجدد کد</a>
+                </form>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Stats and Score in same row -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px">

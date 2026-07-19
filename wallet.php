@@ -214,15 +214,16 @@ render_user_panel_open($user, 'wallet');
                 <?php endforeach; ?>
               </div>
 
-              <?php if (WALLET_DEMO_DEPOSIT): ?>
               <div class="form-group">
-                <label class="form-label">نوع پرداخت</label>
-                <select name="payment_type" class="form-control">
-                  <option value="sep">درگاه بانک سامان (پرداخت واقعی)</option>
-                  <option value="demo">آزمایشی (بدون پرداخت)</option>
-                </select>
-              </div>
-              <?php endif; ?>
+                <label class="form-label">درگاه پرداخت</label>
+                <div class="payment-gateway-select">
+                    <input type="radio" id="payment-sep" name="payment_type" value="sep" checked>
+                    <label for="payment-sep">
+                        <img src="<?= APP_URL ?>/src/img/sep-logo.svg" alt="Saman Bank">
+                        <span>بانک سامان</span>
+                    </label>
+                </div>
+            </div>
 
               <button type="submit" class="btn btn-primary w-100">
                 <i class="bi bi-credit-card"></i> ادامه به پرداخت

@@ -198,7 +198,7 @@ render_navbar(null);
                 <i class="bi bi-google" aria-hidden="true"></i>
                 <span>ورود با گوگل</span>
               </button>
-              <p class="fs-sm text-center" style="color:var(--text-muted);margin:12px 0 0;">اگر نخواستید شماره وارد کنید، مستقیم با حساب گوگل ادامه دهید.</p>
+              <p class="fs-sm text-center" style="color:var(--text-muted);margin:12px 0 0;">ورود با حساب گوگل</p>
               <div id="googleWidgetFallback" style="display:none;justify-content:center;margin-top:12px;"></div>
             </div>
           </div>
