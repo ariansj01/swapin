@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'meta' => $meta,
                 ]);
                 
-                $redirectUrl = APP_URL . '/payment_callback.php';
+                $redirectUrl = APP_URL . '/sep/callback';
                 $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
                 
                 if ($tokenResult && isset($tokenResult['token'])) {

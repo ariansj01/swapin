@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deposit_amount'])) {
                     'status' => 'pending',
                 ]);
                 
-                $redirectUrl = APP_URL . '/payment_callback.php';
+                $redirectUrl = APP_URL . '/sep/callback';
                 $tokenResult = SEPPayment::getToken($amount, $resNum, $redirectUrl, $user['phone'] ?? null);
                 
                 if ($tokenResult && isset($tokenResult['token'])) {
