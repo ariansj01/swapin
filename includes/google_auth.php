@@ -201,7 +201,6 @@ function google_find_or_create_user(array $claims): array {
             return [
                 'user_id' => (int) $user['id'],
                 'is_new' => false,
-                'needs_profile_completion' => (empty($user['phone']) || empty($user['city'])),
             ];
         }
 
@@ -223,7 +222,6 @@ function google_find_or_create_user(array $claims): array {
         return [
             'user_id' => $userId,
             'is_new' => true,
-            'needs_profile_completion' => true,
         ];
     } catch (Throwable $e) {
         if (DB::pdo()->inTransaction()) {
