@@ -49,8 +49,8 @@ try {
 
     $dest = APP_URL . '/';
     if ($result['needs_profile_completion'] ?? false) {
-        $_SESSION['google_user_id_for_profile_completion'] = (int) $result['user_id'];
-        $dest = APP_URL . '/auth/complete-profile?google_login=1';
+        $_SESSION['google_user_id_for_phone_verification'] = (int) $result['user_id'];
+        $dest = APP_URL . '/auth/phone-verify?google_login=1';
     } elseif ($redir) {
         $dest = APP_URL . $redir;
     } elseif ((bool) ($result['is_new'] ?? false)) {

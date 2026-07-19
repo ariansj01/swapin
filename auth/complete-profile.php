@@ -30,6 +30,7 @@ if ($isGoogleUser) {
     $vals['name']  = $currentUser['name'] ?? '';
     $vals['email'] = $currentUser['email'] ?? '';
     $vals['city']  = $currentUser['city'] ?? '';
+    $vals['phone'] = $currentUser['phone'] ?? ''; // Pre-fill phone for Google user
 } elseif (!isset($_SESSION['new_user_phone'])) {
     // Non-Google user, but no phone in session (means not coming from OTP verification)
     header('Location: ' . APP_URL . '/auth/login'); exit;
@@ -48,9 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['email'] = clean($_POST['email'] ?? '');
     $vals['city']  = clean($_POST['city']  ?? '');
 
-    if ($isGoogleUser) {
-        $vals['phone'] = clean($_POST['phone'] ?? '');
-    } else {
+    if (!$isGoogleUser) {
         $pass          = $_POST['password']         ?? '';
         $passConf      = $_POST['password_confirm'] ?? '';
     }
@@ -79,11 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors['email'] = 'این ایمیل قبلاً ثبت شده است';
     }
 
-    if ($isGoogleUser) {
-        if (!$vals['phone'] || !is_valid_phone($vals['phone'])) {
-            $errors['phone'] = 'شماره تلفن معتبر الزامی است.';
-        }
-    } else {
+    if (!$isGoogleUser) {
         if (strlen($pass) < 8)
             $errors['password'] = 'رمز عبور باید حداقل ۸ کاراکتر باشد';
 
@@ -97,7 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             DB::update('users', [
                 'name'               => $vals['name'],
                 'email'              => $vals['email'],
-                'phone'              => $vals['phone'],
                 'city'               => $vals['city'],
             ], 'id = ?', [$currentUser['id']]);
 
@@ -174,7 +168,7 @@ render_navbar(null);
             <label class="form-label" for="phone">شماره تلفن <span class="required">*</span></label>
             <input type="tel" class="form-control <?= isset($errors['phone']) ? 'is-invalid' : '' ?>"
                    id="phone" name="phone" value="<?= h($vals['phone']) ?>"
-                   placeholder="مثال: 09123456789" autocomplete="tel" required>
+                   placeholder="مثال: 09123456789" autocomplete="tel" required readonly>
             <?php if (isset($errors['phone'])): ?>
             <div class="invalid-feedback"><?= h($errors['phone']) ?></div>
             <?php endif; ?>
