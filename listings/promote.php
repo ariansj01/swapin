@@ -158,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Throwable $e) {
             $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
         }
+    }
 }
 
 $activePromos = DB::fetchAll(
