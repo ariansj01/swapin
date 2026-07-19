@@ -32,56 +32,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $price = (int)($selectedPlan['price_month'] * $months);
 
-        if ($paymentMethod === 'sep') {
-            // SEP payment
-            try {
-                $resNum = SEPPayment::generateResNum();
-                $meta = json_encode([
-                    'subscription_plan' => $plan,
-                    'months' => $months,
-                ], JSON_UNESCAPED_UNICODE);
-                
-                DB::insert('payments', [
-                    'user_id' => $user['id'],
-                    'type' => 'subscription_purchase', // New type
-                    'amount' => $price,
-                    'res_num' => $resNum,
-                    'status' => 'pending',
-                    'meta' => $meta,
-                ]);
-                
-                $redirectUrl = APP_URL . '/sep/callback';
-                $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
-                
-                if ($tokenResult && isset($tokenResult['token'])) {
-                    echo SEPPayment::getPaymentForm($tokenResult['token']);
-                    exit;
-                } else {
-                    $error = 'خطا در اتصال به درگاه پرداخت';
-                }
-            } catch (Throwable $e) {
-                $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
-            }
-        } else {
-            // Wallet payment
-            if ((float)$user['credit_balance'] < $price) {
-                $error = 'موجودی کیف پول شما کافی نیست. <a href="' . APP_URL . '/wallet">شارژ کیف پول</a>';
+        // SEP payment
+        try {
+            $resNum = SEPPayment::generateResNum();
+            $meta = json_encode([
+                'subscription_plan' => $plan,
+                'months' => $months,
+            ], JSON_UNESCAPED_UNICODE);
+            
+            DB::insert('payments', [
+                'user_id' => $user['id'],
+                'type' => 'subscription_purchase', // New type
+                'amount' => $price,
+                'res_num' => $resNum,
+                'status' => 'pending',
+                'meta' => $meta,
+            ]);
+            
+            $redirectUrl = APP_URL . '/sep/callback';
+            $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
+            
+            if ($tokenResult && isset($tokenResult['token'])) {
+                echo SEPPayment::getPaymentForm($tokenResult['token']);
+                exit;
             } else {
-                $result = subscribe_to_plan($user['id'], $plan, $months);
-                if (isset($result['error'])) {
-                    $error = $result['error'];
-                } else {
-                    credit_transact($user['id'], 'fee', -$price, 'پرداخت برای اشتراک ' . $selectedPlan['name'], [
-                        'ref_type' => 'subscription_order',
-                        'ref_id' => $result['order_id'], // Assuming subscribe_to_plan returns order_id
-                    ]);
-                    $success = "اشتراک {$result['plan']} فعال شد تا " . persian_date($result['ends_at']);
-                    $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$user['id']]);
-                }
+                $error = 'خطا در اتصال به درگاه پرداخت';
             }
+        } catch (Throwable $e) {
+            $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
         }
     }
 }
+render_head('پلن‌های اشتراک');
 render_panel_styles();
 render_navbar($user);
 ?>
@@ -152,27 +134,7 @@ render_navbar($user);
               <button type="submit" class="btn btn-primary" style="flex-shrink:0;white-space:nowrap">خرید اشتراک</button>
             </div>
           </form>
-          <div class="card" style="max-width:500px;margin:var(--sp-5) auto var(--sp-2)">
-            <div class="card-body">
-              <h4 style="margin-bottom:16px"><i class="bi bi-credit-card-2-front" style="color:var(--primary)"></i> روش پرداخت</h4>
-              <div style="display:flex;flex-direction:column;gap:12px">
-                <label style="cursor:pointer">
-                  <input type="radio" name="payment_method_option" value="wallet" checked style="margin-left:8px">
-                  <strong>پرداخت از کیف پول</strong>
-                  <span style="color:var(--text-muted);font-size:0.9rem;margin-right:8px">
-                    (موجودی فعلی: <?= fmt_credit((float)$user['credit_balance']) ?>)
-                  </span>
-                </label>
-                <label style="cursor:pointer">
-                  <input type="radio" name="payment_method_option" value="sep" style="margin-left:8px">
-                  <strong>درگاه بانک سامان</strong>
-                  <span style="color:var(--text-muted);font-size:0.9rem;margin-right:8px">
-                    (پرداخت مستقیم از کارت بانکی)
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
+
           <?php endif; ?>
         </div>
       </div>

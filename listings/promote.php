@@ -128,78 +128,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $price = (int)($planData['base_price'] * ($selectedDuration / $baseDuration));
 
-        if ($paymentMethod === 'sep') {
-            // SEP payment
-            try {
-                $resNum = SEPPayment::generateResNum();
-                $meta = json_encode([
-                    'listing_id' => $listingId,
-                    'plan' => $plan,
-                    'duration_hours' => $selectedDuration,
-                ], JSON_UNESCAPED_UNICODE);
-                
-                DB::insert('payments', [
-                    'user_id' => $uid,
-                    'type' => 'listing_promotion',
-                    'amount' => $price,
-                    'res_num' => $resNum,
-                    'status' => 'pending',
-                    'meta' => $meta,
-                ]);
-                
-                $redirectUrl = APP_URL . '/sep/callback';
-                $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
-                
-                if ($tokenResult && isset($tokenResult['token'])) {
-                    echo SEPPayment::getPaymentForm($tokenResult['token']);
-                    exit;
-                } else {
-                    $error = 'خطا در اتصال به درگاه پرداخت';
-                }
-            } catch (Throwable $e) {
-                $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
-            }
-        } else {
-            // Wallet payment
-            if ((float)$user['credit_balance'] < $price) {
-                $error = 'موجودی کیف پول شما کافی نیست. <a href="' . APP_URL . '/wallet">شارژ کیف پول</a>';
+        // SEP payment
+        try {
+            $resNum = SEPPayment::generateResNum();
+            $meta = json_encode([
+                'listing_id' => $listingId,
+                'plan' => $plan,
+                'duration_hours' => $selectedDuration,
+            ], JSON_UNESCAPED_UNICODE);
+            
+            DB::insert('payments', [
+                'user_id' => $uid,
+                'type' => 'listing_promotion',
+                'amount' => $price,
+                'res_num' => $resNum,
+                'status' => 'pending',
+                'meta' => $meta,
+            ]);
+            
+            $redirectUrl = APP_URL . '/sep/callback';
+            $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
+            
+            if ($tokenResult && isset($tokenResult['token'])) {
+                echo SEPPayment::getPaymentForm($tokenResult['token']);
+                exit;
             } else {
-                credit_transact($uid, 'fee', -$price, 'پرداخت برای پلن ' . $planData['name'], [
-                    'ref_type'   => 'listing',
-                    'ref_id'     => $listingId,
-                    'listing_id' => $listingId,
-                ]);
-
-                $endsAt = date('Y-m-d H:i:s', time() + $selectedDuration * 3600);
-
-                DB::insert('listing_promotions', [
-                    'listing_id'  => $listingId,
-                    'user_id'     => $uid,
-                    'plan'        => $plan,
-                    'starts_at'   => date('Y-m-d H:i:s'),
-                    'ends_at'     => $endsAt,
-                    'amount_paid' => $price,
-                ]);
-
-            $updateData = [
-                'bump_until'     => $endsAt,
-                'featured_until' => $endsAt,
-                'is_featured'    => 1,
-                'vip_until'      => $endsAt,
-            ];
-            if ($plan === 'targeted' || $plan === 'gold') {
-                $updateData['targeted_until'] = $endsAt;
+                $error = 'خطا در اتصال به درگاه پرداخت';
             }
-            if ($plan === 'ai' || $plan === 'gold') {
-                $updateData['ai_promo_until'] = $endsAt;
-            }
-
-            DB::update('listings', $updateData, 'id = ?', [$listingId]);
-
-            $user = DB::fetch('SELECT * FROM users WHERE id = ? AND is_active = 1', [$uid]);
-            $success = 'پلن «' . $planData['name'] . '» با موفقیت فعال شد!';
+        } catch (Throwable $e) {
+            $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
         }
-    }
 }
 
 $activePromos = DB::fetchAll(
@@ -291,28 +249,7 @@ ob_start();
     </div>
   </div>
 
-  <!-- Payment Method -->
-  <div class="card mb-8" style="max-width:500px;margin:0 auto">
-    <div class="card-body">
-      <h4 style="margin-bottom:16px"><i class="bi bi-credit-card-2-front" style="color:var(--primary)"></i> روش پرداخت</h4>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <label style="cursor:pointer">
-          <input type="radio" name="payment_method" value="wallet" checked style="margin-left:8px">
-          <strong>پرداخت از کیف پول</strong>
-          <span style="color:var(--text-muted);font-size:0.9rem;margin-right:8px">
-            (موجودی فعلی: <?= fmt_credit((float)$user['credit_balance']) ?>)
-          </span>
-        </label>
-        <label style="cursor:pointer">
-          <input type="radio" name="payment_method" value="sep" style="margin-left:8px">
-          <strong>درگاه بانک سامان</strong>
-          <span style="color:var(--text-muted);font-size:0.9rem;margin-right:8px">
-            (پرداخت مستقیم از کارت بانکی)
-          </span>
-        </label>
-      </div>
-    </div>
-  </div>
+
 
   <!-- Plans -->
   <section>
@@ -461,4 +398,3 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 render_panel_scripts(['src/js/promote.js']);
 render_footer();
-}
