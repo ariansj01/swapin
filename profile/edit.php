@@ -6,12 +6,57 @@ require_once __DIR__ . '/../includes/dashboard_layout.php';
 $user   = require_auth();
 $errors = [];
 $success = '';
+$showOtpForm = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
     $action = clean($_POST['action'] ?? 'profile');
 
-    if ($action === 'profile') {
+    if ($action === 'send_otp') {
+        $phone = clean($_POST['phone'] ?? '');
+        if (!is_valid_phone($phone)) {
+            $errors['phone'] = 'لطفاً یک شماره تلفن معتبر وارد کنید.';
+        } else {
+            $existingUser = DB::fetch('SELECT id FROM users WHERE phone = ? AND id != ?', [$phone, $user['id']]);
+            if ($existingUser) {
+                $errors['phone'] = 'این شماره تلفن قبلاً ثبت شده است.';
+            }
+        }
+        if (empty($errors)) {
+            $_SESSION['otp_phone_raw'] = $phone;
+            $_SESSION['otp_phone_intl'] = $phone;
+            $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $_SESSION['otp_code'] = $otpCode;
+            $_SESSION['last_otp_send'] = time();
+            if (send_otp_sms($phone, $otpCode)) {
+                $showOtpForm = true;
+            } else {
+                $errors['phone'] = safe_sms_error(last_sms_error());
+            }
+        }
+    } elseif ($action === 'verify_otp') {
+        $otp = clean($_POST['otp'] ?? '');
+        if (empty($_SESSION['otp_phone_raw']) || empty($_SESSION['otp_code'])) {
+            $errors['otp'] = 'لطفاً ابتدا کد تأیید را درخواست کنید.';
+            $showOtpForm = false;
+        } elseif (time() - ($_SESSION['last_otp_send'] ?? 0) > OTP_EXPIRE) {
+            $errors['otp'] = 'کد تأیید منقضی شده است. لطفاً دوباره درخواست کنید.';
+            unset($_SESSION['otp_code'], $_SESSION['last_otp_send']);
+            $showOtpForm = false;
+        } elseif ($otp !== $_SESSION['otp_code']) {
+            $errors['otp'] = 'کد تأیید اشتباه است.';
+            $showOtpForm = true;
+        } else {
+            DB::update('users', [
+                'phone'             => $_SESSION['otp_phone_raw'],
+                'phone_verified_at' => date('Y-m-d H:i:s'),
+            ], 'id = ?', [$user['id']]);
+            unset($_SESSION['otp_code'], $_SESSION['last_otp_send'], $_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl']);
+            $success = 'شماره تلفن تأیید شد.';
+            $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$user['id']]);
+            $showOtpForm = false;
+        }
+    } elseif ($action === 'profile') {
         $name = clean($_POST['name'] ?? '');
         $city = clean($_POST['city'] ?? '');
         $bio  = clean($_POST['bio'] ?? '');
@@ -97,6 +142,50 @@ render_user_panel_open($user, 'settings');
       <div class="card">
         <div class="card-header"><h3 style="margin:0;font-size:1rem">پروفایل پایه</h3></div>
         <div class="card-body">
+          <!-- Phone Verification Section -->
+          <div style="margin-bottom: 32px;">
+            <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 16px;">شماره تلفن</h4>
+            <?php if (!empty($user['phone_verified_at'])): ?>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background: var(--success-light); border-radius: var(--radius); color: var(--success);">
+                <i class="bi bi-check-circle-fill"></i>
+                <span><strong><?= h($user['phone']) ?></strong> — تأیید شده</span>
+              </div>
+            <?php else: ?>
+              <?php if (!$showOtpForm): ?>
+                <form method="POST">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="send_otp">
+                  <div class="form-group">
+                    <label class="form-label">شماره تلفن <span class="required">*</span></label>
+                    <input type="tel" name="phone" class="form-control <?= isset($errors['phone']) ? 'is-invalid' : '' ?>"
+                           value="<?= h($_SESSION['otp_phone_raw'] ?? '') ?>" placeholder="مثال: 09123456789" autocomplete="tel" required>
+                    <?php if (isset($errors['phone'])): ?><div class="invalid-feedback"><?= h($errors['phone']) ?></div><?php endif; ?>
+                  </div>
+                  <button type="submit" class="btn btn-outline">ارسال کد تأیید</button>
+                </form>
+              <?php else: ?>
+                <form method="POST">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="verify_otp">
+                  <div class="form-group">
+                    <label class="form-label">کد تأیید <span class="required">*</span></label>
+                    <input type="text" name="otp" class="form-control <?= isset($errors['otp']) ? 'is-invalid' : '' ?>"
+                           placeholder="کد ۶ رقمی" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required>
+                    <?php if (isset($errors['otp'])): ?><div class="invalid-feedback"><?= h($errors['otp']) ?></div><?php endif; ?>
+                  </div>
+                  <p class="fs-xs" style="color: var(--text-muted); margin-bottom: 12px;">
+                    کد به شماره <strong><?= h($_SESSION['otp_phone_raw'] ?? '') ?></strong> ارسال شد.
+                  </p>
+                  <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn btn-primary">تأیید شماره</button>
+                    <a href="<?= APP_URL ?>/profile/edit" class="btn btn-outline">انصراف</a>
+                  </div>
+                </form>
+              <?php endif; ?>
+            <?php endif; ?>
+          </div>
+
+          <!-- Profile Form -->
           <form method="POST">
           <?= csrf_field() ?>
             <input type="hidden" name="action" value="profile">
