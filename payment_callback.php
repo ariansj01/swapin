@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/sep_payment.php';
@@ -69,7 +70,7 @@ try {
                     if ($planData) {
                         require_once __DIR__ . '/listings/promote.php'; // to get $plans variable
                         $plans = $GLOBALS['plans'];
-                        
+
                         $endsAt = date('Y-m-d H:i:s', time() + $durationHours * 3600);
                         $amountPaid = $payment['amount'];
 
@@ -102,6 +103,23 @@ try {
                         $success = true;
                     }
                 }
+            } elseif ($payment['type'] === 'subscription_purchase') {
+                // Process subscription purchase
+                require_once __DIR__ . '/includes/v2.php'; // To get subscribe_to_plan function
+                $meta = json_decode($payment['meta'], true) ?: [];
+                if (isset($meta['subscription_plan'], $meta['months'])) {
+                    $subPlan = $meta['subscription_plan'];
+                    $subMonths = $meta['months'];
+                    $result = subscribe_to_plan($payment['user_id'], $subPlan, $subMonths, true); // Pass true to skip wallet deduction
+                    if (isset($result['success']) && $result['success']) {
+                        $success = true;
+                    } else {
+                        throw new Exception($result['error'] ?? 'خطا در فعال‌سازی اشتراک');
+                    }
+                }
+            } else {
+                // Unknown payment type, refund or flag
+                throw new Exception('نوع پرداخت نامعتبر');
             }
         } else {
             throw new Exception('تایید پرداخت ناموفق بود');

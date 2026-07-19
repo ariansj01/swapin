@@ -485,7 +485,7 @@ function approve_bnpl(int $requestId): void {
     ], 'id = ?', [$req['trade_id']]);
 }
 
-function subscribe_to_plan(int $userId, string $planSlug, int $months = 1): array {
+function subscribe_to_plan(int $userId, string $planSlug, int $months = 1, bool $paidByGateway = false): array {
     $plan = DB::fetch('SELECT * FROM subscription_plans WHERE slug = ?', [$planSlug]);
     if (!$plan) return ['error' => 'پلن نامعتبر'];
 
@@ -493,7 +493,7 @@ function subscribe_to_plan(int $userId, string $planSlug, int $months = 1): arra
     $user   = DB::fetch('SELECT * FROM users WHERE id = ?', [$userId]);
     $cost   = (float)$plan['price_month'] * $months;
 
-    if ((float)$user['credit_balance'] < $cost) {
+    if (!$paidByGateway && (float)$user['credit_balance'] < $cost) {
         return ['error' => 'موجودی ' . CREDIT_UNIT . ' کافی نیست — نیاز: ' . fmt_credit($cost)];
     }
 
@@ -510,17 +510,19 @@ function subscribe_to_plan(int $userId, string $planSlug, int $months = 1): arra
         'status'      => 'active',
     ]);
 
-    credit_transact($userId, 'fee', -$cost, "اشتراک {$plan['name']} ({$months} ماه)", [
-        'ref_type' => 'subscription_order',
-        'ref_id'   => $orderId,
-    ]);
+    if (!$paidByGateway) {
+        credit_transact($userId, 'fee', -$cost, "اشتراک {$plan['name']} ({$months} ماه)", [
+            'ref_type' => 'subscription_order',
+            'ref_id'   => $orderId,
+        ]);
+    }
 
     DB::update('users', [
         'subscription_plan'  => $planSlug,
         'subscription_until' => $ends,
     ], 'id = ?', [$userId]);
 
-    return ['success' => true, 'ends_at' => $ends, 'plan' => $plan['name']];
+    return ['success' => true, 'ends_at' => $ends, 'plan' => $plan['name'], 'order_id' => $orderId];
 }
 
 function promote_listing(int $listingId, int $userId, string $type): array {
