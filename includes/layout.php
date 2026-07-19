@@ -447,6 +447,25 @@ HTML;
 HTML;
 }
 
+function render_full_page_modal(string $title, string $message, string $buttonText, string $buttonUrl, string $icon): void {
+    render_head($title);
+    render_navbar(auth_user());
+    echo <<<HTML
+    <div style="display: flex; align-items: center; justify-content: center; min-height: 70vh; text-align: center;">
+        <div class="card" style="max-width: 450px; padding: 2rem;">
+            <div class="card-body">
+                <i class="bi {$icon}" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem; display: block;"></i>
+                <h2 style="margin-bottom: 1rem;">{$title}</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">{$message}</p>
+                <a href="{$buttonUrl}" class="btn btn-primary btn-lg">{$buttonText}</a>
+            </div>
+        </div>
+    </div>
+HTML;
+    render_footer();
+    exit;
+}
+
 function render_support_widget(?array $user = null): void {
     $url = APP_URL;
     $loggedIn = $user !== null;
