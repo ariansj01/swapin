@@ -101,7 +101,7 @@ try {
             CREATE TABLE `payments` (
                 `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
                 `user_id` INT UNSIGNED NOT NULL,
-                `type` ENUM("wallet_topup","listing_promotion","subscription_purchase") COLLATE utf8mb4_unicode_ci NOT NULL,
+                `type` ENUM("wallet_topup","listing_promotion") COLLATE utf8mb4_unicode_ci NOT NULL,
                 `amount` DECIMAL(12,0) NOT NULL,
                 `res_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
                 `ref_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -120,6 +120,20 @@ try {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ');
     }
+
+    // Fix: Add `subscription_purchase` to payments.type ENUM
+    if (db_has_table('payments')) {
+        $paymentTableInfo = DB::fetch("SHOW CREATE TABLE `payments`");
+        if ($paymentTableInfo && !empty($paymentTableInfo['Create Table']) && strpos($paymentTableInfo['Create Table'], "'subscription_purchase'") === false) {
+            try {
+                DB::query("ALTER TABLE `payments` MODIFY COLUMN `type` ENUM('wallet_topup','listing_promotion','subscription_purchase') COLLATE utf8mb4_unicode_ci NOT NULL");
+            } catch (Throwable $e) {
+                // Ignore if it fails, maybe another request is already doing it
+                swapin_debug_log('migration-error-payments-type', ['msg' => $e->getMessage()]);
+            }
+        }
+    }
+    
     
     // Add new columns to trades table if they don't exist
     $tradesColumns = db_table_columns('trades');
