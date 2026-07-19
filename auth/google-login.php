@@ -47,9 +47,15 @@ try {
 
     unset($_SESSION['auth_error'], $_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
 
-    $dest = $redir
-        ? APP_URL . $redir
-        : APP_URL . ((bool) ($result['is_new'] ?? false) ? '/?welcome=1' : '/');
+    $dest = APP_URL . '/';
+    if ($result['needs_profile_completion'] ?? false) {
+        $_SESSION['google_user_id_for_profile_completion'] = (int) $result['user_id'];
+        $dest = APP_URL . '/auth/complete-profile?google_login=1';
+    } elseif ($redir) {
+        $dest = APP_URL . $redir;
+    } elseif ((bool) ($result['is_new'] ?? false)) {
+        $dest = APP_URL . '/?welcome=1';
+    }
     header('Location: ' . $dest);
     exit;
 } catch (Throwable $e) {

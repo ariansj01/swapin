@@ -636,6 +636,12 @@ function clean(string $val): string {
     return trim(htmlspecialchars_decode(strip_tags($val)));
 }
 
+function is_valid_phone(string $phone): bool {
+    // Basic validation for Iranian phone numbers (starts with 09 and is 11 digits long)
+    // This can be expanded for more rigorous validation if needed.
+    return (bool) preg_match('/^09\d{9}$/', $phone);
+}
+
 function normalize_digits(string $val): string {
     return strtr($val, [
         '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',

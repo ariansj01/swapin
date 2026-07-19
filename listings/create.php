@@ -4,22 +4,13 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $user = require_auth();
 
-// KYC & Phone Verification Wall
-if (empty($user['phone_verified_at'])) {
-    render_full_page_modal(
-        'تایید شماره تلفن',
-        'برای ثبت آگهی، ابتدا باید شماره تلفن خود را تایید کنید.',
-        'رفتن به صفحه تایید',
-        APP_URL . '/profile.php?action=verify_phone',
-        'bi-phone'
-    );
-}
+// KYC Wall
 if (($user['kyc_status'] ?? 'none') !== 'approved') {
     render_full_page_modal(
-        'احراز هویت',
-        'برای ثبت آگهی، ابتدا باید هویت خود را تایید کنید (سطح ۱ کافی است).',
+        'احراز هویت لازم است',
+        'برای ثبت آگهی، ابتدا باید هویت شما تایید شود.',
         'رفتن به صفحه احراز هویت',
-        APP_URL . '/profile.php?action=verify_kyc',
+        APP_URL . '/profile/edit.php',
         'bi-shield-check'
     );
 }

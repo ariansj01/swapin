@@ -6,14 +6,39 @@ if (auth_user()) {
     header('Location: ' . APP_URL . '/dashboard'); exit;
 }
 
-if (!isset($_SESSION['new_user_phone'])) {
+$isGoogleUser = (isset($_GET['google_login']) && $_GET['google_login'] === '1' && isset($_SESSION['google_user_id_for_profile_completion']));
+
+$googleUserId = 0;
+$currentUser  = null;
+
+if ($isGoogleUser) {
+    $googleUserId = (int) $_SESSION['google_user_id_for_profile_completion'];
+    $currentUser = DB::fetch('SELECT * FROM users WHERE id = ? LIMIT 1', [$googleUserId]);
+
+    if (!$currentUser) {
+        // User not found, something is wrong, redirect to login
+        header('Location: ' . APP_URL . '/auth/login'); exit;
+    }
+
+    // If a Google user already has phone and city, they don't need to complete the profile anymore
+    if (!empty($currentUser['phone']) && !empty($currentUser['city'])) {
+        unset($_SESSION['google_user_id_for_profile_completion']);
+        header('Location: ' . APP_URL . '/'); exit;
+    }
+
+    // Pre-fill values for Google user
+    $vals['name']  = $currentUser['name'] ?? '';
+    $vals['email'] = $currentUser['email'] ?? '';
+    $vals['city']  = $currentUser['city'] ?? '';
+} elseif (!isset($_SESSION['new_user_phone'])) {
+    // Non-Google user, but no phone in session (means not coming from OTP verification)
     header('Location: ' . APP_URL . '/auth/login'); exit;
 }
 
-$phoneIntl = $_SESSION['new_user_phone'];
+$phoneIntl = $_SESSION['new_user_phone'] ?? ''; // Will be empty for Google users, populated for phone users
 $redir  = safe_redirect_path(clean($_GET['redirect'] ?? ''));
 $errors = [];
-$vals   = ['name' => '', 'email' => '', 'city' => ''];
+$vals   = array_merge(['name' => '', 'email' => '', 'city' => '', 'phone' => ''], $vals); // Ensure phone is in vals
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
@@ -22,8 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['name']  = clean($_POST['name']  ?? '');
     $vals['email'] = clean($_POST['email'] ?? '');
     $vals['city']  = clean($_POST['city']  ?? '');
-    $pass          = $_POST['password']         ?? '';
-    $passConf      = $_POST['password_confirm'] ?? '';
+
+    if ($isGoogleUser) {
+        $vals['phone'] = clean($_POST['phone'] ?? '');
+    } else {
+        $pass          = $_POST['password']         ?? '';
+        $passConf      = $_POST['password_confirm'] ?? '';
+    }
 
     // Validate
     if (!$vals['name'] || mb_strlen($vals['name']) < 2)
@@ -39,33 +69,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Check email uniqueness
     if ($vals['email'] && !isset($errors['email'])) {
-        if (DB::fetch('SELECT id FROM users WHERE email = ?', [$vals['email']]))
+        $emailCheckQuery = 'SELECT id FROM users WHERE email = ?';
+        $emailCheckParams = [$vals['email']];
+        if ($isGoogleUser && $currentUser) {
+            $emailCheckQuery .= ' AND id != ?';
+            $emailCheckParams[] = $currentUser['id'];
+        }
+        if (DB::fetch($emailCheckQuery, $emailCheckParams))
             $errors['email'] = 'این ایمیل قبلاً ثبت شده است';
     }
 
-    if (strlen($pass) < 8)
-        $errors['password'] = 'رمز عبور باید حداقل ۸ کاراکتر باشد';
+    if ($isGoogleUser) {
+        if (!$vals['phone'] || !is_valid_phone($vals['phone'])) {
+            $errors['phone'] = 'شماره تلفن معتبر الزامی است.';
+        }
+    } else {
+        if (strlen($pass) < 8)
+            $errors['password'] = 'رمز عبور باید حداقل ۸ کاراکتر باشد';
 
-    if ($pass !== $passConf)
-        $errors['password_confirm'] = 'رمزهای عبور یکسان نیستند';
+        if ($pass !== $passConf)
+            $errors['password_confirm'] = 'رمزهای عبور یکسان نیستند';
+    }
 
     if (empty($errors)) {
-        // Create user
-        $uid = DB::insert('users', [
-            'name'               => $vals['name'],
-            'email'              => $vals['email'],
-            'phone'              => $phoneIntl,
-            'city'               => $vals['city'],
-            'password_hash'      => password_hash($pass, PASSWORD_BCRYPT),
-            'verification_level' => 1,
-            'credit_balance'     => 0,
-        ]);
-        
+        if ($isGoogleUser && $currentUser) {
+            // Update existing Google user
+            DB::update('users', [
+                'name'               => $vals['name'],
+                'email'              => $vals['email'],
+                'phone'              => $vals['phone'],
+                'city'               => $vals['city'],
+            ], 'id = ?', [$currentUser['id']]);
 
-        
-        login_user($uid);
-        unset($_SESSION['new_user_phone']);
-        $dest = $redir ? APP_URL . $redir : APP_URL . '/?welcome=1';
+            unset($_SESSION['google_user_id_for_profile_completion']);
+            login_user((int) $currentUser['id']);
+            $dest = $redir ? APP_URL . $redir : APP_URL . '/';
+        } else {
+            // Create new phone user
+            $uid = DB::insert('users', [
+                'name'               => $vals['name'],
+                'email'              => $vals['email'],
+                'phone'              => $phoneIntl,
+                'city'               => $vals['city'],
+                'password_hash'      => password_hash($pass, PASSWORD_BCRYPT),
+                'verification_level' => 1,
+                'credit_balance'     => 0,
+            ]);
+            login_user($uid);
+            unset($_SESSION['new_user_phone']);
+            $dest = $redir ? APP_URL . $redir : APP_URL . '/?welcome=1';
+        }
         header('Location: ' . $dest); exit;
     }
 }
@@ -110,11 +163,23 @@ render_navbar(null);
             <label class="form-label" for="email">آدرس ایمیل <span class="required">*</span></label>
             <input type="email" class="form-control <?= isset($errors['email']) ? 'is-invalid' : '' ?>"
                    id="email" name="email" value="<?= h($vals['email']) ?>"
-                   placeholder="you@example.com" autocomplete="email" required>
+                   placeholder="you@example.com" autocomplete="email" required <?= $isGoogleUser ? 'readonly' : '' ?>>
             <?php if (isset($errors['email'])): ?>
             <div class="invalid-feedback"><?= h($errors['email']) ?></div>
             <?php endif; ?>
           </div>
+
+          <?php if ($isGoogleUser): // Phone number for Google users only ?>
+          <div class="form-group">
+            <label class="form-label" for="phone">شماره تلفن <span class="required">*</span></label>
+            <input type="tel" class="form-control <?= isset($errors['phone']) ? 'is-invalid' : '' ?>"
+                   id="phone" name="phone" value="<?= h($vals['phone']) ?>"
+                   placeholder="مثال: 09123456789" autocomplete="tel" required>
+            <?php if (isset($errors['phone'])): ?>
+            <div class="invalid-feedback"><?= h($errors['phone']) ?></div>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
 
           <div class="form-group">
             <label class="form-label" for="city">شهر <span class="required">*</span></label>
@@ -127,6 +192,7 @@ render_navbar(null);
             <?php endif; ?>
           </div>
 
+          <?php if (!$isGoogleUser): // Password fields for non-Google users only ?>
           <div class="form-group">
             <label class="form-label" for="password">رمز عبور <span class="required">*</span></label>
             <input type="password" class="form-control <?= isset($errors['password']) ? 'is-invalid' : '' ?>"
@@ -146,6 +212,7 @@ render_navbar(null);
             <div class="invalid-feedback"><?= h($errors['password_confirm']) ?></div>
             <?php endif; ?>
           </div>
+          <?php endif; ?>
 
           <p class="fs-xs" style="color:var(--text-muted);margin-bottom:var(--sp-5)">
             با تکمیل پروفایل، <a href="#">شرایط استفاده</a> و <a href="#">سیاست حریم خصوصی</a> را می‌پذیرید.
