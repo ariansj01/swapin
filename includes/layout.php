@@ -105,6 +105,10 @@ function render_navbar(?array $user = null): void {
     $navAvatar  = $user ? avatar_html($user['avatar'] ?? null, $user['name'], 'sm') : '';
     $loggedIn   = $user !== null;
     $GLOBALS['_nav_user'] = $user;
+    
+    // Get parent categories
+    $categories = DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order');
+    $currentCatSlug = $_GET['cat'] ?? '';
 
     $navItems = [
         // ['/', 'خانه', 'bi-house', ''],
@@ -132,6 +136,22 @@ function render_navbar(?array $user = null): void {
     </a>
 
     <div class="navbar-nav hide-mobile">
+      <!-- Categories Dropdown -->
+      <div class="dropdown">
+        <button class="navbar-nav__link" id="categories-dropdown-btn" style="border:none;background:none;cursor:pointer">
+          <i class="bi bi-grid"></i> دسته‌بندی‌ها <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+        </button>
+        <div class="dropdown-menu categories-dropdown" id="categories-dropdown">
+          <a href="{$url}/" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
+HTML;
+    foreach ($categories as $cat) {
+        $catLabel = category_label($cat['slug'], $cat['name']);
+        $isActive = $currentCatSlug === $cat['slug'] ? 'active' : '';
+        echo "<a href=\"{$url}/?cat={$cat['slug']}\" class=\"dropdown-item {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel}</a>";
+    }
+    echo <<<HTML
+        </div>
+      </div>
 HTML;
     foreach ($navItems as [$href, $label, $icon, $extraClass]) {
         $fullHref = str_starts_with($href, '/#') ? $url . $href : $url . $href;
@@ -194,10 +214,25 @@ HTML;
       <a href="{$url}/auth/login" class="btn btn-accent">ورود / ثبت‌نام</a>
 HTML;
     }
+    $searchValue = isset($_GET['q']) ? h($_GET['q']) : '';
     echo <<<HTML
     </div>
   </div>
 </nav>
+  <!-- Search Bar Below Navbar -->
+  <div class="navbar-search-bar">
+    <div class="container">
+      <form action="{$url}/" method="get" class="navbar-search-form">
+        <div style="position:relative;flex:1">
+          <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)" aria-hidden="true"></i>
+          <input type="search" name="q" placeholder="جستجوی آگهی‌ها…" 
+                 value="{$searchValue}"
+                 class="navbar-search-input">
+        </div>
+        <button type="submit" class="btn btn-accent">جستجو</button>
+      </form>
+    </div>
+  </div>
 </header>
 
 <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>

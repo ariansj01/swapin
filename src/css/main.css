@@ -299,6 +299,49 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
 .hide-desktop { display: none !important; }
 
+/* Navbar Search Bar */
+.navbar-search-bar {
+  background: var(--primary-light);
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.navbar-search-form {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+.navbar-search-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--sp-5) 0 var(--sp-4);
+  border: 1.5px solid rgba(255,255,255,.15);
+  border-radius: var(--radius-lg);
+  font-size: 0.9375rem;
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  outline: none;
+  transition: all var(--duration);
+}
+
+.navbar-search-input::placeholder {
+  color: rgba(255,255,255,.55);
+}
+
+.navbar-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255,201,40,.2);
+  background: rgba(255,255,255,.14);
+}
+
+/* Categories Dropdown */
+.categories-dropdown {
+  right: auto;
+  left: 0;
+  min-width: 240px;
+}
+
 .mobile-nav-overlay {
   display: none;
   position: fixed;
@@ -1335,29 +1378,32 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   flex-direction: column;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-1);
-  border-radius: var(--radius-full);
+  /* padding: var(--sp-1); */
+  border-radius: 10px;
   font-size: .8125rem;
   font-weight: 500;
-  color: var(--text-muted);
-  background: transparent;
-  border: none;
+  /* color: var(--text-muted); */
+  /* background: transparent; */
+  border: 1px solid #071A33;
   white-space: nowrap;
   text-decoration: none;
   transition: all var(--duration) var(--ease);
+  padding: 13px;
+  width: 8%;
 }
 
 .cat-pill__icon {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #555770;
+  /* background: #555770; */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  /* color: white; */
   font-size: 1.5rem;
   transition: all var(--duration) var(--ease);
+  padding-top: 8px;
 }
 
 .cat-pill__label {
