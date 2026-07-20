@@ -530,23 +530,31 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
   .steps-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
-    padding-right: 20px;
+    gap: 38px;
+    padding-right: 16px;
   }
 
-  .steps-grid::before {
-    top: 18px;
-    bottom: 18px;
-    right: 25px;
-    left: auto;
-    border-top: 0;
-    border-right: 2px dashed rgba(255, 180, 0, .32);
+  .step-card__top::after {
+    top: auto;
+    bottom: -42px;
+    right: 50%;
+    width: 2px;
+    height: 34px;
+    transform: translateX(50%);
   }
 
-  .step-card::before {
-    top: 22px;
-    right: -28px;
-    left: auto;
+  .step-card__top::before {
+    top: auto;
+    bottom: -48px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  .step-card__top .step-arrow {
+    top: auto;
+    bottom: -30px;
+    right: 50%;
+    transform: translateX(50%) rotate(90deg);
   }
 
   .step-card {
@@ -992,18 +1000,54 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 24px;
+  gap: 44px;
   align-items: stretch;
 }
 
 .steps-grid::before {
+  display: none;
+}
+
+.step-card__top::after {
   content: "";
   position: absolute;
-  top: 72px;
-  right: 12%;
-  left: 12%;
-  border-top: 2px dashed rgba(255, 180, 0, .35);
+  top: 50%;
+  right: -58px;
+  width: 44px;
+  height: 2px;
+  background: rgba(255, 180, 0, .35);
   z-index: 0;
+  transform: translateY(-50%);
+}
+
+.step-card__top::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -64px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FFB400;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.step-card__top .step-arrow {
+  position: absolute;
+  top: 50%;
+  right: -46px;
+  transform: translateY(-50%) rotate(180deg);
+  color: #FFB400;
+  font-size: 14px;
+  z-index: 1;
+  line-height: 1;
+}
+
+.step-card:last-child .step-card__top::after,
+.step-card:last-child .step-card__top::before,
+.step-card:last-child .step-arrow {
+  display: none;
 }
 
 .step-card {
@@ -1016,9 +1060,6 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   background: linear-gradient(180deg, rgba(255,255,255,.78) 0%, rgba(255,255,255,.66) 100%);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow:
-    0 14px 40px rgba(23, 32, 42, .07),
-    inset 0 1px 0 rgba(255, 255, 255, .65);
   transition:
     transform 260ms var(--ease),
     box-shadow 260ms var(--ease),
@@ -1033,23 +1074,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   transition-delay: calc(var(--step-delay, 0) * 90ms);
 }
 
-.step-card::before {
-  content: "";
-  position: absolute;
-  top: 64px;
-  left: -16px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(255, 180, 0, .45) 0%, rgba(255, 180, 0, .16) 45%, transparent 70%);
-  opacity: .8;
-}
 
-.step-card:first-child::before,
-.step-card:last-child::before {
-  opacity: 0;
-}
 
 .step-card:hover {
   transform: translateY(-10px);
@@ -1069,18 +1094,19 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .step-card__number {
+  position: absolute;
+  right: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   border-radius: 50%;
   background: #FFC928;
   color: #000;
   font-size: 1.125rem;
   font-weight: 800;
-  box-shadow: 0 14px 28px rgba(255, 180, 0, .28);
 }
 
 .step-card__icon-wrap {
