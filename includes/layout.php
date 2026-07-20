@@ -221,7 +221,7 @@ HTML;
 </nav>
   <!-- Search Bar Below Navbar -->
   <div class="navbar-search-bar">
-    <div class="container">
+    <div class="container" style="display: flex; justify-content: end; margin-left: 12%;">
       <form action="{$url}/" method="get" class="navbar-search-form">
         <div style="position:relative;flex:1">
           <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)" aria-hidden="true"></i>

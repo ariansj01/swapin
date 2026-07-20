@@ -947,6 +947,30 @@ function initSupportWidget() {
   });
 }
 
+/* ── Homepage steps reveal ─────────────────────────────────────────────── */
+function initStepsReveal() {
+  const cards = document.querySelectorAll('.step-card');
+  if (!cards.length) return;
+
+  if (!('IntersectionObserver' in window)) {
+    cards.forEach(card => card.classList.add('is-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      obs.unobserve(entry.target);
+    });
+  }, {
+    threshold: 0.2,
+    rootMargin: '0px 0px -40px 0px',
+  });
+
+  cards.forEach(card => observer.observe(card));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Prevent back buttons from accidentally triggering other clicks
   document.querySelectorAll('.dash-back-btn, .trade-room__back, .promote-back-link, .btn').forEach(btn => {
@@ -982,6 +1006,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPasswordStrength();
   initConfirmForms();
   initSupportWidget();
+  initStepsReveal();
 
   // Restore active tab from URL
   const tabParam = new URLSearchParams(window.location.search).get('tab');

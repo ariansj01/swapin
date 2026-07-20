@@ -281,24 +281,39 @@ render_navbar($user);
 
 <section class="home-section home-steps">
   <div class="container">
-    <div class="home-section__header">
-      <h2>چطور کار می‌کند؟</h2>
-      <p>در چهار مرحله ساده، کالای خود را با آنچه نیاز دارید مبادله کنید</p>
+    <div class="home-section__header home-steps__header">
+      <span class="home-steps__eyebrow">مسیر ساده معامله</span>
+      <h2>چطور در سواپین معامله کنیم؟</h2>
+      <p>فقط در چهار مرحله ساده کالای خود را با دیگران معامله کنید.</p>
     </div>
-    <div class="steps-grid">
+    <div class="steps-grid" aria-label="مراحل معامله در سواپین">
       <?php
       $steps = [
-          ['bi-plus-circle',    '۱. ثبت آگهی',     'کالا یا خدمت خود را ثبت کنید، ارزش تقریبی بگذارید و بگویید چه چیزی می‌خواهید.'],
-          ['bi-search',         '۲. جستجو و کشف',  'بین آگهی‌ها بگردید. با دسته‌بندی، شهر و نوع مبادله فیلتر کنید.'],
-          ['bi-chat-dots',      '۳. پیشنهاد دهید', 'کالای خود را پیشنهاد دهید، پیام بفرستید و جزئیات را هماهنگ کنید.'],
-          ['bi-check2-all',     '۴. معامله کنید',  'هر دو طرف تأیید می‌کنند. امتیازدهی اعتماد را برای دفعات بعد می‌سازد.'],
+          ['۱', 'ثبت آگهی', 'از کالای خود عکس بگیرید، توضیحات بنویسید و آگهی را ثبت کنید.', 'bi-phone', 'bi-plus-lg', 'آگهی شما در چند دقیقه آماده نمایش است.'],
+          ['۲', 'دریافت پیشنهاد', 'کاربران دیگر برای کالای شما پیشنهادهای معاوضه ارسال می‌کنند.', 'bi-chat-dots', '', 'همه پیشنهادها یک‌جا و شفاف نمایش داده می‌شوند.'],
+          ['۳', 'توافق با طرف مقابل', 'از طریق گفتگو درباره شرایط معامله به توافق برسید.', 'bi-handshake', '', 'جزئیات معامله را قبل از نهایی‌سازی هماهنگ کنید.'],
+          ['۴', 'انجام معامله', 'در مکان امن ملاقات کرده و کالای خود را با طرف مقابل معاوضه کنید.', 'bi-box-seam', '', 'تجربه‌ای سریع، مطمئن و حرفه‌ای تا پایان معامله.'],
       ];
-      foreach ($steps as [$icon, $title, $desc]):
+      foreach ($steps as $index => [$stepNo, $title, $desc, $icon, $iconBadge, $caption]):
       ?>
-      <article class="step-card">
-        <div class="step-card__icon"><i class="bi <?= $icon ?>"></i></div>
-        <h3><?= $title ?></h3>
-        <p><?= $desc ?></p>
+      <article class="step-card" style="--step-delay: <?= $index ?>;">
+        <div class="step-card__top">
+          <span class="step-card__number"><?= $stepNo ?></span>
+          <div class="step-card__icon-wrap">
+            <div class="step-card__icon">
+              <i class="bi <?= $icon ?>"></i>
+            </div>
+            <?php if ($iconBadge): ?>
+            <span class="step-card__icon-badge" aria-hidden="true"><i class="bi <?= $iconBadge ?>"></i></span>
+            <?php endif; ?>
+          </div>
+        </div>
+        <div class="step-card__body">
+          <span class="step-card__label">مرحله <?= $stepNo ?></span>
+          <h3><?= $title ?></h3>
+          <p><?= $desc ?></p>
+        </div>
+        <div class="step-card__footer"><?= $caption ?></div>
       </article>
       <?php endforeach; ?>
     </div>
