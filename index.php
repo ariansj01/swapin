@@ -298,7 +298,7 @@ render_navbar($user);
       ?>
       <article class="step-card" style="--step-delay: <?= $index ?>;">
         <div class="step-card__top">
-          <span class="step-card__number"><?= $stepNo ?></span>
+          <span class="step-card__number" style="transform: translateY(-38px);"><?= $stepNo ?></span>
           <div class="step-card__icon-wrap">
             <div class="step-card__icon">
               <i class="bi <?= $icon ?>"></i>
