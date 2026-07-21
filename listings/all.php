@@ -100,12 +100,12 @@ render_navbar($user);
 ?>
 
 <main class="section-sm">
-  <div class="container" style="display:grid;grid-template-columns: 75% 1fr;gap: var(--sp-8);direction: rtl;">
+  <div class="container all-listings-layout">
     <!-- Sidebar -->
-    <aside aria-label="فیلترها" style="order:2;margin-top: 50px;">
-      <div class="card" style="padding: var(--sp-5); border-radius: 16px;">
-        <h2 style="font-size:1.125rem;margin:0 0 var(--sp-4)">دسته‌بندی‌ها</h2>
-        <ul style="list-style:none;padding:0;margin:0;display:grid;gap:8px;margin-bottom: var(--sp-6)">
+    <aside aria-label="فیلترها" class="all-listings-sidebar">
+      <div class="card all-listings-filter-card">
+        <h2 class="all-listings-sidebar__title">دسته‌بندی‌ها</h2>
+        <ul class="all-listings-categories">
           <li>
             <a href="<?= APP_URL ?>/listings/all.php" class="<?= $catSlug === '' ? 'text-strong' : '' ?>"><i class="bi bi-grid"></i> همه</a>
           </li>
@@ -117,8 +117,8 @@ render_navbar($user);
           <?php endforeach; ?>
         </ul>
 
-        <h3 style="font-size:1rem;margin:0 0 var(--sp-4)">فیلترهای دیگر</h3>
-        <form method="GET" action="<?= APP_URL ?>/listings/all.php" style="display:grid;gap: var(--sp-4)">
+        <h3 class="all-listings-sidebar__subtitle">فیلترهای دیگر</h3>
+        <form method="GET" action="<?= APP_URL ?>/listings/all.php" class="all-listings-filters">
           <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
           <?php if ($search): ?><input type="hidden" name="q" value="<?= h($search) ?>"><?php endif; ?>
 
@@ -144,7 +144,7 @@ render_navbar($user);
             <?php endforeach; ?>
           </select>
 
-          <div style="display:grid;grid-template-columns: 1fr 1fr;gap: var(--sp-3)">
+          <div class="all-listings-price-grid">
             <div>
               <label class="fs-xs" for="price_min">حداقل قیمت</label>
               <input type="number" id="price_min" name="price_min" class="form-control" value="<?= $pmin > 0 ? (int)$pmin : '' ?>" min="0" step="1000" inputmode="numeric">
@@ -172,9 +172,9 @@ render_navbar($user);
     </aside>
 
     <!-- Results -->
-    <section aria-label="همه آگهی‌ها" style="order:1">
-      <header class="d-flex align-center mb-5" style="gap: var(--sp-3);">
-        <h1 style="font-size:1.5rem;margin:0;">
+    <section aria-label="همه آگهی‌ها" class="all-listings-results">
+      <header class="all-listings-results__header d-flex align-center mb-5">
+        <h1 class="all-listings-results__title">
           <?= h($title) ?>
         </h1>
         <span class="badge badge-primary"><?= fmt_num($total) ?> آگهی</span>
@@ -188,7 +188,7 @@ render_navbar($user);
         <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
       </div>
       <?php else: ?>
-      <div class="all-listings-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5);">
+      <div class="all-listings-grid">
         <?php foreach ($listings as $l): ?>
         <div>
           <?php include __DIR__ . '/../includes/listing_card.php'; ?>

@@ -151,8 +151,8 @@ render_navbar($user);
       <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
     </div>
   </div>
-  <div class="container" style="">
-    <dl class="site-footer__stats" style="border-radius: 16px; padding: var(--sp-6);">
+  <div class="container home-assurance">
+    <dl class="site-footer__stats home-assurance__stats">
       <div class="site-footer__stat">
         <i class="bi bi-shield-lock site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
@@ -190,9 +190,9 @@ render_navbar($user);
   <div class="container">
 
     <!-- Category strip -->
-    <header class="d-flex align-center mb-3" aria-label="سرفصل دسته‌بندی‌ها" style="gap: var(--sp-3);">
-      <h2 style="font-size:1.25rem;margin:0;">دسته‌بندی‌های محبوب</h2>
-      <a href="<?= APP_URL ?>/listings/all.php" style="margin-inline-start:auto;font-size:.875rem;color:var(--text-muted)">
+    <header class="home-section-heading mb-3" aria-label="سرفصل دسته‌بندی‌ها">
+      <h2>دسته‌بندی‌های محبوب</h2>
+      <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
         مشاهده همه
       </a>
     </header>
@@ -201,30 +201,30 @@ render_navbar($user);
     </nav>
 
     <!-- Filter bar -->
-    <form class="filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false">
-      <div style="flex:1;min-width:200px;position:relative">
+    <form class="filter-bar home-filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false">
+      <div class="home-filter-search">
         <label for="search-input" class="visually-hidden">جستجوی آگهی‌ها</label>
-        <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)" aria-hidden="true"></i>
-        <input type="search" class="form-control" style="padding-left:40px;height:40px"
+        <i class="bi bi-search home-filter-search__icon" aria-hidden="true"></i>
+        <input type="search" class="form-control home-filter-control home-filter-control--search"
                id="search-input" name="q" placeholder="جستجوی کالا"
                value="<?= h($search) ?>">
       </div>
 
       <label for="city-filter" class="visually-hidden">شهر</label>
-      <select class="form-control" id="city-filter" name="city" style="width:auto;min-width:140px;height:50px">
+      <select class="form-control home-filter-control" id="city-filter" name="city">
         <option value="">همه شهرها</option>
         <?= render_city_options($city) ?>
       </select>
 
       <label for="want-filter" class="visually-hidden">نوع مبادله</label>
-      <select class="form-control" id="want-filter" name="want" style="width:auto;min-width:150px;height:50px">
+      <select class="form-control home-filter-control" id="want-filter" name="want">
         <option value="item"    <?= $wantType === 'item'    ? 'selected' : '' ?>>کالا با کالا</option>
         <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
         <option value="credit"  <?= $wantType === 'credit'  ? 'selected' : '' ?>>اعتبار</option>
       </select>
 
       <label for="sort-filter" class="visually-hidden">مرتب‌سازی</label>
-      <select class="form-control" id="sort-filter" name="sort" style="width:auto;min-width:130px;height:50px">
+      <select class="form-control home-filter-control" id="sort-filter" name="sort">
         <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
         <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
         <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
@@ -232,14 +232,14 @@ render_navbar($user);
     </form>
 
     <?php if ($category): ?>
-    <header class="d-flex align-center gap-3 mb-5">
-      <h2 style="font-size:1.25rem"><?= h(category_label($category['slug'], $category['name'])) ?></h2>
+    <header class="home-results-header d-flex align-center gap-3 mb-5">
+      <h2 class="home-results-header__title"><?= h(category_label($category['slug'], $category['name'])) ?></h2>
       <span class="badge badge-primary"><?= $total ?> آگهی</span>
-      <a href="<?= APP_URL ?>/" style="margin-inline-start:auto;font-size:.875rem"><i class="bi bi-x"></i> پاک کردن</a>
+      <a href="<?= APP_URL ?>/" class="home-results-header__clear"><i class="bi bi-x"></i> پاک کردن</a>
     </header>
     <?php elseif ($search): ?>
-    <header class="d-flex align-center gap-3 mb-5">
-      <h2 style="font-size:1.25rem">نتایج برای «<?= h($search) ?>»</h2>
+    <header class="home-results-header d-flex align-center gap-3 mb-5">
+      <h2 class="home-results-header__title">نتایج برای «<?= h($search) ?>»</h2>
       <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
     </header>
     <?php endif; ?>
@@ -264,7 +264,7 @@ render_navbar($user);
           ?>
           <article class="step-card" style="--step-delay: <?= $index ?>;">
             <div class="step-card__top">
-              <span class="step-card__number" style="transform: translateY(-45px);"><?= $stepNo ?></span>
+              <span class="step-card__number"><?= $stepNo ?></span>
               <div class="step-card__icon-wrap">
                 <div class="step-card__icon">
                   <i class="bi <?= $icon ?>"></i>
@@ -288,10 +288,10 @@ render_navbar($user);
     </section>
     
     <!-- New Listings Section -->
-    <section id="listings" aria-label="فهرست آگهی‌ها" style="margin-top: 55px;">
-      <div class="d-flex align-center mb-6" style="gap: var(--sp-3);">
-        <h2 style="font-size: 1.75rem; margin: 0;">جدیدترین آگهی‌ها</h2>
-        <a href="<?= APP_URL ?>/listings/all.php" style="margin-inline-start:auto;font-size:.875rem;color:var(--text-muted)">
+    <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
+      <div class="home-section-heading home-section-heading--large mb-6">
+        <h2>جدیدترین آگهی‌ها</h2>
+        <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
           مشاهده همه آگهی‌ها
         </a>
       </div>
@@ -309,9 +309,9 @@ render_navbar($user);
       $row1 = array_slice($showcaseListings, 0, $half);
       $row2 = array_slice($showcaseListings, $half);
       ?>
-      <div class="listings-rows-container" style="margin-bottom: var(--sp-8);">
+      <div class="listings-rows-container">
         <!-- Row 1 -->
-        <div class="listings-row-wrapper" style="margin-bottom: var(--sp-6);">
+        <div class="listings-row-wrapper">
           <div class="listings-scroll-row">
             <?php foreach ($row1 as $l): ?>
             <div class="listings-scroll-card">
