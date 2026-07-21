@@ -1330,9 +1330,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .listing-promo-badge::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: calc(100% + 12px);
+  top: calc(100% + 12px);
   left: 50%;
-  transform: translate(-50%, 6px);
+  transform: translate(-50%, -6px);
   background: #071A33;
   color: #FFFFFF;
   padding: 10px 12px;
@@ -1356,11 +1356,11 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .listing-promo-badge::before {
   content: '';
   position: absolute;
-  bottom: calc(100% + 1px);
+  top: calc(100% + 1px);
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top-color: #071A33;
+  border-bottom-color: #071A33;
   opacity: 0;
   visibility: hidden;
   transition: opacity 160ms ease, visibility 160ms ease;

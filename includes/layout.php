@@ -142,7 +142,7 @@ HTML;
     foreach ($categories as $cat) {
         $catLabel = category_label($cat['slug'], $cat['name']);
         $isActive = $currentCatSlug === $cat['slug'] ? 'active' : '';
-        echo "<a href=\"{$url}/?cat={$cat['slug']}\" class=\"dropdown-item {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel}</a>";
+        echo "<a href=\"{$url}/listings/all.php?cat={$cat['slug']}\" class=\"dropdown-item {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel}</a>";
     }
     echo <<<HTML
         </div>
@@ -529,10 +529,10 @@ function render_categories_strip(?int $active = null): void {
     $url  = APP_URL;
     echo '<div class="category-strip">';
     $cls  = $active === null ? ' active' : '';
-    echo "<a href='{$url}/' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
+    echo "<a href='{$url}/listings/all.php' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
     foreach ($cats as $c) {
         $cls = $active == $c['id'] ? ' active' : '';
-        echo "<a href='{$url}/?cat={$c['slug']}' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='{$c['icon']}'></i></div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
+        echo "<a href='{$url}/listings/all.php?cat={$c['slug']}' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='{$c['icon']}'></i></div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
     }
     echo '</div>';
 }

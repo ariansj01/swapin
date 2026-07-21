@@ -84,18 +84,27 @@ try {
                             'amount_paid' => $amountPaid,
                         ]);
 
-                        // Update listing
-                        $updateData = [
-                            'bump_until' => $endsAt,
-                            'featured_until' => $endsAt,
-                            'is_featured' => 1,
-                            'vip_until' => $endsAt,
-                        ];
-
-                        if ($plan === 'targeted' || $plan === 'gold') {
+                        // Update listing based on plan
+                        $updateData = [];
+                        if ($plan === 'boost') {
+                            $updateData['bump_until'] = $endsAt;
+                        } elseif ($plan === 'featured') {
+                            $updateData['featured_until'] = $endsAt;
+                            $updateData['is_featured'] = 1;
+                        } elseif ($plan === 'vip') {
+                            $updateData['featured_until'] = $endsAt;
+                            $updateData['vip_until'] = $endsAt;
+                            $updateData['is_featured'] = 1;
+                        } elseif ($plan === 'targeted') {
                             $updateData['targeted_until'] = $endsAt;
-                        }
-                        if ($plan === 'ai' || $plan === 'gold') {
+                        } elseif ($plan === 'ai') {
+                            $updateData['ai_promo_until'] = $endsAt;
+                        } elseif ($plan === 'gold') {
+                            $updateData['bump_until'] = $endsAt;
+                            $updateData['featured_until'] = $endsAt;
+                            $updateData['vip_until'] = $endsAt;
+                            $updateData['is_featured'] = 1;
+                            $updateData['targeted_until'] = $endsAt;
                             $updateData['ai_promo_until'] = $endsAt;
                         }
 
