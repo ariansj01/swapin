@@ -68,10 +68,10 @@ function listing_is_bumped(array $l): bool {
 function listing_promotion_badges_html(array $l): string {
     $html = '';
     if (listing_is_featured($l)) {
-        $html .= '<span class="listing-promo-badge listing-promo-badge--featured"><i class="bi bi-star-fill"></i> آگهی ویژه</span>';
+        $html .= '<span class="listing-promo-badge listing-promo-badge--featured" title="آگهی ویژه: در بالاترین نتایج نمایش داده می‌شود و بازدید بیشتری دارد"><i class="bi bi-star-fill"></i> پلن ویژه</span>';
     }
     if (listing_is_bumped($l)) {
-        $html .= '<span class="listing-promo-badge listing-promo-badge--bumped"><i class="bi bi-arrow-up-circle-fill"></i> بالا برده</span>';
+        $html .= '<span class="listing-promo-badge listing-promo-badge--bumped" title="بالا برده: آگهی شما به صورت موقت در بالای لیست نمایش داده می‌شود"><i class="bi bi-arrow-up-circle-fill"></i> پلن پیشرفته</span>';
     }
     return $html;
 }

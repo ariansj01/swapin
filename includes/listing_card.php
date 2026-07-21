@@ -18,7 +18,7 @@ $isSwap   = empty($l['listing_mode']) || $l['listing_mode'] === 'swap' || $l['li
 $isSaved  = in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
 ?>
-<article class="listing-card <?= listing_is_featured($l) ? 'featured' : '' ?> <?= listing_is_bumped($l) ? 'bumped' : '' ?>">
+<article class="listing-card <?= listing_is_featured($l) ? 'listing-plan-featured' : '' ?> <?= listing_is_bumped($l) ? 'listing-plan-bumped' : '' ?>">
   <div class="listing-card__header">
     <div class="listing-card__header-start">
       <?php if (!empty($l['want_in_return'])): ?>

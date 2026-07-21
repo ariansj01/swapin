@@ -1239,6 +1239,25 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   gap: var(--sp-5);
 }
 
+/* Scrollable listing rows */
+.listings-scroll-row {
+  -webkit-overflow-scrolling: touch;
+}
+.listings-scroll-row::-webkit-scrollbar {
+  height: 8px;
+}
+.listings-scroll-row::-webkit-scrollbar-track {
+  background: var(--bg);
+  border-radius: 999px;
+}
+.listings-scroll-row::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+.listings-scroll-row::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
 .listing-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1258,13 +1277,95 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   border-color: rgba(7,26,51,.15);
 }
 
-.listing-card.featured {
-  border-color: var(--accent-dark);
-  box-shadow: 0 0 0 1px rgba(245,183,0,.35), var(--shadow-md);
+/* Plan-specific listing card styles */
+.listing-plan-featured {
+  border: 2px solid #FFB400;
+  box-shadow: 0 0 0 1px rgba(255, 180, 0, 0.35), var(--shadow-md);
 }
 
-.listing-card.bumped {
-  border: 3px solid var(--accent);
+.listing-plan-bumped {
+  border: 2px solid #4A90E2;
+  box-shadow: 0 0 0 1px rgba(74, 144, 226, 0.35), var(--shadow-md);
+}
+
+/* Plan badge styles with tooltips */
+.listing-promo-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  font-size: .75rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  cursor: help;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.listing-promo-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+
+.listing-promo-badge--featured {
+  background: linear-gradient(135deg, #FFC928 0%, #FFB400 100%);
+  color: #5D4E00;
+  border: 1px solid rgba(255, 180, 0, 0.5);
+}
+
+.listing-promo-badge--bumped {
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(74, 144, 226, 0.5);
+}
+
+/* Tooltip styles */
+.listing-promo-badge::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #071A33;
+  color: #FFFFFF;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 160ms ease, visibility 160ms ease, transform 160ms ease;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  max-width: 250px;
+  white-space: normal;
+  text-align: center;
+}
+
+.listing-promo-badge::before {
+  content: '';
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #071A33;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 160ms ease, visibility 160ms ease;
+  z-index: 1000;
+}
+
+.listing-promo-badge:hover::after,
+.listing-promo-badge:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.listing-promo-badge:hover::after {
+  transform: translateX(-50%) translateY(-4px);
 }
 
 .listing-card__header {
@@ -1892,54 +1993,68 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 /* ── 23. Modal ─────────────────────────────────────────────────────────── */
 .modal-overlay {
-  display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.5);
+  background: rgba(0,0,0,.6);
   z-index: 500;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--sp-4);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
 }
-.modal-overlay.show { display: flex; }
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
 
 .modal-box {
   background: var(--surface);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
+  max-height: 90vh;
   overflow: hidden;
-  animation: fadeScale .2s var(--ease);
+  transform: translateY(20px);
+  transition: transform 0.25s ease;
 }
 
-@keyframes fadeScale {
-  from { opacity: 0; transform: scale(.96); }
-  to   { opacity: 1; transform: scale(1); }
+.modal-overlay.show .modal-box {
+  transform: translateY(0);
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-5);
+  padding: var(--sp-4) var(--sp-5);
   border-bottom: 1px solid var(--border);
 }
 
 .modal-close {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: var(--bg);
+  background: none;
   border: none;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-muted);
-  display: flex; align-items: center; justify-content: center;
-  transition: background var(--duration);
+  padding: 0;
+  line-height: 1;
 }
-.modal-close:hover { background: var(--danger-bg); color: var(--danger); }
 
-.modal-body   { padding: var(--sp-5); }
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: var(--sp-5);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
 .modal-footer { padding: var(--sp-4) var(--sp-5); border-top: 1px solid var(--border); display: flex; gap: var(--sp-3); justify-content: flex-end; }
 
 /* ── 24. Spinner ───────────────────────────────────────────────────────── */

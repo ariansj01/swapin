@@ -215,8 +215,8 @@ HTML;
       <button type="button" class="btn btn-ghost btn-icon {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
         <i class="bi bi-bell"></i>
       </button>
-      <a href="{$url}/listings/create" class="btn btn-accent hide-mobile">
-        <i class="bi bi-plus"></i> ثبت آگهی
+      <a href="{$url}/listings/create" class="btn btn-accent">
+        <i class="bi bi-plus"></i> ثبت کالا
       </a>
       <a href="{$url}/auth/login" class="btn btn-primary btn-login-custom">ورود / ثبت‌نام</a>
 HTML;

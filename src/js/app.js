@@ -707,8 +707,19 @@ function initNotifModal() {
 
 /* ── Search modal ─────────────────────────────────────────────────── */
 function initSearchModal() {
+  const searchModalTriggers = document.querySelectorAll('#search-modal-trigger');
   const searchModalClose = document.getElementById('search-modal-close');
   const searchModalForm = document.getElementById('search-modal-form');
+  
+  searchModalTriggers.forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      openModal('search-modal');
+      const searchModalInput = document.getElementById('search-modal-input');
+      if (searchModalInput) {
+        searchModalInput.focus();
+      }
+    });
+  });
   
   searchModalClose?.addEventListener('click', () => closeModal('search-modal'));
   

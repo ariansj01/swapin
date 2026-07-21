@@ -205,46 +205,48 @@ render_navbar($user);
     </header>
     <?php endif; ?>
 
-    <!-- Listings grid -->
+    <!-- New Listings Section -->
     <section id="listings" aria-label="فهرست آگهی‌ها">
-    <?php if (empty($listings)): ?>
-    <div class="empty-state">
-      <i class="bi bi-search"></i>
-      <h3>آگهی‌ای یافت نشد</h3>
-      <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
-      <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
-    </div>
-    <?php else: ?>
-    <div class="listings-grid" id="listings-grid">
-      <?php foreach ($listings as $l): ?>
-      <?php include __DIR__ . '/includes/listing_card.php'; ?>
-      <?php endforeach; ?>
-    </div>
-
-    <!-- Pagination -->
-    <?php if ($pag['pages'] > 1): ?>
-    <nav aria-label="صفحه‌بندی آگهی‌ها" style="display:flex;justify-content:center;align-items:center;gap:var(--sp-2);margin-top:var(--sp-10)">
-      <?php if ($pag['has_prev']): ?>
-        <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page-1])) ?>" class="btn btn-outline btn-sm">
-          <i class="bi bi-chevron-right"></i> قبلی
-        </a>
-      <?php endif; ?>
+      <h2 style="text-align: center; margin-bottom: var(--sp-8); font-size: 1.75rem;">جدیدترین آگهی‌ها</h2>
+      <?php if (empty($listings)): ?>
+      <div class="empty-state">
+        <i class="bi bi-search"></i>
+        <h3>آگهی‌ای یافت نشد</h3>
+        <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
+        <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
+      </div>
+      <?php else: ?>
       <?php
-        $start = max(1, $page - 2);
-        $end   = min($pag['pages'], $page + 2);
-        for ($p = $start; $p <= $end; $p++):
-          $cls = $p === $page ? 'btn-primary' : 'btn-outline';
+      // Split listings into two rows
+      $half = ceil(count($listings) / 2);
+      $row1 = array_slice($listings, 0, min(10, $half));
+      $row2 = array_slice($listings, min(10, $half), min(10, count($listings) - min(10, $half)));
       ?>
-        <a href="?<?= http_build_query(array_merge($_GET, ['page' => $p])) ?>" class="btn <?= $cls ?> btn-sm"><?= $p ?></a>
-      <?php endfor; ?>
-      <?php if ($pag['has_next']): ?>
-        <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page+1])) ?>" class="btn btn-outline btn-sm">
-          بعدی <i class="bi bi-chevron-left"></i>
-        </a>
+      <div class="listings-rows-container" style="margin-bottom: var(--sp-8);">
+        <!-- Row 1 -->
+        <div class="listings-row-wrapper" style="margin-bottom: var(--sp-6);">
+          <div class="listings-scroll-row" style="display: flex; gap: var(--sp-4); overflow-x: auto; padding: var(--sp-2) 0; scrollbar-width: thin;">
+            <?php foreach ($row1 as $l): ?>
+            <div style="flex: 0 0 320px;">
+              <?php include __DIR__ . '/includes/listing_card.php'; ?>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <!-- Row 2 -->
+        <?php if (!empty($row2)): ?>
+        <div class="listings-row-wrapper">
+          <div class="listings-scroll-row" style="display: flex; gap: var(--sp-4); overflow-x: auto; padding: var(--sp-2) 0; scrollbar-width: thin;">
+            <?php foreach ($row2 as $l): ?>
+            <div style="flex: 0 0 320px;">
+              <?php include __DIR__ . '/includes/listing_card.php'; ?>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endif; ?>
+      </div>
       <?php endif; ?>
-    </nav>
-    <?php endif; ?>
-    <?php endif; ?>
     </section>
 
   </div>
@@ -279,7 +281,7 @@ render_navbar($user);
   </div>
 </section>
 
-<section class="home-section home-steps">
+<section class="home-section home-steps" id="home-steps">
   <div class="container">
     <div class="home-section__header home-steps__header">
       <span class="home-steps__eyebrow">مسیر ساده معامله</span>
