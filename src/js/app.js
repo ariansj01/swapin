@@ -982,40 +982,6 @@ function initStepsReveal() {
   cards.forEach(card => observer.observe(card));
 }
 
-/* ── Slider arrows functionality ───────────────────────────────────────── */
-function initSliderArrows() {
-  document.querySelectorAll('.slider-arrow').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const targetId = this.dataset.target;
-      const isPrev = this.classList.contains('slider-arrow--prev');
-      
-      let scrollEl;
-      if (targetId === 'steps') {
-        scrollEl = document.querySelector('.steps-grid');
-      } else {
-        scrollEl = document.getElementById(targetId);
-      }
-      
-      if (!scrollEl) return;
-      
-      // Calculate scroll amount (use card width if available, or 300px as fallback)
-      const firstCard = scrollEl.querySelector('.step-card, .listings-scroll-card');
-      let scrollAmount = 300;
-      if (firstCard) {
-        const style = window.getComputedStyle(firstCard);
-        const marginRight = parseFloat(style.marginRight) || 0;
-        const marginLeft = parseFloat(style.marginLeft) || 0;
-        scrollAmount = firstCard.offsetWidth + marginLeft + marginRight;
-      }
-      
-      scrollEl.scrollBy({
-        left: isPrev ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    });
-  });
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   // Prevent back buttons from accidentally triggering other clicks
   document.querySelectorAll('.dash-back-btn, .trade-room__back, .promote-back-link, .btn').forEach(btn => {
@@ -1052,7 +1018,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initConfirmForms();
   initSupportWidget();
   initStepsReveal();
-  initSliderArrows();
 
   // Restore active tab from URL
   const tabParam = new URLSearchParams(window.location.search).get('tab');

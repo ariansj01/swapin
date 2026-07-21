@@ -252,45 +252,37 @@ render_navbar($user);
           <h2>چطور در سواپین معامله کنیم؟</h2>
           <p>فقط در چهار مرحله ساده کالای خود را با دیگران معامله کنید.</p>
         </div>
-        <div class="steps-slider-wrapper">
-          <button class="slider-arrow slider-arrow--prev" data-target="steps" aria-label="مرحله قبلی">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-          <div class="steps-grid" aria-label="مراحل معامله در سواپین">
-            <?php
-            $steps = [
-                ['۱', 'ثبت آگهی', 'از کالای خود عکس بگیرید، توضیحات بنویسید و آگهی را ثبت کنید.', 'bi-phone', 'bi-plus-lg', 'آگهی شما در چند دقیقه آماده نمایش است.'],
-                ['۲', 'دریافت پیشنهاد', 'کاربران دیگر برای کالای شما پیشنهادهای معاوضه ارسال می‌کنند.', 'bi-chat-dots', 'bi-send', 'همه پیشنهادها یک‌جا و شفاف نمایش داده می‌شوند.'],
-                ['۳', 'توافق با طرف مقابل', 'از طریق گفتگو درباره شرایط معامله به توافق برسید.', 'bi-handshake', 'bi-check2-circle', 'جزئیات معامله را قبل از نهایی‌سازی هماهنگ کنید.'],
-                ['۴', 'انجام معامله', 'در مکان امن ملاقات کرده و کالای خود را با طرف مقابل معاوضه کنید.', 'bi-box-seam', 'bi-gift', 'تجربه‌ای سریع، مطمئن و حرفه‌ای تا پایان معامله.'],
-            ];
-            foreach ($steps as $index => [$stepNo, $title, $desc, $icon, $iconBadge, $caption]):
-            ?>
-            <article class="step-card" style="--step-delay: <?= $index ?>;">
-              <div class="step-card__top">
-                <span class="step-card__number"><?= $stepNo ?></span>
-                <div class="step-card__icon-wrap">
-                  <div class="step-card__icon">
-                    <i class="bi <?= $icon ?>"></i>
-                  </div>
-                  <?php if ($iconBadge): ?>
-                  <span class="step-card__icon-badge" style="display: none;" aria-hidden="true"><i class="bi <?= $iconBadge ?>"></i></span>
-                  <?php endif; ?>
+        <div class="steps-grid" aria-label="مراحل معامله در سواپین">
+          <?php
+          $steps = [
+              ['۱', 'ثبت آگهی', 'از کالای خود عکس بگیرید، توضیحات بنویسید و آگهی را ثبت کنید.', 'bi-phone', 'bi-plus-lg', 'آگهی شما در چند دقیقه آماده نمایش است.'],
+              ['۲', 'دریافت پیشنهاد', 'کاربران دیگر برای کالای شما پیشنهادهای معاوضه ارسال می‌کنند.', 'bi-chat-dots', 'bi-send', 'همه پیشنهادها یک‌جا و شفاف نمایش داده می‌شوند.'],
+              ['۳', 'توافق با طرف مقابل', 'از طریق گفتگو درباره شرایط معامله به توافق برسید.', 'bi-handshake', 'bi-check2-circle', 'جزئیات معامله را قبل از نهایی‌سازی هماهنگ کنید.'],
+              ['۴', 'انجام معامله', 'در مکان امن ملاقات کرده و کالای خود را با طرف مقابل معاوضه کنید.', 'bi-box-seam', 'bi-gift', 'تجربه‌ای سریع، مطمئن و حرفه‌ای تا پایان معامله.'],
+          ];
+          foreach ($steps as $index => [$stepNo, $title, $desc, $icon, $iconBadge, $caption]):
+          ?>
+          <article class="step-card" style="--step-delay: <?= $index ?>;">
+            <div class="step-card__top">
+              <span class="step-card__number"><?= $stepNo ?></span>
+              <div class="step-card__icon-wrap">
+                <div class="step-card__icon">
+                  <i class="bi <?= $icon ?>"></i>
                 </div>
-                <!-- <i class="bi bi-arrow-right step-arrow" aria-hidden="true"></i> -->
+                <?php if ($iconBadge): ?>
+                <span class="step-card__icon-badge" style="display: none;" aria-hidden="true"><i class="bi <?= $iconBadge ?>"></i></span>
+                <?php endif; ?>
               </div>
-              <div class="step-card__body">
-                <span class="step-card__label">مرحله <?= $stepNo ?></span>
-                <h3><?= $title ?></h3>
-                <p><?= $desc ?></p>
-              </div>
-              <div class="step-card__footer"><?= $caption ?></div>
-            </article>
-            <?php endforeach; ?>
-          </div>
-          <button class="slider-arrow slider-arrow--next" data-target="steps" aria-label="مرحله بعدی">
-            <i class="bi bi-chevron-left"></i>
-          </button>
+              <!-- <i class="bi bi-arrow-right step-arrow" aria-hidden="true"></i> -->
+            </div>
+            <div class="step-card__body">
+              <span class="step-card__label">مرحله <?= $stepNo ?></span>
+              <h3><?= $title ?></h3>
+              <p><?= $desc ?></p>
+            </div>
+            <div class="step-card__footer"><?= $caption ?></div>
+          </article>
+          <?php endforeach; ?>
         </div>
       </div>
     </section>
@@ -320,35 +312,23 @@ render_navbar($user);
       <div class="listings-rows-container">
         <!-- Row 1 -->
         <div class="listings-row-wrapper">
-          <button class="slider-arrow slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-          <div class="listings-scroll-row" id="listings-row-1">
+          <div class="listings-scroll-row">
             <?php foreach ($row1 as $l): ?>
             <div class="listings-scroll-card">
               <?php include __DIR__ . '/includes/listing_card.php'; ?>
             </div>
             <?php endforeach; ?>
           </div>
-          <button class="slider-arrow slider-arrow--next" data-target="listings-row-1" aria-label="آگهی بعدی">
-            <i class="bi bi-chevron-left"></i>
-          </button>
         </div>
         <!-- Row 2 -->
         <div class="listings-row-wrapper">
-          <button class="slider-arrow slider-arrow--prev" data-target="listings-row-2" aria-label="آگهی قبلی">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-          <div class="listings-scroll-row" id="listings-row-2">
+          <div class="listings-scroll-row">
             <?php foreach ($row2 as $l): ?>
             <div class="listings-scroll-card">
               <?php include __DIR__ . '/includes/listing_card.php'; ?>
             </div>
             <?php endforeach; ?>
           </div>
-          <button class="slider-arrow slider-arrow--next" data-target="listings-row-2" aria-label="آگهی بعدی">
-            <i class="bi bi-chevron-left"></i>
-          </button>
         </div>
       </div>
       <?php endif; ?>
