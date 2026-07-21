@@ -151,7 +151,7 @@ render_navbar($user);
       <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
     </div>
   </div>
-  <div class="container" style="padding: var(--sp-8) 0; margin-bottom: var(--sp-6);">
+  <div class="container" style="">
     <dl class="site-footer__stats" style="border-radius: 16px; padding: var(--sp-6);">
       <div class="site-footer__stat">
         <i class="bi bi-shield-lock site-footer__stat-icon" aria-hidden="true"></i>
