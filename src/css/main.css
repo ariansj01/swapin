@@ -1103,7 +1103,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .step-card__number {
   position: absolute;
-  right: 40px;
+  right: 0px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
