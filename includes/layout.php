@@ -137,7 +137,7 @@ function render_navbar(?array $user = null): void {
           <i class="bi bi-grid"></i> دسته‌بندی‌ها <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
         <div class="dropdown-menu categories-dropdown" id="categories-dropdown">
-          <a href="{$url}/" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
+          <a href="{$url}/listings/all.php" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
 HTML;
     foreach ($categories as $cat) {
         $catLabel = category_label($cat['slug'], $cat['name']);

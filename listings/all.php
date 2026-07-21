@@ -100,15 +100,27 @@ render_navbar($user);
 ?>
 
 <main class="section-sm">
-  <div class="container" style="display:grid;grid-template-columns: 280px 1fr;gap: var(--sp-8);direction: rtl;">
+  <div class="container" style="display:grid;grid-template-columns: 75% 1fr;gap: var(--sp-8);direction: rtl;">
     <!-- Sidebar -->
-    <aside aria-label="فیلترها" style="order:2">
+    <aside aria-label="فیلترها" style="order:2;margin-top: 50px;">
       <div class="card" style="padding: var(--sp-5); border-radius: 16px;">
-        <h2 style="font-size:1.125rem;margin:0 0 var(--sp-4)">فیلترها</h2>
+        <h2 style="font-size:1.125rem;margin:0 0 var(--sp-4)">دسته‌بندی‌ها</h2>
+        <ul style="list-style:none;padding:0;margin:0;display:grid;gap:8px;margin-bottom: var(--sp-6)">
+          <li>
+            <a href="<?= APP_URL ?>/listings/all.php" class="<?= $catSlug === '' ? 'text-strong' : '' ?>"><i class="bi bi-grid"></i> همه</a>
+          </li>
+          <?php foreach (DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order') as $c): ?>
+          <?php $active = $catSlug === $c['slug'] ? 'text-strong' : ''; ?>
+          <li>
+            <a href="<?= APP_URL ?>/listings/all.php?cat=<?= h($c['slug']) ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
+          </li>
+          <?php endforeach; ?>
+        </ul>
+
+        <h3 style="font-size:1rem;margin:0 0 var(--sp-4)">فیلترهای دیگر</h3>
         <form method="GET" action="<?= APP_URL ?>/listings/all.php" style="display:grid;gap: var(--sp-4)">
           <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
-          <label class="fs-xs" for="q">جستجو</label>
-          <input type="search" id="q" name="q" class="form-control" value="<?= h($search) ?>" placeholder="عنوان یا توضیحات…">
+          <?php if ($search): ?><input type="hidden" name="q" value="<?= h($search) ?>"><?php endif; ?>
 
           <label class="fs-xs" for="city">شهر</label>
           <select id="city" name="city" class="form-control">
@@ -156,21 +168,6 @@ render_navbar($user);
             <i class="bi bi-funnel"></i> اعمال فیلتر
           </button>
         </form>
-      </div>
-
-      <div class="card" style="padding: var(--sp-5); border-radius: 16px; margin-top: var(--sp-6);">
-        <h3 style="font-size:1rem;margin:0 0 var(--sp-3)">دسته‌بندی‌ها</h3>
-        <ul style="list-style:none;padding:0;margin:0;display:grid;gap:8px">
-          <li>
-            <a href="<?= APP_URL ?>/listings/all.php" class="<?= $catSlug === '' ? 'text-strong' : '' ?>"><i class="bi bi-grid"></i> همه</a>
-          </li>
-          <?php foreach (DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order') as $c): ?>
-          <?php $active = $catSlug === $c['slug'] ? 'text-strong' : ''; ?>
-          <li>
-            <a href="<?= APP_URL ?>/listings/all.php?cat=<?= h($c['slug']) ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
-          </li>
-          <?php endforeach; ?>
-        </ul>
       </div>
     </aside>
 
