@@ -8,14 +8,14 @@ function swapin_content_defaults(): array {
         'hero_title_line_2'       => 'مبادله کالا با کالا',
         'hero_subtitle_before'    => 'کمتر بخر، بیشتر',
         'hero_subtitle_highlight' => 'مبادله',
-        'hero_primary_cta'        => 'ثبت آگهی',
+        'hero_primary_cta'        => 'ثبت معامله',
         'hero_secondary_cta'      => 'مرور آگهی‌ها',
         'home_ai_badge'           => 'هوش مصنوعی',
         'home_ai_title'           => 'ارزش‌گذاری و مشاوره معاوضه با AI',
         'home_ai_desc'            => 'بعد از ثبت کالا، هوش مصنوعی سواپین ارزش تقریبی را محاسبه می‌کند. با دستیار AI هم درباره بهترین گزینه‌های معاوضه مشورت کنید.',
         'home_ai_primary_cta'     => 'ثبت کالا + قیمت AI',
         'home_ai_secondary_cta'   => 'دستیار AI',
-        'footer_brand_tagline'    => 'بزرگترین پلتفرم مبادله کالا با کالا در ایران',
+        'footer_brand_tagline'    => 'سواَپین بستری امن و آسان برای معاوضه تهاتر کالا های نو و دست دوم بین کاربران',
         'footer_copy'             => 'تمامی حقوق این وبسایت متعلق به سواپین می‌باشد.',
     ];
 }

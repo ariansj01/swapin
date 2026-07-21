@@ -87,12 +87,6 @@ $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
       </div>
     </div>
 
-    <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
-      <div class="listing-card__value" style="margin: 6px 16px;">
-        <span class="listing-card__value-label">ارزش تقریبی:</span>
-        <span class="listing-card__value-amount"><?= fmt_credit((float)$l['estimated_value']) ?></span>
-      </div>
-    <?php endif; ?>
     
     <?php if (!empty($l['want_in_return'])): ?>
       <div class="listing-card__exchange">
@@ -101,6 +95,13 @@ $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
         <i class="bi bi-arrow-left-right"></i><?= h($l['want_in_return']) ?>
       </div>
     </div>
+    <?php endif; ?>
+
+    <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
+      <div class="listing-card__value" style="margin: 6px 16px;">
+        <span class="listing-card__value-label">ارزش تقریبی:</span>
+        <span class="listing-card__value-amount"><?= fmt_credit((float)$l['estimated_value']) ?></span>
+      </div>
     <?php endif; ?>
 
     <div class="listing-card__meta">

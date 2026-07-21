@@ -111,16 +111,11 @@ function render_navbar(?array $user = null): void {
     $currentCatSlug = $_GET['cat'] ?? '';
 
     $navItems = [
-        // ['/', 'خانه', 'bi-house', ''],
-        // ['/#listings', 'کالاها', 'bi-grid', ''],
-        ['/listings/create', 'ثبت کالا', 'bi-plus-circle', ''],
-        ['/trades', 'معامله امن', 'bi-shield-lock', ''],
-        // ['/wallet', 'کیف پول', 'bi-wallet2', ''],
+        ['/#home-steps', 'چگونه کار می‌کند؟', 'bi-lightbulb', ''],
+        ['/trades', 'اتاق امن', 'bi-shield-lock', ''],
         ['/ai/chat', 'دستیار AI', 'bi-stars', 'navbar-nav__link--ai'],
         ['/about', 'درباره ما', 'bi-question-circle', ''],
         ['/contact', 'تماس با ما', 'bi-envelope', ''],
-        // ['/support', 'پشتیبانی', 'bi-headset', ''],
-        // ['/fraud-prevention', 'راهنمای امنیت', 'bi-shield-exclamation', ''],
     ];
 
     echo <<<HTML
@@ -178,9 +173,15 @@ HTML;
 HTML;
         }
         echo <<<HTML
+      <button type="button" class="btn btn-ghost btn-icon" id="search-modal-trigger" title="جستجو" aria-label="جستجو">
+        <i class="bi bi-search"></i>
+      </button>
       <button type="button" class="btn btn-ghost btn-icon {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
         <i class="bi bi-bell"></i>
       </button>
+      <a href="{$url}/listings/create" class="btn btn-accent hide-mobile">
+        <i class="bi bi-plus"></i> ثبت آگهی
+      </a>
       <div class="dropdown hide-mobile">
         <button class="btn btn-ghost d-flex align-center gap-2" id="user-menu-btn">
           {$navAvatar}
@@ -208,10 +209,16 @@ HTML;
 HTML;
     } else {
         echo <<<HTML
+      <button type="button" class="btn btn-ghost btn-icon" id="search-modal-trigger" title="جستجو" aria-label="جستجو">
+        <i class="bi bi-search"></i>
+      </button>
       <button type="button" class="btn btn-ghost btn-icon {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
         <i class="bi bi-bell"></i>
       </button>
-      <a href="{$url}/auth/login" class="btn btn-accent">ورود / ثبت‌نام</a>
+      <a href="{$url}/listings/create" class="btn btn-accent hide-mobile">
+        <i class="bi bi-plus"></i> ثبت آگهی
+      </a>
+      <a href="{$url}/auth/login" class="btn btn-primary btn-login-custom">ورود / ثبت‌نام</a>
 HTML;
     }
     $searchValue = isset($_GET['q']) ? h($_GET['q']) : '';
@@ -219,20 +226,6 @@ HTML;
     </div>
   </div>
 </nav>
-  <!-- Search Bar Below Navbar -->
-  <div class="navbar-search-bar">
-    <div class="container" style="display: flex; justify-content: end; margin-left: 12%;">
-      <form action="{$url}/" method="get" class="navbar-search-form">
-        <div style="position:relative;flex:1">
-          <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)" aria-hidden="true"></i>
-          <input type="search" name="q" placeholder="جستجوی آگهی‌ها…" 
-                 value="{$searchValue}"
-                 class="navbar-search-input">
-        </div>
-        <button type="submit" class="btn btn-accent">جستجو</button>
-      </form>
-    </div>
-  </div>
 </header>
 
 <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
@@ -419,7 +412,7 @@ function render_footer(): void {
 
     <div class="site-footer__main">
       <div class="site-footer__col">
-        <h3 class="site-footer__heading">تماس با ما</h3>
+        <h3 class="site-footer__heading">راه های ارتباطی</h3>
         <ul class="site-footer__contact-list">
           <li>
             <i class="bi bi-telephone" aria-hidden="true"></i>
@@ -434,6 +427,12 @@ function render_footer(): void {
             <span>مرکز نواوری اکباتان</span>
           </li>
         </ul>
+        <div class="site-footer__social">
+          <a href="https://www.instagram.com/swaapin_official" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
+          <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
+          <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
+          <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
+        </div>
       </div>
 
       <div class="site-footer__col">
@@ -461,16 +460,22 @@ function render_footer(): void {
           <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
         </a>
         <p class="site-footer__tagline">{$tagline}</p>
-        <div class="site-footer__social">
+        <!-- <div class="site-footer__social">
           <a href="https://www.instagram.com/swaapin_official" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
           <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
           <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
           <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
-        </div>
+        </div> -->
       </div>
     </div>
 
-    <p class="site-footer__copy">{$footerCopy}</p>
+    <p class="site-footer__copy" style="display: flex;justify-content: space-around;">
+      {$footerCopy}
+      <div class='liks'>
+          <li><a href="{$url}/terms">قوانین و مقررات</a></li>
+          <li><a href="{$url}/privacy">حریم خصوصی</a></li>
+      </div>
+    </p>
   </div>
 </footer>
 HTML;
