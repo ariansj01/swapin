@@ -1241,28 +1241,29 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 /* Scrollable listing rows */
 .listings-scroll-row {
+  display: flex;
+  gap: var(--sp-4);
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: var(--sp-2) 0;
   -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .listings-scroll-row::-webkit-scrollbar {
-  height: 8px;
+  display: none;
 }
-.listings-scroll-row::-webkit-scrollbar-track {
-  background: var(--bg);
-  border-radius: 999px;
-}
-.listings-scroll-row::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 999px;
-}
-.listings-scroll-row::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+.listings-scroll-card {
+  flex: 0 0 320px;
+  scroll-snap-align: start;
 }
 
 .listing-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   transition: transform var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
@@ -1282,10 +1283,16 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   border: 2px solid #FFB400;
   box-shadow: 0 0 0 1px rgba(255, 180, 0, 0.35), var(--shadow-md);
 }
+.listing-plan-featured:hover {
+  border-color: #FFB400;
+}
 
 .listing-plan-bumped {
   border: 2px solid #4A90E2;
   box-shadow: 0 0 0 1px rgba(74, 144, 226, 0.35), var(--shadow-md);
+}
+.listing-plan-bumped:hover {
+  border-color: #4A90E2;
 }
 
 /* Plan badge styles with tooltips */
@@ -1321,33 +1328,35 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 /* Tooltip styles */
 .listing-promo-badge::after {
-  content: attr(title);
+  content: attr(data-tooltip);
   position: absolute;
-  bottom: 120%;
+  bottom: calc(100% + 12px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, 6px);
   background: #071A33;
   color: #FFFFFF;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.4;
-  white-space: nowrap;
   opacity: 0;
   visibility: hidden;
   transition: opacity 160ms ease, visibility 160ms ease, transform 160ms ease;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0,0,0,.2);
-  max-width: 250px;
+  width: max-content;
+  min-width: 150px;
+  max-width: 220px;
   white-space: normal;
   text-align: center;
+  pointer-events: none;
 }
 
 .listing-promo-badge::before {
   content: '';
   position: absolute;
-  bottom: 105%;
+  bottom: calc(100% + 1px);
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
@@ -1365,14 +1374,17 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .listing-promo-badge:hover::after {
-  transform: translateX(-50%) translateY(-4px);
+  transform: translate(-50%, 0);
 }
 
 .listing-card__header {
+  position: relative;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--sp-3) var(--sp-4) 0;
+  overflow: visible;
 }
 
 .listing-card__badge {
@@ -1390,12 +1402,14 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .listing-card__badge i { color: var(--accent-dark); font-size: .8125rem; }
 
 .listing-card__header-start {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
   flex: 1;
   min-width: 0;
   flex-wrap: wrap;
+  overflow: visible;
 }
 
 .listing-card__header-start .listing-card__swap-badge {
@@ -1449,6 +1463,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   flex: 1;
   text-decoration: none;
   color: inherit;
+  overflow: hidden;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .listing-card__badges {

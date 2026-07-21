@@ -75,7 +75,8 @@ $totalRow = DB::fetch(
     $params
 );
 $total = (int)($totalRow['c'] ?? 0);
-$pag   = paginate($total, LISTINGS_PER_PAGE, $page);
+$displayLimit = 20;
+$pag   = paginate($total, $displayLimit, $page);
 
 $listings = DB::fetchAll(
     "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
@@ -87,7 +88,7 @@ $listings = DB::fetchAll(
      {$where}
      ORDER BY {$orderBy}
      LIMIT ? OFFSET ?",
-    [...$params, LISTINGS_PER_PAGE, $pag['offset']]
+    [...$params, $displayLimit, $pag['offset']]
 );
 
 $cities = iran_cities();
@@ -217,17 +218,16 @@ render_navbar($user);
       </div>
       <?php else: ?>
       <?php
-      // Split listings into two rows
-      $half = ceil(count($listings) / 2);
-      $row1 = array_slice($listings, 0, min(10, $half));
-      $row2 = array_slice($listings, min(10, $half), min(10, count($listings) - min(10, $half)));
+      $showcaseListings = array_slice($listings, 0, 20);
+      $row1 = array_slice($showcaseListings, 0, 10);
+      $row2 = array_slice($showcaseListings, 10, 10);
       ?>
       <div class="listings-rows-container" style="margin-bottom: var(--sp-8);">
         <!-- Row 1 -->
         <div class="listings-row-wrapper" style="margin-bottom: var(--sp-6);">
-          <div class="listings-scroll-row" style="display: flex; gap: var(--sp-4); overflow-x: auto; padding: var(--sp-2) 0; scrollbar-width: thin;">
+          <div class="listings-scroll-row">
             <?php foreach ($row1 as $l): ?>
-            <div style="flex: 0 0 320px;">
+            <div class="listings-scroll-card">
               <?php include __DIR__ . '/includes/listing_card.php'; ?>
             </div>
             <?php endforeach; ?>
@@ -236,9 +236,9 @@ render_navbar($user);
         <!-- Row 2 -->
         <?php if (!empty($row2)): ?>
         <div class="listings-row-wrapper">
-          <div class="listings-scroll-row" style="display: flex; gap: var(--sp-4); overflow-x: auto; padding: var(--sp-2) 0; scrollbar-width: thin;">
+          <div class="listings-scroll-row">
             <?php foreach ($row2 as $l): ?>
-            <div style="flex: 0 0 320px;">
+            <div class="listings-scroll-card">
               <?php include __DIR__ . '/includes/listing_card.php'; ?>
             </div>
             <?php endforeach; ?>

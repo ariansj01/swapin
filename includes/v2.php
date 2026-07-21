@@ -65,15 +65,40 @@ function listing_is_bumped(array $l): bool {
     return !empty($l['bump_until']) && strtotime($l['bump_until']) > time();
 }
 
-function listing_promotion_badges_html(array $l): string {
-    $html = '';
+function listing_active_promotion_meta(array $l): ?array {
     if (listing_is_featured($l)) {
-        $html .= '<span class="listing-promo-badge listing-promo-badge--featured" title="آگهی ویژه: در بالاترین نتایج نمایش داده می‌شود و بازدید بیشتری دارد"><i class="bi bi-star-fill"></i> پلن ویژه</span>';
+        return [
+            'label'       => 'پلن ویژه',
+            'icon'        => 'bi-star-fill',
+            'badge_class' => 'listing-promo-badge--featured',
+            'card_class'  => 'listing-plan-featured',
+            'tooltip'     => 'این پلن آگهی را ویژه و پررنگ‌تر نمایش می‌دهد.',
+        ];
     }
+
     if (listing_is_bumped($l)) {
-        $html .= '<span class="listing-promo-badge listing-promo-badge--bumped" title="بالا برده: آگهی شما به صورت موقت در بالای لیست نمایش داده می‌شود"><i class="bi bi-arrow-up-circle-fill"></i> پلن پیشرفته</span>';
+        return [
+            'label'       => 'پلن فوری',
+            'icon'        => 'bi-arrow-up-circle-fill',
+            'badge_class' => 'listing-promo-badge--bumped',
+            'card_class'  => 'listing-plan-bumped',
+            'tooltip'     => 'این پلن آگهی را موقتاً بالاتر از بقیه نشان می‌دهد.',
+        ];
     }
-    return $html;
+
+    return null;
+}
+
+function listing_promotion_badges_html(array $l): string {
+    $meta = listing_active_promotion_meta($l);
+    if ($meta === null) {
+        return '';
+    }
+
+    return '<span class="listing-promo-badge ' . $meta['badge_class'] . '" data-tooltip="' . h($meta['tooltip']) . '">'
+        . '<i class="bi ' . $meta['icon'] . '"></i> '
+        . h($meta['label'])
+        . '</span>';
 }
 
 function get_active_subscription(array $user): ?array {

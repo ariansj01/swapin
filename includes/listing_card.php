@@ -17,8 +17,10 @@ if ($_savedListingIds === null) {
 $isSwap   = empty($l['listing_mode']) || $l['listing_mode'] === 'swap' || $l['listing_mode'] === 'both';
 $isSaved  = in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
+$promotionMeta = function_exists('listing_active_promotion_meta') ? listing_active_promotion_meta($l) : null;
+$promotionClass = $promotionMeta['card_class'] ?? '';
 ?>
-<article class="listing-card <?= listing_is_featured($l) ? 'listing-plan-featured' : '' ?> <?= listing_is_bumped($l) ? 'listing-plan-bumped' : '' ?>">
+<article class="listing-card <?= h($promotionClass) ?>">
   <div class="listing-card__header">
     <div class="listing-card__header-start">
       <?php if (!empty($l['want_in_return'])): ?>
@@ -35,9 +37,6 @@ $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
       <span class="listing-card__badge">
         <i class="bi bi-tag"></i> <?= h(listing_mode_label($l['listing_mode'])) ?>
       </span>
-      <?php endif; ?>
-      <?php if (listing_is_featured($l)): ?>
-      <span class="badge badge-gold"><i class="bi bi-star-fill"></i></span>
       <?php endif; ?>
       <?= listing_promotion_badges_html($l) ?>
     </div>
