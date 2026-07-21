@@ -207,7 +207,7 @@ render_navbar($user);
     <?php endif; ?>
 
     <!-- New Listings Section -->
-    <section id="listings" aria-label="فهرست آگهی‌ها">
+    <section id="listings" aria-label="فهرست آگهی‌ها" style="margin-top: 55px;">
       <h2 style="text-align: center; margin-bottom: var(--sp-8); font-size: 1.75rem;">جدیدترین آگهی‌ها</h2>
       <?php if (empty($listings)): ?>
       <div class="empty-state">
