@@ -152,6 +152,38 @@ render_navbar($user);
     </div>
   </div>
 </section>
+  <div class="container" style="padding: var(--sp-8) 0; margin-bottom: var(--sp-6);">
+    <dl class="site-footer__stats" style="background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,248,230,0.9) 100%); border-radius: 16px; padding: var(--sp-6);">
+      <div class="site-footer__stat">
+        <i class="bi bi-shield-lock site-footer__stat-icon" aria-hidden="true"></i>
+        <div class="site-footer__stat-body">
+          <dt class="site-footer__stat-label">اتاق امن معامله</dt>
+          <dd class="site-footer__stat-value">معامله مطمئن و امن</dd>
+        </div>
+      </div>
+      <div class="site-footer__stat">
+        <i class="bi bi-person-check site-footer__stat-icon" aria-hidden="true"></i>
+        <div class="site-footer__stat-body">
+          <dt class="site-footer__stat-label">احراز هویت کاربران</dt>
+          <dd class="site-footer__stat-value">برای تجربه ای امن و ایمن</dd>
+        </div>
+      </div>
+      <div class="site-footer__stat">
+        <i class="bi bi-chat-dots site-footer__stat-icon" aria-hidden="true"></i>
+        <div class="site-footer__stat-body">
+          <dt class="site-footer__stat-label">پشتیبانی آنلاین</dt>
+          <dd class="site-footer__stat-value">همراه شما در هر مرحله</dd>
+        </div>
+      </div>
+      <div class="site-footer__stat">
+        <i class="bi bi-trophy site-footer__stat-icon" aria-hidden="true"></i>
+        <div class="site-footer__stat-body">
+          <dt class="site-footer__stat-label">هزاران معامله موفق</dt>
+          <dd class="site-footer__stat-value">توسط کاربران سواپین</dd>
+        </div>
+      </div>
+    </dl>
+  </div>
 <?php endif; ?>
 
 <main id="main-content" class="section-sm">
@@ -174,7 +206,7 @@ render_navbar($user);
         <label for="search-input" class="visually-hidden">جستجوی آگهی‌ها</label>
         <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)" aria-hidden="true"></i>
         <input type="search" class="form-control" style="padding-left:40px;height:40px"
-               id="search-input" name="q" placeholder="جستجوی آگهی‌ها…"
+               id="search-input" name="q" placeholder="جستجوی کالا"
                value="<?= h($search) ?>">
       </div>
 
@@ -238,7 +270,7 @@ render_navbar($user);
                   <i class="bi <?= $icon ?>"></i>
                 </div>
                 <?php if ($iconBadge): ?>
-                <span class="step-card__icon-badge" aria-hidden="true"><i class="bi <?= $iconBadge ?>"></i></span>
+                <span class="step-card__icon-badge" style="display: none;" aria-hidden="true"><i class="bi <?= $iconBadge ?>"></i></span>
                 <?php endif; ?>
               </div>
               <!-- <i class="bi bi-arrow-right step-arrow" aria-hidden="true"></i> -->

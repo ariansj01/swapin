@@ -279,7 +279,7 @@ function render_search_modal() {
         <div style="position:relative">
           <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)" aria-hidden="true"></i>
           <input type="search" class="form-control" style="padding-left:40px;height:48px;font-size:1rem"
-                 id="search-modal-input" name="q" placeholder="جستجوی آگهی‌ها…"
+                 id="search-modal-input" name="q" placeholder="جستجوی کالا"
                  value="{$searchValue}" autocomplete="off" autofocus>
         </div>
       </form>
