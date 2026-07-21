@@ -191,7 +191,7 @@ render_navbar($user);
         <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
       </div>
       <?php else: ?>
-      <div class="grid" style="--cols: 3; gap: var(--sp-5);">
+      <div class="all-listings-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5);">
         <?php foreach ($listings as $l): ?>
         <div>
           <?php include __DIR__ . '/../includes/listing_card.php'; ?>

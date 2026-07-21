@@ -477,6 +477,9 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
 .mobile-bottom-nav__fab i { font-size: 1.375rem; color: var(--primary); }
 
+@media (max-width: 991px) {
+  .all-listings-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
 @media (max-width: 768px) {
   body { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
 
@@ -2379,6 +2382,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
   .navbar-search { max-width: 160px; }
 
+  .all-listings-grid { grid-template-columns: 1fr !important; }
   .listings-grid { grid-template-columns: 1fr; }
 
   .listing-card__media { width: 100%; }
