@@ -471,10 +471,6 @@ function render_footer(): void {
 
     <p class="site-footer__copy" style="display: flex;justify-content: space-around;">
       {$footerCopy}
-      <div class='liks'>
-          <li><a href="{$url}/terms">قوانین و مقررات</a></li>
-          <li><a href="{$url}/privacy">حریم خصوصی</a></li>
-      </div>
     </p>
   </div>
 </footer>

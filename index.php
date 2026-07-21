@@ -307,7 +307,7 @@ render_navbar($user);
             <span class="step-card__icon-badge" aria-hidden="true"><i class="bi <?= $iconBadge ?>"></i></span>
             <?php endif; ?>
           </div>
-          <i class="bi bi-arrow-right step-arrow" aria-hidden="true"></i>
+          <!-- <i class="bi bi-arrow-right step-arrow" aria-hidden="true"></i> -->
         </div>
         <div class="step-card__body">
           <span class="step-card__label">مرحله <?= $stepNo ?></span>
