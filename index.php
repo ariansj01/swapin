@@ -151,9 +151,8 @@ render_navbar($user);
       <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
     </div>
   </div>
-</section>
   <div class="container" style="padding: var(--sp-8) 0; margin-bottom: var(--sp-6);">
-    <dl class="site-footer__stats" style="background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,248,230,0.9) 100%); border-radius: 16px; padding: var(--sp-6);">
+    <dl class="site-footer__stats" style="border-radius: 16px; padding: var(--sp-6);">
       <div class="site-footer__stat">
         <i class="bi bi-shield-lock site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
@@ -184,6 +183,7 @@ render_navbar($user);
       </div>
     </dl>
   </div>
+</section>
 <?php endif; ?>
 
 <main id="main-content" class="section-sm">
