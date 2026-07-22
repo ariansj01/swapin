@@ -312,23 +312,35 @@ render_navbar($user);
       <div class="listings-rows-container">
         <!-- Row 1 -->
         <div class="listings-row-wrapper">
-          <div class="listings-scroll-row">
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <div class="listings-scroll-row" id="listings-row-1">
             <?php foreach ($row1 as $l): ?>
             <div class="listings-scroll-card">
               <?php include __DIR__ . '/includes/listing_card.php'; ?>
             </div>
             <?php endforeach; ?>
           </div>
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-1" aria-label="آگهی بعدی">
+            <i class="bi bi-chevron-left"></i>
+          </button>
         </div>
         <!-- Row 2 -->
         <div class="listings-row-wrapper">
-          <div class="listings-scroll-row">
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-2" aria-label="آگهی قبلی">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <div class="listings-scroll-row" id="listings-row-2">
             <?php foreach ($row2 as $l): ?>
             <div class="listings-scroll-card">
               <?php include __DIR__ . '/includes/listing_card.php'; ?>
             </div>
             <?php endforeach; ?>
           </div>
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-2" aria-label="آگهی بعدی">
+            <i class="bi bi-chevron-left"></i>
+          </button>
         </div>
       </div>
       <?php endif; ?>

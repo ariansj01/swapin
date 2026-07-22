@@ -518,6 +518,11 @@ p { color: var(--text-secondary); line-height: 1.6; }
   .listings-scroll-card {
     flex-basis: 300px;
   }
+
+  .listings-slider-arrow {
+    width: 42px;
+    height: 42px;
+  }
 }
 @media (max-width: 768px) {
   body { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
@@ -593,12 +598,15 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 
   .steps-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    overflow: visible;
-    padding: 0;
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 var(--sp-2);
     gap: var(--sp-4);
-    scroll-snap-type: none;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 
   .steps-grid::-webkit-scrollbar {
@@ -606,9 +614,12 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 
   .step-card {
-    width: 100%;
-    max-width: none;
+    width: min(320px, calc(100vw - 48px));
+    min-width: min(320px, calc(100vw - 48px));
+    max-width: min(320px, calc(100vw - 48px));
     padding: 28px 20px 20px;
+    scroll-snap-align: start;
+    flex: 0 0 auto;
   }
 
   .step-card__number {
@@ -640,6 +651,11 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
   .listings-scroll-card {
     flex: 0 0 min(300px, calc(100vw - 32px));
+  }
+
+  .listings-slider-arrow {
+    width: 38px;
+    height: 38px;
   }
 
   .all-listings-categories,
@@ -1362,11 +1378,42 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .listings-row-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
   max-width: 100%;
+}
+
+.listings-slider-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(10, 37, 64, .12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+  color: var(--primary);
+  box-shadow: 0 14px 28px rgba(10, 37, 64, .12);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+  flex: 0 0 auto;
+}
+
+.listings-slider-arrow:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px rgba(10, 37, 64, .16);
+}
+
+.listings-slider-arrow:active {
+  transform: scale(.96);
 }
 
 .listings-scroll-row {
   display: flex;
+  flex: 1 1 auto;
   gap: var(--sp-4);
   overflow-x: auto;
   overflow-y: visible;

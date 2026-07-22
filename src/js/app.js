@@ -982,6 +982,30 @@ function initStepsReveal() {
   cards.forEach(card => observer.observe(card));
 }
 
+function initListingsSliderArrows() {
+  const arrows = document.querySelectorAll('.listings-slider-arrow');
+  if (!arrows.length) return;
+
+  arrows.forEach((arrow) => {
+    arrow.addEventListener('click', () => {
+      const targetId = arrow.getAttribute('data-target');
+      const row = targetId ? document.getElementById(targetId) : null;
+      if (!row) return;
+
+      const firstCard = row.querySelector('.listings-scroll-card');
+      const scrollStep = firstCard
+        ? firstCard.getBoundingClientRect().width + 16
+        : Math.max(row.clientWidth * 0.75, 280);
+      const direction = arrow.classList.contains('listings-slider-arrow--prev') ? -1 : 1;
+
+      row.scrollBy({
+        left: direction * scrollStep,
+        behavior: 'smooth',
+      });
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Prevent back buttons from accidentally triggering other clicks
   document.querySelectorAll('.dash-back-btn, .trade-room__back, .promote-back-link, .btn').forEach(btn => {
@@ -1018,6 +1042,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initConfirmForms();
   initSupportWidget();
   initStepsReveal();
+  initListingsSliderArrows();
 
   // Restore active tab from URL
   const tabParam = new URLSearchParams(window.location.search).get('tab');
