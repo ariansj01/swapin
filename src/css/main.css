@@ -561,13 +561,13 @@ p { color: var(--text-secondary); line-height: 1.6; }
     grid-row: 1;
     justify-self: center;
     margin-inline: 0;
-    margin-right: 25px;
+    /* margin-right: 25px; */
   }
 
   .navbar-brand .brand-logo {
     /* height: 100px; */
-    width: 50%;
-    margin-right: 20px;
+    /* width: 50%; */
+    /* margin-right: 20px; */
     /* margin-top: -30px; */
   }
 
@@ -2015,7 +2015,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .home-filter-search {
-  flex: 1 1 260px;
+  /* flex: 1 1 260px; */
   min-width: 220px;
   position: relative;
 }
@@ -2758,9 +2758,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     max-width: 100% !important;
     min-width: 0;
   }
-  .listing-card{
-    width: 150% !important;
-  }
+  /* .listing-card{
+    width: 120% !important;
+  } */
 }
 
 @media (max-width: 480px) {
@@ -2812,7 +2812,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     flex-wrap: nowrap;
     min-width: 0;
     max-width: 100%;
-    gap: var(--sp-3);
+    gap: 50%;
     overflow-x: auto;
     overflow-y: visible;
     padding: var(--sp-1) 0 var(--sp-2);
@@ -2834,7 +2834,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .trust-grid { grid-template-columns: 1fr; }
 
   .listing-card {
-  width: 150% !important;
+  width: 120% !important;
   }
 }
 
