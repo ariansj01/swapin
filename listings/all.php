@@ -105,8 +105,8 @@ render_navbar($user);
 ?>
 
 <main class="section-sm">
-  <!-- Filter Button (Mobile Only) -->
-  <div class="container mb-4 d-block d-lg-none">
+  <!-- Filter Button -->
+  <div class="container mb-4">
     <button type="button" id="open-filter-modal" class="btn btn-primary w-100">
       <i class="bi bi-funnel"></i> فیلترها
     </button>
