@@ -2776,7 +2776,6 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .listings-row-wrapper {
-    display: none;
     display: flex;
     align-items: center;
     gap: var(--sp-2);
@@ -2786,7 +2785,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .listings-slider-arrow {
-    display: inline-flex;
+    display: none;
   }
 
   .listings-scroll-row {
