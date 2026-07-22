@@ -2757,6 +2757,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     max-width: 100% !important;
     min-width: 0;
   }
+  .listing-card{
+    width: 150% !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2829,7 +2832,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
   .trust-grid { grid-template-columns: 1fr; }
 
-  .all-listings-grid .listing-card {
+  .listing-card {
   width: 150% !important;
   }
 }
