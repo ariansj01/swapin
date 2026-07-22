@@ -6,6 +6,10 @@
   <sitemap>
     <loc>https://swaapin.ir/sitemap-main.xml</loc>
   </sitemap>
+
+  <sitemap>
+    <loc>https://swaapin.ir/sitemap-pages.php</loc>
+  </sitemap>
   <sitemap>
     <loc>https://swaapin.ir/blog/wp-sitemap.xml</loc>
   </sitemap>
