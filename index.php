@@ -304,10 +304,10 @@ render_navbar($user);
       </div>
       <?php else: ?>
       <?php
-      $showcaseListings = array_slice($listings, 0, 4);
+      $showcaseListings = array_slice($listings, 0, 20);
       ?>
       <div class="listings-rows-container">
-        <!-- Single Row with 4 Listings -->
+        <!-- Single Row with 20 Listings (4 visible at a time) -->
         <div class="listings-row-wrapper">
           <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
             <i class="bi bi-chevron-right"></i>

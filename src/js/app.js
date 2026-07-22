@@ -993,9 +993,10 @@ function initListingsSliderArrows() {
       if (!row) return;
 
       const firstCard = row.querySelector('.listings-scroll-card');
-      const scrollStep = firstCard
-        ? firstCard.getBoundingClientRect().width + 16
-        : Math.max(row.clientWidth * 0.75, 280);
+      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : Math.max(row.clientWidth * 0.25, 280);
+      const gap = 16; // Same as var(--sp-4)
+      const cardsToScroll = window.innerWidth <= 768 ? 2 : 4; // 2 cards on mobile, 4 on desktop
+      const scrollStep = (cardWidth + gap) * cardsToScroll;
       const direction = arrow.classList.contains('listings-slider-arrow--prev') ? -1 : 1;
 
       row.scrollBy({

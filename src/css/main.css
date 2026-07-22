@@ -1452,8 +1452,15 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: none;
 }
 .listings-scroll-card {
-  flex: 0 0 min(360px, 30vw);
+  flex: 0 0 calc((100% - (3 * var(--sp-4))) / 4);
   scroll-snap-align: start;
+}
+
+/* Mobile override: 2 cards visible */
+@media (max-width: 768px) {
+  .listings-scroll-card {
+    flex: 0 0 calc(50% - (var(--sp-3) / 2));
+  }
 }
 
 .listing-card {
