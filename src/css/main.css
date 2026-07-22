@@ -598,11 +598,15 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 
   .steps-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    overflow: visible;
-    padding: 0;
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 var(--sp-2);
     gap: var(--sp-4);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 
   .steps-grid::-webkit-scrollbar {
@@ -610,10 +614,12 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 
   .step-card {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
+    width: min(320px, calc(100vw - 48px));
+    min-width: min(320px, calc(100vw - 48px));
+    max-width: min(320px, calc(100vw - 48px));
     padding: 28px 20px 20px;
+    scroll-snap-align: start;
+    flex: 0 0 auto;
   }
 
   .step-card__number {
@@ -2710,6 +2716,12 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .home-section-heading{
     margin-bottom: 20px;
   }
+  .listings-rows-container{
+    width: 100%;
+  }
+  .listings-row-wrapper{
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2731,10 +2743,15 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .steps-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    grid-template-columns: none;
+    gap: var(--sp-3);
   }
 
   .step-card {
+    width: calc(100vw - 32px);
+    min-width: calc(100vw - 32px);
+    max-width: calc(100vw - 32px);
     padding: 24px 18px 18px;
   }
 
