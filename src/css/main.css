@@ -2815,6 +2815,54 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .trust-grid { grid-template-columns: 1fr; }
 }
 
+/* ── 28. Filter Modal for Listings Page ───────────────────────────────── */
+.filter-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+.filter-modal-overlay.open {
+  display: block;
+}
+
+.filter-modal-header {
+  padding: var(--sp-4);
+}
+
+#filter-modal {
+  /* Desktop default (sidebar) */
+  position: relative;
+}
+
+@media (max-width: 991px) {
+  #filter-modal {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 90%;
+    max-width: 400px;
+    background-color: var(--bg);
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding: var(--sp-4);
+  }
+  #filter-modal.open {
+    transform: translateX(0);
+  }
+  #filter-modal .all-listings-filter-card {
+    box-shadow: none;
+    border: none;
+  }
+}
+
 /* ── 29. Swap Score & Match UI ─────────────────────────────────────────── */
 .swap-score-card {
   background: var(--bg);

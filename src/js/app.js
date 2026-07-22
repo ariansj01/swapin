@@ -1006,6 +1006,31 @@ function initListingsSliderArrows() {
   });
 }
 
+function initFilterModal() {
+  const openBtn = document.getElementById('open-filter-modal');
+  const closeBtn = document.getElementById('close-filter-modal');
+  const modal = document.getElementById('filter-modal');
+  const overlay = document.getElementById('filter-modal-overlay');
+
+  if (!openBtn || !closeBtn || !modal || !overlay) return;
+
+  function openModal() {
+    modal.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    modal.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  openBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', closeModal);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Prevent back buttons from accidentally triggering other clicks
   document.querySelectorAll('.dash-back-btn, .trade-room__back, .promote-back-link, .btn').forEach(btn => {
