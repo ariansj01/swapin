@@ -1399,7 +1399,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .all-listings-grid .listing-card {
-  width: 150%;
+  width: 150% !important;
 }
 
 /* Scrollable listing rows */
