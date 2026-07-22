@@ -1388,7 +1388,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  max-width: 100%;
+  max-width: 65%;
 }
 
 .listings-slider-arrow {
