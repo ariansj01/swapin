@@ -1150,7 +1150,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .step-card__top::after {
-  content: "------>";
+  content: "--->";
   position: absolute;
   top: 50%;
   right: calc(100% + 8px);

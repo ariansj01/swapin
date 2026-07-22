@@ -309,7 +309,7 @@ render_navbar($user);
       $row1 = array_slice($showcaseListings, 0, $half);
       $row2 = array_slice($showcaseListings, $half);
       ?>
-      <div class="listings-rows-container">
+      <div class="listings-rows-container" style="width: 65%;">
         <!-- Row 1 -->
         <div class="listings-row-wrapper">
           <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
