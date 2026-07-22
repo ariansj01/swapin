@@ -642,7 +642,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
   .listings-rows-container {
     gap: var(--sp-4);
     min-width: 0;
-    width: 65%;
+    width: 210%;
   }
 
   .listings-row-wrapper {
