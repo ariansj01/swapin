@@ -206,9 +206,6 @@ HTML;
 HTML;
     } else {
         echo <<<HTML
-      <button type="button" class="btn btn-ghost btn-icon" id="search-modal-trigger" title="جستجو" aria-label="جستجو">
-        <i class="bi bi-search"></i>
-      </button>
       <button type="button" class="btn btn-ghost btn-icon {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
         <i class="bi bi-bell"></i>
       </button>

@@ -2812,7 +2812,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     flex-wrap: nowrap;
     min-width: 0;
     max-width: 100%;
-    gap: 50%;
+    gap: 10%;
     overflow-x: auto;
     overflow-y: visible;
     padding: var(--sp-1) 0 var(--sp-2);
@@ -2834,7 +2834,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .trust-grid { grid-template-columns: 1fr; }
 
   .listing-card {
-  width: 120% !important;
+  width: 100% !important;
   }
 }
 

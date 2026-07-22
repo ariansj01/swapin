@@ -104,10 +104,27 @@ render_head($title, $desc, [
 render_navbar($user);
 ?>
 
+<!-- Filter Button (Mobile & Tablet Only) -->
+<div class="container mb-4 d-block d-lg-none">
+  <button type="button" id="open-filter-modal" class="btn btn-primary w-100">
+    <i class="bi bi-funnel"></i> فیلترها
+  </button>
+</div>
+
 <main class="section-sm">
   <div class="container all-listings-layout">
-    <!-- Sidebar -->
-    <aside aria-label="فیلترها" class="all-listings-sidebar">
+    <!-- Filter Modal Overlay (Mobile Only) -->
+    <div id="filter-modal-overlay" class="filter-modal-overlay"></div>
+
+    <!-- Sidebar / Filter Modal -->
+    <aside aria-label="فیلترها" class="all-listings-sidebar" id="filter-modal">
+      <!-- Close Button (Mobile Only) -->
+      <div class="filter-modal-header d-flex justify-between align-center d-lg-none mb-4">
+        <h2>فیلترها</h2>
+        <button type="button" id="close-filter-modal" class="btn btn-ghost">   
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
       <div class="card all-listings-filter-card">
         <!-- جستجو -->
         <div class="mb-5">
@@ -189,7 +206,7 @@ render_navbar($user);
             </select>
           </div>
 
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-primary w-100">
             <i class="bi bi-funnel"></i> اعمال فیلتر
           </button>
         </form>
