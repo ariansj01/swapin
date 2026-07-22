@@ -33,7 +33,7 @@ jobs:
               --optimize-autoloader
             fi
 
-            [ -d storage ] && chmod -R 775 storage
+            [ -d storage ] && chmod -R 775 storage || true
             [ -d uploads ] && sudo chmod -R 775 uploads
 
             sudo systemctl reload php8.4-fpm
