@@ -63,6 +63,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
     $nav = [
         'index'          => ['/', 'داشبورد', 'bi-speedometer2', 0],
         'create_listing' => ['/create_listing.php', 'ایجاد آگهی', 'bi-plus-square', 0],
+        'pages'          => ['/pages.php', 'صفحات سایت', 'bi-file-earmark-text', 0],
         'content'        => ['/content.php', 'مدیریت محتوا', 'bi-pencil-square', 0],
         'listings'       => ['/listings.php', 'آگهی‌ها', 'bi-grid', $counts['listings']],
         'kyc'            => ['/kyc.php', 'احراز هویت', 'bi-person-badge', $counts['kyc']],
