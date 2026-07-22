@@ -598,15 +598,11 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 
   .steps-grid {
-    display: flex;
-    grid-template-columns: none;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 0 0 var(--sp-2);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+    padding: 0;
     gap: var(--sp-4);
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
   }
 
   .steps-grid::-webkit-scrollbar {
@@ -614,12 +610,10 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 
   .step-card {
-    width: min(320px, calc(100vw - 48px));
-    min-width: min(320px, calc(100vw - 48px));
-    max-width: min(320px, calc(100vw - 48px));
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     padding: 28px 20px 20px;
-    scroll-snap-align: start;
-    flex: 0 0 auto;
   }
 
   .step-card__number {
@@ -641,9 +635,19 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
   .listings-rows-container {
     gap: var(--sp-4);
+    min-width: 0;
+  }
+
+  .listings-row-wrapper {
+    gap: var(--sp-2);
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .listings-scroll-row {
+    min-width: 0;
+    max-width: 100%;
     gap: var(--sp-3);
     padding: var(--sp-1) 0 var(--sp-2);
     scroll-padding-inline: var(--sp-4);
@@ -651,6 +655,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
   .listings-scroll-card {
     flex: 0 0 min(300px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
   }
 
   .listings-slider-arrow {
@@ -2722,6 +2727,36 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     flex-direction: column-reverse;
     justify-content: center;
     align-items: center;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .step-card {
+    padding: 24px 18px 18px;
+  }
+
+  .listings-row-wrapper {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .listings-slider-arrow {
+    display: none;
+  }
+
+  .listings-scroll-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: visible;
+    padding: 0;
+    scroll-snap-type: none;
+  }
+
+  .listings-scroll-card {
+    flex: initial;
+    max-width: 100%;
   }
 
   .trust-grid { grid-template-columns: 1fr; }
