@@ -1398,9 +1398,6 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   gap: var(--sp-5);
 }
 
-.all-listings-grid .listing-card {
-  width: 150% !important;
-}
 
 /* Scrollable listing rows */
 .listings-rows-container {
@@ -2831,6 +2828,10 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .trust-grid { grid-template-columns: 1fr; }
+
+  .all-listings-grid .listing-card {
+  width: 150% !important;
+  }
 }
 
 /* ── 28. Filter Modal for Listings Page ───────────────────────────────── */
