@@ -1,25 +1,42 @@
 User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /auth/
+
+# Public SEO pages - must be crawlable
+Allow: /listings
+Allow: /listings/
+Allow: /listings/view
+Allow: /categories
+Allow: /category
+Allow: /blog/
+
+# Private / system / user-specific areas
 Disallow: /admin/
+Disallow: /dashboard
 Disallow: /dashboard.php
+Disallow: /auth/
+Disallow: /api/
+Disallow: /storage/
+Disallow: /includes/
+Disallow: /vendor/
+Disallow: /tools/
+Disallow: /seed/
+Disallow: /database/
 Disallow: /messages.php
 Disallow: /wallet.php
 Disallow: /profile/edit.php
+
+# Private listing actions - not public SEO pages
+Disallow: /listings/create
 Disallow: /listings/create.php
 Disallow: /listings/edit.php
 Disallow: /listings/my.php
 Disallow: /listings/offers.php
 Disallow: /listings/bump.php
-Disallow: /store/
-Disallow: /seed/
-Disallow: /database/
-Disallow: /storage/
-Disallow: /media/
-Disallow: /run_migration.php
-Disallow: /run_admin_migration.php
-Disallow: /run_support_migration.php
-Disallow: /run_categories_fa.php
+Disallow: /listings/promote.php
 
-Sitemap: http://localhost/swaapin/sitemap.php
+# WordPress admin only
+Disallow: /blog/wp-admin/
+Allow: /blog/wp-admin/admin-ajax.php
+
+Sitemap: https://swaapin.ir/sitemap.xml
+Sitemap: https://swaapin.ir/blog/wp-sitemap.xml
