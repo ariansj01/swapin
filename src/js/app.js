@@ -1068,6 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSupportWidget();
   initStepsReveal();
   initListingsSliderArrows();
+  initFilterModal();
 
   // Restore active tab from URL
   const tabParam = new URLSearchParams(window.location.search).get('tab');
