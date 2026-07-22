@@ -1398,6 +1398,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   gap: var(--sp-5);
 }
 
+
 /* Scrollable listing rows */
 .listings-rows-container {
   display: grid;
@@ -1490,6 +1491,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   cursor: pointer;
   text-decoration: none;
   color: inherit;
+  width: 150%;
 }
 
 .listing-card:hover {
@@ -2756,6 +2758,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     max-width: 100% !important;
     min-width: 0;
   }
+  .listing-card{
+    width: 150% !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2827,6 +2832,10 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .trust-grid { grid-template-columns: 1fr; }
+
+  .listing-card {
+  width: 150% !important;
+  }
 }
 
 /* ── 28. Filter Modal for Listings Page ───────────────────────────────── */
