@@ -1061,6 +1061,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   justify-content: space-between;
   gap: var(--sp-4);
   flex-wrap: wrap;
+  margin: 20px 0;
 }
 
 .home-section-heading h2 {
@@ -1394,8 +1395,20 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  max-width: 65%;
+  max-width: 100%;
+  width: 100%;
 }
+
+/* Utility classes for search box in all.php */
+.flex-1 { flex: 1 1 auto; }
+.position-relative { position: relative; }
+.position-absolute { position: absolute; }
+.top-50 { top: 50%; }
+.end-0 { right: 0; }
+.me-3 { margin-right: 0.75rem; }
+.transform-translate-y-n50 { transform: translateY(-50%); }
+.text-muted { color: var(--text-muted); }
+.mb-5 { margin-bottom: var(--sp-5); }
 
 .listings-slider-arrow {
   display: inline-flex;
@@ -1439,7 +1452,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: none;
 }
 .listings-scroll-card {
-  flex: 0 0 320px;
+  flex: 0 0 min(360px, 30vw);
   scroll-snap-align: start;
 }
 

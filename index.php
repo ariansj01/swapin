@@ -156,29 +156,29 @@ render_navbar($user);
       <div class="site-footer__stat">
         <i class="bi bi-shield-lock site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">اتاق امن معامله</dt>
-          <dd class="site-footer__stat-value">معامله مطمئن و امن</dd>
+          <dt class="site-footer__stat-value">اتاق امن معامله</dt>
+          <dd class="site-footer__stat-lable">معامله مطمئن و امن</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-person-check site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">احراز هویت کاربران</dt>
-          <dd class="site-footer__stat-value">برای تجربه ای امن و ایمن</dd>
+          <dt class="site-footer__stat-value">احراز هویت کاربران</dt>
+          <dd class="site-footer__stat-lable">برای تجربه ای امن و ایمن</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-chat-dots site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">پشتیبانی آنلاین</dt>
-          <dd class="site-footer__stat-value">همراه شما در هر مرحله</dd>
+          <dt class="site-footer__stat-valuse">پشتیبانی آنلاین</dt>
+          <dd class="site-footer__stat-lable">همراه شما در هر مرحله</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-trophy site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">هزاران معامله موفق</dt>
-          <dd class="site-footer__stat-value">توسط کاربران سواپین</dd>
+          <dt class="site-footer__stat-value">هزاران معامله موفق</dt>
+          <dd class="site-footer__stat-label">توسط کاربران سواپین</dd>
         </div>
       </div>
     </dl>

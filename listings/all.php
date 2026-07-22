@@ -104,6 +104,27 @@ render_navbar($user);
     <!-- Sidebar -->
     <aside aria-label="فیلترها" class="all-listings-sidebar">
       <div class="card all-listings-filter-card">
+        <!-- جستجو -->
+        <div class="mb-5">
+          <label class="fs-xs" for="q">جستجو در آگهی‌ها</label>
+          <form method="GET" action="<?= APP_URL ?>/listings/all.php" class="d-flex gap-2 align-center">
+            <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
+            <input type="hidden" name="city" value="<?= h($city) ?>">
+            <input type="hidden" name="want" value="<?= h($wantType) ?>">
+            <input type="hidden" name="condition" value="<?= h($condition) ?>">
+            <input type="hidden" name="price_min" value="<?= $pmin > 0 ? (int)$pmin : '' ?>">
+            <input type="hidden" name="price_max" value="<?= $pmax > 0 ? (int)$pmax : '' ?>">
+            <input type="hidden" name="sort" value="<?= h($sort) ?>">
+            <div class="flex-1 position-relative">
+              <i class="bi bi-search position-absolute top-50 end-0 transform-translate-y-n50 me-3 text-muted" aria-hidden="true"></i>
+              <input type="search" id="q" name="q" class="form-control" value="<?= h($search) ?>" placeholder="جستجوی کالا..." dir="rtl">
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i> جستجو
+            </button>
+          </form>
+        </div>
+
         <h2 class="all-listings-sidebar__title">دسته‌بندی‌ها</h2>
         <ul class="all-listings-categories">
           <li>
@@ -112,7 +133,7 @@ render_navbar($user);
           <?php foreach (DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order') as $c): ?>
           <?php $active = $catSlug === $c['slug'] ? 'text-strong' : ''; ?>
           <li>
-            <a href="<?= APP_URL ?>/listings/all.php?cat=<?= h($c['slug']) ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
+            <a href="<?= APP_URL ?>/listings/all.php?cat=<?= h($c['slug']) ?><?= $search ? '&q=' . urlencode($search) : '' ?><?= $city ? '&city=' . urlencode($city) : '' ?><?= $wantType ? '&want=' . urlencode($wantType) : '' ?><?= $condition ? '&condition=' . urlencode($condition) : '' ?><?= $pmin > 0 ? '&price_min=' . $pmin : '' ?><?= $pmax > 0 ? '&price_max=' . $pmax : '' ?><?= $sort ? '&sort=' . urlencode($sort) : '' ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
           </li>
           <?php endforeach; ?>
         </ul>
