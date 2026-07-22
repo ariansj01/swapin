@@ -116,7 +116,6 @@ render_navbar($user);
             <input type="hidden" name="price_max" value="<?= $pmax > 0 ? (int)$pmax : '' ?>">
             <input type="hidden" name="sort" value="<?= h($sort) ?>">
             <div class="flex-1 position-relative">
-              <i class="bi bi-search position-absolute top-50 end-0 transform-translate-y-n50 me-3 text-muted" aria-hidden="true"></i>
               <input type="search" id="q" name="q" class="form-control" value="<?= h($search) ?>" placeholder="جستجوی کالا..." dir="rtl">
             </div>
             <button type="submit" class="btn btn-primary">

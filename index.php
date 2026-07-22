@@ -289,7 +289,7 @@ render_navbar($user);
     
     <!-- New Listings Section -->
     <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
-      <div class="home-section-heading home-section-heading--large" style="width:65%;margin:25px 0;">
+      <div class="home-section-heading home-section-heading--large mb-5">
         <h2>جدیدترین آگهی‌ها</h2>
         <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
           مشاهده همه آگهی‌ها
@@ -304,41 +304,22 @@ render_navbar($user);
       </div>
       <?php else: ?>
       <?php
-      $showcaseListings = array_slice($listings, 0, 20);
-      $half = (int)ceil(count($showcaseListings) / 2);
-      $row1 = array_slice($showcaseListings, 0, $half);
-      $row2 = array_slice($showcaseListings, $half);
+      $showcaseListings = array_slice($listings, 0, 4);
       ?>
-      <div class="listings-rows-container" style="width: 65%;">
-        <!-- Row 1 -->
+      <div class="listings-rows-container">
+        <!-- Single Row with 4 Listings -->
         <div class="listings-row-wrapper">
           <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
             <i class="bi bi-chevron-right"></i>
           </button>
           <div class="listings-scroll-row" id="listings-row-1">
-            <?php foreach ($row1 as $l): ?>
+            <?php foreach ($showcaseListings as $l): ?>
             <div class="listings-scroll-card">
               <?php include __DIR__ . '/includes/listing_card.php'; ?>
             </div>
             <?php endforeach; ?>
           </div>
           <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-1" aria-label="آگهی بعدی">
-            <i class="bi bi-chevron-left"></i>
-          </button>
-        </div>
-        <!-- Row 2 -->
-        <div class="listings-row-wrapper">
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-2" aria-label="آگهی قبلی">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-          <div class="listings-scroll-row" id="listings-row-2">
-            <?php foreach ($row2 as $l): ?>
-            <div class="listings-scroll-card">
-              <?php include __DIR__ . '/includes/listing_card.php'; ?>
-            </div>
-            <?php endforeach; ?>
-          </div>
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-2" aria-label="آگهی بعدی">
             <i class="bi bi-chevron-left"></i>
           </button>
         </div>
