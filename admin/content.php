@@ -9,7 +9,7 @@ $admin = require_admin();
 $fields = [
     'home_meta_title' => ['label' => 'عنوان متای صفحه اصلی', 'rows' => 2],
     'home_meta_desc' => ['label' => 'توضیح متای صفحه اصلی', 'rows' => 3],
-    // 'hero_title_line_1' => ['label' => 'خط اول هدر صفحه اصلی', 'rows' => 2],
+    'hero_title_line_1' => ['label' => 'خط اول هدر صفحه اصلی', 'rows' => 2],
     'hero_title_line_2' => ['label' => 'خط دوم هدر صفحه اصلی', 'rows' => 2],
     'hero_subtitle_before' => ['label' => 'متن قبل از کلمه برجسته', 'rows' => 2],
     'hero_subtitle_highlight' => ['label' => 'کلمه برجسته هدر', 'rows' => 2],
