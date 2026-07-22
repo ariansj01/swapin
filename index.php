@@ -289,7 +289,7 @@ render_navbar($user);
     
     <!-- New Listings Section -->
     <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
-      <div class="home-section-heading home-section-heading--large mb-6">
+      <div class="home-section-heading home-section-heading--large mb-6" style="width: 65%;">
         <h2>جدیدترین آگهی‌ها</h2>
         <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
           مشاهده همه آگهی‌ها
