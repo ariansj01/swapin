@@ -1147,7 +1147,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--sp-5);
+  gap: 7%;
   align-items: stretch;
 }
 
@@ -1463,12 +1463,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 /* Plan-specific listing card styles */
-.listing-plan-featured {
+.listing-plan-featured:hover {
   border: 2px solid #FFB400;
   box-shadow: 0 0 0 1px rgba(255, 180, 0, 0.35), var(--shadow-md);
-}
-.listing-plan-featured:hover {
-  border-color: #FFB400;
 }
 
 .listing-plan-bumped {
