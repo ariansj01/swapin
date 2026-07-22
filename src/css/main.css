@@ -2714,10 +2714,10 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     margin-bottom: 20px;
   }
   .listings-rows-container{
-    width: 100%;
+    width: 100% !important;
   }
   .listings-row-wrapper{
-    max-width: 100%;
+    max-width: 100% !important;
   }
 }
 
@@ -2753,25 +2753,37 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .listings-row-wrapper {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .listings-slider-arrow {
-    display: none;
+    display: inline-flex;
   }
 
   .listings-scroll-row {
-    display: grid;
-    grid-template-columns: 1fr;
-    overflow: visible;
-    padding: 0;
-    scroll-snap-type: none;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--sp-3);
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: var(--sp-1) 0 var(--sp-2);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .listings-scroll-row::-webkit-scrollbar {
+    display: none;
   }
 
   .listings-scroll-card {
-    flex: initial;
-    max-width: 100%;
+    flex: 0 0 calc(50% - var(--sp-2));
+    max-width: calc(50% - var(--sp-2));
+    scroll-snap-align: start;
   }
 
   .trust-grid { grid-template-columns: 1fr; }
