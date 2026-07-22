@@ -1398,6 +1398,10 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   gap: var(--sp-5);
 }
 
+.all-listings-grid .listing-card {
+  width: 150%;
+}
+
 /* Scrollable listing rows */
 .listings-rows-container {
   display: grid;
