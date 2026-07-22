@@ -1491,6 +1491,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   cursor: pointer;
   text-decoration: none;
   color: inherit;
+  width: 150%;
 }
 
 .listing-card:hover {
