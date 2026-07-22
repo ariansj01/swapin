@@ -120,7 +120,7 @@ render_navbar($user);
   <div class="container hero__inner">
     <div class="hero__content">
       <h1 class="hero__title">
-        <span class="hero__line"><?= h(swapin_content_get('hero_title_line_1')) ?></span>
+        <span class="hero__line">سواَپین، پلتفرم هوشمند</span>
         <span class="hero__line"><?= h(swapin_content_get('hero_title_line_2')) ?></span>
       </h1>
       <p class="hero__subtitle"><?= h(swapin_content_get('hero_subtitle_before')) ?> <span class="hero__gold"><?= h(swapin_content_get('hero_subtitle_highlight')) ?></span> کن</p>
