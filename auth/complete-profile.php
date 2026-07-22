@@ -37,6 +37,8 @@ if ($isGoogleUser) {
     header('Location: ' . APP_URL . '/auth/login'); exit;
 }
 
+$vals = [];
+
 $phoneIntl = $_SESSION['new_user_phone'] ?? ''; // Will be empty for Google users, populated for phone users
 $redir  = safe_redirect_path(clean($_GET['redirect'] ?? ''));
 $errors = [];
