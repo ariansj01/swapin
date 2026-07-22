@@ -1388,6 +1388,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .listings-rows-container {
   display: grid;
   gap: var(--sp-5);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .listings-row-wrapper {
@@ -1397,6 +1400,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   gap: var(--sp-3);
   max-width: 100%;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Utility classes for search box in all.php */
@@ -1439,6 +1444,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .listings-scroll-row {
   display: flex;
   flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   gap: var(--sp-4);
   overflow-x: auto;
   overflow-y: visible;
@@ -1452,7 +1460,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: none;
 }
 .listings-scroll-card {
-  flex: 0 0 min(360px, 30vw);
+  flex: 0 0 clamp(240px, 24vw, 360px);
+  max-width: clamp(240px, 24vw, 360px);
   scroll-snap-align: start;
 }
 
@@ -2731,6 +2740,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
   .listings-row-wrapper{
     max-width: 100% !important;
+    min-width: 0;
   }
 }
 
@@ -2770,6 +2780,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     align-items: center;
     gap: var(--sp-2);
     max-width: 100%;
+    min-width: 0;
     overflow: hidden;
   }
 
@@ -2780,6 +2791,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .listings-scroll-row {
     display: flex;
     flex-wrap: nowrap;
+    min-width: 0;
+    max-width: 100%;
     gap: var(--sp-3);
     overflow-x: auto;
     overflow-y: visible;
@@ -2794,8 +2807,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .listings-scroll-card {
-    flex: 0 0 min(300px, calc(100vw - 32px));
-    max-width: min(300px, calc(100vw - 32px));
+    flex: 0 0 clamp(240px, 78vw, 300px);
+    max-width: clamp(240px, 78vw, 300px);
     scroll-snap-align: start;
   }
 
