@@ -117,7 +117,10 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
 /* Flex helpers */
 .d-flex       { display: flex; }
+.d-block      { display: block; }
+.d-none       { display: none; }
 .align-center { align-items: center; }
+.justify-between { justify-content: space-between; }
 .gap-2        { gap: var(--sp-2); }
 .gap-3        { gap: var(--sp-3); }
 .gap-4        { gap: var(--sp-4); }
@@ -132,6 +135,16 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .mt-8         { margin-top: var(--sp-8); }
 .text-center  { text-align: center; }
 .w-100        { width: 100%; }
+
+/* Responsive display helpers */
+@media (min-width: 992px) {
+  .d-lg-none { display: none !important; }
+  .d-lg-block { display: block !important; }
+}
+
+@media (max-width: 991px) {
+  .d-none-lg { display: none !important; }
+}
 
 /* ── 4. Typography helpers ─────────────────────────────────────────────── */
 .fs-xs  { font-size: .75rem; }
@@ -486,6 +499,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
   .all-listings-sidebar {
     order: 1;
     margin-top: 0;
+    display: none; /* Hide sidebar on mobile since we have the modal */
   }
 
   .all-listings-results {
@@ -497,7 +511,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 
   .all-listings-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: 1fr !important;
   }
 
   .all-listings-categories {
@@ -2841,6 +2855,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 @media (max-width: 991px) {
   #filter-modal {
+    display: block !important; /* Override the display: none we set earlier */
     position: fixed;
     top: 0;
     right: 0;
