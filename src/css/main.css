@@ -2749,9 +2749,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .step-card {
-    width: calc(100vw - 32px);
-    min-width: calc(100vw - 32px);
-    max-width: calc(100vw - 32px);
+    width: calc(70vw - 32px);
+    min-width: calc(70vw - 32px);
+    max-width: calc(70vw - 32px);
     padding: 24px 18px 18px;
   }
 
