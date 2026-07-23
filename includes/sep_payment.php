@@ -7,12 +7,15 @@ class SEPPayment {
     private const REVERSE_URL = 'https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/ReverseTransaction';
     
     // Terminal ID
-    public const TERMINAL_ID = '15620853';
+    public static function terminalId(){
+        $config=require __DIR__.'/sep_secrets.php';
+        return $config['terminal_id'];
+    }
 
     public static function getToken(int $amount, string $resNum, string $redirectUrl, ?string $cellNumber = null): ?array {
         $data = [
             'Action' => 'Token',
-            'TerminalId' => self::TERMINAL_ID,
+            'TerminalId' => self::terminalId(),
             'Amount' => $amount,
             'ResNum' => $resNum,
             'RedirectUrl' => $redirectUrl,
@@ -34,7 +37,7 @@ class SEPPayment {
     public static function verifyTransaction(string $refNum): ?array {
         $data = [
             'RefNum' => $refNum,
-            'TerminalNumber' => (int)self::TERMINAL_ID,
+            'TerminalNumber' => (int)self::terminalId(),
         ];
 
         $response = self::sendRequest(self::VERIFY_URL, $data);
@@ -54,7 +57,7 @@ class SEPPayment {
     public static function reverseTransaction(string $refNum): ?array {
         $data = [
             'RefNum' => $refNum,
-            'TerminalNumber' => (int)self::TERMINAL_ID,
+            'TerminalNumber' => (int)self::terminalId(),
         ];
 
         $response = self::sendRequest(self::REVERSE_URL, $data);

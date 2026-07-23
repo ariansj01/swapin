@@ -20,7 +20,14 @@ $payment = null;
 try {
     // Find payment by res_num
     if ($resNum) {
-        $payment = DB::fetch('SELECT * FROM payments WHERE res_num = ? LIMIT 1', [$resNum]);
+        DB::beginTransaction();
+
+$payment = DB::fetch(
+    'SELECT * FROM payments WHERE res_num = ? FOR UPDATE',
+    [$resNum]
+);
+
+
     }
 
     if (!$payment) {
