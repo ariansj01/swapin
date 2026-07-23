@@ -170,15 +170,15 @@ render_navbar($user);
       <div class="site-footer__stat">
         <i class="bi bi-chat-dots site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-valuse">پشتیبانی آنلاین</dt>
+          <dt class="site-footer__stat-value">پشتیبانی آنلاین</dt>
           <dd class="site-footer__stat-lable">همراه شما در هر مرحله</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-trophy site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-value">هزاران معامله موفق</dt>
-          <dd class="site-footer__stat-label">توسط کاربران سواپین</dd>
+          <dd class="site-footer__stat-value">توسط کاربران سواپین</dd>
+          <dt class="site-footer__stat-lable">هزاران معامله موفق</dt>
         </div>
       </div>
     </dl>

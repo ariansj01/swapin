@@ -35,9 +35,9 @@ if ($isGoogleUser) {
 } elseif (!isset($_SESSION['new_user_phone'])) {
     // Non-Google user, but no phone in session (means not coming from OTP verification)
     header('Location: ' . APP_URL . '/auth/login'); exit;
+} else {
+    $vals = [];
 }
-
-$vals = [];
 
 $phoneIntl = $_SESSION['new_user_phone'] ?? ''; // Will be empty for Google users, populated for phone users
 $redir  = safe_redirect_path(clean($_GET['redirect'] ?? ''));

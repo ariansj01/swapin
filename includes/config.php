@@ -113,9 +113,11 @@ try {
                 `ref_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
                 `trace_no` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
                 `state` VARCHAR(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                `status` ENUM("pending","success","failed","canceled") COLLATE utf8mb4_unicode_ci DEFAULT "pending",
+                `status` ENUM("pending","success","failed","canceled","processing_failed") COLLATE utf8mb4_unicode_ci DEFAULT "pending",
                 `gateway` VARCHAR(50) COLLATE utf8mb4_unicode_ci DEFAULT "sep",
                 `meta` JSON DEFAULT NULL,
+                `processed_at` DATETIME DEFAULT NULL,
+                `last_error` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
                 `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (`id`),
@@ -136,6 +138,70 @@ try {
             } catch (Throwable $e) {
                 // Ignore if it fails, maybe another request is already doing it
                 swapin_debug_log('migration-error-payments-type', ['msg' => $e->getMessage()]);
+            }
+        }
+        if ($paymentTableInfo && !empty($paymentTableInfo['Create Table'])) {
+            $needsProcessingFailed = strpos($paymentTableInfo['Create Table'], "'processing_failed'") === false;
+            $needsExpired = strpos($paymentTableInfo['Create Table'], "'expired'") === false;
+            if ($needsProcessingFailed || $needsExpired) {
+                try {
+                    DB::query("ALTER TABLE `payments` MODIFY COLUMN `status` ENUM('pending','success','failed','canceled','processing_failed','expired') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending'");
+                } catch (Throwable $e) {
+                    swapin_debug_log('migration-error-payments-status', ['msg' => $e->getMessage()]);
+                }
+            }
+        }
+        if (!db_has_column('payments', 'processed_at')) {
+            try {
+                DB::query("ALTER TABLE `payments` ADD COLUMN `processed_at` DATETIME DEFAULT NULL AFTER `meta`");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-payments-processed-at', ['msg' => $e->getMessage()]);
+            }
+        }
+        if (!db_has_column('payments', 'last_error')) {
+            try {
+                DB::query("ALTER TABLE `payments` ADD COLUMN `last_error` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `processed_at`");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-payments-last-error', ['msg' => $e->getMessage()]);
+            }
+        }
+    }
+
+    if (db_has_table('wallet_transactions')) {
+        $walletTableInfo = DB::fetch("SHOW CREATE TABLE `wallet_transactions`");
+        if ($walletTableInfo && !empty($walletTableInfo['Create Table']) && strpos($walletTableInfo['Create Table'], "'payment'") === false) {
+            try {
+                DB::query("ALTER TABLE `wallet_transactions` MODIFY COLUMN `ref_type` ENUM('none','trade','trade_offer','listing','subscription_order','listing_bump','inspection_request','external','payment') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none' COMMENT 'Entity type that ref_id points to'");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-wallet-ref-type', ['msg' => $e->getMessage()]);
+            }
+        }
+        if (!db_has_column('wallet_transactions', 'payment_id')) {
+            try {
+                DB::query("ALTER TABLE `wallet_transactions` ADD COLUMN `payment_id` INT UNSIGNED DEFAULT NULL AFTER `ref_id`");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-wallet-payment-id', ['msg' => $e->getMessage()]);
+            }
+        }
+        if (!db_has_column('wallet_transactions', 'bank_ref_num')) {
+            try {
+                DB::query("ALTER TABLE `wallet_transactions` ADD COLUMN `bank_ref_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `payment_id`");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-wallet-bank-ref-num', ['msg' => $e->getMessage()]);
+            }
+        }
+        if (db_has_column('wallet_transactions', 'payment_id') && !db_has_index('wallet_transactions', 'idx_wallet_payment')) {
+            try {
+                DB::query("ALTER TABLE `wallet_transactions` ADD KEY `idx_wallet_payment` (`payment_id`)");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-wallet-payment-index', ['msg' => $e->getMessage()]);
+            }
+        }
+        if ($walletTableInfo && !empty($walletTableInfo['Create Table']) && strpos($walletTableInfo['Create Table'], 'fk_wallet_payment') === false && db_has_column('wallet_transactions', 'payment_id')) {
+            try {
+                DB::query("ALTER TABLE `wallet_transactions` ADD CONSTRAINT `fk_wallet_payment` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`id`) ON DELETE SET NULL");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-wallet-payment-fk', ['msg' => $e->getMessage()]);
             }
         }
     }
@@ -568,7 +634,8 @@ function app_url(string $path = ''): string {
 //   listing_bump        — ref_id = listing_bumps.id; listing_id = listings.id
 //   subscription_order  — ref_id = subscription_orders.id
 //   inspection_request  — ref_id = inspection_requests.id; listing_id = listings.id
-//   external            — ref_id = payment gateway / bank reference number
+//   external            — ref_id = external reference when no internal payment row exists
+//   payment             — ref_id + payment_id = payments.id; bank_ref_num = gateway reference number
 // ══════════════════════════════════════════════════════════════════════════════
 function wallet_listing_for_trade_user(array $trade, int $userId): ?int {
     if ((int)$userId === (int)$trade['user_a_id']) {
@@ -582,9 +649,11 @@ function wallet_listing_for_trade_user(array $trade, int $userId): ?int {
 
 function credit_transact(int $userId, string $type, float $amount, string $note = '', array $ctx = []): void {
     $refType      = $ctx['ref_type'] ?? 'none';
-    $refId        = isset($ctx['ref_id']) ? (int)$ctx['ref_id'] : null;
+    $refId        = isset($ctx['ref_id']) && is_numeric((string)$ctx['ref_id']) ? (int)$ctx['ref_id'] : null;
+    $paymentId    = isset($ctx['payment_id']) && is_numeric((string)$ctx['payment_id']) ? (int)$ctx['payment_id'] : null;
     $tradeId      = isset($ctx['trade_id']) ? (int)$ctx['trade_id'] : null;
     $listingId    = isset($ctx['listing_id']) ? (int)$ctx['listing_id'] : null;
+    $bankRefNum   = isset($ctx['bank_ref_num']) ? trim((string)$ctx['bank_ref_num']) : null;
     $currencyCode = $ctx['currency_code'] ?? DEFAULT_CURRENCY_CODE;
     $currency     = $ctx['currency'] ?? DEFAULT_CURRENCY_LABEL;
 
@@ -594,8 +663,18 @@ function credit_transact(int $userId, string $type, float $amount, string $note 
     if ($tradeId && !$refId) {
         $refId = $tradeId;
     }
+    if ($paymentId && $refType === 'none') {
+        $refType = 'payment';
+    }
+    if ($paymentId && !$refId) {
+        $refId = $paymentId;
+    }
 
-    DB::pdo()->beginTransaction();
+    $pdo = DB::pdo();
+    $ownsTransaction = !$pdo->inTransaction();
+    if ($ownsTransaction) {
+        $pdo->beginTransaction();
+    }
     try {
         DB::query(
             'UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?',
@@ -612,6 +691,8 @@ function credit_transact(int $userId, string $type, float $amount, string $note 
             'currency'      => $currency,
             'note'          => $note,
             'ref_id'        => $refId ?: null,
+            'payment_id'    => $paymentId ?: null,
+            'bank_ref_num'  => $bankRefNum !== '' ? $bankRefNum : null,
             'trade_id'      => $tradeId ?: null,
             'listing_id'    => $listingId ?: null,
         ];
@@ -622,9 +703,13 @@ function credit_transact(int $userId, string $type, float $amount, string $note 
         }
         $row = array_intersect_key($row, array_flip($walletCols));
         DB::insert('wallet_transactions', $row);
-        DB::pdo()->commit();
+        if ($ownsTransaction) {
+            $pdo->commit();
+        }
     } catch (Throwable $e) {
-        DB::pdo()->rollBack();
+        if ($ownsTransaction && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         throw $e;
     }
 }

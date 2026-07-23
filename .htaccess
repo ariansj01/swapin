@@ -62,6 +62,9 @@ Options +MultiViews -Indexes
   RewriteCond %{REQUEST_FILENAME}.php -f
   RewriteRule ^([^/]+)/?$ $1.php [L,QSA]
   
+  # Handle /sep/callback route for backward compatibility
+  RewriteRule ^sep/callback/?$ payment_callback.php [L,NC,QSA]
+
   # Handle subdirectories like /auth/login
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f

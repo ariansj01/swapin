@@ -1073,22 +1073,43 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sp-4);
+  gap: 12px;
   flex-wrap: wrap;
   margin: 20px 0;
 }
 
+.home-section-heading::after {
+  content: "";
+  flex: 1 1 auto;
+  min-width: 56px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(15, 23, 42, .08) 0%, rgba(15, 23, 42, .16) 100%);
+  order: 2;
+}
+
 .home-section-heading h2 {
   margin: 0;
-  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  order: 1;
 }
 
 .home-section-heading__link {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 700;
+  gap: 4px;
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text-muted);
   white-space: nowrap;
+  order: 3;
+  transition: color .2s ease, transform .2s ease;
+}
+
+.home-section-heading__link:hover {
+  color: var(--text);
+  transform: translateX(-2px);
 }
 
 .home-listings-section {
@@ -2718,7 +2739,11 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .all-listings-grid { grid-template-columns: 1fr !important; }
   .listings-grid { grid-template-columns: 1fr; }
 
-  .listing-card__media { width: 100%; }
+  .listing-card__media { width: 100%; display: flex; justify-content: center; }
+
+  .listing-card__img{
+    width: 50%;
+  }
 
   /* Two-column → stack */
   [style*="grid-template-columns:1fr 360px"],
@@ -2750,6 +2775,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .home-section-heading{
     margin-bottom: 20px;
   }
+  .home-section-heading::after{
+    display: none;
+  }
   .listings-rows-container{
     width: 100% !important;
   }
@@ -2777,7 +2805,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     display: flex;
     flex-direction: column-reverse;
     justify-content: center;
-    align-items: center;
+    /* align-items: center; */
   }
 
   .steps-grid {
@@ -2833,7 +2861,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .trust-grid { grid-template-columns: 1fr; }
 
   .listing-card {
-  width: 150% !important;
+  width: 100% !important;
   }
 }
 

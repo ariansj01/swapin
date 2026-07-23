@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/dashboard_layout.php';
 require_once __DIR__ . '/../includes/sep_payment.php';
+require_once __DIR__ . '/../includes/promotion_service.php';
 
 $user = require_auth();
 $uid  = (int)$user['id'];
@@ -35,75 +36,7 @@ $planFeatures = [
     'اولویت در جستجو',
 ];
 
-$plans = [
-    'boost' => [
-        'name'        => 'بازدید بیشتر',
-        'icon'        => 'bi-send',
-        'color'       => 'purple',
-        'header'      => 'purple',
-        'badge'       => null,
-        'badge_class' => '',
-        'base_price'  => 50000,
-        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
-        'description' => 'آگهی در بالاترین جایگاه لیست قرار می‌گیرد',
-    ],
-    'featured' => [
-        'name'        => 'داغ',
-        'icon'        => 'bi-fire',
-        'color'       => 'orange',
-        'header'      => 'orange',
-        'badge'       => null,
-        'badge_class' => '',
-        'base_price'  => 100000,
-        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
-        'description' => 'نمایش در بخش آگهی‌های ویژه با برچسب داغ',
-    ],
-    'vip' => [
-        'name'        => 'ویژه',
-        'icon'        => 'bi-award',
-        'color'       => 'violet',
-        'header'      => 'violet',
-        'badge'       => 'محبوب',
-        'badge_class' => 'popular',
-        'base_price'  => 200000,
-        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
-        'description' => 'نمایش در صفحه اول، اولویت در نتایج جستجو',
-    ],
-    'targeted' => [
-        'name'        => 'هدفمند',
-        'icon'        => 'bi-bullseye',
-        'color'       => 'green',
-        'header'      => 'green',
-        'badge'       => 'جدید',
-        'badge_class' => 'new',
-        'base_price'  => 150000,
-        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
-        'description' => 'نمایش به مخاطبان مرتبط بر اساس شهر و دسته‌بندی',
-    ],
-    'ai' => [
-        'name'        => 'هوشمند',
-        'icon'        => 'bi-telegram',
-        'color'       => 'blue',
-        'header'      => 'blue',
-        'badge'       => 'حرفه‌ای',
-        'badge_class' => 'pro',
-        'base_price'  => 250000,
-        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
-        'description' => 'ارسال هوشمند آگهی به مخاطبان دقیقاً مرتبط',
-    ],
-    'gold' => [
-        'name'        => 'طلایی',
-        'icon'        => 'bi-star-fill',
-        'color'       => 'gold',
-        'header'      => 'gold',
-        'badge'       => 'پیشنهاد ویژه',
-        'badge_class' => 'special',
-        'base_price'  => 500000,
-        'durations'   => ['24 ساعت' => 24, '7 روز' => 7*24, '14 روز' => 14*24, '30 روز' => 30*24],
-        'description' => 'شامل تمام امکانات: بازدید بیشتر, داغ, ویژه, هدفمند و هوشمند',
-        'featured'    => true,
-    ],
-];
+$plans = promotion_ui_plans();
 
 $success = '';
 $error   = '';
@@ -119,14 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($plans[$plan])) {
         $error = 'پلن انتخاب‌شده نامعتبر است';
     } else {
-        $planData = $plans[$plan];
-        // Check if selected duration is valid for this plan
-        $validDurations = array_values($planData['durations']);
-        $baseDuration = $validDurations[0];
-        if (!in_array($selectedDuration, $validDurations, true)) {
-            $selectedDuration = $baseDuration;
-        }
-        $price = (int)($planData['base_price'] * ($selectedDuration / $baseDuration));
+        $normalized = normalize_promotion_duration($plan, $selectedDuration);
+        $planData = $normalized['plan'];
+        $baseDuration = (int)$normalized['base_duration'];
+        $selectedDuration = (int)$normalized['duration_hours'];
+        $price = (int)$normalized['price'];
 
         // SEP payment
         try {
@@ -146,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'meta' => $meta,
             ]);
             
-            $redirectUrl = APP_URL . '/sep/callback';
+            $redirectUrl = APP_URL . '/payment_callback';
             $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
             
             if ($tokenResult && isset($tokenResult['token'])) {

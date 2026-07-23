@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/sep_secrets.php';
 
 class SEPPayment {
     private const TOKEN_URL = 'https://sep.shaparak.ir/onlinepg/onlinepg';
@@ -7,7 +8,7 @@ class SEPPayment {
     private const REVERSE_URL = 'https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/ReverseTransaction';
     
     // Terminal ID
-    public const TERMINAL_ID = '15620853';
+    public const TERMINAL_ID = SEP_TERMINAL_ID;
 
     public static function getToken(int $amount, string $resNum, string $redirectUrl, ?string $cellNumber = null): ?array {
         $data = [

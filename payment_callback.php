@@ -3,6 +3,8 @@ session_start();
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/sep_payment.php';
+require_once __DIR__ . '/includes/promotion_service.php';
+require_once __DIR__ . '/includes/v2.php';
 
 // Get parameters from callback (POST or GET)
 $params = array_merge($_POST, $_GET);
@@ -19,119 +21,155 @@ $payment = null;
 
 try {
     // Find payment by res_num
-    if ($resNum) {
+    if (!$resNum) {
+        $error = 'پارامترهای لازم برای پردازش پرداخت ارائه نشده است';
+        swapin_debug_log('payment_callback_missing_params', []);
+    } else {
         $payment = DB::fetch('SELECT * FROM payments WHERE res_num = ? LIMIT 1', [$resNum]);
+
+        if (!$payment) {
+            $error = 'پرداخت یافت نشد';
+            swapin_debug_log('payment_callback_payment_not_found', ['res_num' => $resNum]);
+        }
     }
 
     if (!$payment) {
-        throw new Exception('پرداخت یافت نشد');
-    }
+        // If no payment, just render error without heavy exception log
+        // Continue to render the error page
+    } else {
 
     // Verify transaction with SEP if state is OK
     if ($state === 'OK' && $refNum) {
+        if ($payment['status'] === 'success') {
+            $success = true;
+            swapin_debug_log('payment_callback_duplicate_ignored', [
+                'payment_id' => (int)$payment['id'],
+                'res_num' => $resNum,
+                'ref_num' => $refNum,
+            ]);
+        } else {
         $verifyResult = SEPPayment::verifyTransaction($refNum);
-        
-        if ($verifyResult && $verifyResult['success']) {
-            // Check amount matches
-            $txnAmount = (int)($verifyResult['data']['OrginalAmount'] ?? $verifyResult['data']['amount'] ?? 0);
-            if ($txnAmount !== (int)$payment['amount']) {
-                throw new Exception('مبلغ پرداخت شده با مبلغ درخواستی مطابقت ندارد');
-            }
-
-            // Mark payment as success
+        if (!$verifyResult || empty($verifyResult['success'])) {
             DB::update('payments', [
-                'status' => 'success',
+                'status' => 'failed',
                 'ref_num' => $refNum,
                 'trace_no' => $traceNo,
                 'state' => $state,
-                'meta' => json_encode($verifyResult['data'], JSON_UNESCAPED_UNICODE),
+                'last_error' => 'تایید پرداخت ناموفق بود',
             ], 'id = ?', [$payment['id']]);
+            throw new Exception('تایید پرداخت ناموفق بود');
+        }
 
-            // Process payment based on type
-            if ($payment['type'] === 'wallet_topup') {
-                // Add to user wallet
-                credit_transact(
-                    $payment['user_id'],
-                    'deposit',
-                    $payment['amount'],
-                    'شارژ کیف پول via درگاه بانک سامان',
-                    ['ref_type' => 'external', 'ref_id' => $refNum]
-                );
+        // Check amount matches
+        $txnAmount = (int)($verifyResult['data']['OrginalAmount'] ?? $verifyResult['data']['amount'] ?? 0);
+        if ($txnAmount !== (int)$payment['amount']) {
+            DB::update('payments', [
+                'status' => 'processing_failed',
+                'ref_num' => $refNum,
+                'trace_no' => $traceNo,
+                'state' => $state,
+                'last_error' => 'مبلغ پرداخت شده با مبلغ درخواستی مطابقت ندارد',
+            ], 'id = ?', [$payment['id']]);
+            throw new Exception('مبلغ پرداخت شده با مبلغ درخواستی مطابقت ندارد');
+        }
+
+        $pdo = DB::pdo();
+        $pdo->beginTransaction();
+        try {
+            $payment = DB::fetch('SELECT * FROM payments WHERE id = ? LIMIT 1 FOR UPDATE', [$payment['id']]);
+            if (!$payment) {
+                throw new Exception('پرداخت یافت نشد');
+            }
+            if ($payment['status'] === 'success') {
+                $pdo->commit();
                 $success = true;
-            } elseif ($payment['type'] === 'listing_promotion') {
-                // Process listing promotion
-                $meta = json_decode($payment['meta'], true) ?: [];
-                if (isset($meta['listing_id'], $meta['plan'], $meta['duration_hours'])) {
-                    $listingId = $meta['listing_id'];
-                    $plan = $meta['plan'];
-                    $durationHours = $meta['duration_hours'];
-                    $planData = $GLOBALS['plans'][$plan] ?? null;
+                swapin_debug_log('payment_callback_duplicate_locked', [
+                    'payment_id' => (int)$payment['id'],
+                    'res_num' => $resNum,
+                    'ref_num' => $refNum,
+                ]);
+            } else {
+                $meta = json_decode($payment['meta'] ?? '', true) ?: [];
 
-                    if ($planData) {
-                        require_once __DIR__ . '/listings/promote.php'; // to get $plans variable
-                        $plans = $GLOBALS['plans'];
-
-                        $endsAt = date('Y-m-d H:i:s', time() + $durationHours * 3600);
-                        $amountPaid = $payment['amount'];
-
-                        // Insert promotion
-                        DB::insert('listing_promotions', [
-                            'listing_id' => $listingId,
-                            'user_id' => $payment['user_id'],
-                            'plan' => $plan,
-                            'starts_at' => date('Y-m-d H:i:s'),
-                            'ends_at' => $endsAt,
-                            'amount_paid' => $amountPaid,
-                        ]);
-
-                        // Update listing based on plan
-                        $updateData = [];
-                        if ($plan === 'boost') {
-                            $updateData['bump_until'] = $endsAt;
-                        } elseif ($plan === 'featured') {
-                            $updateData['featured_until'] = $endsAt;
-                            $updateData['is_featured'] = 1;
-                        } elseif ($plan === 'vip') {
-                            $updateData['featured_until'] = $endsAt;
-                            $updateData['vip_until'] = $endsAt;
-                            $updateData['is_featured'] = 1;
-                        } elseif ($plan === 'targeted') {
-                            $updateData['targeted_until'] = $endsAt;
-                        } elseif ($plan === 'ai') {
-                            $updateData['ai_promo_until'] = $endsAt;
-                        } elseif ($plan === 'gold') {
-                            $updateData['bump_until'] = $endsAt;
-                            $updateData['featured_until'] = $endsAt;
-                            $updateData['vip_until'] = $endsAt;
-                            $updateData['is_featured'] = 1;
-                            $updateData['targeted_until'] = $endsAt;
-                            $updateData['ai_promo_until'] = $endsAt;
-                        }
-
-                        DB::update('listings', $updateData, 'id = ?', [$listingId]);
-                        $success = true;
+                if ($payment['type'] === 'wallet_topup') {
+                    credit_transact(
+                        (int)$payment['user_id'],
+                        'deposit',
+                        (float)$payment['amount'],
+                        'شارژ کیف پول via درگاه بانک سامان',
+                        [
+                            'ref_type' => 'payment',
+                            'ref_id' => (int)$payment['id'],
+                            'payment_id' => (int)$payment['id'],
+                            'bank_ref_num' => $refNum,
+                        ]
+                    );
+                } elseif ($payment['type'] === 'listing_promotion') {
+                    if (!isset($meta['listing_id'], $meta['plan'], $meta['duration_hours'])) {
+                        throw new Exception('اطلاعات ارتقای آگهی ناقص است');
                     }
-                }
-            } elseif ($payment['type'] === 'subscription_purchase') {
-                // Process subscription purchase
-                require_once __DIR__ . '/includes/v2.php'; // To get subscribe_to_plan function
-                $meta = json_decode($payment['meta'], true) ?: [];
-                if (isset($meta['subscription_plan'], $meta['months'])) {
-                    $subPlan = $meta['subscription_plan'];
-                    $subMonths = $meta['months'];
-                    $result = subscribe_to_plan($payment['user_id'], $subPlan, $subMonths, true); // Pass true to skip wallet deduction
-                    if (isset($result['success']) && $result['success']) {
-                        $success = true;
-                    } else {
+                    apply_listing_promotion(
+                        (int)$meta['listing_id'],
+                        (int)$payment['user_id'],
+                        (string)$meta['plan'],
+                        (int)$meta['duration_hours'],
+                        (float)$payment['amount']
+                    );
+                } elseif ($payment['type'] === 'subscription_purchase') {
+                    if (!isset($meta['subscription_plan'], $meta['months'])) {
+                        throw new Exception('اطلاعات اشتراک ناقص است');
+                    }
+                    $result = subscribe_to_plan(
+                        (int)$payment['user_id'],
+                        (string)$meta['subscription_plan'],
+                        (int)$meta['months'],
+                        true
+                    );
+                    if (empty($result['success'])) {
                         throw new Exception($result['error'] ?? 'خطا در فعال‌سازی اشتراک');
                     }
+                } else {
+                    throw new Exception('نوع پرداخت نامعتبر');
                 }
-            } else {
-                // Unknown payment type, refund or flag
-                throw new Exception('نوع پرداخت نامعتبر');
+
+                $paymentMeta = [
+                    'callback' => [
+                        'status' => $status,
+                        'mid' => $mid,
+                    ],
+                    'verify' => $verifyResult['data'] ?? [],
+                ];
+                DB::update('payments', [
+                    'status' => 'success',
+                    'ref_num' => $refNum,
+                    'trace_no' => $traceNo,
+                    'state' => $state,
+                    'meta' => json_encode($paymentMeta, JSON_UNESCAPED_UNICODE),
+                    'processed_at' => date('Y-m-d H:i:s'),
+                    'last_error' => null,
+                ], 'id = ?', [$payment['id']]);
+                $pdo->commit();
+                $success = true;
+                $payment = DB::fetch('SELECT * FROM payments WHERE id = ? LIMIT 1', [$payment['id']]);
             }
-        } else {
-            throw new Exception('تایید پرداخت ناموفق بود');
+        } catch (Throwable $txError) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            DB::update('payments', [
+                'status' => 'processing_failed',
+                'ref_num' => $refNum,
+                'trace_no' => $traceNo,
+                'state' => $state,
+                'last_error' => $txError->getMessage(),
+            ], 'id = ?', [$payment['id']]);
+            swapin_debug_log('payment_callback_processing_failed', [
+                'payment_id' => (int)$payment['id'],
+                'type' => $payment['type'],
+                'message' => $txError->getMessage(),
+            ]);
+            throw $txError;
+        }
         }
     } else {
         // Payment failed or canceled
@@ -140,8 +178,10 @@ try {
             'ref_num' => $refNum,
             'trace_no' => $traceNo,
             'state' => $state,
+            'last_error' => 'پرداخت ناموفق بود یا توسط کاربر لغو شد',
         ], 'id = ?', [$payment['id']]);
         $error = 'پرداخت ناموفق بود یا توسط کاربر لغو شد';
+    }
     }
 
 } catch (Throwable $e) {
@@ -159,7 +199,13 @@ render_navbar();
             <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
             <h2 style="margin-bottom: 16px; color: #10b981;">پرداخت موفق</h2>
             <p style="color: var(--text-muted); margin-bottom: 24px;">
-                <?= $payment['type'] === 'wallet_topup' ? 'کیف پول شما با موفقیت شارژ شد' : 'ارتقای آگهی شما با موفقیت انجام شد' ?>
+                <?php if (($payment['type'] ?? '') === 'wallet_topup'): ?>
+                    کیف پول شما با موفقیت شارژ شد
+                <?php elseif (($payment['type'] ?? '') === 'subscription_purchase'): ?>
+                    اشتراک شما با موفقیت فعال شد
+                <?php else: ?>
+                    ارتقای آگهی شما با موفقیت انجام شد
+                <?php endif; ?>
             </p>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <?php if ($payment['type'] === 'wallet_topup'): ?>
