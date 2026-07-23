@@ -29,7 +29,7 @@ $listings = DB::fetchAll(
 );
 foreach ($listings as $l) {
     $urls[] = [
-        'loc'        => $base . '/listings/view.php?id=' . (int)$l['id'],
+        'loc'        => $base . '/listings/view?id=' . (int)$l['id'],
         'priority'   => '0.8',
         'changefreq' => 'weekly',
         'lastmod'    => !empty($l['updated_at']) ? date('c', strtotime($l['updated_at'])) : $now,
