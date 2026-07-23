@@ -520,13 +520,13 @@ HTML;
 
 function render_categories_strip(?int $active = null): void {
     $cats = DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order');
-    $url  = APP_URL;
     echo '<div class="category-strip">';
     $cls  = $active === null ? ' active' : '';
-    echo "<a href='{$url}/listings/all.php' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
+    echo "<a href='" . APP_URL . "/listings/all.php' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
     foreach ($cats as $c) {
         $cls = $active == $c['id'] ? ' active' : '';
-        echo "<a href='{$url}/listings/all.php?cat={$c['slug']}' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='{$c['icon']}'></i></div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
+        $catUrl = category_url($c['slug']);
+        echo "<a href='{$catUrl}' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='{$c['icon']}'></i></div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
     }
     echo '</div>';
 }

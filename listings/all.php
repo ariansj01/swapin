@@ -96,8 +96,13 @@ if ($category) $title = 'آگهی‌های ' . category_label($category['slug'],
 if ($search)   $title = 'نتایج برای «' . $search . '»';
 $desc = 'فهرست کامل آگهی‌ها با فیلتر بر اساس دسته‌بندی، شهر، وضعیت و قیمت';
 
+$canonical = APP_URL . '/listings/all.php';
+if ($category && !$search && !$city && !$wantType && !$condition && $pmin === 0 && $pmax === 0 && $sort === 'new' && $page === 1) {
+    $canonical = category_url($category['slug']);
+}
+
 render_head($title, $desc, [
-  'canonical' => APP_URL . '/listings/all.php',
+  'canonical' => $canonical,
   'og_type'   => 'website',
   'og_image'  => APP_URL . '/src/img/heropng.png',
 ]);
@@ -154,7 +159,23 @@ render_navbar($user);
           <?php foreach (DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order') as $c): ?>
           <?php $active = $catSlug === $c['slug'] ? 'text-strong' : ''; ?>
           <li>
-            <a href="<?= APP_URL ?>/listings/all.php?cat=<?= h($c['slug']) ?><?= $search ? '&q=' . urlencode($search) : '' ?><?= $city ? '&city=' . urlencode($city) : '' ?><?= $wantType ? '&want=' . urlencode($wantType) : '' ?><?= $condition ? '&condition=' . urlencode($condition) : '' ?><?= $pmin > 0 ? '&price_min=' . $pmin : '' ?><?= $pmax > 0 ? '&price_max=' . $pmax : '' ?><?= $sort ? '&sort=' . urlencode($sort) : '' ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
+            <?php 
+            $baseCatUrl = category_url($c['slug']);
+            $hasOtherFilters = $search || $city || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new';
+            if ($hasOtherFilters) {
+                $catLink = APP_URL . '/listings/all.php?cat=' . h($c['slug']) . 
+                    ($search ? '&q=' . urlencode($search) : '') .
+                    ($city ? '&city=' . urlencode($city) : '') .
+                    ($wantType ? '&want=' . urlencode($wantType) : '') .
+                    ($condition ? '&condition=' . urlencode($condition) : '') .
+                    ($pmin > 0 ? '&price_min=' . $pmin : '') .
+                    ($pmax > 0 ? '&price_max=' . $pmax : '') .
+                    ($sort ? '&sort=' . urlencode($sort) : '');
+            } else {
+                $catLink = $baseCatUrl;
+            }
+            ?>
+            <a href="<?= $catLink ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
           </li>
           <?php endforeach; ?>
         </ul>

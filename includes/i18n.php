@@ -61,9 +61,9 @@ function condition_label(string $cond): string {
 
 function category_label(string $slug, string $name = ''): string {
     $labels = [
-        'electronics'     => 'الکترونیک',
+        'electronics'     => 'دیجیتال',
         'clothing'        => 'پوشاک',
-        'home-garden'     => 'خانه و باغ',
+        'home-garden'     => 'خانه و ویلا',
         'books-media'     => 'کتاب و رسانه',
         'sports'          => 'ورزش',
         'toys-games'      => 'اسباب‌بازی و بازی',
@@ -92,6 +92,17 @@ function category_label(string $slug, string $name = ''): string {
     ];
 
     return $labels[$slug] ?? ($name ?: $slug);
+}
+
+function category_url(string $slug): string {
+    $urlMap = [
+        'electronics' => '/category/digital',
+        'home-garden' => '/category/home-and-villa',
+    ];
+    if (isset($urlMap[$slug])) {
+        return APP_URL . $urlMap[$slug];
+    }
+    return APP_URL . '/category/' . $slug;
 }
 
 function want_type_label(string $type): string {

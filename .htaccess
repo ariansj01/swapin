@@ -65,6 +65,22 @@ Options +MultiViews -Indexes
   # Handle /sep/callback route for backward compatibility
   RewriteRule ^sep/callback/?$ payment_callback.php [L,NC,QSA]
 
+  # Category URLs (e.g., /category/digital → /listings/all.php?cat=electronics)
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^category/digital/?$ listings/all.php?cat=electronics [L,NC,QSA]
+  RewriteRule ^category/electronics/?$ listings/all.php?cat=electronics [L,NC,QSA]
+  RewriteRule ^category/clothing/?$ listings/all.php?cat=clothing [L,NC,QSA]
+  RewriteRule ^category/home-and-villa/?$ listings/all.php?cat=home-garden [L,NC,QSA]
+  RewriteRule ^category/home-garden/?$ listings/all.php?cat=home-garden [L,NC,QSA]
+  RewriteRule ^category/books-media/?$ listings/all.php?cat=books-media [L,NC,QSA]
+  RewriteRule ^category/sports/?$ listings/all.php?cat=sports [L,NC,QSA]
+  RewriteRule ^category/toys-games/?$ listings/all.php?cat=toys-games [L,NC,QSA]
+  RewriteRule ^category/vehicles/?$ listings/all.php?cat=vehicles [L,NC,QSA]
+  RewriteRule ^category/services/?$ listings/all.php?cat=services [L,NC,QSA]
+  RewriteRule ^category/food-drink/?$ listings/all.php?cat=food-drink [L,NC,QSA]
+  RewriteRule ^category/other/?$ listings/all.php?cat=other [L,NC,QSA]
+
   # Handle subdirectories like /auth/login
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f
