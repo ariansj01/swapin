@@ -2860,7 +2860,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   width: 100% !important;
   }
   .all-page-listing-card{
-    width: 250px !important;
+    width: 150% !important;
   }
 }
 
