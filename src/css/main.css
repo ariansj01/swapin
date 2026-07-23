@@ -2741,10 +2741,6 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
   .listing-card__media { width: 100%; display: flex; justify-content: center; }
 
-  .listing-card__img{
-    width: 50%;
-  }
-
   /* Two-column → stack */
   [style*="grid-template-columns:1fr 360px"],
   [style*="grid-template-columns:1fr 380px"],
@@ -2864,7 +2860,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   width: 100% !important;
   }
   .all-page-listing-card{
-    width: 150px !important;
+    width: 250px !important;
   }
 }
 
