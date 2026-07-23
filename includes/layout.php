@@ -525,7 +525,7 @@ function render_categories_strip(?int $active = null): void {
     echo "<a href='" . APP_URL . "/listings/all.php' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
     foreach ($cats as $c) {
         $cls = $active == $c['id'] ? ' active' : '';
-        echo "<a href='{$url}/category/{$c['slug']}' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='{$c['icon']}'></i></div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
+        // echo "<a href='{$url}/category/{$c['slug']}' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='{$c['icon']}'></i></div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
     }
     echo '</div>';
 }
