@@ -189,7 +189,11 @@ try {
     swapin_debug_log('payment_callback_error', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 }
 
-render_head('نتیجه پرداخت');
+render_head('نتیجه پرداخت', '', [
+    'robots' => 'noindex, nofollow',
+    'canonical' => '',
+    'skip_canonical' => true
+]);
 render_navbar();
 ?>
 
