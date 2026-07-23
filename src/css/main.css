@@ -1491,7 +1491,6 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   cursor: pointer;
   text-decoration: none;
   color: inherit;
-  width: 150%;
 }
 
 .listing-card:hover {
@@ -2834,7 +2833,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .trust-grid { grid-template-columns: 1fr; }
 
   .listing-card {
-  width: 100% !important;
+  width: 150% !important;
   }
 }
 
