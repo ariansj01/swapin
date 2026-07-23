@@ -1,7 +1,8 @@
 <?php
 // SWAPIN_DIRECT_ALL_PHP_301
 if (isset($_SERVER["REQUEST_URI"]) && preg_match("#^/listings/all\.php(?:\?|$)#", $_SERVER["REQUEST_URI"])) {
-    header("Location: /listings/", true, 301);
+    $query = $_SERVER["QUERY_STRING"] ?? "";
+    header("Location: /listings" . ($query ? "?" . $query : ""), true, 301);
     exit;
 }
 require_once __DIR__ . '/../includes/config.php';

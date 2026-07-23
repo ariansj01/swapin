@@ -142,7 +142,7 @@ ob_start();
       </form>
       <?php endif; ?>
       <?php endif; ?>
-      <a href="<?= APP_URL ?>/listings/view.php?id=<?= $id ?>" class="btn btn-ghost w-100 mt-3" target="_blank">مشاهده در سایت</a>
+      <a href="<?= APP_URL ?>/listings/view?id=<?= $id ?>" class="btn btn-ghost w-100 mt-3" target="_blank">مشاهده در سایت</a>
     </div>
   </div>
 </div>

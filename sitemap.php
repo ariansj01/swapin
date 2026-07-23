@@ -8,17 +8,17 @@ $now  = date('c');
 
 $urls = [
     ['loc' => $base . '/',              'priority' => '1.0', 'changefreq' => 'daily'],
-    ['loc' => $base . '/about.php',     'priority' => '0.6', 'changefreq' => 'monthly'],
-    ['loc' => $base . '/contact.php',   'priority' => '0.5', 'changefreq' => 'monthly'],
-    ['loc' => $base . '/fraud-prevention.php', 'priority' => '0.6', 'changefreq' => 'monthly'],
-    ['loc' => $base . '/support/index.php', 'priority' => '0.5', 'changefreq' => 'weekly'],
-    ['loc' => $base . '/ai/chat.php',   'priority' => '0.5', 'changefreq' => 'weekly'],
+    ['loc' => $base . '/about',     'priority' => '0.6', 'changefreq' => 'monthly'],
+    ['loc' => $base . '/contact',   'priority' => '0.5', 'changefreq' => 'monthly'],
+    ['loc' => $base . '/fraud-prevention', 'priority' => '0.6', 'changefreq' => 'monthly'],
+    ['loc' => $base . '/support', 'priority' => '0.5', 'changefreq' => 'weekly'],
+    ['loc' => $base . '/ai/chat',   'priority' => '0.5', 'changefreq' => 'weekly'],
 ];
 
 $cats = DB::fetchAll('SELECT slug FROM categories WHERE parent_id IS NULL AND is_active = 1');
 foreach ($cats as $cat) {
     $urls[] = [
-        'loc'        => $base . '/?cat=' . rawurlencode($cat['slug']),
+        'loc'        => $base . '/category/' . rawurlencode($cat['slug']),
         'priority'   => '0.7',
         'changefreq' => 'daily',
     ];
@@ -29,7 +29,7 @@ $listings = DB::fetchAll(
 );
 foreach ($listings as $l) {
     $urls[] = [
-        'loc'        => $base . '/listings/view.php?id=' . (int)$l['id'],
+        'loc'        => $base . '/listings/view?id=' . (int)$l['id'],
         'priority'   => '0.8',
         'changefreq' => 'weekly',
         'lastmod'    => !empty($l['updated_at']) ? date('c', strtotime($l['updated_at'])) : $now,

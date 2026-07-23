@@ -217,7 +217,7 @@ render_head($listing['title'], $metaDesc, [
         seo_json_ld_product($listing, $ogImage, $listingUrl),
         seo_json_ld_breadcrumbs([
             ['name' => 'خانه', 'url' => APP_URL . '/'],
-            ['name' => $listing['cat_name'], 'url' => APP_URL . '/?cat=' . $listing['cat_slug']],
+            ['name' => $listing['cat_name'], 'url' => APP_URL . '/category/' . $listing['cat_slug']],
             ['name' => $listing['title']],
         ]),
     ],
@@ -521,7 +521,7 @@ render_navbar($user);
     <nav class="lv-breadcrumb" aria-label="مسیر صفحه">
       <a href="<?= APP_URL ?>/">خانه</a>
       <i class="bi bi-chevron-left"></i>
-      <a href="<?= APP_URL ?>/?cat=<?= h($listing['cat_slug']) ?>"><?= h($listing['cat_name']) ?></a>
+      <a href="<?= APP_URL ?>/category/<?= h($listing['cat_slug']) ?>"><?= h($listing['cat_name']) ?></a>
       <i class="bi bi-chevron-left"></i>
       <span><?= h(mb_strimwidth($listing['title'], 0, 40, '…')) ?></span>
     </nav>
