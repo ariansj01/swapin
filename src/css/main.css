@@ -2863,6 +2863,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .listing-card {
   width: 100% !important;
   }
+  .all-page-listing-card{
+    width: 150px !important;
+  }
 }
 
 /* ── 28. Filter Modal for Listings Page ───────────────────────────────── */

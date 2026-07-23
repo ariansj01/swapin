@@ -254,7 +254,7 @@ render_navbar($user);
       <?php else: ?>
       <div class="all-listings-grid">
         <?php foreach ($listings as $l): ?>
-        <div class="all-page-listing-card" style="width: 150%;">
+        <div class="all-page-listing-card">
           <?php include __DIR__ . '/../includes/listing_card.php'; ?>
         </div>
         <?php endforeach; ?>
