@@ -37,7 +37,7 @@ $matches = array_map(static function ($m) {
     $m['value_fmt'] = !empty($m['estimated_value'])
         ? fmt_credit((float) $m['estimated_value'])
         : '';
-    $m['url'] = APP_URL . '/listings/view.php?id=' . (int) $m['listing_id'];
+    $m['url'] = APP_URL . '/listings/view?id=' . (int) $m['listing_id'];
     return $m;
 }, $result['matches']);
 

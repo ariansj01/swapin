@@ -185,7 +185,7 @@ render_navbar($user);
                 <?php endif; ?>
               </div>
             </div>
-            <a href="<?= APP_URL ?>/listings/view.php?id=<?= $item['id'] ?>" class="btn btn-ghost btn-sm">مشاهده</a>
+            <a href="<?= APP_URL ?>/listings/view?id=<?= $item['id'] ?>" class="btn btn-ghost btn-sm">مشاهده</a>
           </div>
           <?php endforeach; ?>
           <?php endif; ?>
