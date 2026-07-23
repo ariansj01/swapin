@@ -2129,7 +2129,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .all-listings-results {
   order: 1;
-  min-width: 0;
+  min-width: 130px;
 }
 
 .all-listings-results__header {
