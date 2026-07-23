@@ -18,7 +18,7 @@ $urls = [
 $cats = DB::fetchAll('SELECT slug FROM categories WHERE parent_id IS NULL AND is_active = 1');
 foreach ($cats as $cat) {
     $urls[] = [
-        'loc'        => $base . '/?cat=' . rawurlencode($cat['slug']),
+        'loc'        => $base . '/category/' . rawurlencode($cat['slug']),
         'priority'   => '0.7',
         'changefreq' => 'daily',
     ];

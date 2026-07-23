@@ -1,7 +1,8 @@
 <?php
 // SWAPIN_DIRECT_ALL_PHP_301
 if (isset($_SERVER["REQUEST_URI"]) && preg_match("#^/listings/all\.php(?:\?|$)#", $_SERVER["REQUEST_URI"])) {
-    header("Location: /listings/", true, 301);
+    $query = $_SERVER["QUERY_STRING"] ?? "";
+    header("Location: /listings" . ($query ? "?" . $query : ""), true, 301);
     exit;
 }
 require_once __DIR__ . '/../includes/config.php';
@@ -97,7 +98,9 @@ if ($search)   $title = 'نتایج برای «' . $search . '»';
 $desc = 'فهرست کامل آگهی‌ها با فیلتر بر اساس دسته‌بندی، شهر، وضعیت و قیمت';
 
 render_head($title, $desc, [
-  'canonical' => APP_URL . '/listings/all.php',
+  'canonical' => $catSlug
+        ? APP_URL . '/category/' . $catSlug
+        : APP_URL . '/listings',
   'og_type'   => 'website',
   'og_image'  => APP_URL . '/src/img/heropng.png',
 ]);
@@ -154,7 +157,7 @@ render_navbar($user);
           <?php foreach (DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order') as $c): ?>
           <?php $active = $catSlug === $c['slug'] ? 'text-strong' : ''; ?>
           <li>
-            <a href="<?= APP_URL ?>/listings/all.php?cat=<?= h($c['slug']) ?><?= $search ? '&q=' . urlencode($search) : '' ?><?= $city ? '&city=' . urlencode($city) : '' ?><?= $wantType ? '&want=' . urlencode($wantType) : '' ?><?= $condition ? '&condition=' . urlencode($condition) : '' ?><?= $pmin > 0 ? '&price_min=' . $pmin : '' ?><?= $pmax > 0 ? '&price_max=' . $pmax : '' ?><?= $sort ? '&sort=' . urlencode($sort) : '' ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
+            <a href="<?= APP_URL ?>/category/<?= h($c['slug']) ?><?= $search ? '&q=' . urlencode($search) : '' ?><?= $city ? '&city=' . urlencode($city) : '' ?><?= $wantType ? '&want=' . urlencode($wantType) : '' ?><?= $condition ? '&condition=' . urlencode($condition) : '' ?><?= $pmin > 0 ? '&price_min=' . $pmin : '' ?><?= $pmax > 0 ? '&price_max=' . $pmax : '' ?><?= $sort ? '&sort=' . urlencode($sort) : '' ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
           </li>
           <?php endforeach; ?>
         </ul>
