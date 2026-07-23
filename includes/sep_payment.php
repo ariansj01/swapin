@@ -13,7 +13,7 @@ class SEPPayment {
     public static function getToken(int $amount, string $resNum, string $redirectUrl, ?string $cellNumber = null): ?array {
         $data = [
             'Action' => 'Token',
-            'TerminalId' => self::TERMINAL_ID,
+            'TerminalId' => self::terminalId(),
             'Amount' => $amount,
             'ResNum' => $resNum,
             'RedirectUrl' => $redirectUrl,
@@ -35,7 +35,7 @@ class SEPPayment {
     public static function verifyTransaction(string $refNum): ?array {
         $data = [
             'RefNum' => $refNum,
-            'TerminalNumber' => (int)self::TERMINAL_ID,
+            'TerminalNumber' => (int)self::terminalId(),
         ];
 
         $response = self::sendRequest(self::VERIFY_URL, $data);
@@ -55,7 +55,7 @@ class SEPPayment {
     public static function reverseTransaction(string $refNum): ?array {
         $data = [
             'RefNum' => $refNum,
-            'TerminalNumber' => (int)self::TERMINAL_ID,
+            'TerminalNumber' => (int)self::terminalId(),
         ];
 
         $response = self::sendRequest(self::REVERSE_URL, $data);
