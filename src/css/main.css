@@ -827,7 +827,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
 .login-code-input,
 .login-input-tall {
-    min-height: 66px;
+    /* min-height: 66px; */
 }
 
 .login-code-input {
