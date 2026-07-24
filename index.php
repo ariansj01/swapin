@@ -309,7 +309,7 @@ render_navbar($user);
       <div class="listings-rows-container">
         <!-- Single Row with 20 Listings (4 visible at a time) -->
         <div class="listings-row-wrapper">
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی بعدی">
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-1" aria-label="آگهی بعدی">
             <i class="bi bi-chevron-right"></i>
           </button>
           <div class="listings-scroll-row" id="listings-row-1">
@@ -319,7 +319,7 @@ render_navbar($user);
             </div>
             <?php endforeach; ?>
           </div>
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-1" aria-label="آگهی قبلی">
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
             <i class="bi bi-chevron-left"></i>
           </button>
         </div>
