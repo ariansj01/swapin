@@ -2715,8 +2715,6 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 /* ── 28. Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .hide-mobile { display: none !important; }
-
   .hero__inner {
     grid-template-columns: 1fr;
     direction: rtl;
@@ -2890,6 +2888,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 @media (max-width: 991px) {
+  .hide-mobile { display: none !important; }
   #filter-modal {
     display: block !important; /* Override the display: none we set earlier */
     position: fixed;
