@@ -219,7 +219,7 @@ render_navbar(null);
               <input type="tel" class="form-control login-input-tall" name="phone" placeholder="09123456789"
                      autocomplete="tel" inputmode="numeric" maxlength="11" pattern="09[0-9]{9}" required autofocus
                      value="<?= isset($_POST['phone']) ? h($_POST['phone']) : '' ?>"
-                     style="font-size: 1.4rem;"
+                     style="font-size: 1rem;"
                      >
             </div>
             <button type="submit" class="btn btn-primary w-100 btn-lg" id="sendBtn">ارسال کد</button>

@@ -565,10 +565,10 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 
   .navbar-brand .brand-logo {
-    /* height: 100px; */
-    /* width: 50%; */
+    height: 100px;
+    width: 50%;
     /* margin-right: 20px; */
-    /* margin-top: -30px; */
+    margin-top: -30px;
   }
 
   .navbar-actions {
@@ -1717,6 +1717,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .listing-card__media {
@@ -3880,9 +3881,12 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .site-footer__main {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--sp-6);
     padding: var(--sp-6);
+  }
+  .site-footer__links {
+    grid-template-columns: repeat(1, 1fr);
   }
 
   .site-footer__col {
