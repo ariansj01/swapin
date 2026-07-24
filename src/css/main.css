@@ -306,7 +306,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .navbar-hamburger:hover { background: rgba(255,255,255,.1); }
 
 .navbar-brand .brand-logo {
-  height: 50%;
+  /* height: 50%; */
   width: 75%;
 }
 
@@ -583,8 +583,6 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
   .mobile-nav-overlay { display: block; }
   .mobile-drawer { display: flex; }
-  .mobile-bottom-nav { display: flex !important; }
-
   .home-steps__header {
     margin-bottom: 36px;
   }
@@ -2889,6 +2887,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 @media (max-width: 991px) {
   .hide-mobile { display: none !important; }
+  .mobile-bottom-nav { display: flex !important; }
+
   #filter-modal {
     display: block !important; /* Override the display: none we set earlier */
     position: fixed;
