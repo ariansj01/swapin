@@ -439,8 +439,8 @@ function render_footer(): void {
       <div class="site-footer__col">
         <h3 class="site-footer__heading">لینک‌های مفید</h3>
         <ul class="site-footer__links">
-          <li><a href="{$url}/about">درباره ما</a></li>
-          <li><a href="{$url}/contact">تماس با ما</a></li>
+          <!-- <li><a href="{$url}/about">درباره ما</a></li> -->
+          <!-- <li><a href="{$url}/contact">تماس با ما</a></li> -->
           <!-- <li><a href="{$url}/support">پشتیبانی</a></li> -->
           <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
           <li><a href="{$url}/blog">بلاگ</a></li>
