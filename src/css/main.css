@@ -831,7 +831,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
 }
 
 .login-code-input {
-    font-size: 1.4rem;
+    font-size: 1rem;
     letter-spacing: .24em;
     text-align: center;
 }

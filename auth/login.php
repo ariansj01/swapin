@@ -153,7 +153,7 @@ render_navbar(null);
 ?>
 
 <div style="min-height:calc(100vh - 130px);display:flex;align-items:center;padding:var(--sp-8) 0">
-  <div class="container-sm">
+  <div class="container-sm" style="width: 30%;">
     <div class="card" style="max-width:440px;margin:0 auto;min-height:520px;">
         <div class="card-body" style="padding:var(--sp-8); display:flex; flex-direction:column; min-height:520px;">
 
