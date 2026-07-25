@@ -154,12 +154,12 @@ render_navbar($user);
 
         <h2 class="all-listings-sidebar__title">دسته‌بندی‌ها</h2>
         <ul class="all-listings-categories">
-          <li style="cursor: pointer;padding: 12px;border: 1px solid #e1e1e1;border-radius: 8px;margin: 8px 0;">
+          <li style="cursor: pointer;padding: 12px;border: 1px solid #e1e1e1;border-radius: 8px;margin: 3px 0;">
             <a href="<?= APP_URL ?>/listings/all.php" class="<?= $catSlug === '' ? 'text-strong' : '' ?>"><i class="bi bi-grid"></i> همه</a>
           </li>
           <?php foreach (DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order') as $c): ?>
           <?php $active = $catSlug === $c['slug'] ? 'text-strong' : ''; ?>
-          <li style="cursor: pointer;padding: 12px;border: 1px solid #e1e1e1;border-radius: 8px;margin: 8px 0;">
+          <li style="cursor: pointer;padding: 12px;border: 1px solid #e1e1e1;border-radius: 8px;margin: 3px 0;">
             <?php 
             $baseCatUrl = category_url($c['slug']);
             $hasOtherFilters = $search || $city || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new';
