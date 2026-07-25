@@ -1076,7 +1076,7 @@
   justify-content: flex-start;
   gap: 10px;
   flex: 0 0 auto;
-  min-width: 130px;
+  /* min-width: 130px; */
   min-height: 44px;
   padding: 8px 10px;
   border-radius: 0;

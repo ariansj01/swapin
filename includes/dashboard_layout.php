@@ -44,7 +44,7 @@ function render_user_panel_open(array $user, string $active, array $navOverrides
 </form>
 HTML;
 
-    echo '<div class="dash-sidebar__pro">';
+    echo '<div class="dash-sidebar__pro" style="display: none;">';
     echo '<div class="dash-sidebar__pro-icon"><i class="bi bi-gem"></i></div>';
     echo '<strong>اشتراک حرفه‌ای</strong>';
     echo '<p>آگهی بیشتر + گزارش پیشرفته</p>';

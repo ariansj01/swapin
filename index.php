@@ -91,6 +91,28 @@ $listings = DB::fetchAll(
     [...$params, $displayLimit, $pag['offset']]
 );
 
+// ─── Premium / promoted listings (before filters on home page 1) ─────────────
+$premiumListings = [];
+if (!$search && !$catSlug && $page === 1) {
+    $premiumWhere = [
+        listing_public_sql('l'),
+        'l.listing_mode != "sell"',
+        '(l.featured_until > NOW() OR l.bump_until > NOW() OR l.vip_until > NOW())',
+    ];
+    $premiumOrderBy = '(l.vip_until > NOW()) DESC, (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC';
+    $premiumListings = DB::fetchAll(
+        "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
+                c.name AS cat_name, c.slug AS cat_slug,
+                (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+         FROM listings l
+         JOIN users u ON u.id = l.user_id
+         JOIN categories c ON c.id = l.category_id
+         WHERE " . implode(' AND ', $premiumWhere) . "
+         ORDER BY {$premiumOrderBy}
+         LIMIT 20"
+    );
+}
+
 $cities = iran_cities();
 
 $homeMetaTitle = swapin_content_get('home_meta_title');
@@ -100,7 +122,7 @@ render_head($homeMetaTitle, $homeMetaDesc, [
     'canonical' => APP_URL . '/',
     'og_type'   => 'website',
     'og_image'  => APP_URL . '/src/img/heropng.png',
-    'keywords'  => 'مبادله کالا, تعویض کالا, بازار مبادله, سواپین, معاوضه',
+    'keywords'  => 'مبادله کالا, تعویض کالا, بازار مبادله, سواَپین, معاوضه',
     'json_ld'   => [seo_json_ld_website(), seo_json_ld_organization()],
 ]);
 render_navbar($user);
@@ -177,7 +199,7 @@ render_navbar($user);
       <div class="site-footer__stat">
         <i class="bi bi-trophy site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dd class="site-footer__stat-value">توسط کاربران سواپین</dd>
+          <dd class="site-footer__stat-value">توسط کاربران سواَپین</dd>
           <dt class="site-footer__stat-lable">هزاران معامله موفق</dt>
         </div>
       </div>
@@ -249,10 +271,10 @@ render_navbar($user);
       <div class="container">
         <div class="home-section__header home-steps__header">
           <span class="home-steps__eyebrow">مسیر ساده معامله</span>
-          <h2>چطور در سواپین معامله کنیم؟</h2>
+          <h2>چطور در سواَپین معامله کنیم؟</h2>
           <p>فقط در چهار مرحله ساده کالای خود را با دیگران معامله کنید.</p>
         </div>
-        <div class="steps-grid" aria-label="مراحل معامله در سواپین">
+        <div class="steps-grid" aria-label="مراحل معامله در سواَپین">
           <?php
           $steps = [
               ['۱', 'ثبت آگهی', 'از کالای خود عکس بگیرید، توضیحات بنویسید و آگهی را ثبت کنید.', 'bi-phone', 'bi-plus-lg', 'آگهی شما در چند دقیقه آماده نمایش است.'],
@@ -286,6 +308,35 @@ render_navbar($user);
         </div>
       </div>
     </section>
+
+    <!-- Premium Listings Section (Active promotion plans) -->
+    <?php if (!empty($premiumListings)): ?>
+    <section class="home-listings-section" aria-label="اگهی‌های ویژه">
+      <div class="home-section-heading home-section-heading--large mb-5">
+        <h2>اگهی‌های ویژه</h2>
+        <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
+          مشاهده همه آگهی‌ها
+        </a>
+      </div>
+      <div class="listings-rows-container">
+        <div class="listings-row-wrapper">
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-premium" aria-label="آگهی بعدی">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <div class="listings-scroll-row" id="listings-row-premium">
+            <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
+            <div class="listings-scroll-card">
+              <?php include __DIR__ . '/includes/listing_card.php'; ?>
+            </div>
+            <?php endforeach; ?>
+          </div>
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-premium" aria-label="آگهی قبلی">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+    <?php endif; ?>
     
     <!-- New Listings Section -->
     <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">

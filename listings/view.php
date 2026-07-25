@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
     } elseif ($_POST['action'] === 'buy_now') {
-        $offerError = 'خرید مستقیم در سواپین غیرفعال است؛ فقط معاوضه مجاز است.';
+        $offerError = 'خرید مستقیم در سواَپین غیرفعال است؛ فقط معاوضه مجاز است.';
     } elseif ($_POST['action'] === 'request_inspection') {
         if (!$user || (int)$listing['user_id'] !== (int)$user['id']) {
             $offerError = 'فقط صاحب آگهی می‌تواند بازرسی درخواست کند.';
@@ -678,7 +678,7 @@ render_navbar($user);
               <button type="button" class="lv-offer-type<?= !$myListings ? ' active' : '' ?>" data-type="message">
                 <div class="lv-offer-icon"><i class="bi bi-chat-dots"></i></div>
                 <div class="lv-offer-type-info">
-                  <div class="lv-offer-type-title">فقط پیام می‌فرستم</div>
+                  <div class="lv-offer-type-title">کالا جهت معاوضه ندارم</div>
                   <p class="lv-offer-type-desc">اگر کالایی ندارید، مستقیم پیام بگذارید</p>
                 </div>
               </button>

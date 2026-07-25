@@ -300,7 +300,7 @@ ob_start();
 <?php
 $content = ob_get_clean();
 
-render_head('ارتقای آگهی', 'ارتقای آگهی و افزایش بازدید در سواپین', ['robots' => 'noindex, nofollow']);
+render_head('ارتقای آگهی', 'ارتقای آگهی و افزایش بازدید در سواَپین', ['robots' => 'noindex, nofollow']);
 render_panel_styles();
 render_navbar($user);
 render_user_panel_open($user, 'promote', [

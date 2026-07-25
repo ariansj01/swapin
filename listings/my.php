@@ -75,6 +75,30 @@ $listings = DB::fetchAll(
     [$uid, $tab, LISTINGS_PER_PAGE, $pag['offset']]
 );
 
+// ─── Performance dropdown + selected listing ──────────────────────────────────
+$perfListings = DB::fetchAll(
+    "SELECT l.id, l.title, l.status, l.views,
+            (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb,
+            (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = l.id)                     AS saved_count,
+            (SELECT COUNT(*) FROM trade_offers o WHERE o.listing_id = l.id)                          AS offers_count
+     FROM listings l
+     WHERE l.user_id = ? AND l.status IN ('active','traded','expired')
+     ORDER BY l.updated_at DESC",
+    [$uid]
+);
+
+$selectedPerfId = (int)($_GET['perf_id'] ?? ($perfListings[0]['id'] ?? 0));
+$perfListing = null;
+foreach ($perfListings as $pl) {
+    if ((int)$pl['id'] === $selectedPerfId) {
+        $perfListing = $pl;
+        break;
+    }
+}
+if ($perfListing) {
+    $perfListing['link_url'] = APP_URL . '/listings/view?id=' . (int)$perfListing['id'];
+}
+
 $statusLabels = ['active' => 'فعال', 'traded' => 'معامله‌شده', 'expired' => 'منقضی', 'deleted' => 'حذف‌شده'];
 $condColors = ['new' => 'success', 'like_new' => 'success', 'good' => 'info', 'fair' => 'warning', 'poor' => 'danger'];
 
@@ -98,6 +122,35 @@ render_user_panel_open($user, 'my');
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
     </div>
+
+    <?php if (!empty($perfListings)): ?>
+    <div class="card mb-5 p-4">
+      <div class="d-flex justify-between align-center mb-4 flex-wrap gap-3">
+        <div>
+          <h2 class="fs-5 mb-0 fw-bold">عملکرد آگهی‌های من</h2>
+          <div class="fs-xs text-muted">از لیست زیر یک آگهی را انتخاب کنید تا آمار عملکرد آن را مشاهده کنید.</div>
+        </div>
+        <form method="GET" class="d-flex align-center gap-2" style="min-width:260px">
+          <?php foreach (['tab','page'] as $k): if (isset($_GET[$k])): ?>
+          <input type="hidden" name="<?= h($k) ?>" value="<?= h($_GET[$k]) ?>">
+          <?php endif; endforeach; ?>
+          <label for="perf_id" class="fs-xs text-muted">آگهی:</label>
+          <select id="perf_id" name="perf_id" class="form-control form-control-sm" onchange="this.form.submit()">
+            <?php foreach ($perfListings as $pl): ?>
+            <option value="<?= (int)$pl['id'] ?>" <?= (int)$pl['id'] === $selectedPerfId ? 'selected' : '' ?>>
+              <?= h(mb_strimwidth($pl['title'], 0, 64, '…')) ?> (#<?= (int)$pl['id'] ?>)
+            </option>
+            <?php endforeach; ?>
+          </select>
+          <noscript><button type="submit" class="btn btn-outline btn-sm">اعمال</button></noscript>
+        </form>
+      </div>
+      <?php if ($perfListing): ?>
+      <?php include __DIR__ . '/../includes/listing_performance_card.php'; ?>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <div class="alert alert-warning mb-5"><i class="bi bi-rocket"></i> آگهی شما بعد از ۳۰ روز دیگر منقضی میشود</div>
     <?php if (isset($_GET['promoted'])): ?>
     <div class="alert alert-success mb-5"><i class="bi bi-rocket"></i> آگهی با موفقیت ارتقا یافت!</div>

@@ -35,12 +35,17 @@ function user_initial(string $name): string {
     return '';
 }
 
-/** Avatar markup: photo, letter initial, or person icon (never broken "?"). */
+/** Avatar markup: photo (local or external URL), letter initial, or person icon (never broken "?"). */
 function avatar_html(?string $avatar, string $name, string $size = 'md'): string {
     $sizeClass = 'avatar-' . preg_replace('/[^a-z]/', '', $size);
-    if ($avatar) {
-        return '<img class="avatar ' . $sizeClass . ' avatar--img" src="' . UPLOAD_URL . h($avatar) . '" alt="' . h($name) . '">';
+
+    if ($avatar !== null && trim($avatar) !== '') {
+        $avatar = trim($avatar);
+        $isExternal = preg_match('#^https?://#i', $avatar) === 1 || str_starts_with($avatar, '//');
+        $src = $isExternal ? $avatar : UPLOAD_URL . $avatar;
+        return '<img class="avatar ' . $sizeClass . ' avatar--img" src="' . h($src) . '" alt="' . h($name) . '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'' . 'avatar ' . $sizeClass . '\',innerHTML:this.alt.charAt(0)||\'\'}));">';
     }
+
     $initial = user_initial($name);
     if ($initial !== '') {
         return '<div class="avatar ' . $sizeClass . '" aria-hidden="true">' . h($initial) . '</div>';
