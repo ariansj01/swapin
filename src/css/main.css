@@ -2082,14 +2082,14 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .all-listings-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: 320px minmax(0, 1fr);
   gap: var(--sp-8);
   direction: rtl;
   align-items: start;
 }
 
 .all-listings-sidebar {
-  order: 2;
+  order: 1;
   margin-top: 50px;
 }
 
@@ -2130,7 +2130,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .all-listings-results {
-  order: 1;
+  order: 2;
   min-width: 130px;
 }
 
