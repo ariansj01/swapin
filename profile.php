@@ -142,10 +142,10 @@ render_navbar($currentUser);
               <div class="profile-compact__score-ring" style="--pct: <?= (int)$swapScore['score'] ?>">
                 <span><?= fmt_num((int)$swapScore['score']) ?></span>
               </div>
-              <div>
+              <div style="position: relative;">
                 <div class="dash-page-head__title" style="font-size:1rem;margin-bottom:4px">امتیاز معاوضه</div>
                 <div class="dash-page-head__sub" style="margin:0 0 6px"><?= h($swapScore['label']) ?></div>
-                <div class="badge badge-warning"><i class="bi bi-stars"></i> وضعیت اعتماد</div>
+                <div class="badge badge-warning" style="position: absolute;top: 30px;left: -60px;"><i class="bi bi-stars"></i> وضعیت اعتماد</div>
               </div>
             </div>
           </div>

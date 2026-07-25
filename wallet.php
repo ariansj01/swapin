@@ -188,7 +188,7 @@ render_user_panel_open($user, 'wallet');
       </div>
 
       <!-- ── Deposit Sidebar ───────────────────────────────────── -->
-      <div style="position:sticky;top:80px">
+      <div style="">
 
         <!-- Deposit Card -->
         <div class="card mb-4" id="deposit-form-card">
@@ -234,7 +234,7 @@ render_user_panel_open($user, 'wallet');
 
 
         <!-- How Credits Work -->
-        <div class="card">
+        <div class="card" style="display:none;">
           <div class="card-header">
             <h3 style="margin:0;font-size:1rem"><i class="bi bi-question-circle"></i> <?= CREDIT_UNIT ?> چگونه کار می‌کند؟</h3>
           </div>

@@ -92,7 +92,6 @@ render_user_panel_open($user, 'my');
 ?>
 
   <div class="dash-panel">
-    <span class="badge badge-warning">آ</span>
     <?php render_panel_page_header('آگهی‌های من', 'مدیریت همه آگهی‌های تعویض شما'); ?>
     <div class="dash-page-head__actions">
       <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">

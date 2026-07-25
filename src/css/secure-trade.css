@@ -1202,7 +1202,7 @@
 .trade-room__timeline::before {
   content: "";
   position: absolute;
-  inset-inline-start: 178px;
+  inset-inline-start: 158px;
   top: 0px;
   bottom: 8px;
   width: 2px;
@@ -1220,7 +1220,7 @@
 
 .trade-room__timeline-dot {
   position: absolute;
-  inset-inline-start: 170px;
+  inset-inline-start: 150px;
   top: 2px;
   width: 18px;
   height: 18px;

@@ -103,9 +103,9 @@ render_navbar($user);
         if ($plan['has_api'])     $features[] = 'دستیار هوشمند';
       ?>
       <div class="card" style="display:flex;flex-direction:column;<?= $plan['slug'] === 'gold' ? 'border:2px solid var(--accent-dark)' : '' ?>">
-        <div class="card-body" style="padding:var(--sp-6);flex:1;display:flex;flex-direction:column">
+        <div class="card-body" style="padding:var(--sp-6);flex:1;display:flex;flex-direction:column;position: relative;">
           <?php if ($plan['slug'] === 'gold'): ?>
-          <span class="badge badge-warning mb-3"><i class="bi bi-star-fill"></i> محبوب</span>
+          <span class="badge badge-warning mb-3" style="position: absolute;left: 20px;"><i class="bi bi-star-fill"></i> محبوب</span>
           <?php endif; ?>
           <h3><?= h($plan['name']) ?></h3>
           <div style="font-size:2rem;font-weight:800;color:var(--primary);margin:var(--sp-3) 0">
@@ -124,7 +124,7 @@ render_navbar($user);
           <form method="POST" style="margin-top:auto">
             <?= csrf_field() ?>
             <input type="hidden" name="plan" value="<?= h($plan['slug']) ?>">
-            <div style="display:flex;gap:var(--sp-2);align-items:stretch">
+            <div style="display:flex;gap:var(--sp-2);align-items:center">
               <select name="months" class="form-control" style="flex:1;margin:0">
                 <?php foreach ([1,3,6,12] as $m): ?>
                 <option value="<?= $m ?>"><?= fmt_num($m) ?> ماه — <?= fmt_credit((float)$plan['price_month'] * $m) ?></option>

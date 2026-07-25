@@ -1239,7 +1239,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   padding: 28px 24px 22px;
   border: 1px solid rgba(255, 255, 255, .65);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255,255,255,.78) 0%, rgba(255,255,255,.66) 100%);
+  /* background: linear-gradient(180deg, rgba(255,255,255,.78) 0%, rgba(255,255,255,.66) 100%); */
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition:

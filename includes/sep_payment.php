@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/sep_secrets.php';
+$sepSecrets = require __DIR__ . '/sep_secrets.php';
 
 class SEPPayment {
     private const TOKEN_URL = 'https://sep.shaparak.ir/onlinepg/onlinepg';
@@ -7,9 +7,6 @@ class SEPPayment {
     private const VERIFY_URL = 'https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/VerifyTransaction';
     private const REVERSE_URL = 'https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/ReverseTransaction';
     
-    // Terminal ID
-    public const TERMINAL_ID = SEP_TERMINAL_ID;
-
     public static function getToken(int $amount, string $resNum, string $redirectUrl, ?string $cellNumber = null): ?array {
         $data = [
             'Action' => 'Token',
@@ -110,5 +107,19 @@ class SEPPayment {
 
     public static function generateResNum(): string {
         return uniqid('SWP_', true) . '_' . time();
+    }
+
+    private static function terminalId(): string {
+        global $sepSecrets;
+
+        if (is_array($sepSecrets) && !empty($sepSecrets['terminal_id'])) {
+            return (string)$sepSecrets['terminal_id'];
+        }
+
+        if (defined('SEP_TERMINAL_ID') && SEP_TERMINAL_ID !== '') {
+            return (string) SEP_TERMINAL_ID;
+        }
+
+        throw new RuntimeException('SEP terminal ID is not configured.');
     }
 }
