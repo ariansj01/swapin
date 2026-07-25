@@ -124,7 +124,7 @@ render_user_panel_open($user, 'my');
     </div>
 
     <?php if (!empty($perfListings)): ?>
-    <div class="card mb-5 p-4">
+    <div class="card mb-5 p-4" style="padding: 20px;">
       <div class="d-flex justify-between align-center mb-4 flex-wrap gap-3">
         <div>
           <h2 class="fs-5 mb-0 fw-bold">عملکرد آگهی‌های من</h2>
