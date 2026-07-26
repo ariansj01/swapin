@@ -4,7 +4,7 @@ function promotion_plans(): array {
     return [
         'boost' => [
             'name' => 'بازدید بیشتر',
-            'base_price' => 50000,
+            'base_price' => 1000,
             'durations' => ['24 ساعت' => 24, '7 روز' => 7 * 24, '14 روز' => 14 * 24, '30 روز' => 30 * 24],
         ],
         'featured' => [
