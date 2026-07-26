@@ -60,9 +60,12 @@ try {
             throw new Exception('تایید پرداخت ناموفق بود');
         }
 
-        // Check amount matches
-        $txnAmount = (int)($verifyResult['data']['OrginalAmount'] ?? $verifyResult['data']['amount'] ?? 0);
-        if ($txnAmount !== (int)$payment['amount']) {
+        // Check amount matches (SEP reports in Rials, our payments.amount is stored in Tomans)
+        $txnRial   = (int)($verifyResult['data']['OrginalAmount'] ?? $verifyResult['data']['_sep_amount_rial'] ?? $verifyResult['data']['amount'] ?? 0);
+        $txnAmount = (int)($verifyResult['data']['_amount_toman'] ?? ($txnRial > 0 ? round($txnRial / 10) : 0));
+        $expected  = (int)$payment['amount'];
+        // Allow ±1 Toman of rounding tolerance
+        if ($txnAmount <= 0 || abs($txnAmount - $expected) > 1) {
             DB::update('payments', [
                 'status' => 'processing_failed',
                 'ref_num' => $refNum,
@@ -70,6 +73,14 @@ try {
                 'state' => $state,
                 'last_error' => 'مبلغ پرداخت شده با مبلغ درخواستی مطابقت ندارد',
             ], 'id = ?', [$payment['id']]);
+            swapin_debug_log('payment_callback_amount_mismatch', [
+                'payment_id' => (int)$payment['id'],
+                'res_num' => $resNum,
+                'ref_num' => $refNum,
+                'expected_toman' => $expected,
+                'got_toman' => $txnAmount,
+                'got_rial' => $txnRial,
+            ]);
             throw new Exception('مبلغ پرداخت شده با مبلغ درخواستی مطابقت ندارد');
         }
 
