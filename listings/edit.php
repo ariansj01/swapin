@@ -50,10 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['description']     = clean($_POST['description']     ?? '');
     $vals['condition']       = clean($_POST['condition']       ?? 'good');
     $vals['estimated_value'] = (float)($_POST['estimated_value'] ?? 0);
+    $vals['estimated_value'] = max(0, min($vals['estimated_value'], 999999999999.99));
     $vals['want_in_return']  = clean($_POST['want_in_return']  ?? '');
     $vals['want_type']       = clean($_POST['want_type']       ?? 'any');
     $vals['listing_mode']    = clean($_POST['listing_mode']    ?? 'swap');
-    $vals['sell_price']      = (float)($_POST['sell_price']    ?? 0);
+    $vals['sell_price']      = max(0, min((float)($_POST['sell_price']    ?? 0), 99999999999999.00));
     $vals['city']            = clean($_POST['city']            ?? '');
 
     // Validate (same rules as create.php)

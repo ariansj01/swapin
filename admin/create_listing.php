@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['description']      = clean($_POST['description'] ?? '');
     $vals['condition']        = clean($_POST['condition'] ?? 'good');
     $vals['estimated_value']  = (float) ($_POST['estimated_value'] ?? 0);
+    $vals['estimated_value']  = max(0, min($vals['estimated_value'], 999999999999.99));
     $vals['want_type']        = clean($_POST['want_type'] ?? 'any');
     $vals['want_in_return']   = clean($_POST['want_in_return'] ?? '');
     $vals['city']             = clean($_POST['city'] ?? '');

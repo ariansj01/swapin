@@ -327,6 +327,15 @@ try {
     if (!in_array('ai_promo_until', $listingsColumns)) {
         DB::query('ALTER TABLE `listings` ADD COLUMN `ai_promo_until` TIMESTAMP NULL DEFAULT NULL AFTER `targeted_until`');
     }
+    try {
+        $colInfo = DB::fetch("SHOW COLUMNS FROM `listings` LIKE 'estimated_value'");
+        $currentType = $colInfo['Type'] ?? '';
+        if (stripos($currentType, 'decimal(10,2)') !== false || stripos($currentType, 'decimal(11,') !== false || stripos($currentType, 'decimal(12,') !== false) {
+            DB::query('ALTER TABLE `listings` MODIFY COLUMN `estimated_value` DECIMAL(14,2) NOT NULL DEFAULT 0.00');
+        }
+    } catch (Throwable $e) {
+        swapin_debug_log('migration_estimated_value', ['error' => $e->getMessage()]);
+    }
 } catch (Throwable $e) {
     // Ignore migration errors, just log them
     swapin_debug_log('migration_error', ['message' => $e->getMessage()]);

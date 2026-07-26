@@ -412,11 +412,11 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
         $min = (int) max(500_000, round($max * 0.85));
     }
     if ($max <= 0) {
-        $max = (int) min(120_000_000, round($min * 1.15));
+        $max = (int) min(500_000_000_000, round($min * 1.15));
     }
 
     $min = (int) max(500_000, round($min / 100_000) * 100_000);
-    $max = (int) min(120_000_000, round($max / 100_000) * 100_000);
+    $max = (int) min(500_000_000_000, round($max / 100_000) * 100_000);
     if ($min > $max) {
         $min = (int) round($max * 0.88 / 100_000) * 100_000;
     }
@@ -459,7 +459,7 @@ function ai_price_listing_fallback(array $listing): array {
     $seed      = abs(crc32($title . $description . $condition));
     $base      = 3_500_000 + ($seed % 42_000_000);
     $value     = (int) round($base * $mul / 100_000) * 100_000;
-    $value     = max(500_000, min($value, 120_000_000));
+    $value     = max(500_000, min($value, 500_000_000_000));
     $rangeLow  = (int) round($value * 0.88 / 100_000) * 100_000;
     $rangeHigh = (int) round($value * 1.12 / 100_000) * 100_000;
 

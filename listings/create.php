@@ -69,6 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
     $suggestedValue = (int)($_POST['suggested_value'] ?? $suggestedValue);
     $vals['estimated_value'] = $vals['custom_value'] > 0 ? $vals['custom_value'] : $suggestedValue;
+    $vals['estimated_value'] = max(0, min((float)$vals['estimated_value'], 999999999999.99));
 
     // Validation
     $errors = [];
