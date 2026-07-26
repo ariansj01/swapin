@@ -1,4 +1,58 @@
 <?php
+
+function content_page_nav_links(): array {
+    try {
+        return DB::fetchAll(
+            'SELECT title, slug FROM content_pages
+             WHERE status = "published" AND show_in_nav = 1
+             ORDER BY id ASC LIMIT 20'
+        );
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+function content_page_footer_links(): array {
+    try {
+        return DB::fetchAll(
+            'SELECT title, slug FROM content_pages
+             WHERE status = "published" AND show_in_footer = 1
+             ORDER BY id ASC LIMIT 20'
+        );
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+
+function content_page_nav_links_html(): string {
+    $html = '';
+    foreach (content_page_nav_links() as $page) {
+        $html .= '<a href="' . APP_URL . '/page/' . h($page['slug']) . '">' . h($page['title']) . '</a>';
+    }
+    return $html;
+}
+
+function content_page_footer_links_html(): string {
+    $html = '';
+    foreach (content_page_footer_links() as $page) {
+        $html .= '<a href="' . APP_URL . '/page/' . h($page['slug']) . '">' . h($page['title']) . '</a>';
+    }
+    return $html;
+}
+
+function render_content_page_nav_links(): void {
+    foreach (content_page_nav_links() as $page) {
+        echo '<a href="' . APP_URL . '/page/' . h($page['slug']) . '">' . h($page['title']) . '</a>';
+    }
+}
+
+function render_content_page_footer_links(): void {
+    foreach (content_page_footer_links() as $page) {
+        echo '<a href="' . APP_URL . '/page/' . h($page['slug']) . '">' . h($page['title']) . '</a>';
+    }
+}
+
 // includes/layout.php — shared header/footer helpers
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/content_manager.php';
@@ -215,10 +269,12 @@ HTML;
       <a href="{$url}/auth/login" class="btn btn-primary btn-login-custom">ورود / ثبت‌نام</a>
 HTML;
     }
+    $contentPageNavLinks = content_page_nav_links_html();
     $searchValue = isset($_GET['q']) ? h($_GET['q']) : '';
     echo <<<HTML
     </div>
   </div>
+    {$contentPageNavLinks}
 </nav>
 </header>
 
@@ -260,6 +316,7 @@ HTML;
 
 function render_search_modal() {
     $url = APP_URL;
+    $contentPageNavLinks = content_page_nav_links_html();
     $searchValue = isset($_GET['q']) ? h($_GET['q']) : '';
     echo <<<HTML
 <div class="modal-overlay" id="search-modal">
@@ -370,6 +427,7 @@ function render_footer(): void {
     $footerCopy = h(swapin_content_get('footer_copy'));
     $user     = $GLOBALS['_nav_user'] ?? null;
     render_mobile_bottom_nav($user);
+    $contentPageFooterLinks = content_page_footer_links_html();
     echo <<<HTML
 <footer class="site-footer">
   <div class="container">
@@ -467,6 +525,7 @@ function render_footer(): void {
       {$footerCopy}
     </p>
   </div>
+    {$contentPageFooterLinks}
 </footer>
 HTML;
     render_support_widget($user);
