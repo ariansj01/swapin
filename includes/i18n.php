@@ -69,6 +69,7 @@ function category_label(string $slug, string $name = ''): string {
         'electronics'     => 'دیجیتال',
         'clothing'        => 'پوشاک',
         'home-garden'     => 'خانه و ویلا',
+        'home-appliances' => 'لوازم خانگی',
         'books-media'     => 'کتاب و رسانه',
         'sports'          => 'ورزش',
         'toys-games'      => 'اسباب‌بازی و بازی',
@@ -101,8 +102,6 @@ function category_label(string $slug, string $name = ''): string {
 
 function category_url(string $slug): string {
     $urlMap = [
-        'electronics' => '/category/digital',
-        'home-garden' => '/category/home-and-villa',
     ];
     if (isset($urlMap[$slug])) {
         return APP_URL . $urlMap[$slug];
