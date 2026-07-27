@@ -124,46 +124,105 @@ function wizard_allowed_category_slugs(): array {
     ];
 }
 
-function render_wizard_category_options(array $categories, int $selectedId = 0): string {
-    $allowedSlugs   = wizard_allowed_category_slugs();
-    $allowedSet     = array_fill_keys($allowedSlugs, true);
+function wizard_category_seed(): array {
+    return [
+        'electronics'     => ['name' => 'دیجیتال',        'icon' => 'bi bi-phone',      'sort_order' => 1],
+        'clothing'        => ['name' => 'پوشاک',          'icon' => 'bi bi-bag',        'sort_order' => 2],
+        'home-garden'     => ['name' => 'خانه و ویلا',    'icon' => 'bi bi-house',      'sort_order' => 3],
+        'books-media'     => ['name' => 'کتاب و رسانه',   'icon' => 'bi bi-book',       'sort_order' => 4],
+        'sports'          => ['name' => 'ورزش',           'icon' => 'bi bi-trophy',     'sort_order' => 5],
+        'toys-games'      => ['name' => 'اسباب‌بازی و بازی', 'icon' => 'bi bi-joystick', 'sort_order' => 6],
+        'vehicles'        => ['name' => 'خودرو',          'icon' => 'bi bi-car-front',  'sort_order' => 7],
+        'services'        => ['name' => 'خدمات',          'icon' => 'bi bi-tools',      'sort_order' => 8],
+        'food-drink'      => ['name' => 'غذا و نوشیدنی',  'icon' => 'bi bi-cup-hot',    'sort_order' => 9],
+        'home-appliances' => ['name' => 'لوازم خانگی',    'icon' => 'bi bi-tv',         'sort_order' => 10],
+    ];
+}
 
-    $parentsBySlug  = [];
-    $childrenByPid  = [];
+function wizard_ensure_parents_exist(): array {
+    $slugs = wizard_allowed_category_slugs();
+    $seed  = wizard_category_seed();
+    $parentCond = '(parent_id IS NULL OR parent_id = 0)';
+    $slugIn = implode(',', array_fill(0, count($slugs), '?'));
 
-    foreach ($categories as $cat) {
-        $rawPid = $cat['parent_id'];
-        $isParent = ($rawPid === null || $rawPid === '' || (int)$rawPid === 0);
-        $pid = $isParent ? null : (int)$rawPid;
+    $existing = DB::fetchAll(
+        "SELECT id, slug FROM categories WHERE {$parentCond} AND slug IN ({$slugIn})",
+        $slugs
+    );
+    $bySlug = [];
+    foreach ($existing as $e) $bySlug[(string)$e['slug']] = (int)$e['id'];
 
-        if ($isParent) {
-            $slug = (string)($cat['slug'] ?? '');
-            if (isset($allowedSet[$slug])) {
-                $parentsBySlug[$slug] = $cat;
+    foreach ($slugs as $slug) {
+        if (isset($bySlug[$slug])) {
+            $info = $seed[$slug];
+            DB::query(
+                "UPDATE categories SET name = ?, icon = ?, sort_order = ?, is_active = 1 WHERE id = ?",
+                [$info['name'], $info['icon'], $info['sort_order'], $bySlug[$slug]]
+            );
+            continue;
+        }
+        $info = $seed[$slug];
+        DB::query(
+            "INSERT INTO categories (parent_id, name, slug, icon, sort_order, is_active) VALUES (NULL, ?, ?, ?, ?, 1)",
+            [$info['name'], $slug, $info['icon'], $info['sort_order']]
+        );
+        $bySlug[$slug] = (int)DB::lastId();
+        swapin_debug_log('wizard_cat_created', ['slug' => $slug, 'name' => $info['name']]);
+    }
+
+    DB::query("UPDATE categories SET is_active = 0 WHERE slug = 'other' AND {$parentCond} AND is_active = 1");
+
+    return $bySlug;
+}
+
+function render_wizard_category_options(array $categoriesIgnored = [], int $selectedId = 0): string {
+    try {
+        $parentIdsBySlug = wizard_ensure_parents_exist();
+    } catch (Throwable $e) {
+        swapin_debug_log('wizard_cat_ensure_fail', ['msg' => $e->getMessage()]);
+        $parentIdsBySlug = [];
+    }
+
+    $slugs = wizard_allowed_category_slugs();
+
+    $parentIds = [];
+    foreach ($slugs as $slug) {
+        if (isset($parentIdsBySlug[$slug])) $parentIds[] = $parentIdsBySlug[$slug];
+    }
+
+    $childrenByPid = [];
+    if (!empty($parentIds)) {
+        $pidIn = implode(',', array_fill(0, count($parentIds), '?'));
+        try {
+            $children = DB::fetchAll(
+                "SELECT id, parent_id, slug, name FROM categories WHERE parent_id IN ({$pidIn}) AND is_active = 1 ORDER BY sort_order, id",
+                $parentIds
+            );
+            foreach ($children as $c) {
+                $childrenByPid[(int)$c['parent_id']][] = $c;
             }
-        } else {
-            $childrenByPid[$pid][] = $cat;
+        } catch (Throwable $e) {
+            swapin_debug_log('wizard_cat_children_fail', ['msg' => $e->getMessage()]);
         }
     }
 
     $html = '';
-    foreach ($allowedSlugs as $slug) {
-        if (!isset($parentsBySlug[$slug])) continue;
-        $parent   = $parentsBySlug[$slug];
-        $parentId = (int)$parent['id'];
-        $label    = category_label($parent['slug'], $parent['name']);
+    foreach ($slugs as $slug) {
+        if (!isset($parentIdsBySlug[$slug])) continue;
+        $parentId = (int)$parentIdsBySlug[$slug];
+        $label    = category_label($slug, '');
         $html    .= '<optgroup label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">';
 
-        $children = $childrenByPid[$parentId] ?? [];
-        if (empty($children)) {
+        $kids = $childrenByPid[$parentId] ?? [];
+        if (empty($kids)) {
             $sel    = $selectedId === $parentId ? ' selected' : '';
             $html  .= '<option value="' . $parentId . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
         } else {
-            foreach ($children as $child) {
-                $cid    = (int)$child['id'];
-                $clabel = category_label($child['slug'], $child['name']);
-                $sel    = $selectedId === $cid ? ' selected' : '';
-                $html  .= '<option value="' . $cid . '"' . $sel . '>' . htmlspecialchars($clabel, ENT_QUOTES, 'UTF-8') . '</option>';
+            foreach ($kids as $k) {
+                $kid    = (int)$k['id'];
+                $klabel = category_label($k['slug'], $k['name']);
+                $sel    = $selectedId === $kid ? ' selected' : '';
+                $html  .= '<option value="' . $kid . '"' . $sel . '>' . htmlspecialchars($klabel, ENT_QUOTES, 'UTF-8') . '</option>';
             }
         }
         $html .= '</optgroup>';

@@ -348,46 +348,13 @@ try {
         swapin_debug_log('migration_estimated_value', ['error' => $e->getMessage()]);
     }
 
-    // ── Categories: ensure 10 required parent cats exist + "other" is hidden ──
-    try {
-        $catSlugOrder = [
-            'electronics'     => 1,
-            'clothing'        => 2,
-            'home-garden'     => 3,
-            'books-media'     => 4,
-            'sports'          => 5,
-            'toys-games'      => 6,
-            'vehicles'        => 7,
-            'services'        => 8,
-            'food-drink'      => 9,
-            'home-appliances' => 10,
-        ];
+    // Note: The "10 parent categories + other hidden" migration is no longer
+    // applied here at bootstrap. Instead, render_wizard_category_options() in
+    // includes/i18n.php calls wizard_ensure_parents_exist() on-demand which
+    // does idempotent INSERT + UPDATE + name/icon/sort_order correction for
+    // the exact 10 allowed slugs, and deactivates "other". This guarantees
+    // the wizard dropdown never shows stale DB state.
 
-        $parentNullCond = '(parent_id IS NULL OR parent_id = 0)';
-
-        // 1) Insert لوازم خانگی (home-appliances) parent if missing
-        $existingAppl = DB::fetch("SELECT id FROM categories WHERE slug = ? AND {$parentNullCond}", ['home-appliances']);
-        if (!$existingAppl) {
-            DB::query(
-                "INSERT INTO categories (parent_id, name, slug, icon, sort_order, is_active)
-                 VALUES (NULL, 'Home Appliances', 'home-appliances', 'bi bi-tv', 10, 1)"
-            );
-            swapin_debug_log('migration_cat_insert_home_appliances', ['status' => 'inserted']);
-        }
-
-        // 2) Deactivate "سایر" (other) parent category
-        DB::query("UPDATE categories SET is_active = 0 WHERE slug = 'other' AND {$parentNullCond} AND is_active = 1");
-
-        // 3) Enforce sort_order + is_active=1 for the 10 allowed parents
-        foreach ($catSlugOrder as $slug => $order) {
-            DB::query(
-                "UPDATE categories SET sort_order = ?, is_active = 1 WHERE slug = ? AND {$parentNullCond}",
-                [$order, $slug]
-            );
-        }
-    } catch (Throwable $e) {
-        swapin_debug_log('migration_categories', ['error' => $e->getMessage()]);
-    }
 } catch (Throwable $e) {
     // Ignore migration errors, just log them
     swapin_debug_log('migration_error', ['message' => $e->getMessage()]);
