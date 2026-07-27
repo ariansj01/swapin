@@ -562,12 +562,13 @@ p { color: var(--text-secondary); line-height: 1.6; }
     grid-row: 1;
     justify-self: center;
     margin-inline: 0;
-    /* margin-right: 25px; */
+    margin-right: -8px;
+    width: 13vh;
   }
 
   .navbar-brand .brand-logo {
     height: 100px;
-    width: 50%;
+    width: 15vh;
     /* margin-right: 20px; */
     margin-top: -30px;
   }
@@ -577,7 +578,10 @@ p { color: var(--text-secondary); line-height: 1.6; }
     grid-row: 1;
     justify-self: start;
     margin-inline-start: 0;
-    /* margin-top: -30px; */
+    margin-top: -20px;
+  }
+  .hero__actions{
+    justify-content: center;
   }
 
   .navbar-actions .btn.hide-desktop { display: none !important; }
@@ -1760,7 +1764,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .listing-card__details {
   flex: 1;
-  min-width: 0;
+  min-width: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1991,7 +1995,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   text-decoration: none;
   transition: all var(--duration) var(--ease);
   padding: 13px;
-  width: 8%;
+  width: 15%;
 }
 
 .cat-pill__icon {
