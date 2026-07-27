@@ -563,7 +563,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
     justify-self: center;
     margin-inline: 0;
     margin-right: -7px;
-    width: 11vh;
+    width: 10vh;
   }
 
   .navbar-brand .brand-logo {
