@@ -222,20 +222,7 @@ render_navbar($user);
               <select class="form-control <?= isset($errors['category_id']) ? 'is-invalid' : '' ?>"
                       id="category_id" name="category_id" required>
                 <option value="">انتخاب دسته‌بندی…</option>
-                <?php
-                $lastParent = null;
-                foreach ($categories as $cat):
-                    if ($cat['parent_id'] === null) {
-                        if ($lastParent !== null) echo '</optgroup>';
-                        echo '<optgroup label="' . h(category_label($cat['slug'], $cat['name'])) . '">';
-                        $lastParent = $cat['id'];
-                    } else {
-                        $sel = $vals['category_id'] == $cat['id'] ? 'selected' : '';
-                        echo '<option value="' . $cat['id'] . '" ' . $sel . '>' . h(category_label($cat['slug'], $cat['name'])) . '</option>';
-                    }
-                endforeach;
-                if ($lastParent !== null) echo '</optgroup>';
-                ?>
+                <?= render_wizard_category_options($categories, (int)$vals['category_id']) ?>
               </select>
               <?php if (isset($errors['category_id'])): ?>
               <div class="invalid-feedback"><?= h($errors['category_id']) ?></div>

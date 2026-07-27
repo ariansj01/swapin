@@ -249,19 +249,7 @@ render_navbar($user);
             <label class="wizard-form-label">دسته‌بندی *</label>
             <select name="category_id" id="step3-category" class="wizard-form-select">
               <option value="">انتخاب دسته‌بندی…</option>
-              <?php
-                $lastParent = null;
-                foreach ($categories as $cat):
-                  if ($cat['parent_id'] === null):
-                    if ($lastParent !== null) echo '</optgroup>';
-                    echo '<optgroup label="'.h(category_label($cat['slug'], $cat['name'])).'">';
-                    $lastParent = $cat['id'];
-                  else:
-                    echo '<option value="'.$cat['id'].'">'.h(category_label($cat['slug'], $cat['name'])).'</option>';
-                  endif;
-                endforeach;
-                if ($lastParent !== null) echo '</optgroup>';
-              ?>
+              <?= render_wizard_category_options($categories, (int)$vals['category_id']) ?>
             </select>
           </div>
 

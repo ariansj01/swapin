@@ -347,6 +347,45 @@ try {
     } catch (Throwable $e) {
         swapin_debug_log('migration_estimated_value', ['error' => $e->getMessage()]);
     }
+
+    // ── Categories: ensure 10 required parent cats exist + "other" is hidden ──
+    try {
+        $catSlugOrder = [
+            'electronics'     => 1,
+            'clothing'        => 2,
+            'home-garden'     => 3,
+            'books-media'     => 4,
+            'sports'          => 5,
+            'toys-games'      => 6,
+            'vehicles'        => 7,
+            'services'        => 8,
+            'food-drink'      => 9,
+            'home-appliances' => 10,
+        ];
+
+        // 1) Insert لوازم خانگی (home-appliances) parent if missing
+        $existingAppl = DB::fetch('SELECT id FROM categories WHERE slug = ? AND parent_id IS NULL', ['home-appliances']);
+        if (!$existingAppl) {
+            DB::query(
+                "INSERT INTO categories (parent_id, name, slug, icon, sort_order, is_active)
+                 VALUES (NULL, 'Home Appliances', 'home-appliances', 'bi bi-tv', 10, 1)"
+            );
+            swapin_debug_log('migration_cat_insert_home_appliances', ['status' => 'inserted']);
+        }
+
+        // 2) Deactivate "سایر" (other) parent category
+        DB::query("UPDATE categories SET is_active = 0 WHERE slug = 'other' AND parent_id IS NULL AND is_active = 1");
+
+        // 3) Enforce sort_order for the 10 allowed parents
+        foreach ($catSlugOrder as $slug => $order) {
+            DB::query(
+                'UPDATE categories SET sort_order = ? WHERE slug = ? AND parent_id IS NULL',
+                [$order, $slug]
+            );
+        }
+    } catch (Throwable $e) {
+        swapin_debug_log('migration_categories', ['error' => $e->getMessage()]);
+    }
 } catch (Throwable $e) {
     // Ignore migration errors, just log them
     swapin_debug_log('migration_error', ['message' => $e->getMessage()]);

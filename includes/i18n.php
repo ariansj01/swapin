@@ -109,6 +109,65 @@ function category_url(string $slug): string {
     return APP_URL . '/category/' . $slug;
 }
 
+function wizard_allowed_category_slugs(): array {
+    return [
+        'electronics',
+        'clothing',
+        'home-garden',
+        'books-media',
+        'sports',
+        'toys-games',
+        'vehicles',
+        'services',
+        'food-drink',
+        'home-appliances',
+    ];
+}
+
+function render_wizard_category_options(array $categories, int $selectedId = 0): string {
+    $allowedSlugs   = wizard_allowed_category_slugs();
+    $allowedSet     = array_fill_keys($allowedSlugs, true);
+
+    $parentsBySlug  = [];
+    $childrenByPid  = [];
+
+    foreach ($categories as $cat) {
+        $pid = $cat['parent_id'] === null ? null : (int)$cat['parent_id'];
+        if ($pid === null) {
+            $slug = (string)($cat['slug'] ?? '');
+            if (isset($allowedSet[$slug])) {
+                $parentsBySlug[$slug] = $cat;
+            }
+        } else {
+            $childrenByPid[$pid][] = $cat;
+        }
+    }
+
+    $html = '';
+    foreach ($allowedSlugs as $slug) {
+        if (!isset($parentsBySlug[$slug])) continue;
+        $parent   = $parentsBySlug[$slug];
+        $parentId = (int)$parent['id'];
+        $label    = category_label($parent['slug'], $parent['name']);
+        $html    .= '<optgroup label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">';
+
+        $children = $childrenByPid[$parentId] ?? [];
+        if (empty($children)) {
+            $sel    = $selectedId === $parentId ? ' selected' : '';
+            $html  .= '<option value="' . $parentId . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
+        } else {
+            foreach ($children as $child) {
+                $cid    = (int)$child['id'];
+                $clabel = category_label($child['slug'], $child['name']);
+                $sel    = $selectedId === $cid ? ' selected' : '';
+                $html  .= '<option value="' . $cid . '"' . $sel . '>' . htmlspecialchars($clabel, ENT_QUOTES, 'UTF-8') . '</option>';
+            }
+        }
+        $html .= '</optgroup>';
+    }
+    return $html;
+}
+
 function want_type_label(string $type): string {
     return match ($type) {
         'item'    => 'کالا',
