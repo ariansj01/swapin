@@ -562,8 +562,8 @@ p { color: var(--text-secondary); line-height: 1.6; }
     grid-row: 1;
     justify-self: center;
     margin-inline: 0;
-    margin-right: -8px;
-    width: 13vh;
+    margin-right: -7px;
+    width: 11vh;
   }
 
   .navbar-brand .brand-logo {
@@ -2865,6 +2865,38 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
   .all-page-listing-card{
     width: 150% !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 991px) {
+  .steps-grid {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 var(--sp-2);
+    gap: var(--sp-4);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .steps-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .step-card {
+    flex: 0 0 calc((100% - var(--sp-4)) / 2);
+    width: calc((100% - var(--sp-4)) / 2);
+    min-width: calc((100% - var(--sp-4)) / 2);
+    max-width: calc((100% - var(--sp-4)) / 2);
+    scroll-snap-align: start;
+  }
+
+  .step-card__top::after,
+  .step-card__top::before,
+  .step-card__top .step-arrow {
+    display: none;
   }
 }
 
