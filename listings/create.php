@@ -76,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($vals['title']) < 5) $errors['title'] = 'عنوان باید حداقل ۵ کاراکتر باشد';
     if (mb_strlen($vals['title']) > 200) $errors['title'] = 'عنوان باید کمتر از ۲۰۰ کاراکتر باشد';
     if (!$vals['category_id']) $errors['category_id'] = 'لطفا دسته‌بندی را انتخاب کنید';
+    if ($vals['category_id'] && !wizard_validate_category_id($vals['category_id'])) $errors['category_id'] = 'دسته‌بندی انتخاب‌شده نامعتبر است';
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
     if ($vals['city'] && !in_array($vals['city'], iran_cities(), true)) {
         $errors['city'] = 'لطفاً شهر را از فهرست انتخاب کنید';

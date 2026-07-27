@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['title'] = 'عنوان باید کمتر از ۲۰۰ کاراکتر باشد.';
     if (!$vals['category_id'])
         $errors['category_id'] = 'لطفاً دسته‌بندی را انتخاب کنید.';
-    if (!DB::fetch('SELECT id FROM categories WHERE id = ? AND is_active = 1', [$vals['category_id']]))
+    if ($vals['category_id'] && !wizard_validate_category_id($vals['category_id']))
         $errors['category_id'] = 'دسته‌بندی انتخاب‌شده نامعتبر است.';
     if (mb_strlen($vals['description']) < 20)
         $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد.';

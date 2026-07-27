@@ -183,51 +183,49 @@ function render_wizard_category_options(array $categoriesIgnored = [], int $sele
         $parentIdsBySlug = [];
     }
 
-    $slugs = wizard_allowed_category_slugs();
-
-    $parentIds = [];
-    foreach ($slugs as $slug) {
-        if (isset($parentIdsBySlug[$slug])) $parentIds[] = $parentIdsBySlug[$slug];
-    }
-
-    $childrenByPid = [];
-    if (!empty($parentIds)) {
-        $pidIn = implode(',', array_fill(0, count($parentIds), '?'));
-        try {
-            $children = DB::fetchAll(
-                "SELECT id, parent_id, slug, name FROM categories WHERE parent_id IN ({$pidIn}) AND is_active = 1 ORDER BY sort_order, id",
-                $parentIds
-            );
-            foreach ($children as $c) {
-                $childrenByPid[(int)$c['parent_id']][] = $c;
+    if ($selectedId > 0) {
+        $isAllowed = in_array($selectedId, array_values($parentIdsBySlug), true);
+        if (!$isAllowed) {
+            try {
+                $anc = DB::fetch('SELECT id, parent_id FROM categories WHERE id = ?', [$selectedId]);
+                if ($anc) {
+                    $pid = $anc['parent_id'];
+                    $parentCandidate = ($pid === null || $pid === '' || (int)$pid === 0) ? (int)$anc['id'] : (int)$pid;
+                    if (in_array($parentCandidate, array_values($parentIdsBySlug), true)) {
+                        $selectedId = $parentCandidate;
+                    } else {
+                        $selectedId = 0;
+                    }
+                } else {
+                    $selectedId = 0;
+                }
+            } catch (Throwable) {
+                $selectedId = 0;
             }
-        } catch (Throwable $e) {
-            swapin_debug_log('wizard_cat_children_fail', ['msg' => $e->getMessage()]);
         }
     }
 
-    $html = '';
+    $slugs = wizard_allowed_category_slugs();
+    $html  = '';
+
     foreach ($slugs as $slug) {
         if (!isset($parentIdsBySlug[$slug])) continue;
-        $parentId = (int)$parentIdsBySlug[$slug];
-        $label    = category_label($slug, '');
-        $html    .= '<optgroup label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">';
-
-        $kids = $childrenByPid[$parentId] ?? [];
-        if (empty($kids)) {
-            $sel    = $selectedId === $parentId ? ' selected' : '';
-            $html  .= '<option value="' . $parentId . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
-        } else {
-            foreach ($kids as $k) {
-                $kid    = (int)$k['id'];
-                $klabel = category_label($k['slug'], $k['name']);
-                $sel    = $selectedId === $kid ? ' selected' : '';
-                $html  .= '<option value="' . $kid . '"' . $sel . '>' . htmlspecialchars($klabel, ENT_QUOTES, 'UTF-8') . '</option>';
-            }
-        }
-        $html .= '</optgroup>';
+        $pid   = (int)$parentIdsBySlug[$slug];
+        $label = category_label($slug, '');
+        $sel   = $selectedId === $pid ? ' selected' : '';
+        $html .= '<option value="' . $pid . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
     }
     return $html;
+}
+
+function wizard_validate_category_id(int $categoryId): bool {
+    $allowList = [];
+    try {
+        $allowList = wizard_ensure_parents_exist();
+    } catch (Throwable) {
+    }
+    if (empty($allowList)) return $categoryId > 0;
+    return in_array($categoryId, array_values($allowList), true);
 }
 
 function want_type_label(string $type): string {
