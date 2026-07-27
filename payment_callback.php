@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/sep_payment.php';

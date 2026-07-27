@@ -39,14 +39,25 @@ send_security_headers();
 
 // ─── Session ───────────────────────────────────────────────────────────────
 if (!defined('SKIP_SESSION') && session_status() === PHP_SESSION_NONE) {
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443
+        || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+
+    // Bank gateways usually return to the callback with a cross-site POST.
+    // SameSite=None keeps the existing session attached on that return trip.
+    $sameSite = $https ? 'None' : 'Lax';
+
     ini_set('session.cookie_httponly', '1');
     ini_set('session.use_strict_mode', '1');
-    ini_set('session.cookie_samesite', 'Lax');
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443;
-    if (app_is_production() && $https) {
-        ini_set('session.cookie_secure', '1');
-    }
+    ini_set('session.cookie_secure', $https ? '1' : '0');
+    ini_set('session.cookie_samesite', $sameSite);
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => $https,
+        'httponly' => true,
+        'samesite' => $sameSite,
+    ]);
     session_start();
 }
 

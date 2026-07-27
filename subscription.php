@@ -9,12 +9,12 @@ $success = '';
 $error   = '';
 
 $plans = DB::fetchAll('SELECT * FROM subscription_plans ORDER BY price_month ASC');
-foreach ($plans as &$p) {
-    if ($p['slug'] === 'bronze') {
-        $p['price_month'] = 1000;
-    }
-}
-unset($p);
+// foreach ($plans as &$p) {
+//     if ($p['slug'] === 'bronze') {
+//         $p['price_month'] = 1000;
+//     }
+// }
+// unset($p);
 $activeSub = get_active_subscription($user);
 $activeCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "active"', [$user['id']])['c'] ?? 0);
 
