@@ -170,7 +170,9 @@ ob_start();
         <?php
         $lastParent = null;
         foreach ($categories as $cat):
-            if ($cat['parent_id'] === null) {
+            $rawPid = $cat['parent_id'];
+            $isParent = ($rawPid === null || $rawPid === '' || (int)$rawPid === 0);
+            if ($isParent) {
                 if ($lastParent !== null) {
                     echo '</optgroup>';
                 }

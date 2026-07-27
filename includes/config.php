@@ -363,8 +363,10 @@ try {
             'home-appliances' => 10,
         ];
 
+        $parentNullCond = '(parent_id IS NULL OR parent_id = 0)';
+
         // 1) Insert لوازم خانگی (home-appliances) parent if missing
-        $existingAppl = DB::fetch('SELECT id FROM categories WHERE slug = ? AND parent_id IS NULL', ['home-appliances']);
+        $existingAppl = DB::fetch("SELECT id FROM categories WHERE slug = ? AND {$parentNullCond}", ['home-appliances']);
         if (!$existingAppl) {
             DB::query(
                 "INSERT INTO categories (parent_id, name, slug, icon, sort_order, is_active)
@@ -374,12 +376,12 @@ try {
         }
 
         // 2) Deactivate "سایر" (other) parent category
-        DB::query("UPDATE categories SET is_active = 0 WHERE slug = 'other' AND parent_id IS NULL AND is_active = 1");
+        DB::query("UPDATE categories SET is_active = 0 WHERE slug = 'other' AND {$parentNullCond} AND is_active = 1");
 
-        // 3) Enforce sort_order for the 10 allowed parents
+        // 3) Enforce sort_order + is_active=1 for the 10 allowed parents
         foreach ($catSlugOrder as $slug => $order) {
             DB::query(
-                'UPDATE categories SET sort_order = ? WHERE slug = ? AND parent_id IS NULL',
+                "UPDATE categories SET sort_order = ?, is_active = 1 WHERE slug = ? AND {$parentNullCond}",
                 [$order, $slug]
             );
         }

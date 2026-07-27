@@ -132,8 +132,11 @@ function render_wizard_category_options(array $categories, int $selectedId = 0):
     $childrenByPid  = [];
 
     foreach ($categories as $cat) {
-        $pid = $cat['parent_id'] === null ? null : (int)$cat['parent_id'];
-        if ($pid === null) {
+        $rawPid = $cat['parent_id'];
+        $isParent = ($rawPid === null || $rawPid === '' || (int)$rawPid === 0);
+        $pid = $isParent ? null : (int)$rawPid;
+
+        if ($isParent) {
             $slug = (string)($cat['slug'] ?? '');
             if (isset($allowedSet[$slug])) {
                 $parentsBySlug[$slug] = $cat;

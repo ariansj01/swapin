@@ -15,7 +15,7 @@ $urls = [
     ['loc' => $base . '/ai/chat',   'priority' => '0.5', 'changefreq' => 'weekly'],
 ];
 
-$cats = DB::fetchAll('SELECT slug FROM categories WHERE parent_id IS NULL AND is_active = 1');
+$cats = DB::fetchAll('SELECT slug FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1');
 foreach ($cats as $cat) {
     $urls[] = [
         'loc'        => $base . '/category/' . rawurlencode($cat['slug']),

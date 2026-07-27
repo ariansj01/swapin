@@ -161,7 +161,7 @@ function render_navbar(?array $user = null): void {
     $GLOBALS['_nav_user'] = $user;
     
     // Get parent categories
-    $categories = DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order');
+    $categories = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order');
     $currentCatSlug = $_GET['cat'] ?? '';
 
     $navItems = [
@@ -578,7 +578,7 @@ HTML;
 }
 
 function render_categories_strip(?int $active = null): void {
-    $cats = DB::fetchAll('SELECT * FROM categories WHERE parent_id IS NULL AND is_active = 1 ORDER BY sort_order');
+    $cats = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order');
     echo '<div class="category-strip">';
     $cls  = $active === null ? ' active' : '';
     echo "<a href='" . APP_URL . "/listings/all.php' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
