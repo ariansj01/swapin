@@ -2812,6 +2812,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     display: flex;
     grid-template-columns: none;
     gap: var(--sp-3);
+    gap: 100%;
   }
 
   .step-card {
