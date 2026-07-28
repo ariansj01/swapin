@@ -101,6 +101,35 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
         }
     }
 
+    $enableAnalytics = true;
+
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+
+    if (
+        str_contains($requestUri, '/admin') ||
+        str_contains($requestUri, '/dashboard') ||
+        str_contains($requestUri, '/auth') ||
+        str_contains($requestUri, '/profile') ||
+        str_contains($requestUri, '/payment_callback')
+    ) {
+        $enableAnalytics = false;
+    }
+
+    $analytics = '';
+
+    if ($enableAnalytics) {
+        $analytics = <<<GA
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-S0RG4SWX8K"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-S0RG4SWX8K');
+</script>
+GA;
+    }
+
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -135,14 +164,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/web-app-manifest-192x192.png">
 <link rel="apple-touch-icon" href="{$url}/src/img/fav_icon/apple-touch-icon.png">
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-S0RG4SWX8K"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-S0RG4SWX8K');
-</script>
+{$analytics}
 <link rel="manifest" href="{$url}/src/img/fav_icon/site.webmanifest">
 </head>
 <body>
