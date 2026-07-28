@@ -18,25 +18,65 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
           script: |
-            set -e
+            set -Eeuo pipefail
 
-            cd /var/www/swapin
+            APP_DIR="/var/www/swapin"
+            NGINX_SOURCE="$APP_DIR/ops/nginx/swaapin.ir.conf"
+            NGINX_TARGET="/etc/nginx/sites-available/swaapin.ir"
 
+            echo "========================================"
+            echo "SWAAPIN PRODUCTION DEPLOY"
+            echo "========================================"
+
+            cd "$APP_DIR"
+
+            echo "[1/8] Fetching main..."
             git fetch origin
+
+            echo "[2/8] Syncing production with origin/main..."
             git reset --hard origin/main
 
+            echo "[3/8] Installing dependencies..."
             if [ -f composer.json ]; then
               /usr/bin/composer install \
-              --no-dev \
-              --no-interaction \
-              --prefer-dist \
-              --optimize-autoloader
+                --no-dev \
+                --no-interaction \
+                --prefer-dist \
+                --optimize-autoloader
             fi
 
+            echo "[4/8] Restoring runtime permissions..."
             [ -d storage ] && chmod -R 775 storage || true
-            [ -d uploads ] && sudo chmod -R 775 uploads
+            [ -d uploads ] && sudo chmod -R 775 uploads || true
 
+            echo "[5/8] Installing version-controlled Nginx config..."
+
+            if [ ! -f "$NGINX_SOURCE" ]; then
+              echo "ERROR: Nginx source config not found:"
+              echo "$NGINX_SOURCE"
+              exit 1
+            fi
+
+            sudo cp "$NGINX_SOURCE" "$NGINX_TARGET"
+
+            echo "[6/8] Validating Nginx..."
+            sudo nginx -t
+
+            echo "[7/8] Reloading services..."
             sudo systemctl reload php8.4-fpm
             sudo systemctl reload nginx
 
-            echo "Deploy completed successfully."
+            echo "[8/8] Running production SEO guard..."
+
+            if [ ! -x "$APP_DIR/tools/seo-production-check.sh" ]; then
+              echo "ERROR: SEO production guard is missing or not executable."
+              exit 1
+            fi
+
+            "$APP_DIR/tools/seo-production-check.sh"
+
+            echo
+            echo "========================================"
+            echo "DEPLOY COMPLETED SUCCESSFULLY"
+            echo "SEO PRODUCTION GUARD PASSED"
+            echo "========================================"

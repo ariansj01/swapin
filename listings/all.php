@@ -97,7 +97,7 @@ if ($category) $title = 'آگهی‌های ' . category_label($category['slug'],
 if ($search)   $title = 'نتایج برای «' . $search . '»';
 $desc = 'فهرست کامل آگهی‌ها با فیلتر بر اساس دسته‌بندی، شهر، وضعیت و قیمت';
 
-$canonical = APP_URL . '/listings/all.php';
+$canonical = APP_URL . '/listings/';
 if ($category && !$search && !$city && !$wantType && !$condition && $pmin === 0 && $pmax === 0 && $sort === 'new' && $page === 1) {
     $canonical = category_url($category['slug']);
 }
