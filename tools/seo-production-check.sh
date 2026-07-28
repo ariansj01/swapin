@@ -253,6 +253,44 @@ else
 fi
 
 # --------------------------------------------------
+# 10. Sitemap canonical integrity
+# --------------------------------------------------
+
+info "Checking canonical integrity for sitemap URLs..."
+
+for url in "${sitemap_urls[@]}"; do
+    [ -z "$url" ] && continue
+
+    # Query-based listing detail pages may intentionally use dynamic canonicals.
+    # We still require a canonical to exist, use the canonical host, and resolve to 200.
+    canonical=$(canonical_of "$url")
+
+    if [ -z "$canonical" ]; then
+        fail "Missing canonical: $url"
+        continue
+    fi
+
+    if echo "$canonical" | grep -q '^https://www\.swaapin\.ir'; then
+        fail "Canonical uses www: $url -> $canonical"
+        continue
+    fi
+
+    if ! echo "$canonical" | grep -q '^https://swaapin\.ir'; then
+        fail "Canonical uses unexpected host: $url -> $canonical"
+        continue
+    fi
+
+    canonical_code=$(status_code "$canonical")
+
+    if [ "$canonical_code" != "200" ]; then
+        fail "Canonical target is not 200: $url -> $canonical [$canonical_code]"
+        continue
+    fi
+
+    pass "Canonical valid: $url -> $canonical"
+done
+
+# --------------------------------------------------
 # 9. Canonicals must never use www
 # --------------------------------------------------
 
