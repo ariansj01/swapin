@@ -60,8 +60,18 @@ require_once __DIR__ . '/seo.php';
 require_once __DIR__ . '/dashboard_layout.php';
 
 function render_head(string $title = '', string $desc = '', array $seo = []): void {
-    $t         = $title ? h($title) . ' — ' . APP_NAME : APP_NAME . ' — بازار تعویض هوشمند';
-    $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواَپین مبادله کنید — بازار تعویض هوشمند.';
+    if ($title) {
+        $safeTitle = h($title);
+
+        if (mb_strpos($title, APP_NAME) !== false) {
+            $t = $safeTitle;
+        } else {
+            $t = $safeTitle . ' — ' . APP_NAME;
+        }
+    } else {
+        $t = APP_NAME . ' — بازار تعویض هوشمند';
+    }
+    $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواپین مبادله کنید — بازار تعویض هوشمند.';
     $url       = APP_URL;
     $canonical = h($seo['canonical'] ?? seo_canonical());
     $ogImage   = h($seo['og_image'] ?? LOGO_URL);

@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
     } elseif ($_POST['action'] === 'buy_now') {
-        $offerError = 'خرید مستقیم در سواَپین غیرفعال است؛ فقط معاوضه مجاز است.';
+        $offerError = 'خرید مستقیم در سواپین غیرفعال است؛ فقط معاوضه مجاز است.';
     } elseif ($_POST['action'] === 'request_inspection') {
         if (!$user || (int)$listing['user_id'] !== (int)$user['id']) {
             $offerError = 'فقط صاحب آگهی می‌تواند بازرسی درخواست کند.';

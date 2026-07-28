@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['page_url'] = clean($_GET['url'] ?? ($_SERVER['HTTP_REFERER'] ?? ''));
 }
 
-render_head('گزارش خطا | سواَپین', 'گزارش مشکلات فنی سایت به تیم سواَپین', [
+render_head('گزارش خطا | سواپین', 'گزارش مشکلات فنی سایت به تیم سواپین', [
     'canonical' => APP_URL . '/support/report',
 ]);
 render_panel_styles();

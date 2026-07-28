@@ -34,7 +34,7 @@ $tickets = DB::fetchAll(
 $catLabels = support_category_labels();
 $statusLabels = support_status_labels();
 
-render_head('پشتیبانی سواَپین | تیکت‌ها', 'ثبت تیکت و پیگیری درخواست‌های پشتیبانی سواَپین.', [
+render_head('پشتیبانی سواپین | تیکت‌ها', 'ثبت تیکت و پیگیری درخواست‌های پشتیبانی سواپین.', [
     'canonical' => APP_URL . '/support',
 ]);
 render_panel_styles();

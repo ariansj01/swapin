@@ -42,7 +42,7 @@ if (!$_POST && $user) {
 $emailJsConfig = emailjs_public_config();
 $secretsMissing = !is_readable(__DIR__ . '/includes/mail_secrets.php');
 
-render_head('تماس با سواَپین | پشتیبانی', 'با تیم سواَپین در ارتباط باشید - سوال یا پیشنهادی دارید؟ با ما تماس بگیرید.', [
+render_head('تماس با سواپین | پشتیبانی', 'با تیم سواپین در ارتباط باشید - سوال یا پیشنهادی دارید؟ با ما تماس بگیرید.', [
     'canonical' => APP_URL . '/contact',
     'json_ld'   => seo_json_ld_organization(),
 ]);

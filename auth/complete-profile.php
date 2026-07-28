@@ -192,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-render_head('تکمیل پروفایل | سواَپین', 'تکمیل اطلاعات پروفایل برای ورود به سواَپین', [
+render_head('تکمیل پروفایل | سواپین', 'تکمیل اطلاعات پروفایل برای ورود به سواپین', [
     'canonical' => APP_URL . '/auth/complete-profile',
 ]);
 render_navbar(null);

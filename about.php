@@ -3,7 +3,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $user = auth_user();
-render_head('درباره سواَپین | پلتفرم مبادله کالا', 'با سواَپین - بزرگترین پلتفرم هوشمند مبادله کالا با کالا در ایران - آشنا شوید.', [
+render_head('درباره سواپین | پلتفرم مبادله کالا', 'با سواپین - بزرگترین پلتفرم هوشمند مبادله کالا با کالا در ایران - آشنا شوید.', [
     'canonical' => APP_URL . '/about',
     'json_ld'   => seo_json_ld_organization(),
 ]);
