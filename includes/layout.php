@@ -128,7 +128,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <meta name="theme-color" content="#0a2540">
 {$keywords}{$jsonLd}
 <link rel="stylesheet" href="{$url}/src/css/fonts.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{$url}/src/vendor/bootstrap-icons/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
 <link rel="icon" type="image/x-icon" href="{$url}/src/img/fav_icon/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="{$url}/src/img/fav_icon/web-app-manifest-512x512.png">

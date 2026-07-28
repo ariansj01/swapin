@@ -15,7 +15,7 @@ function render_admin_head(string $title = ''): void {
 <title>{$t}</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="{$url}/src/css/fonts.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{$url}/src/vendor/bootstrap-icons/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
 <link rel="stylesheet" href="{$url}/src/css/admin.css">
 </head>
