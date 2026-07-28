@@ -46,8 +46,15 @@ jobs:
             fi
 
             echo "[4/8] Restoring runtime permissions..."
-            [ -d storage ] && chmod -R 775 storage || true
-            [ -d uploads ] && sudo chmod -R 775 uploads || true
+            if [ -d storage ]; then
+              find storage -type d -exec chmod 775 {} +
+              find storage -type f -exec chmod 664 {} +
+            fi
+
+            if [ -d uploads ]; then
+              sudo find uploads -type d -exec chmod 775 {} +
+              sudo find uploads -type f -exec chmod 664 {} +
+            fi
 
             echo "[5/8] Installing version-controlled Nginx config..."
 
