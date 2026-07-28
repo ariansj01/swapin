@@ -1031,6 +1031,32 @@ function initFilterModal() {
   overlay.addEventListener('click', closeModal);
 }
 
+/* ── Reset scroll position on page load/reload ────────────────────────── */
+function initScrollReset() {
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+
+  const resetToTop = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  const restoreTop = () => {
+    window.requestAnimationFrame(() => {
+      resetToTop();
+      window.requestAnimationFrame(resetToTop);
+    });
+  };
+
+  window.addEventListener('load', restoreTop);
+  window.addEventListener('pageshow', restoreTop);
+  restoreTop();
+}
+
+initScrollReset();
+
 document.addEventListener('DOMContentLoaded', () => {
   // Prevent back buttons from accidentally triggering other clicks
   document.querySelectorAll('.dash-back-btn, .trade-room__back, .promote-back-link, .btn').forEach(btn => {

@@ -1,3 +1,28 @@
+function initScrollReset() {
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+
+  const resetToTop = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  const restoreTop = () => {
+    window.requestAnimationFrame(() => {
+      resetToTop();
+      window.requestAnimationFrame(resetToTop);
+    });
+  };
+
+  window.addEventListener('load', restoreTop);
+  window.addEventListener('pageshow', restoreTop);
+  restoreTop();
+}
+
+initScrollReset();
+
 // User panel sidebar toggle (all panel pages)
 (function () {
   const toggle  = document.getElementById('dash-sidebar-toggle');
