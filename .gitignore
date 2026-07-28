@@ -13,3 +13,20 @@ storage/private/*
 /vendor/
 composer.phar
 composer-setup.php
+
+# Local / production backup files
+*.bak
+*.bak.*
+*.backup
+*.backup.*
+*~
+
+# Local backup directories
+backups/
+
+# OS / editor temporary files
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+includes/layout.php.*

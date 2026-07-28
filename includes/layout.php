@@ -60,8 +60,18 @@ require_once __DIR__ . '/seo.php';
 require_once __DIR__ . '/dashboard_layout.php';
 
 function render_head(string $title = '', string $desc = '', array $seo = []): void {
-    $t         = $title ? h($title) . ' — ' . APP_NAME : APP_NAME . ' — بازار تعویض هوشمند';
-    $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواَپین مبادله کنید — بازار تعویض هوشمند.';
+    if ($title) {
+        $safeTitle = h($title);
+
+        if (mb_strpos($title, APP_NAME) !== false) {
+            $t = $safeTitle;
+        } else {
+            $t = $safeTitle . ' — ' . APP_NAME;
+        }
+    } else {
+        $t = APP_NAME . ' — بازار تعویض هوشمند';
+    }
+    $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواپین مبادله کنید — بازار تعویض هوشمند.';
     $url       = APP_URL;
     $canonical = h($seo['canonical'] ?? seo_canonical());
     $ogImage   = h($seo['og_image'] ?? LOGO_URL);
@@ -91,6 +101,35 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
         }
     }
 
+    $enableAnalytics = true;
+
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+
+    if (
+        str_contains($requestUri, '/admin') ||
+        str_contains($requestUri, '/dashboard') ||
+        str_contains($requestUri, '/auth') ||
+        str_contains($requestUri, '/profile') ||
+        str_contains($requestUri, '/payment_callback')
+    ) {
+        $enableAnalytics = false;
+    }
+
+    $analytics = '';
+
+    if ($enableAnalytics) {
+        $analytics = <<<GA
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-S0RG4SWX8K"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-S0RG4SWX8K');
+</script>
+GA;
+    }
+
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -118,21 +157,14 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
 <meta name="theme-color" content="#0a2540">
 {$keywords}{$jsonLd}
 <link rel="stylesheet" href="{$url}/src/css/fonts.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{$url}/src/vendor/bootstrap-icons/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
 <link rel="icon" type="image/x-icon" href="{$url}/src/img/fav_icon/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="{$url}/src/img/fav_icon/web-app-manifest-512x512.png">
 <link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/web-app-manifest-192x192.png">
 <link rel="apple-touch-icon" href="{$url}/src/img/fav_icon/apple-touch-icon.png">
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-S0RG4SWX8K"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-S0RG4SWX8K');
-</script>
+{$analytics}
 <link rel="manifest" href="{$url}/src/img/fav_icon/site.webmanifest">
 </head>
 <body>

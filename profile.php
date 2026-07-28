@@ -100,7 +100,7 @@ render_navbar($currentUser);
             <?php if ($profile['bio']): ?>
             <p class="dash-page-head__sub" style="margin:0;max-width:620px;line-height:1.9"><?= nl2br(h($profile['bio'])) ?></p>
             <?php else: ?>
-            <p class="dash-page-head__sub" style="margin:0">پروفایل کاربری در سواَپین</p>
+            <p class="dash-page-head__sub" style="margin:0">پروفایل کاربری در سواپین</p>
             <?php endif; ?>
           </div>
 

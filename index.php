@@ -122,7 +122,7 @@ render_head($homeMetaTitle, $homeMetaDesc, [
     'canonical' => APP_URL . '/',
     'og_type'   => 'website',
     'og_image'  => APP_URL . '/src/img/heropng.png',
-    'keywords'  => 'مبادله کالا, تعویض کالا, بازار مبادله, سواَپین, معاوضه',
+    'keywords'  => 'مبادله کالا, تعویض کالا, بازار مبادله, سواپین, معاوضه',
     'json_ld'   => [seo_json_ld_website(), seo_json_ld_organization()],
 ]);
 render_navbar($user);
@@ -142,7 +142,7 @@ render_navbar($user);
   <div class="container hero__inner">
     <div class="hero__content">
       <h1 class="hero__title">
-        <span class="hero__line">سواَپین، پلتفرم هوشمند</span>
+        <span class="hero__line">سواپین، پلتفرم هوشمند</span>
         <span class="hero__line"><?= h(swapin_content_get('hero_title_line_2')) ?></span>
       </h1>
       <p class="hero__subtitle"><?= h(swapin_content_get('hero_subtitle_before')) ?> <span class="hero__gold"><?= h(swapin_content_get('hero_subtitle_highlight')) ?></span> کن</p>
@@ -199,7 +199,7 @@ render_navbar($user);
       <div class="site-footer__stat">
         <i class="bi bi-trophy site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dd class="site-footer__stat-value">توسط کاربران سواَپین</dd>
+          <dd class="site-footer__stat-value">توسط کاربران سواپین</dd>
           <dt class="site-footer__stat-lable">هزاران معامله موفق</dt>
         </div>
       </div>
@@ -271,10 +271,10 @@ render_navbar($user);
       <div class="container">
         <div class="home-section__header home-steps__header">
           <span class="home-steps__eyebrow">مسیر ساده معامله</span>
-          <h2>چطور در سواَپین معامله کنیم؟</h2>
+          <h2>چطور در سواپین معامله کنیم؟</h2>
           <p>فقط در چهار مرحله ساده کالای خود را با دیگران معامله کنید.</p>
         </div>
-        <div class="steps-grid" aria-label="مراحل معامله در سواَپین">
+        <div class="steps-grid" aria-label="مراحل معامله در سواپین">
           <?php
           $steps = [
               ['۱', 'ثبت آگهی', 'از کالای خود عکس بگیرید، توضیحات بنویسید و آگهی را ثبت کنید.', 'bi-phone', 'bi-plus-lg', 'آگهی شما در چند دقیقه آماده نمایش است.'],
