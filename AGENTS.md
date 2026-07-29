@@ -48,3 +48,21 @@ Deployment must not continue if:
 - JSON-LD schema removed
 - Blog canonical removed
 - Sitemap unavailable
+
+## Mandatory Before Production Deploy
+
+Before every deploy execute:
+
+./tools/seo-production-check.sh
+
+./scripts/check-seo-analytics.sh
+
+
+Deployment is blocked when:
+
+- SEO Guard fails
+- Canonical changes unexpectedly
+- Sitemap breaks
+- GTM disappears from public pages
+- GTM appears in admin/dashboard
+- Direct GA4 script is introduced
