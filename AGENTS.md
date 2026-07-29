@@ -28,3 +28,23 @@ Rules:
 Before deployment run:
 
 ./scripts/check-seo-analytics.sh
+
+
+## Deployment QA Checklist
+
+Before every production deployment:
+
+Run:
+
+./scripts/check-seo-analytics.sh
+
+
+Deployment must not continue if:
+
+- GTM missing from public pages
+- GTM exists in admin/dashboard
+- Direct GA4 script exists
+- Canonical tags removed
+- JSON-LD schema removed
+- Blog canonical removed
+- Sitemap unavailable
