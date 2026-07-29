@@ -5,7 +5,7 @@ require_once __DIR__ . '/load_env.php';
 load_env(__DIR__ . '/../.env');
 
 // ─── Core Configuration ────────────────────────────────────────────────────
-define('APP_NAME',          'سواپین');
+define('APP_NAME',          'سواَپین');
 define('APP_NAME_EN',       'Swapin');
 define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE', 'IRT');
@@ -963,7 +963,7 @@ if (!defined('MAIL_FROM_EMAIL')) {
     define('MAIL_FROM_EMAIL', 'info@swaapin.ir');
 }
 if (!defined('MAIL_FROM_NAME')) {
-    define('MAIL_FROM_NAME', 'سواپین');
+    define('MAIL_FROM_NAME', 'سواَپین');
 }
 if (!defined('MAIL_REPLY_TO')) {
     define('MAIL_REPLY_TO', 'info@swaapin.ir');
