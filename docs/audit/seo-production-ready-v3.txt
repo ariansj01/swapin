@@ -1,0 +1,150 @@
+
+==============================================
+ SWAAPIN PRODUCTION SEO GUARD
+ Wed Jul 29 09:57:25 UTC 2026
+==============================================
+
+[0;32m[PASS][0m HTTP redirects directly to HTTPS canonical host
+[0;32m[PASS][0m HTTPS www redirects to non-www
+[0;32m[PASS][0m Homepage returns HTTP 200
+[0;32m[PASS][0m Homepage canonical is correct
+[0;32m[PASS][0m Homepage is index,follow
+[0;32m[PASS][0m robots.txt returns HTTP 200
+[0;32m[PASS][0m robots.txt does not block the whole site
+[0;32m[PASS][0m robots.txt references main sitemap
+[0;32m[PASS][0m https://swaapin.ir/about is 200 and self-canonical
+[0;32m[PASS][0m https://swaapin.ir/contact is 200 and self-canonical
+[0;32m[PASS][0m https://swaapin.ir/terms is 200 and self-canonical
+[0;32m[PASS][0m https://swaapin.ir/privacy is 200 and self-canonical
+[0;32m[PASS][0m https://swaapin.ir/listings/ is 200 and self-canonical
+[0;32m[PASS][0m https://swaapin.ir/category/electronics is 200 and self-canonical
+[0;32m[PASS][0m https://swaapin.ir/category/home-appliances is 200 and self-canonical
+[0;32m[PASS][0m https://swaapin.ir/about.php redirects permanently to https://swaapin.ir/about
+[0;32m[PASS][0m https://swaapin.ir/contact.php redirects permanently to https://swaapin.ir/contact
+[0;32m[PASS][0m https://swaapin.ir/terms.php redirects permanently to https://swaapin.ir/terms
+[0;32m[PASS][0m https://swaapin.ir/privacy.php redirects permanently to https://swaapin.ir/privacy
+[0;32m[PASS][0m https://swaapin.ir/listings/all redirects permanently to https://swaapin.ir/listings/
+[0;32m[PASS][0m https://swaapin.ir/listings/all.php redirects permanently to https://swaapin.ir/listings/
+[0;32m[PASS][0m https://swaapin.ir/sitemap.xml returns HTTP 200
+[0;32m[PASS][0m https://swaapin.ir/sitemap.php returns HTTP 200
+[0;32m[PASS][0m https://swaapin.ir/sitemap-main.xml returns HTTP 200
+[0;32m[PASS][0m https://swaapin.ir/sitemap-pages.php returns HTTP 200
+[0;32m[PASS][0m https://swaapin.ir/blog/wp-sitemap.xml returns HTTP 200
+[1;33m[INFO][0m Checking every URL emitted by Swaapin sitemaps...
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/about
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/ai/chat
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/blog/
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/books-media
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/clothing
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/electronics
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/food-drink
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/home-appliances
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/home-garden
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/services
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/sports
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/toys-games
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/category/vehicles
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/contact
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/fraud-prevention
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=226
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=229
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=249
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=250
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=251
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=253
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=254
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=261
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=262
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=263
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=264
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=265
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=266
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=267
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=268
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=269
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=270
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=271
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=272
+[0;32m[PASS][0m Sitemap URL 200: https://swaapin.ir/listings/view?id=273
+[0;32m[PASS][0m /support is excluded from sitemap
+[1;33m[INFO][0m Checking canonical integrity for sitemap URLs...
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/ -> https://swaapin.ir/
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/about -> https://swaapin.ir/about
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/ai/chat -> https://swaapin.ir/ai/chat
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/blog/ -> https://swaapin.ir/blog/
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/books-media -> https://swaapin.ir/category/books-media
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/clothing -> https://swaapin.ir/category/clothing
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/electronics -> https://swaapin.ir/category/electronics
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/food-drink -> https://swaapin.ir/category/food-drink
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/home-appliances -> https://swaapin.ir/category/home-appliances
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/home-garden -> https://swaapin.ir/category/home-garden
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/services -> https://swaapin.ir/category/services
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/sports -> https://swaapin.ir/category/sports
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/toys-games -> https://swaapin.ir/category/toys-games
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/category/vehicles -> https://swaapin.ir/category/vehicles
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/contact -> https://swaapin.ir/contact
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/fraud-prevention -> https://swaapin.ir/fraud-prevention
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=226 -> https://swaapin.ir/listings/view?id=226
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=229 -> https://swaapin.ir/listings/view?id=229
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=249 -> https://swaapin.ir/listings/view?id=249
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=250 -> https://swaapin.ir/listings/view?id=250
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=251 -> https://swaapin.ir/listings/view?id=251
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=253 -> https://swaapin.ir/listings/view?id=253
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=254 -> https://swaapin.ir/listings/view?id=254
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=261 -> https://swaapin.ir/listings/view?id=261
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=262 -> https://swaapin.ir/listings/view?id=262
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=263 -> https://swaapin.ir/listings/view?id=263
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=264 -> https://swaapin.ir/listings/view?id=264
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=265 -> https://swaapin.ir/listings/view?id=265
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=266 -> https://swaapin.ir/listings/view?id=266
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=267 -> https://swaapin.ir/listings/view?id=267
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=268 -> https://swaapin.ir/listings/view?id=268
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=269 -> https://swaapin.ir/listings/view?id=269
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=270 -> https://swaapin.ir/listings/view?id=270
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=271 -> https://swaapin.ir/listings/view?id=271
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=272 -> https://swaapin.ir/listings/view?id=272
+[0;32m[PASS][0m Canonical valid: https://swaapin.ir/listings/view?id=273 -> https://swaapin.ir/listings/view?id=273
+[0;32m[PASS][0m https://swaapin.ir/ canonical does not use www
+[0;32m[PASS][0m https://swaapin.ir/about canonical does not use www
+[0;32m[PASS][0m https://swaapin.ir/contact canonical does not use www
+[0;32m[PASS][0m https://swaapin.ir/listings/ canonical does not use www
+
+==============================================
+ SEO GUARD RESULT
+ Checks:   103
+ Failures: 0
+==============================================
+
+[0;32mSEO PRODUCTION CHECK PASSED[0m
+===== SWAAPIN SEO / ANALYTICS PRODUCTION QA =====
+
+1) Homepage SEO
+✅ Title OK
+✅ Description OK
+✅ Canonical OK
+✅ Schema OK
+
+2) Google Tag Manager
+✅ GTM Public Enabled
+
+3) Direct GA4 Check
+✅ GA4 Controlled By GTM
+
+4) Admin Tracking Isolation
+✅ Admin Tracking Disabled
+
+5) Dashboard Tracking Isolation
+✅ Dashboard Tracking Disabled
+
+6) Blog SEO
+✅ Blog Canonical OK
+✅ Blog Robots OK
+
+7) Robots.txt
+✅ Sitemap Declaration OK
+
+8) Sitemap Availability
+✅ Sitemap Available
+
+===== QA COMPLETE =====
