@@ -116,17 +116,43 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     }
 
     $analytics = '';
+    $gtm = '';
+    $gtm_noscript = '';
 
     if ($enableAnalytics) {
-        $analytics = <<<GA
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-S0RG4SWX8K"></script>
+
+        $gtm_noscript = <<<NOSCRIPT
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5GLQN3HL"
+height="0"
+width="0"
+style="display:none;visibility:hidden"></iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+NOSCRIPT;
+
+        $gtm = <<<GTM
+<!-- Google Tag Manager -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-S0RG4SWX8K');
+(function(w,d,s,l,i){
+w[l]=w[l]||[];
+w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});
+var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),
+dl=l!='dataLayer'?'&l='+l:'';
+j.async=true;
+j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5GLQN3HL');
 </script>
+<!-- End Google Tag Manager -->
+GTM;
+
+
+        $analytics = <<<GA
+
 GA;
     }
 
@@ -134,6 +160,7 @@ GA;
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{$csrf}">
@@ -164,10 +191,14 @@ GA;
 <link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/web-app-manifest-192x192.png">
 <link rel="apple-touch-icon" href="{$url}/src/img/fav_icon/apple-touch-icon.png">
 
+{$gtm}
 {$analytics}
 <link rel="manifest" href="{$url}/src/img/fav_icon/site.webmanifest">
 </head>
 <body>
+{$gtm_noscript}
+
+
 <a href="#main-content" class="skip-link">رفتن به محتوای اصلی</a>
 HTML;
 }
