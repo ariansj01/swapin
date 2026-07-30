@@ -232,13 +232,25 @@ render_navbar(null);
           <button type="submit" class="btn btn-primary w-100 btn-lg">ارسال کد تأیید</button>
           <?php elseif ($isGoogleUser && empty($currentUser['phone_verified_at']) && $showOtpForm): // Google user, OTP sent, needs verification ?>
           <input type="hidden" name="action" value="verify_otp">
+          <input type="hidden" name="otp" value="">
           <div class="form-group">
-            <label class="form-label" for="otp">کد تأیید <span class="required">*</span></label>
-            <input type="text" class="form-control <?= isset($errors['otp']) ? 'is-invalid' : '' ?>"
-                   id="otp" name="otp" value="<?= h($otp ?? '') ?>"
-                   placeholder="کد ۶ رقمی" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus>
+            <label class="form-label">کد تأیید <span class="required">*</span></label>
+            <div class="otp-group" data-target="otp" data-mode="digits" id="cpOtpGroup">
+              <?php for ($i = 0; $i < 6; $i++): ?>
+                <input
+                  type="text"
+                  class="otp-group__digit <?= isset($errors['otp']) ? 'is-invalid' : '' ?>"
+                  maxlength="1"
+                  inputmode="numeric"
+                  pattern="[0-9]"
+                  aria-label="رقم <?= ($i + 1) ?>"
+                  autocomplete="<?= $i === 0 ? 'one-time-code' : 'off' ?>"
+                  <?php if ($i === 0) echo 'autofocus'; ?>
+                >
+              <?php endfor; ?>
+            </div>
             <?php if (isset($errors['otp'])): ?>
-            <div class="invalid-feedback"><?= h($errors['otp']) ?></div>
+            <div class="invalid-feedback text-center mt-2 d-block"><?= h($errors['otp']) ?></div>
             <?php endif; ?>
           </div>
           <button type="submit" class="btn btn-primary w-100 btn-lg">تأیید شماره تلفن</button>

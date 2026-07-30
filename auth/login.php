@@ -226,15 +226,27 @@ render_navbar(null);
           </form>
           <?php elseif ($step === 'otp'): ?>
           <!-- OTP Entry -->
-          <form method="POST">
+          <form method="POST" id="otpForm">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="verify_otp">
+            <input type="hidden" name="code" value="">
             <div class="form-group">
               <label class="form-label">کد تأیید</label>
-              <input type="text" class="form-control login-input-tall login-code-input" name="code" placeholder="000000"
-                     inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code"
-                     required autofocus>
-              <p class="form-hint">
+              <div class="otp-group" data-target="code" data-mode="digits" id="loginOtpGroup">
+                <?php for ($i = 0; $i < 6; $i++): ?>
+                  <input
+                    type="text"
+                    class="otp-group__digit"
+                    maxlength="1"
+                    inputmode="numeric"
+                    pattern="[0-9]"
+                    aria-label="رقم <?= ($i + 1) ?>"
+                    autocomplete="<?= $i === 0 ? 'one-time-code' : 'off' ?>"
+                    <?php if ($i === 0) echo 'autofocus'; ?>
+                  >
+                <?php endfor; ?>
+              </div>
+              <p class="form-hint text-center mt-4">
                 کد ۶ رقمی به <strong><?= h($phone) ?></strong> ارسال شد
               </p>
             </div>
@@ -293,17 +305,11 @@ render_navbar(null);
     }
 
     const phoneInput = document.querySelector('input[name="phone"]');
-    const codeInput = document.querySelector('input[name="code"]');
+    const otpGroup = document.getElementById('loginOtpGroup');
 
     if (phoneInput) {
         phoneInput.addEventListener('input', function () {
             this.value = normalizeDigits(this.value).replace(/\D+/g, '').slice(0, 11);
-        });
-    }
-
-    if (codeInput) {
-        codeInput.addEventListener('input', function () {
-            this.value = normalizeDigits(this.value).replace(/\D+/g, '').slice(0, 6);
         });
     }
 
@@ -318,6 +324,8 @@ render_navbar(null);
             }
         }
         errorBox.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + message;
+        // Shake OTP group if shown
+        if (otpGroup) otpGroup.dispatchEvent(new CustomEvent('otp-shake'));
     }
 
     let googleSigninReady = false;

@@ -1031,6 +1031,178 @@ function initFilterModal() {
   overlay.addEventListener('click', closeModal);
 }
 
+/* ── OTP / verification input — one box per digit ──────────────────────── */
+function initOtpInputs() {
+  const faDigits = { '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+  const arDigits = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9' };
+  const normDigit = (ch) => {
+    if (!ch || !ch.length) return '';
+    const c = ch.charAt(ch.length - 1);
+    return (faDigits[c] ?? arDigits[c] ?? c);
+  };
+
+  document.querySelectorAll('.otp-group').forEach(group => {
+    const inputs = Array.from(group.querySelectorAll('.otp-group__digit'));
+    if (!inputs.length) return;
+
+    let target = null;
+    const targetName = group.dataset.target || '';
+    if (targetName) {
+      target = group.closest('form')?.querySelector(`input[name="${targetName}"]`);
+    }
+    if (!target) {
+      const form = group.closest('form');
+      target = form?.querySelector('input[name="code"]') || form?.querySelector('input[name="otp"]');
+    }
+
+    const digitsOnly = (group.dataset.mode || 'digits') === 'digits';
+
+    const updateTarget = () => {
+      const joined = inputs.map(i => i.value || '').join('');
+      if (target) target.value = joined;
+      group.dispatchEvent(new CustomEvent('otp-change', { detail: { value: joined, complete: joined.length === inputs.length } }));
+    };
+
+    const moveFocus = (idx) => {
+      if (idx < 0) idx = 0;
+      if (idx >= inputs.length) idx = inputs.length - 1;
+      const el = inputs[idx];
+      if (!el) return;
+      try { el.focus(); } catch {}
+      try { el.setSelectionRange(el.value.length, el.value.length); } catch {}
+    };
+
+    const setShake = (on) => {
+      inputs.forEach(i => i.classList.toggle('is-invalid', !!on));
+      if (on) {
+        setTimeout(() => inputs.forEach(i => i.classList.remove('is-invalid')), 500);
+      }
+    };
+    group.addEventListener('otp-shake', () => setShake(true));
+
+    inputs.forEach((inp, idx) => {
+      inp.addEventListener('input', (e) => {
+        let raw = inp.value || '';
+        let cleaned = '';
+        for (const ch of raw) {
+          const nc = normDigit(ch);
+          if (digitsOnly && !/^[0-9]$/.test(nc)) continue;
+          if (!/^\s$/.test(nc)) cleaned += nc;
+        }
+        if (!cleaned) {
+          inp.value = '';
+          inp.classList.remove('is-filled');
+          updateTarget();
+          return;
+        }
+        if (cleaned.length > 1) {
+          let extras = cleaned.slice(1);
+          inp.value = cleaned.charAt(0);
+          let next = idx + 1;
+          while (extras && next < inputs.length) {
+            inputs[next].value = extras.charAt(0);
+            inputs[next].classList.add('is-filled');
+            extras = extras.slice(1);
+            next++;
+          }
+          inputs.forEach(i => i.classList.toggle('is-filled', i.value.length > 0));
+          updateTarget();
+          moveFocus(next - 1);
+          return;
+        }
+        inp.value = cleaned.charAt(0);
+        inp.classList.add('is-filled');
+        updateTarget();
+        if (idx < inputs.length - 1) moveFocus(idx + 1);
+      });
+
+      inp.addEventListener('keydown', (e) => {
+        const key = e.key;
+        if (key === 'Backspace') {
+          e.stopPropagation();
+          if (!inp.value) {
+            if (idx > 0) {
+              inputs[idx - 1].value = '';
+              inputs[idx - 1].classList.remove('is-filled');
+              updateTarget();
+              moveFocus(idx - 1);
+              e.preventDefault();
+            }
+          } else {
+            // let default behavior clear value; after clearing our input will fire
+          }
+          return;
+        }
+        if (key === 'Delete') {
+          if (inp.value) {
+            inp.value = '';
+            inp.classList.remove('is-filled');
+            updateTarget();
+            e.preventDefault();
+          }
+          return;
+        }
+        if (key === 'ArrowLeft') {
+          e.preventDefault();
+          moveFocus(idx - 1);
+          return;
+        }
+        if (key === 'ArrowRight') {
+          e.preventDefault();
+          moveFocus(idx + 1);
+          return;
+        }
+        if (key === 'Enter') {
+          // let form submit
+          return;
+        }
+        if (key === 'Tab') {
+          return;
+        }
+        if (digitsOnly) {
+          if (/^F[0-9]+$/.test(key) || key === 'Escape' || key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta') return;
+          if (!/^[0-9۰-۹٠-٩]$/.test(key)) {
+            e.preventDefault();
+          }
+        }
+      });
+
+      inp.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const txt = (e.clipboardData || window.clipboardData).getData('text') || '';
+        if (!txt) return;
+        let clean = '';
+        for (const ch of txt) {
+          const nc = normDigit(ch);
+          if (digitsOnly && !/^[0-9]$/.test(nc)) continue;
+          if (!/^\s$/.test(nc)) clean += nc;
+        }
+        if (!clean) return;
+        const start = idx;
+        for (let i = 0; i < inputs.length - start && i < clean.length; i++) {
+          inputs[start + i].value = clean.charAt(i);
+          inputs[start + i].classList.add('is-filled');
+        }
+        inputs.forEach(i => i.classList.toggle('is-filled', i.value.length > 0));
+        updateTarget();
+        const nextIdx = Math.min(start + clean.length, inputs.length - 1);
+        moveFocus(nextIdx);
+      });
+
+      inp.addEventListener('focus', () => {
+        try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch {}
+      });
+    });
+
+    // Browser one-time-code autofill on any of the inputs
+    group.addEventListener('input', () => {
+      // already handled above via individual input listeners
+    }, true);
+
+    updateTarget();
+  });
+}
+
 /* ── Reset scroll position on page load/reload ────────────────────────── */
 function initScrollReset() {
   if ('scrollRestoration' in window.history) {
@@ -1095,6 +1267,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initStepsReveal();
   initListingsSliderArrows();
   initFilterModal();
+  initOtpInputs();
 
   // Restore active tab from URL
   const tabParam = new URLSearchParams(window.location.search).get('tab');

@@ -840,6 +840,60 @@ p { color: var(--text-secondary); line-height: 1.6; }
     text-align: center;
 }
 
+/* OTP / verification — one box per digit */
+.otp-group {
+  display: flex;
+  gap: var(--sp-3);
+  justify-content: center;
+  align-items: center;
+  direction: ltr;
+}
+
+.otp-group__digit {
+  width: 52px;
+  height: 62px;
+  min-height: 0;
+  padding: 0;
+  font-size: 1.5rem !important;
+  font-weight: 700;
+  line-height: 62px;
+  text-align: center;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  transition: all .18s ease;
+  caret-color: var(--primary);
+}
+
+.otp-group__digit:focus {
+  outline: none;
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 4px rgba(7,26,51,.10);
+  transform: translateY(-1px);
+}
+
+.otp-group__digit.is-filled {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.otp-group__digit.is-invalid {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  animation: otp-shake .4s;
+}
+
+@keyframes otp-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@media (max-width: 480px) {
+  .otp-group { gap: var(--sp-2); }
+  .otp-group__digit { width: 44px; height: 54px; line-height: 54px; font-size: 1.25rem !important; }
+}
+
 .form-control:focus {
   border-color: var(--primary-light);
   box-shadow: 0 0 0 3px rgba(7,26,51,.12);
