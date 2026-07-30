@@ -30,3 +30,10 @@ Thumbs.db
 *.swp
 *.tmp
 includes/layout.php.*
+
+# Database backups
+*.sql
+*.sql.gz
+
+# Production audit exports
+docs/audit/*.tmp
