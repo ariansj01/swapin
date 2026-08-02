@@ -69,7 +69,7 @@ render_navbar($user);
   <div class="container-md">
 
     <div style="text-align:center;padding:var(--sp-6) 0 var(--sp-4)">
-      <div style="margin-bottom:var(--sp-5)">
+      <div style="margin-bottom:var(--sp-5);display: flex;justify-content: center;">
         <img src="<?= h($ogImage) ?>" alt="دستیار هوشمند سواپین" style="max-width:100%;width:640px;height:auto;border-radius:24px;box-shadow:0 12px 40px rgba(10,37,64,.12)">
       </div>
       <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent-dark));margin-bottom:var(--sp-5)">
