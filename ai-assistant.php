@@ -6,7 +6,7 @@ $user = auth_user();
 $metaTitle = 'دستیار هوشمند سواپین';
 $metaDesc = 'دستیار هوشمند سواپین با استفاده از هوش مصنوعی، ارزش‌گذاری کالا، پیشنهاد بهترین معاوضه، راهنمای ثبت آگهی و پاسخ به سوالات کاربران را انجام می‌دهد تا تجربه‌ای سریع، دقیق و مطمئن از مبادله کالا داشته باشید.';
 $canonical = APP_URL . '/ai-assistant';
-$ogImage = APP_URL . '/uploads/photo_6017098746631491339_wj.jpg';
+$ogImage = APP_URL . '/uploads/photo_6017098746631491339_w.jpg';
 
 $jsonLd = [
     '@context' => 'https://schema.org',
