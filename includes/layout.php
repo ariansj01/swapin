@@ -230,7 +230,6 @@ function render_navbar(?array $user = null): void {
     $navItems = [
         ['/#home-steps', 'چگونه کار می‌کند؟', 'bi-lightbulb', ''],
         ['/trades', 'اتاق امن', 'bi-shield-lock', ''],
-        ['/ai/chat', 'دستیار AI', 'bi-stars', 'navbar-nav__link--ai'],
         ['/about', 'درباره ما', 'bi-question-circle', ''],
         ['/contact', 'تماس با ما', 'bi-envelope', ''],
     ];
@@ -262,6 +261,17 @@ HTML;
         echo "<a href=\"{$url}/category/{$cat['slug']}\" class=\"dropdown-item {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel}</a>";
     }
     echo <<<HTML
+        </div>
+      </div>
+
+      <!-- AI Assistant Dropdown -->
+      <div class="dropdown">
+        <button class="navbar-nav__link navbar-nav__link--ai" id="ai-dropdown-btn" style="border:none;background:none;cursor:pointer">
+          <i class="bi bi-stars"></i> دستیار AI <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+        </button>
+        <div class="dropdown-menu" id="ai-dropdown">
+          <a href="{$url}/ai/chat" class="dropdown-item"><i class="bi bi-chat-dots-fill"></i> چت با دستیار</a>
+          <a href="{$url}/ai-assistant" class="dropdown-item"><i class="bi bi-info-circle-fill"></i> دستیار هوشمند چیست؟</a>
         </div>
       </div>
 HTML;
@@ -349,6 +359,9 @@ HTML;
   </div>
   <nav class="mobile-drawer__nav">
 HTML;
+    echo "<a href=\"{$url}/ai/chat\" class=\"mobile-drawer__link\"><i class=\"bi bi-chat-dots-fill\"></i> چت با دستیار AI</a>";
+    echo "<a href=\"{$url}/ai-assistant\" class=\"mobile-drawer__link\"><i class=\"bi bi-info-circle-fill\"></i> دستیار هوشمند چیست؟</a>";
+    echo "<div class=\"mobile-drawer__divider\"></div>";
     foreach ($navItems as [$href, $label, $icon, $extraClass]) {
         $fullHref = str_starts_with($href, '/#') ? $url . $href : $url . $href;
         echo "<a href=\"{$fullHref}\" class=\"mobile-drawer__link\"><i class=\"bi {$icon}\"></i> {$label}</a>";

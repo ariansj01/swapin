@@ -2226,6 +2226,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 .dropdown-menu.open { display: block; }
 
+.navbar-nav .dropdown:hover > .dropdown-menu { display: block; }
+
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -3889,7 +3891,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .site-footer__links {
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px 20px;
   padding: 0;
   margin: 0;

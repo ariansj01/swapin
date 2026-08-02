@@ -11,6 +11,7 @@ $urls = [
     ['loc' => $base . '/about',     'priority' => '0.6', 'changefreq' => 'monthly'],
     ['loc' => $base . '/contact',   'priority' => '0.5', 'changefreq' => 'monthly'],
     ['loc' => $base . '/fraud-prevention', 'priority' => '0.6', 'changefreq' => 'monthly'],
+    ['loc' => $base . '/ai-assistant', 'priority' => '0.8', 'changefreq' => 'monthly'],
     ['loc' => $base . '/ai/chat',   'priority' => '0.5', 'changefreq' => 'weekly'],
 ];
 
