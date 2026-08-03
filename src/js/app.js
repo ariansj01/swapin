@@ -1,5 +1,5 @@
 /**
- * Swapin (سواپین) — app.js
+ * Swapin (سواَپین) — app.js
  * Vanilla JS — no dependencies
  */
 

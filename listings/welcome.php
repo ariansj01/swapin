@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-render_head('به سواپین خوش آمدید', '', ['robots' => 'noindex']);
+render_head('به سواَپین خوش آمدید', '', ['robots' => 'noindex']);
 render_navbar($user);
 ?>
 
@@ -36,7 +36,7 @@ render_navbar($user);
   <div class="wizard-container welcome-page">
     <form method="POST" class="welcome-content">
       <h1 class="welcome-title">برای شروع، چند علاقه‌مندی را انتخاب کنید</h1>
-      <p class="welcome-subtitle">برای اینکه تجربه بهتری در سواپین داشته باشید.</p>
+      <p class="welcome-subtitle">برای اینکه تجربه بهتری در سواَپین داشته باشید.</p>
 
       <div class="category-chips">
         <?php foreach ($categories as $cat): ?>

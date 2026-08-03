@@ -71,7 +71,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     } else {
         $t = APP_NAME . ' — بازار تعویض هوشمند';
     }
-    $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواپین مبادله کنید — بازار تعویض هوشمند.';
+    $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواَپین مبادله کنید — بازار تعویض هوشمند.';
     $url       = APP_URL;
     $canonical = h($seo['canonical'] ?? seo_canonical());
     $ogImage   = h($seo['og_image'] ?? LOGO_URL);

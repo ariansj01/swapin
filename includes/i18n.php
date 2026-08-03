@@ -1,5 +1,5 @@
 <?php
-// Persian UI helpers — Swapin (سواپین)
+// Persian UI helpers — Swapin (سواَپین)
 
 function persian_digits(string $str): string {
     return str_replace(

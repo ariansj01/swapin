@@ -5,7 +5,7 @@ require_once __DIR__ . '/../includes/layout.php';
 $user = auth_user();
 $url  = APP_URL;
 
-render_head('دستیار هوش مصنوعی | سواپین', 'مشاوره معاوضه، ارزش‌گذاری و پیشنهاد هوشمند در سواپین', [
+render_head('دستیار هوش مصنوعی | سواَپین', 'مشاوره معاوضه، ارزش‌گذاری و پیشنهاد هوشمند در سواَپین', [
     'canonical' => APP_URL . '/ai/chat',
     'robots'    => 'noindex, nofollow',
 ]);
@@ -16,7 +16,7 @@ render_navbar($user);
   <div class="container-md">
 
     <div class="ai-chat-page__header">
-      <div class="ai-chat-page__badge"><i class="bi bi-stars"></i> هوش مصنوعی سواپین</div>
+      <div class="ai-chat-page__badge"><i class="bi bi-stars"></i> هوش مصنوعی سواَپین</div>
       <h1>دستیار معاوضه هوشمند</h1>
       <p>ارزش کالا، پیشنهاد معاوضه و راهنمای معامله — با کمک AI</p>
     </div>
@@ -27,12 +27,12 @@ render_navbar($user);
         <div class="ai-chat-window ai-chat-window--blurred">
           <div class="ai-chat-window__head">
             <span class="ai-dot ai-dot--green"></span>
-            <strong>دستیار سواپین</strong>
+            <strong>دستیار سواَپین</strong>
           </div>
           <div class="ai-chat-window__body">
             <div class="ai-msg ai-msg--bot">
               <div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>
-              <div class="ai-msg__bubble">سلام! من دستیار معاوضه سواپین هستم. می‌توانم ارزش کالای شما را تخمین بزنم و بهترین پیشنهادهای معاوضه را پیشنهاد دهم.</div>
+              <div class="ai-msg__bubble">سلام! من دستیار معاوضه سواَپین هستم. می‌توانم ارزش کالای شما را تخمین بزنم و بهترین پیشنهادهای معاوضه را پیشنهاد دهم.</div>
             </div>
             <div class="ai-msg ai-msg--user">
               <div class="ai-msg__bubble">آیفون ۱۳ پرو ۲۵۶ گیگ — چه چیزی مناسب معاوضه است؟</div>
@@ -46,7 +46,7 @@ render_navbar($user);
         <div class="ai-chat-guest__lock">
           <i class="bi bi-lock-fill"></i>
           <h3>برای گفتگو با دستیار AI وارد شوید</h3>
-          <p>این قابلیت فقط برای اعضای سواپین فعال است.</p>
+          <p>این قابلیت فقط برای اعضای سواَپین فعال است.</p>
           <div class="ai-chat-guest__actions">
             <a href="<?= $url ?>/auth/login?redirect=<?= urlencode('/ai/chat') ?>" class="btn btn-accent btn-lg">
               <i class="bi bi-box-arrow-in-right"></i> ورود / ثبت‌نام
@@ -78,7 +78,7 @@ render_navbar($user);
       <div class="ai-chat-window">
         <div class="ai-chat-window__head">
           <span class="ai-dot ai-dot--green"></span>
-          <strong>دستیار سواپین</strong>
+          <strong>دستیار سواَپین</strong>
           <span class="ai-chat-window__status">آنلاین · دستیار هوشمند</span>
         </div>
         <div class="ai-chat-window__body" id="ai-chat-messages">
@@ -86,11 +86,11 @@ render_navbar($user);
             <div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>
             <div class="ai-msg__bubble">
               سلام <?= h(explode(' ', $user['name'])[0]) ?>! 👋<br>
-              من دستیار معاوضه سواپین هستم. می‌توانید درباره ارزش کالا، پیشنهاد معاوضه یا نحوه معامله امن سؤال بپرسید.
+              من دستیار معاوضه سواَپین هستم. می‌توانید درباره ارزش کالا، پیشنهاد معاوضه یا نحوه معامله امن سؤال بپرسید.
               <div class="ai-quick-chips">
                 <button type="button" class="ai-chip" data-prompt="چطور ارزش کالایم را تخمین بزنم؟">ارزش‌گذاری کالا</button>
                 <button type="button" class="ai-chip" data-prompt="چه کالایی برای معاوضه با لپ‌تاپ من مناسب است؟">پیشنهاد معاوضه</button>
-                <button type="button" class="ai-chip" data-prompt="مراحل معامله امن در سواپین چیست؟">معامله امن</button>
+                <button type="button" class="ai-chip" data-prompt="مراحل معامله امن در سواَپین چیست؟">معامله امن</button>
                 <a href="<?= $url ?>/dashboard#swap-matches" class="ai-chip" style="text-decoration:none;display:inline-flex;align-items:center">Matching Engine</a>
               </div>
             </div>
@@ -109,7 +109,7 @@ render_navbar($user);
           <div class="card-body">
             <h3 style="font-size:1rem;margin-bottom:var(--sp-3)"><i class="bi bi-lightbulb" style="color:var(--accent-dark)"></i> نکته</h3>
             <p class="fs-sm" style="color:var(--text-muted);line-height:1.7;margin:0">
-              پاسخ‌ها توسط دستیار هوشمند سواپین با قوانین کنترل‌شده پلتفرم تولید می‌شوند — تصمیم مالی نهایی با شماست.
+              پاسخ‌ها توسط دستیار هوشمند سواَپین با قوانین کنترل‌شده پلتفرم تولید می‌شوند — تصمیم مالی نهایی با شماست.
             </p>
           </div>
         </div>

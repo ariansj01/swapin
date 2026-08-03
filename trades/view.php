@@ -434,7 +434,7 @@ $summaryShippingMethod = $shippingReady
         . ' / ' . shipping_label((string)($isA ? ($trade['user_b_shipping_method'] ?? '') : ($trade['user_a_shipping_method'] ?? '')))
     : 'در انتظار انتخاب زمان و روش ارسال';
 $summaryPaymentMethod = $amountToPay > 0
-    ? 'کیف پول امن سواپین / نگهداری امانی'
+    ? 'کیف پول امن سواَپین / نگهداری امانی'
     : 'بدون اختلاف قیمت';
 
 $tabLabels = [
@@ -815,7 +815,7 @@ render_user_panel_open($user, 'trades');
               <p>برای این معامله اختلاف قیمت در نظر گرفته نشده است.</p>
               <span class="trade-room__pill trade-room__pill--success">نیازی نیست</span>
             <?php elseif ($trade['diff_paid']): ?>
-              <p>مابه‌التفاوت این معامله با موفقیت در امانت سواپین ثبت شده است.</p>
+              <p>مابه‌التفاوت این معامله با موفقیت در امانت سواَپین ثبت شده است.</p>
               <span class="trade-room__pill trade-room__pill--success">پرداخت شده</span>
             <?php elseif ($iOwe): ?>
               <p>شما باید مبلغ <strong><?= fmt_credit($amountToPay) ?></strong> را برای ادامه معامله پرداخت کنید.</p>
@@ -1098,7 +1098,7 @@ render_user_panel_open($user, 'trades');
 
       <section class="trade-room__summary-card trade-room__summary-card--wide">
         <h4 class="trade-room__summary-head">
-          کارمزد سواپین(هرطرف)
+          کارمزد سواَپین(هرطرف)
         </h4>
         <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
           <span><?= h($trade['user_a_name']) ?></span>

@@ -3,8 +3,8 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $user = auth_user();
-$metaTitle = 'دستیار هوشمند سواپین';
-$metaDesc = 'دستیار هوشمند سواپین با استفاده از هوش مصنوعی، ارزش‌گذاری کالا، پیشنهاد بهترین معاوضه، راهنمای ثبت آگهی و پاسخ به سوالات کاربران را انجام می‌دهد تا تجربه‌ای سریع، دقیق و مطمئن از مبادله کالا داشته باشید.';
+$metaTitle = 'دستیار هوشمند سواَپین';
+$metaDesc = 'دستیار هوشمند سواَپین با استفاده از هوش مصنوعی، ارزش‌گذاری کالا، پیشنهاد بهترین معاوضه، راهنمای ثبت آگهی و پاسخ به سوالات کاربران را انجام می‌دهد تا تجربه‌ای سریع، دقیق و مطمئن از مبادله کالا داشته باشید.';
 $canonical = APP_URL . '/ai-assistant';
 $ogImage = APP_URL . '/uploads/photo_6017098746631491339_w.jpg';
 
@@ -34,7 +34,7 @@ $faqJsonLd = [
             'name' => 'آیا استفاده از دستیار هوشمند رایگان است؟',
             'acceptedAnswer' => [
                 '@type' => 'Answer',
-                'text' => 'بله، امکانات پایه دستیار هوشمند برای کاربران سواپین رایگان است.',
+                'text' => 'بله، امکانات پایه دستیار هوشمند برای کاربران سواَپین رایگان است.',
             ],
         ],
         [
@@ -70,12 +70,12 @@ render_navbar($user);
 
     <div style="text-align:center;padding:var(--sp-6) 0 var(--sp-4)">
       <div style="margin-bottom:var(--sp-5);display: flex;justify-content: center;">
-        <img src="<?= h($ogImage) ?>" alt="دستیار هوشمند سواپین" style="max-width:100%;width:640px;height:auto;border-radius:24px;box-shadow:0 12px 40px rgba(10,37,64,.12)">
+        <img src="<?= h($ogImage) ?>" alt="دستیار هوشمند سواَپین" style="max-width:100%;width:640px;height:auto;border-radius:24px;box-shadow:0 12px 40px rgba(10,37,64,.12)">
       </div>
       <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent-dark));margin-bottom:var(--sp-5)">
         <i class="bi bi-stars" style="font-size:2rem;color:#fff"></i>
       </div>
-      <h1 style="font-size:2.25rem;margin:0 0 var(--sp-3);background:linear-gradient(135deg,var(--primary),var(--accent-dark));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">دستیار هوشمند سواپین</h1>
+      <h1 style="font-size:2.25rem;margin:0 0 var(--sp-3);background:linear-gradient(135deg,var(--primary),var(--accent-dark));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">دستیار هوشمند سواَپین</h1>
       <p style="font-size:1.25rem;color:var(--text-secondary);max-width:640px;margin:0 auto;line-height:1.8;font-weight:500">
         معامله هوشمندتر با کمک هوش مصنوعی
       </p>
@@ -84,7 +84,7 @@ render_navbar($user);
     <div class="card mb-6">
       <div class="card-body" style="padding:var(--sp-8)">
         <p style="color:var(--text-secondary);line-height:2;margin:0;font-size:1.0625rem">
-          دستیار هوشمند سواپین با بهره‌گیری از هوش مصنوعی طراحی شده است تا فرآیند مبادله کالا را ساده‌تر، سریع‌تر و دقیق‌تر کند. فرقی نمی‌کند قصد ثبت کالا، ارزش‌گذاری، پیدا کردن کالای مناسب برای معاوضه یا دریافت راهنمایی درباره روند معامله را داشته باشید؛ دستیار هوشمند در تمام مراحل کنار شماست.
+          دستیار هوشمند سواَپین با بهره‌گیری از هوش مصنوعی طراحی شده است تا فرآیند مبادله کالا را ساده‌تر، سریع‌تر و دقیق‌تر کند. فرقی نمی‌کند قصد ثبت کالا، ارزش‌گذاری، پیدا کردن کالای مناسب برای معاوضه یا دریافت راهنمایی درباره روند معامله را داشته باشید؛ دستیار هوشمند در تمام مراحل کنار شماست.
         </p>
       </div>
     </div>
@@ -92,7 +92,7 @@ render_navbar($user);
     <div class="card mb-6">
       <div class="card-body" style="padding:var(--sp-8)">
         <h2 style="font-size:1.5rem;margin-bottom:var(--sp-6);text-align:center">
-          دستیار هوشمند سواپین چه کارهایی انجام می‌دهد؟
+          دستیار هوشمند سواَپین چه کارهایی انجام می‌دهد؟
         </h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-5)">
           <?php
@@ -145,7 +145,7 @@ render_navbar($user);
     <div class="card mb-6" style="border-right:4px solid var(--primary)">
       <div class="card-body" style="padding:var(--sp-8)">
         <h2 style="font-size:1.375rem;margin-bottom:var(--sp-5)">
-          <i class="bi bi-lightbulb-fill" style="color:var(--primary)"></i> چرا از دستیار هوشمند سواپین استفاده کنیم؟
+          <i class="bi bi-lightbulb-fill" style="color:var(--primary)"></i> چرا از دستیار هوشمند سواَپین استفاده کنیم؟
         </h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--sp-4)">
           <?php
@@ -176,7 +176,7 @@ render_navbar($user);
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--sp-5)">
           <?php
           $steps = [
-            ['num' => '۱', 'title' => 'ورود به حساب کاربری', 'desc' => 'وارد حساب کاربری سواپین شوید.'],
+            ['num' => '۱', 'title' => 'ورود به حساب کاربری', 'desc' => 'وارد حساب کاربری سواَپین شوید.'],
             ['num' => '۲', 'title' => 'باز کردن بخش AI', 'desc' => 'بخش «دستیار هوشمند» را باز کنید.'],
             ['num' => '۳', 'title' => 'ثبت سوال یا اطلاعات', 'desc' => 'سوال خود را بنویسید یا اطلاعات کالای خود را وارد کنید.'],
             ['num' => '۴', 'title' => 'دریافت پیشنهادها', 'desc' => 'پیشنهادها و راهنمایی‌های هوشمند را دریافت کنید.'],
@@ -200,10 +200,10 @@ render_navbar($user);
           جمع‌بندی
         </h2>
         <p style="color:var(--text-secondary);line-height:2;margin-bottom:var(--sp-5);font-size:1.0625rem;text-align:center">
-          سواپین با استفاده از فناوری هوش مصنوعی، تجربه‌ای متفاوت از مبادله کالا را در اختیار کاربران قرار می‌دهد. هدف ما این است که شما بتوانید بدون اتلاف وقت، با اطلاعات بیشتر و اطمینان بالاتر، کالاهای خود را با بهترین گزینه‌های ممکن معاوضه کنید.
+          سواَپین با استفاده از فناوری هوش مصنوعی، تجربه‌ای متفاوت از مبادله کالا را در اختیار کاربران قرار می‌دهد. هدف ما این است که شما بتوانید بدون اتلاف وقت، با اطلاعات بیشتر و اطمینان بالاتر، کالاهای خود را با بهترین گزینه‌های ممکن معاوضه کنید.
         </p>
         <p style="color:var(--text-secondary);line-height:2;margin:0;font-size:1.0625rem;text-align:center;font-weight:600">
-          اگر آماده‌اید مبادله‌ای هوشمند، سریع و مطمئن را تجربه کنید، همین حالا از دستیار هوشمند سواپین استفاده کنید.
+          اگر آماده‌اید مبادله‌ای هوشمند، سریع و مطمئن را تجربه کنید، همین حالا از دستیار هوشمند سواَپین استفاده کنید.
         </p>
         <div style="text-align:center;margin-top:var(--sp-6)">
           <a href="<?= APP_URL ?>/ai/chat" class="btn btn-primary btn-lg" style="font-size:1.0625rem;padding:14px 32px;border-radius:16px">
@@ -223,7 +223,7 @@ render_navbar($user);
           $faqs = [
             [
               'q' => 'آیا استفاده از دستیار هوشمند رایگان است؟',
-              'a' => 'بله، امکانات پایه دستیار هوشمند برای کاربران سواپین رایگان است.',
+              'a' => 'بله، امکانات پایه دستیار هوشمند برای کاربران سواَپین رایگان است.',
             ],
             [
               'q' => 'آیا قیمت اعلام‌شده قطعی است؟',

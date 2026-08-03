@@ -444,7 +444,7 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
         'reasons'     => array_values($reasons),
         'note'        => $uncertain
             ? 'ارزش‌گذاری با اطمینان پایین — پیشنهاد را راهنما در نظر بگیرید.'
-            : 'ارزش‌گذاری هوشمند سواپین بر اساس مشخصات و آگهی‌های مشابه.',
+            : 'ارزش‌گذاری هوشمند سواَپین بر اساس مشخصات و آگهی‌های مشابه.',
         'ai_source'   => $provider ?? 'ai',
     ];
 }
@@ -740,7 +740,7 @@ function ai_public_mode(?string $internal): string {
 function ai_sanitize_pricing_for_client(array $result): array {
     unset($result['ai_source']);
     if (isset($result['note']) && str_contains($result['note'], 'Groq')) {
-        $result['note'] = 'ارزش‌گذاری هوشمند سواپین بر اساس مشخصات و آگهی‌های مشابه.';
+        $result['note'] = 'ارزش‌گذاری هوشمند سواَپین بر اساس مشخصات و آگهی‌های مشابه.';
     }
     return $result;
 }

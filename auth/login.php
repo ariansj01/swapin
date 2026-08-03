@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-render_head('ورود / ثبت‌نام | سواپین', 'ورود یا ثبت‌نام در سواپین با شماره تلفن', [
+render_head('ورود / ثبت‌نام | سواَپین', 'ورود یا ثبت‌نام در سواَپین با شماره تلفن', [
     'canonical' => APP_URL . '/auth/login',
 ]);
 render_navbar(null);

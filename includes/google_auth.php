@@ -137,7 +137,7 @@ function google_verify_id_token(string $idToken): ?array {
 
     $name = trim((string) ($payload['name'] ?? ''));
     if ($name === '') {
-        $name = strstr($email, '@', true) ?: 'کاربر سواپین';
+        $name = strstr($email, '@', true) ?: 'کاربر سواَپین';
     }
 
     return [
