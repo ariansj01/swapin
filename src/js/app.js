@@ -76,12 +76,25 @@ function showListingsGridSkeleton(count = 6) {
 }
 
 function skeletonMatchRowsHtml(count = 3) {
+  const pillar = (label, cls, w) => `
+    <div class="match-pillar" aria-hidden="true">
+      <div class="match-pillar__label" style="opacity:0">${label}</div>
+      <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--${cls}" style="width:${w}%;opacity:.25"></span></div>
+      <div class="match-pillar__pct" style="opacity:0">٪</div>
+    </div>`;
   return Array.from({ length: count }, () =>
     `<div class="match-row match-row--skeleton" aria-hidden="true">
       <div class="skeleton skeleton-circle skeleton-circle--score"></div>
       <div class="match-row__body" style="flex:1">
         <div class="skeleton skeleton-line skeleton-line--sm"></div>
         <div class="skeleton skeleton-line skeleton-line--md"></div>
+        <div class="skeleton skeleton-line skeleton-line--xs" style="margin-top:6px"></div>
+        <div class="match-pillars" style="margin-top:10px;pointer-events:none">
+          ${pillar('نیاز',    'need',    55)}
+          ${pillar('ارزش',   'value',   70)}
+          ${pillar('دسته',   'cat',     60)}
+          ${pillar('موفقیت','success',  50)}
+        </div>
       </div>
     </div>`
   ).join('');
@@ -845,6 +858,18 @@ function initAiMatch() {
     return d.innerHTML;
   }
 
+  const toFaDigits = (s) => String(s).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+
+  function pillarBar(label, cls, pct, title) {
+    const p = Math.max(0, Math.min(100, Number(pct) || 0));
+    return `
+      <div class="match-pillar" title="${escHtml(title + ' — ' + p + '٪')}">
+        <div class="match-pillar__label">${escHtml(label)}</div>
+        <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--${cls}" style="width:${p}%"></span></div>
+        <div class="match-pillar__pct">${toFaDigits(p)}٪</div>
+      </div>`;
+  }
+
   function renderMatches(matches, source) {
     if (!matches.length) {
       listEl.innerHTML = `
@@ -862,9 +887,14 @@ function initAiMatch() {
         m.trade_type === 'credit' ? '<span class="badge badge-primary fs-xs">اعتباری</span>' : '',
       ].filter(Boolean).join(' ');
 
+      const need  = Number(m.score_need || 0);
+      const val   = Number(m.score_value || 0);
+      const cat   = Number(m.score_category || 0);
+      const succ  = Number(m.score_success || 0);
+
       return `
         <a href="${escHtml(m.url)}" class="match-row" data-listing-id="${escHtml(String(m.listing_id))}">
-          <div class="match-row__score">${escHtml(String(m.match_score))}٪</div>
+          <div class="match-row__score">${toFaDigits(m.match_score)}٪</div>
           <div class="match-row__body">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
               <span style="font-weight:700">${escHtml(m.title)}</span>
@@ -874,6 +904,12 @@ function initAiMatch() {
               ${escHtml(m.seller_name)} · برای: ${escHtml((m.match_title || '').slice(0, 30))}${(m.match_title || '').length > 30 ? '…' : ''}
             </div>
             ${m.reason ? `<p class="match-row__reason fs-xs">${escHtml(m.reason)}</p>` : ''}
+            <div class="match-pillars" aria-label="چهار عامل تطبیق هوشمند">
+              ${pillarBar('نیاز',     'need',    need, 'نیاز کاربران')}
+              ${pillarBar('ارزش',    'value',   val,  'ارزش کالا')}
+              ${pillarBar('دسته',    'cat',     cat,  'دسته‌بندی')}
+              ${pillarBar('موفقیت', 'success', succ,  'احتمال موفقیت')}
+            </div>
           </div>
           <i class="bi bi-chevron-left" style="color:var(--text-muted)"></i>
         </a>`;
@@ -1280,5 +1316,32 @@ document.addEventListener('DOMContentLoaded', () => {
   if (toastMsg) {
     const safe = decodeURIComponent(toastMsg).replace(/<[^>]*>/g, '').slice(0, 200);
     if (safe) showToast(safe, 'success');
+  }
+});
+
+
+/*  Mobile AI Dropdown Toggle  */
+function toggleMobileAiDropdown() {
+  const btn = document.getElementById('mobile-ai-dropdown-btn');
+  const submenu = document.getElementById('mobile-ai-submenu');
+  if (!btn || !submenu) return;
+  const expanded = btn.getAttribute('aria-expanded') === 'true';
+  if (expanded) {
+    btn.setAttribute('aria-expanded', 'false');
+    submenu.classList.remove('open');
+  } else {
+    btn.setAttribute('aria-expanded', 'true');
+    submenu.classList.add('open');
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const wrapper = document.getElementById('mobile-ai-dropdown-wrapper');
+  const submenu = document.getElementById('mobile-ai-submenu');
+  const btn = document.getElementById('mobile-ai-dropdown-btn');
+  if (!wrapper || !submenu) return;
+  if (!wrapper.contains(e.target)) {
+    submenu.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
   }
 });

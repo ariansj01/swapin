@@ -543,6 +543,18 @@ function ai_match_context(int $userId, ?int $listingId = null): ?array {
 }
 
 function ai_match_format_row(array $candidate, int $score, string $tradeType, string $reason, string $source): array {
+    $need    = (int) ($candidate['score_need'] ?? 0);
+    $cat     = (int) ($candidate['score_category'] ?? 0);
+    $value   = (int) ($candidate['score_value'] ?? 0);
+    $success = (int) ($candidate['score_success'] ?? 0);
+
+    if ($need <= 0 && $cat <= 0 && $value <= 0 && $success <= 0 && !empty($candidate['match_listing_id'])) {
+        $need    = (int) max(0, min(100, round($score * 0.9)));
+        $cat     = (int) max(0, min(100, round($score * 0.85)));
+        $value   = (int) max(0, min(100, round($score * 0.88)));
+        $success = (int) max(0, min(100, round($score * 0.82)));
+    }
+
     return [
         'listing_id'       => (int) $candidate['id'],
         'title'            => $candidate['title'] ?? '',
@@ -558,6 +570,10 @@ function ai_match_format_row(array $candidate, int $score, string $tradeType, st
         'want_in_return'   => $candidate['want_in_return'] ?? '',
         'estimated_value'  => (float) ($candidate['estimated_value'] ?? 0),
         'ai_source'        => $source,
+        'score_need'       => max(0, min(100, $need)),
+        'score_category'   => max(0, min(100, $cat)),
+        'score_value'      => max(0, min(100, $value)),
+        'score_success'    => max(0, min(100, $success)),
     ];
 }
 
@@ -621,14 +637,32 @@ function ai_match_listings(int $userId, ?int $listingId = null, int $limit = 8):
 
     $candidatePayload = array_map(static function ($c) {
         return array_merge(ai_match_listing_payload($c), [
-            'rule_score' => (int) ($c['match_score'] ?? 0),
-            'mutual'     => !empty($c['mutual']),
+            'rule_score'        => (int) ($c['match_score'] ?? 0),
+            'mutual'            => !empty($c['mutual']),
+            'four_pillars'      => [
+                'needs_match_score'       => (int) ($c['score_need'] ?? 0),
+                'category_match_score'    => (int) ($c['score_category'] ?? 0),
+                'value_proximity_score'   => (int) ($c['score_value'] ?? 0),
+                'success_probability'     => (int) ($c['score_success'] ?? 0),
+            ],
+            'seller_stats' => [
+                'verified'         => (string) ($c['seller_verified'] ?? 'none'),
+                'rating'           => (float) ($c['seller_rating'] ?? 0),
+                'completed_trades' => (int) ($c['seller_completed_trades'] ?? 0),
+            ],
+            'weights_hint' => [
+                'needs_match'   => 0.34,
+                'value'         => 0.24,
+                'category'      => 0.22,
+                'success'       => 0.20,
+            ],
         ]);
     }, $candidates);
 
     $payload = [
         'user_listing'       => ai_match_listing_payload($userListing),
         'candidate_listings' => $candidatePayload,
+        'instruction'        => 'Rank candidates by weighted FOUR PILLAR score: needs_match*0.34 + value*0.24 + category*0.22 + success*0.20. For each match, return listing_id, score (0-100), trade_type (direct|credit), and a 1-line Persian reason mentioning the strongest pillars.',
     ];
 
     $result = ai_call('matching', $payload);

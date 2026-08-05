@@ -137,7 +137,7 @@ render_navbar($user);
 <div class="alert alert-warning" style="border-radius:0;border-left:0;border-right:0" id="expired-listings-alert">
   <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
     <i class="bi bi-clock-history"></i>
-    <span><?= fmt_num($expiredListingsCount) ?> آگهی شما به‌دلیل سپری شدن ۳۰ روز منقضی شده است. برای بازگردانی آنها به تب «منقضی» بروید.</span>
+    <span><?= fmt_num($expiredListingsCount) ?> آگهی شما به‌دلیل سپری شدن ۶۰ روز منقضی شده است. برای بازگردانی آنها به تب «منقضی» بروید.</span>
     <button type="button" class="btn btn-ghost btn-sm" style="margin-inline-start:auto" onclick="this.closest('.alert')?.remove()">
       <i class="bi bi-x-lg"></i> بستن
     </button>
@@ -239,7 +239,12 @@ render_navbar($user);
             </div>
             <div id="ai-match-list" style="display:flex;flex-direction:column;gap:var(--sp-3)">
             <?php if ($swapMatches): ?>
-              <?php foreach (array_slice($swapMatches, 0, 3) as $m): ?>
+              <?php foreach (array_slice($swapMatches, 0, 3) as $m):
+                  $need  = (int)($m['score_need']     ?? 0);
+                  $cat   = (int)($m['score_category'] ?? 0);
+                  $val   = (int)($m['score_value']    ?? 0);
+                  $succ  = (int)($m['score_success']  ?? 0);
+              ?>
               <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>" class="match-row" data-listing-id="<?= (int)$m['listing_id'] ?>">
                 <div class="match-row__score"><?= (int)$m['match_score'] ?>٪</div>
                 <div class="match-row__body">
@@ -261,6 +266,28 @@ render_navbar($user);
                   <?php if (!empty($m['reason'])): ?>
                   <p class="match-row__reason fs-xs"><?= h($m['reason']) ?></p>
                   <?php endif; ?>
+                  <div class="match-pillars" aria-label="چهار عامل تطبیق هوشمند">
+                    <div class="match-pillar" title="نیاز کاربران — <?= fmt_num($need) ?>٪">
+                      <div class="match-pillar__label">نیاز</div>
+                      <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--need" style="width:<?= $need ?>%"></span></div>
+                      <div class="match-pillar__pct"><?= fmt_num($need) ?>٪</div>
+                    </div>
+                    <div class="match-pillar" title="ارزش کالا — <?= fmt_num($val) ?>٪">
+                      <div class="match-pillar__label">ارزش</div>
+                      <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--value" style="width:<?= $val ?>%"></span></div>
+                      <div class="match-pillar__pct"><?= fmt_num($val) ?>٪</div>
+                    </div>
+                    <div class="match-pillar" title="دسته‌بندی — <?= fmt_num($cat) ?>٪">
+                      <div class="match-pillar__label">دسته</div>
+                      <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--cat" style="width:<?= $cat ?>%"></span></div>
+                      <div class="match-pillar__pct"><?= fmt_num($cat) ?>٪</div>
+                    </div>
+                    <div class="match-pillar" title="احتمال موفقیت — <?= fmt_num($succ) ?>٪">
+                      <div class="match-pillar__label">موفقیت</div>
+                      <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--success" style="width:<?= $succ ?>%"></span></div>
+                      <div class="match-pillar__pct"><?= fmt_num($succ) ?>٪</div>
+                    </div>
+                  </div>
                 </div>
                 <i class="bi bi-chevron-left" style="color:var(--text-muted)"></i>
               </a>

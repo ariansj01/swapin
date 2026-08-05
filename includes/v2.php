@@ -892,6 +892,112 @@ function listing_wants_item(array $listing, array $target): bool {
     );
 }
 
+/**
+ * Numeric "needs match" score (0–100) — how well listing's want_in_return matches target listing.
+ */
+function listing_wants_score(array $listing, array $target): int {
+    $want = trim((string)($listing['want_in_return'] ?? ''));
+    if ($want === '') return 0;
+
+    $title = mb_strtolower((string)($target['title'] ?? ''));
+    $cat   = mb_strtolower((string)($target['cat_name'] ?? ''));
+    $wantL = mb_strtolower($want);
+
+    $exactHit = text_matches_want($want, $target['title'] ?? '', $target['cat_name'] ?? '');
+    if ($exactHit) return 92;
+
+    $score = 12;
+
+    if ($cat !== '' && mb_strpos($wantL, $cat) !== false) {
+        $score += 28;
+    }
+    $titleWords = preg_split('/\s+/u', $title, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $hits = 0;
+    foreach ($titleWords as $w) {
+        if (mb_strlen($w) >= 3 && mb_strpos($wantL, $w) !== false) {
+            $hits++;
+        }
+    }
+    if ($hits > 0) {
+        $score += min(40, 14 * $hits);
+    }
+    $wantWords = preg_split('/\s+/u', $wantL, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $revHits = 0;
+    foreach ($wantWords as $w) {
+        if (mb_strlen($w) >= 3 && mb_strpos($title, $w) !== false) {
+            $revHits++;
+        }
+    }
+    if ($revHits > 0) {
+        $score += min(30, 10 * $revHits);
+    }
+    return max(0, min(100, $score));
+}
+
+/** Category match score (0–100). Same main category = 92-100, parent/child = 55, else 0. */
+function listing_category_score(array $a, array $b): int {
+    $aCat = (int)($a['category_id'] ?? 0);
+    $bCat = (int)($b['category_id'] ?? 0);
+    if ($aCat <= 0 || $bCat <= 0) return 0;
+    if ($aCat === $bCat) {
+        return 96;
+    }
+    $aParent = (int)($a['parent_id'] ?? 0);
+    $bParent = (int)($b['parent_id'] ?? 0);
+    if ($aParent > 0 && $aParent === $bCat) return 58;
+    if ($bParent > 0 && $bParent === $aCat) return 58;
+    if ($aParent > 0 && $aParent === $bParent) return 44;
+    return 0;
+}
+
+/** Value proximity score (0–100) — closer estimated values get higher scores, wide gap still gets floor. */
+function listing_value_score(array $a, array $b): int {
+    $va = (float)($a['estimated_value'] ?? 0);
+    $vb = (float)($b['estimated_value'] ?? 0);
+    if ($va <= 0 || $vb <= 0) return 40;
+    $max = max($va, $vb);
+    $min = min($va, $vb);
+    if ($max <= 0) return 40;
+    $ratio = $min / $max;
+    if ($ratio >= 0.95) return 95;
+    if ($ratio >= 0.85) return 85;
+    if ($ratio >= 0.70) return 72;
+    if ($ratio >= 0.55) return 58;
+    if ($ratio >= 0.38) return 42;
+    if ($ratio >= 0.22) return 28;
+    return 18;
+}
+
+/**
+ * Success probability estimate (0–100) derived from seller stats + mutual match + category demand.
+ */
+function listing_success_probability_score(array $candidate, array $mine, bool $mutual, bool $theyWant, bool $iWant): int {
+    $base = 30;
+
+    if ($mutual) $base += 32;
+    elseif ($theyWant && $iWant) $base += 28;
+    elseif ($theyWant || $iWant) $base += 14;
+
+    $verified = $candidate['seller_verified'] ?? null;
+    $rating   = (float)($candidate['seller_rating'] ?? 0);
+    $trades   = (int)($candidate['seller_completed_trades'] ?? 0);
+    if ($verified === 'verified' || $verified === 'full' || !empty($candidate['is_verified'])) {
+        $base += 10;
+    }
+    if ($rating >= 4.5) $base += 8;
+    elseif ($rating >= 4.0) $base += 5;
+    elseif ($rating >= 3.0) $base += 2;
+    if ($trades >= 10) $base += 7;
+    elseif ($trades >= 3) $base += 4;
+
+    $daysOld = max(0, (time() - (int)strtotime($candidate['created_at'] ?? 'now')) / 86400);
+    if ($daysOld <= 3) $base += 6;
+    elseif ($daysOld <= 10) $base += 4;
+    elseif ($daysOld <= 30) $base += 2;
+
+    return max(0, min(100, $base));
+}
+
 /** Loose match: same category or keyword overlap (for surfacing suggestions) */
 function listing_loose_match(array $a, array $b): bool {
     if (listing_wants_item($a, $b) || listing_wants_item($b, $a)) return true;
@@ -918,6 +1024,9 @@ function find_swap_matches(int $userId, int $limit = 6): array {
 
     $pool = DB::fetchAll(
         'SELECT l.*, u.name AS seller_name, c.name AS cat_name,
+                u.kyc_status AS seller_verified,
+                IFNULL((SELECT AVG(rating) FROM trade_ratings WHERE rated_user_id = u.id),0) AS seller_rating,
+                (SELECT COUNT(*) FROM trades WHERE (user_a_id = u.id OR user_b_id = u.id) AND status = "completed") AS seller_completed_trades,
                 (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
          FROM listings l
          JOIN users u ON u.id = l.user_id
@@ -935,20 +1044,38 @@ function find_swap_matches(int $userId, int $limit = 6): array {
             $loose        = !$theyWantMine && !$iWantTheirs && listing_loose_match($mine, $c);
 
             if (!$theyWantMine && !$iWantTheirs && !$loose) continue;
+            $mutual = $theyWantMine && $iWantTheirs;
 
-            if ($theyWantMine && $iWantTheirs) {
-                $score = 100;
-            } elseif ($theyWantMine || $iWantTheirs) {
-                $score = 65;
-            } else {
-                $score = 45;
+            $score_need     = max(listing_wants_score($c, $mine), listing_wants_score($mine, $c));
+            $score_cat      = listing_category_score($mine, $c);
+            $score_value    = listing_value_score($mine, $c);
+            $score_success  = listing_success_probability_score($c, $mine, $mutual, $theyWantMine, $iWantTheirs);
+
+            $WEIGHT_NEED    = 0.34;
+            $WEIGHT_CAT     = 0.22;
+            $WEIGHT_VALUE   = 0.24;
+            $WEIGHT_SUCCESS = 0.20;
+
+            $weightedScore = (int)round(
+                $score_need    * $WEIGHT_NEED  +
+                $score_cat     * $WEIGHT_CAT   +
+                $score_value   * $WEIGHT_VALUE +
+                $score_success * $WEIGHT_SUCCESS
+            );
+            if ($mutual) {
+                $weightedScore = min(100, $weightedScore + 8);
             }
+            $weightedScore = max(0, min(100, $weightedScore));
 
             $matches[] = array_merge($c, [
-                'match_score'      => $score,
-                'match_listing_id' => $mine['id'],
-                'match_title'      => $mine['title'],
-                'mutual'           => $theyWantMine && $iWantTheirs,
+                'match_score'       => $weightedScore,
+                'score_need'        => $score_need,
+                'score_category'    => $score_cat,
+                'score_value'       => $score_value,
+                'score_success'     => $score_success,
+                'match_listing_id'  => $mine['id'],
+                'match_title'       => $mine['title'],
+                'mutual'            => $mutual,
             ]);
         }
     }

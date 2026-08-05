@@ -468,16 +468,34 @@ function render_mobile_bottom_nav(?array $user = null): void {
     $user     = $user ?? ($GLOBALS['_nav_user'] ?? null);
     $profile  = $user ? $url . '/profile' : $url . '/auth/login';
     $trades   = $user ? $url . '/trades' : $url . '/auth/login';
+    $aiChat   = $user ? $url . '/ai/chat' : $url . '/auth/login?redirect=' . urlencode('/ai/chat');
     echo <<<HTML
 <nav class="mobile-bottom-nav" aria-label="ناوبری موبایل">
   <a href="{$url}/" class="mobile-bottom-nav__item">
     <i class="bi bi-house"></i>
     <span>خانه</span>
   </a>
-  <a href="{$url}/#listings" class="mobile-bottom-nav__item" id="mobile-search-link">
-    <i class="bi bi-search"></i>
-    <span>جستجو</span>
-  </a>
+  <div class="mobile-bottom-nav__item mobile-bottom-nav__item--dropdown" id="mobile-ai-dropdown-wrapper">
+    <button type="button" class="mobile-bottom-nav__btn" id="mobile-ai-dropdown-btn" aria-expanded="false" aria-controls="mobile-ai-submenu" onclick="toggleMobileAiDropdown()">
+      <i class="bi bi-stars"></i>
+      <span>دستیار AI</span>
+      <i class="bi bi-chevron-up mobile-ai-chevron"></i>
+    </button>
+    <div class="mobile-ai-submenu" id="mobile-ai-submenu" role="menu">
+      <a href="{$url}/ai-assistant" class="mobile-ai-submenu__item" role="menuitem">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>آشنایی با دستیار</span>
+      </a>
+      <a href="{$aiChat}" class="mobile-ai-submenu__item" role="menuitem">
+        <i class="bi bi-chat-dots-fill"></i>
+        <span>گفتگو با دستیار</span>
+      </a>
+      <a href="{$url}/listings/create" class="mobile-ai-submenu__item" role="menuitem">
+        <i class="bi bi-calculator-fill"></i>
+        <span>قیمت‌گذاری هوشمند</span>
+      </a>
+    </div>
+  </div>
   <a href="{$url}/listings/create" class="mobile-bottom-nav__item mobile-bottom-nav__item--fab">
     <span class="mobile-bottom-nav__fab"><i class="bi bi-plus-lg"></i></span>
     <span>ثبت کالا</span>

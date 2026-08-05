@@ -55,6 +55,29 @@ function skeleton_match_rows(int $count = 3): string {
   <div class="match-row__body" style="flex:1">
     <div class="skeleton skeleton-line skeleton-line--sm"></div>
     <div class="skeleton skeleton-line skeleton-line--md"></div>
+    <div class="skeleton skeleton-line skeleton-line--xs" style="margin-top:6px"></div>
+    <div class="match-pillars" aria-hidden="true" style="margin-top:10px;pointer-events:none">
+      <div class="match-pillar">
+        <div class="match-pillar__label" style="opacity:0">نیاز</div>
+        <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--need" style="width:55%;opacity:.25"></span></div>
+        <div class="match-pillar__pct" style="opacity:0">٪</div>
+      </div>
+      <div class="match-pillar">
+        <div class="match-pillar__label" style="opacity:0">ارزش</div>
+        <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--value" style="width:70%;opacity:.25"></span></div>
+        <div class="match-pillar__pct" style="opacity:0">٪</div>
+      </div>
+      <div class="match-pillar">
+        <div class="match-pillar__label" style="opacity:0">دسته</div>
+        <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--cat" style="width:60%;opacity:.25"></span></div>
+        <div class="match-pillar__pct" style="opacity:0">٪</div>
+      </div>
+      <div class="match-pillar">
+        <div class="match-pillar__label" style="opacity:0">موفقیت</div>
+        <div class="match-pillar__bar"><span class="match-pillar__fill match-pillar__fill--success" style="width:50%;opacity:.25"></span></div>
+        <div class="match-pillar__pct" style="opacity:0">٪</div>
+      </div>
+    </div>
   </div>
 </div>
 HTML;

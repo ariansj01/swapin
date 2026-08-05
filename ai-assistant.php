@@ -122,7 +122,7 @@ render_navbar($user);
               'desc'  => 'برای اینکه آگهی شما شانس بیشتری برای دیده شدن و انجام معامله داشته باشد، دستیار هوشمند در انتخاب عنوان، توضیحات، دسته‌بندی و مشخصات کالا نیز شما را راهنمایی می‌کند.',
             ],
             [
-              'icon'  => 'bi-balance',
+              'icon'  => 'bi-lightbulb-fill',
               'color' => 'warning',
               'title' => 'کمک به تصمیم‌گیری',
               'desc'  => 'اگر بین چند پیشنهاد مردد هستید، دستیار هوشمند با مقایسه ارزش تقریبی کالاها و بررسی شرایط معامله، اطلاعات لازم را در اختیار شما قرار می‌دهد تا انتخاب آگاهانه‌تری داشته باشید.',
@@ -138,6 +138,53 @@ render_navbar($user);
             <p style="color:var(--text-secondary);line-height:1.8;margin:0;font-size:.9375rem"><?= $f['desc'] ?></p>
           </div>
           <?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-6" id="decision-help" style="background:linear-gradient(135deg,rgba(255,193,7,.06),rgba(255,152,0,.08));border:1px solid rgba(255,193,7,.2);border-radius:24px;overflow:hidden">
+      <div class="card-body" style="padding:var(--sp-8)">
+        <div style="display:grid;grid-template-columns:1fr;gap:var(--sp-6);align-items:center">
+          <div>
+            <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-4)">
+              <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,var(--warning),#ff9800);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(255,152,0,.25);flex-shrink:0">
+                <i class="bi bi-lightbulb-fill" style="font-size:1.75rem;color:#fff"></i>
+              </div>
+              <h2 style="font-size:1.5rem;margin:0;font-weight:800">کارت کمک به تصمیم‌گیری</h2>
+            </div>
+            <p style="color:var(--text-secondary);line-height:2;margin:0 0 var(--sp-5);font-size:1.0625rem">
+              گاهی انتخاب بین چند پیشنهاد معامله، کار دشواری است. دستیار هوشمند سواَپین با تحلیل چند معیاره، بهترین گزینه را به شما پیشنهاد می‌دهد تا با اطمینان خاطر تصمیم بگیرید.
+            </p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-5)">
+              <?php
+              $decisionItems = [
+                ['icon' => 'bi-cash-stack', 'title' => 'مقایسه ارزش مالی', 'desc' => 'مقایسه قیمت بازار و ارزش واقعی کالاها'],
+                ['icon' => 'bi-bar-chart-line-fill', 'title' => 'تحلیل احتمال موفقیت', 'desc' => 'بررسی شانس انجام شدن معامله بر اساس داده‌ها'],
+                ['icon' => 'bi-geo-alt-fill', 'title' => 'توسعه منطقه‌ای', 'desc' => 'در نظر گرفتن موقعیت جغرافیایی طرفین'],
+                ['icon' => 'bi-clock-history', 'title' => 'بررسی تاریخچه', 'desc' => 'تحلیل فعالیت و اعتبار کاربران طرف معامله'],
+              ];
+              foreach ($decisionItems as $di):
+              ?>
+              <div style="display:flex;gap:var(--sp-3);align-items:flex-start;background:rgba(255,255,255,.7);padding:var(--sp-4);border-radius:16px;border:1px solid rgba(255,193,7,.15)">
+                <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,152,0,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="bi <?= $di['icon'] ?>" style="font-size:1.125rem;color:var(--warning)"></i>
+                </div>
+                <div>
+                  <h4 style="font-size:.9375rem;margin:0 0 var(--sp-1);font-weight:700"><?= $di['title'] ?></h4>
+                  <p style="font-size:.8125rem;color:var(--text-secondary);margin:0;line-height:1.7"><?= $di['desc'] ?></p>
+                </div>
+              </div>
+              <?php endforeach; ?>
+            </div>
+            <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap">
+              <a href="<?= APP_URL ?>/ai/chat" class="btn btn-warning btn-lg" style="font-weight:700;border-radius:14px;padding:12px 28px;color:#fff">
+                <i class="bi bi-lightbulb-fill"></i> شروع کمک به تصمیم‌گیری
+              </a>
+              <a href="<?= APP_URL ?>/dashboard" class="btn btn-outline btn-lg" style="border-radius:14px;padding:12px 28px">
+                <i class="bi bi-grid-fill"></i> مشاهده پیشنهادهای من
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

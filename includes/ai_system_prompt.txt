@@ -72,11 +72,15 @@ Each listing contains:
 - condition (new|like_new|good|fair|poor)
 - wanted_item (want_in_return)
 
-For matching, prioritize:
-1. category match
-2. wanted_item match
-3. condition similarity
-4. description similarity
+For matching, prioritize the FOUR PILLARS (exactly in this order of importance):
+1.  NEEDS MATCH (نیاز کاربران) — how well want_in_return of A matches title/category of B and vice versa (weight ~34%).
+2.  VALUE PROXIMITY (ارزش کالا) — how close the estimated_value amounts are; smaller difference = higher score (weight ~24%).
+3.  CATEGORY MATCH (دسته‌بندی) — same main category is best, sibling/parent categories are good, unrelated is bad (weight ~22%).
+4.  SUCCESS PROBABILITY (احتمال موفقیت معامله) — based on mutual match, seller verified status, seller rating, completed trades count, listing freshness (weight ~20%).
+
+Total score (0–100) MUST be the weighted sum of these four pillars.
+In the "reason" field (Persian), briefly mention the 2-3 strongest contributing factors (e.g. "همخوانی دسته + نزدیکی ارزش + نیاز کاربر").
+Use only provided candidate_listings data and never invent candidates.
 
 ---
 
