@@ -329,6 +329,34 @@ try {
     
     // Add promotion columns to listings table if they don't exist
     $listingsColumns = db_table_columns('listings');
+    if (!in_array('listing_mode', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `listing_mode` ENUM('swap','sell','both') COLLATE utf8mb4_unicode_ci DEFAULT 'swap' AFTER `want_type`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-mode', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('sell_price', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `sell_price` DECIMAL(15,0) UNSIGNED DEFAULT 0 COMMENT 'Price in Toman if sell mode' AFTER `listing_mode`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-sell-price', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('review_status', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `review_status` ENUM('pending','approved','rejected') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'approved' AFTER `status`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-review-status', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('review_note', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `review_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `review_status`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-review-note', ['msg' => $e->getMessage()]);
+        }
+    }
     if (!in_array('vip_until', $listingsColumns)) {
         DB::query('ALTER TABLE `listings` ADD COLUMN `vip_until` TIMESTAMP NULL DEFAULT NULL AFTER `featured_until`');
     }
@@ -338,6 +366,13 @@ try {
     if (!in_array('ai_promo_until', $listingsColumns)) {
         DB::query('ALTER TABLE `listings` ADD COLUMN `ai_promo_until` TIMESTAMP NULL DEFAULT NULL AFTER `targeted_until`');
     }
+    if (!db_has_index('listings', 'idx_review_status') && in_array('review_status', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD KEY `idx_review_status` (`review_status`)");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-idx-review', ['msg' => $e->getMessage()]);
+        }
+    }
     try {
         $colInfo = DB::fetch("SHOW COLUMNS FROM `listings` LIKE 'estimated_value'");
         $currentType = $colInfo['Type'] ?? '';
@@ -346,6 +381,228 @@ try {
         }
     } catch (Throwable $e) {
         swapin_debug_log('migration_estimated_value', ['error' => $e->getMessage()]);
+    }
+
+    // Create wallet_transactions table if it doesn't exist
+    if (!db_has_table('wallet_transactions')) {
+        try {
+            DB::query("
+                CREATE TABLE `wallet_transactions` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `type` ENUM('deposit','withdraw','trade_credit','trade_debit','fee','refund') COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `ref_type` ENUM('none','trade','trade_offer','listing','subscription_order','listing_bump','inspection_request','external','payment') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none' COMMENT 'Entity type that ref_id points to',
+                    `amount` DECIMAL(12,2) NOT NULL,
+                    `balance_after` DECIMAL(12,2) NOT NULL,
+                    `currency_code` CHAR(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'IRT' COMMENT 'ISO 4217 (ledger in Toman)',
+                    `currency` VARCHAR(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'تومان' COMMENT 'Display unit label',
+                    `note` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `ref_id` INT UNSIGNED DEFAULT NULL COMMENT 'ID within ref_type table (see ref_type column)',
+                    `payment_id` INT UNSIGNED DEFAULT NULL,
+                    `bank_ref_num` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `trade_id` INT UNSIGNED DEFAULT NULL COMMENT 'FK trades.id when trade-related',
+                    `listing_id` INT UNSIGNED DEFAULT NULL COMMENT 'FK listings.id when listing-related',
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_wallet_user` (`user_id`),
+                    KEY `idx_wallet_ref` (`ref_type`,`ref_id`),
+                    KEY `idx_wallet_trade` (`trade_id`),
+                    KEY `idx_wallet_listing` (`listing_id`),
+                    KEY `idx_wallet_payment` (`payment_id`),
+                    CONSTRAINT `fk_wallet_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-wallet-transactions-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // Add missing KYC & user columns if they don't exist
+    $usersCols = db_table_columns('users');
+    if (!in_array('kyc_status', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `kyc_status` ENUM('none','pending','approved','rejected') COLLATE utf8mb4_unicode_ci DEFAULT 'none' AFTER `bank_account`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-kyc-status', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('seller_type', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `seller_type` ENUM('personal','store') COLLATE utf8mb4_unicode_ci DEFAULT 'personal' AFTER `kyc_status`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-seller-type', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_name', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_name` VARCHAR(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_type`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-name', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('subscription_plan', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `subscription_plan` ENUM('none','bronze','silver','gold') COLLATE utf8mb4_unicode_ci DEFAULT 'none' AFTER `store_name`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-subscription-plan', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('subscription_until', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `subscription_until` DATE DEFAULT NULL AFTER `subscription_plan`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-subscription-until', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('role', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `role` ENUM('user','admin') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user' AFTER `is_active`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-user-role', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('kyc_note', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `kyc_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `role`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-kyc-note', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!db_has_index('users', 'idx_role') && in_array('role', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD KEY `idx_role` (`role`)");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-idx-role', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // Create inspection_requests table if it doesn't exist
+    if (!db_has_table('inspection_requests')) {
+        try {
+            DB::query("
+                CREATE TABLE `inspection_requests` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `listing_id` INT UNSIGNED NOT NULL,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `trade_id` INT UNSIGNED DEFAULT NULL,
+                    `type` ENUM('self_request','trade_required') COLLATE utf8mb4_unicode_ci DEFAULT 'self_request',
+                    `status` ENUM('pending','scheduled','done','cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+                    `report` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `result` ENUM('passed','failed','conditional') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `price` DECIMAL(10,0) NOT NULL DEFAULT 300000,
+                    `scheduled_at` TIMESTAMP NULL DEFAULT NULL,
+                    `done_at` TIMESTAMP NULL DEFAULT NULL,
+                    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_inspection_listing` (`listing_id`),
+                    KEY `idx_inspection_user` (`user_id`),
+                    KEY `idx_inspection_trade` (`trade_id`),
+                    CONSTRAINT `fk_inspection_listing` FOREIGN KEY (`listing_id`) REFERENCES `listings` (`id`),
+                    CONSTRAINT `fk_inspection_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+                    CONSTRAINT `fk_inspection_trade` FOREIGN KEY (`trade_id`) REFERENCES `trades` (`id`) ON DELETE SET NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-inspection-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // Create disputes table if it doesn't exist
+    if (!db_has_table('disputes')) {
+        try {
+            DB::query("
+                CREATE TABLE `disputes` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `trade_id` INT UNSIGNED NOT NULL,
+                    `filed_by` INT UNSIGNED NOT NULL,
+                    `against` INT UNSIGNED NOT NULL,
+                    `reason` ENUM('wrong_item','damaged','missing','fraud','other') COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `description` TEXT COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `evidence` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'uploaded file',
+                    `status` ENUM('open','reviewing','resolved_a','resolved_b','dismissed') COLLATE utf8mb4_unicode_ci DEFAULT 'open',
+                    `admin_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `resolved_at` TIMESTAMP NULL DEFAULT NULL,
+                    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_dispute_trade` (`trade_id`),
+                    KEY `idx_dispute_filed_by` (`filed_by`),
+                    KEY `idx_dispute_against` (`against`),
+                    CONSTRAINT `fk_dispute_trade` FOREIGN KEY (`trade_id`) REFERENCES `trades` (`id`),
+                    CONSTRAINT `fk_dispute_filed_by` FOREIGN KEY (`filed_by`) REFERENCES `users` (`id`),
+                    CONSTRAINT `fk_dispute_against` FOREIGN KEY (`against`) REFERENCES `users` (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-disputes-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // Create support_tickets table if it doesn't exist
+    if (!db_has_table('support_tickets')) {
+        try {
+            DB::query("
+                CREATE TABLE `support_tickets` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `subject` VARCHAR(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `category` ENUM('account','listing','payment','trade','bug','other') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'other',
+                    `status` ENUM('open','answered','closed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open',
+                    `priority` ENUM('normal','high') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal',
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    `closed_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_support_user` (`user_id`),
+                    KEY `idx_support_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-support-tickets-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // Create support_messages table if it doesn't exist
+    if (!db_has_table('support_messages')) {
+        try {
+            DB::query("
+                CREATE TABLE `support_messages` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `ticket_id` INT UNSIGNED NOT NULL,
+                    `sender_type` ENUM('user','admin') COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `sender_id` INT UNSIGNED NOT NULL,
+                    `body` TEXT COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_msg_ticket` (`ticket_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-support-messages-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // Create error_reports table if it doesn't exist
+    if (!db_has_table('error_reports')) {
+        try {
+            DB::query("
+                CREATE TABLE `error_reports` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED DEFAULT NULL,
+                    `page_url` VARCHAR(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `message` TEXT COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `steps` TEXT COLLATE utf8mb4_unicode_ci,
+                    `user_agent` VARCHAR(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `status` ENUM('new','reviewing','resolved','dismissed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
+                    `admin_note` TEXT COLLATE utf8mb4_unicode_ci,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `resolved_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_error_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-error-reports-create', ['msg' => $e->getMessage()]);
+        }
     }
 
     // Note: The "10 parent categories + other hidden" migration is no longer

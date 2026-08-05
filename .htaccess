@@ -14,10 +14,10 @@ Options +MultiViews -Indexes
 # Block direct web access to sensitive directories
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # For production server (root domain) — UNCOMMENT ON PRODUCTION:
+  # RewriteBase /
   # For local development (XAMPP in /swaapin subdir):
   RewriteBase /swaapin/
-  # For production server (root domain):
-  # RewriteBase /
 
   # Force HTTPS
   RewriteCond %{HTTPS} off
@@ -42,15 +42,16 @@ Options +MultiViews -Indexes
   RewriteRule ^backups/ - [F,L]
   RewriteRule ^sql/ - [F,L]
 
-  # Support/index.php -> /support
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^support/?$ support/index.php [L,NC,QSA]
+  # ── FIX: /store and /support routes ────────────────────────────────────
+  # These MUST come BEFORE the !-d checks because store/ and support/
+  # are real directories. Without this, 404 occurs on servers where
+  # DirectoryIndex or directory permission doesn't kick in fast enough.
 
-  # Store/index.php -> /store
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-f
+  # /store OR /store/  →  store/index.php  (also allow /store/anything to go as-is)
   RewriteRule ^store/?$ store/index.php [L,NC,QSA]
+
+  # /support OR /support/  →  support/index.php
+  RewriteRule ^support/?$ support/index.php [L,NC,QSA]
 
   # Handle trailing slashes for files (e.g., /profile/ -> /profile.php)
   RewriteCond %{REQUEST_FILENAME} -d
@@ -87,6 +88,11 @@ Options +MultiViews -Indexes
   RewriteCond %{DOCUMENT_ROOT}/swaapin/$1.php -f
   RewriteRule ^(.+?)/?$ $1.php [L,QSA]
 </IfModule>
+
+# ── FIX: Explicit DirectoryIndex for folders like /store ──────────────────
+# Ensures that on servers where MultiViews is flaky, going to /store/
+# or /support/ will still load the index.php inside them.
+DirectoryIndex index.php index.html
 
 # Custom error documents
 ErrorDocument 404 /404.php
