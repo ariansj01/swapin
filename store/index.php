@@ -86,15 +86,24 @@ $inventory   = DB::fetchAll(
 );
 $totalValue = array_sum(array_map(fn($r) => (float)$r['estimated_value'], $inventory));
 
-$pendingBuyOffers = (int)(DB::fetch(
-    'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.offer_type = "buy" AND o.status = "pending"',
-    [$uid]
-)['c'] ?? 0);
-
-$pendingSwapOffers = (int)(DB::fetch(
-    'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.offer_type = "swap" AND o.status = "pending"',
-    [$uid]
-)['c'] ?? 0);
+$_hasOfferType = db_has_column('trade_offers', 'offer_type');
+if ($_hasOfferType) {
+    $pendingBuyOffers = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.offer_type = "buy" AND o.status = "pending"',
+        [$uid]
+    )['c'] ?? 0);
+    $pendingSwapOffers = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.offer_type IN ("swap","item") AND o.status = "pending"',
+        [$uid]
+    )['c'] ?? 0);
+} else {
+    $_totalPending = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "pending"',
+        [$uid]
+    )['c'] ?? 0);
+    $pendingBuyOffers = 0;
+    $pendingSwapOffers = $_totalPending;
+}
 
 $completedTrades = (int)(DB::fetch(
     'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "accepted"',

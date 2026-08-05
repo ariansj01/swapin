@@ -79,6 +79,37 @@ try {
         DB::query('ALTER TABLE `reviews` ADD COLUMN `trade_rating` TINYINT UNSIGNED NULL COMMENT "1-5" AFTER `rating`');
     }
     
+    // Add missing trade_offers columns if they don't exist
+    $tradeOffersCols = db_table_columns('trade_offers');
+    if (!in_array('offer_type', $tradeOffersCols)) {
+        try {
+            DB::query("ALTER TABLE `trade_offers` ADD COLUMN `offer_type` ENUM('item','message','swap','buy') COLLATE utf8mb4_unicode_ci DEFAULT 'item' AFTER `offer_listing_id`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-offer-type', ['msg' => $e->getMessage()]);
+        }
+    } else {
+        try {
+            $toInfo = DB::fetch("SHOW CREATE TABLE `trade_offers`");
+            if ($toInfo && !empty($toInfo['Create Table'])) {
+                $needsSwap = (strpos($toInfo['Create Table'], "'swap'") === false);
+                $needsBuy  = (strpos($toInfo['Create Table'], "'buy'") === false);
+                $needsMsg  = (strpos($toInfo['Create Table'], "'message'") === false);
+                if ($needsSwap || $needsBuy || $needsMsg) {
+                    DB::query("ALTER TABLE `trade_offers` MODIFY COLUMN `offer_type` ENUM('item','message','swap','buy') COLLATE utf8mb4_unicode_ci DEFAULT 'item'");
+                }
+            }
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-offer-type-modify', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('buy_price', $tradeOffersCols)) {
+        try {
+            DB::query("ALTER TABLE `trade_offers` ADD COLUMN `buy_price` DECIMAL(15,0) UNSIGNED DEFAULT 0 COMMENT 'Buy offer price in Toman' AFTER `offer_credit`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-buy-price', ['msg' => $e->getMessage()]);
+        }
+    }
+
     // Add onboarding columns to users table if they don't exist
     $usersColumns = db_table_columns('users');
     if (!in_array('onboarding_completed', $usersColumns)) {

@@ -136,10 +136,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 
             if (!$offerError) {
+                $offerTypeInsert = 'item';
+                if ($offerType === 'message') {
+                    $offerTypeInsert = 'message';
+                } elseif ($offerType === 'swap' || $offerListingId) {
+                    $offerTypeInsert = 'swap';
+                } elseif ($offerType === 'buy') {
+                    $offerTypeInsert = 'buy';
+                }
                 DB::insert('trade_offers', [
                     'listing_id'       => $id,
                     'from_user_id'     => $user['id'],
                     'offer_listing_id' => $offerListingId,
+                    'offer_type'       => $offerTypeInsert,
                     'offer_credit'     => $offerCredit,
                     'message'          => $message ?: null,
                     'status'           => 'pending',
