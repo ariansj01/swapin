@@ -108,6 +108,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     if (
         str_contains($requestUri, '/admin') ||
         str_contains($requestUri, '/dashboard') ||
+        str_contains($requestUri, '/store') ||
         str_contains($requestUri, '/auth') ||
         str_contains($requestUri, '/profile') ||
         str_contains($requestUri, '/payment_callback')
@@ -489,10 +490,6 @@ function render_mobile_bottom_nav(?array $user = null): void {
       <a href="{$aiChat}" class="mobile-ai-submenu__item" role="menuitem">
         <i class="bi bi-chat-dots-fill"></i>
         <span>گفتگو با دستیار</span>
-      </a>
-      <a href="{$url}/listings/create" class="mobile-ai-submenu__item" role="menuitem">
-        <i class="bi bi-calculator-fill"></i>
-        <span>قیمت‌گذاری هوشمند</span>
       </a>
     </div>
   </div>
