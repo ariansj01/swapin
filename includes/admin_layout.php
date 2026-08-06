@@ -5,6 +5,7 @@ function render_admin_head(string $title = ''): void {
     $t    = $title ? h($title) . ' — پنل مدیریت' : 'پنل مدیریت — ' . APP_NAME;
     $url  = APP_URL;
     $csrf = h(csrf_token());
+    $adminCssV = filemtime(__DIR__ . '/../src/css/admin.css');
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -17,7 +18,7 @@ function render_admin_head(string $title = ''): void {
 <link rel="stylesheet" href="{$url}/src/css/fonts.css">
 <link rel="stylesheet" href="{$url}/src/vendor/bootstrap-icons/bootstrap-icons.css">
 <link rel="stylesheet" href="{$url}/src/css/main.css">
-<link rel="stylesheet" href="{$url}/src/css/admin.css">
+<link rel="stylesheet" href="{$url}/src/css/admin.css?v={$adminCssV}">
 </head>
 <body class="admin-body">
 HTML;
@@ -66,11 +67,11 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'pages'          => ['/pages.php', 'صفحات سایت', 'bi-file-earmark-text', 0],
         'content'        => ['/content.php', 'مدیریت محتوا', 'bi-pencil-square', 0],
         'listings'       => ['/listings.php', 'آگهی‌ها', 'bi-grid', $counts['listings']],
+        'stores'         => ['/stores.php', 'فروشگاه‌ها', 'bi-shop', 0],
         'kyc'            => ['/kyc.php', 'احراز هویت', 'bi-person-badge', $counts['kyc']],
         'inspections'    => ['/inspections.php', 'بازرسی', 'bi-search', $counts['inspections']],
         'disputes'       => ['/disputes.php', 'اختلافات', 'bi-exclamation-triangle', $counts['disputes']],
         'tickets'        => ['/tickets.php', 'پشتیبانی', 'bi-headset', $counts['tickets']],
-        'stores'         => ['/stores.php', 'فروشگاه‌ها', 'bi-shop', 0],
         'users'          => ['/users.php', 'کاربران', 'bi-people', 0],
     ];
 

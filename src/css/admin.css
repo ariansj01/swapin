@@ -15,6 +15,8 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .admin-sidebar__brand {
@@ -26,7 +28,24 @@
   gap: var(--sp-2);
 }
 
-.admin-nav { display: flex; flex-direction: column; gap: var(--sp-1); flex: 1; }
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-inline-end: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.35) transparent;
+}
+
+.admin-nav::-webkit-scrollbar { width: 6px; }
+.admin-nav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.35);
+  border-radius: 999px;
+}
 
 .admin-nav__link {
   display: flex;

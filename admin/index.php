@@ -56,6 +56,10 @@ ob_start();
     <div class="admin-stat__value"><?= $counts['disputes'] ?></div>
     <div class="admin-stat__label">اختلافات باز</div>
   </a>
+  <a href="<?= APP_URL ?>/admin/stores.php" class="admin-stat" style="text-decoration:none;color:inherit">
+    <div class="admin-stat__value"><i class="bi bi-shop"></i></div>
+    <div class="admin-stat__label">مدیریت فروشگاه‌ها</div>
+  </a>
   <div class="admin-stat">
     <div class="admin-stat__value"><?= $counts['users'] ?></div>
     <div class="admin-stat__label">کاربران فعال</div>
