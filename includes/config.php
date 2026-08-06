@@ -471,6 +471,117 @@ try {
             swapin_debug_log('migration-error-store-name', ['msg' => $e->getMessage()]);
         }
     }
+    if (!in_array('store_slug', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_slug` VARCHAR(140) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'SEO slug for store profile page' AFTER `store_name`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-slug', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_description', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_description` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_slug`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-desc', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_banner', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_banner` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'uploaded banner filename' AFTER `store_description`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-banner', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_address', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_address` VARCHAR(300) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_banner`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-address', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_phone', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_phone` VARCHAR(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'store landline phone' AFTER `store_address`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-phone', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_website', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_website` VARCHAR(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_phone`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-website', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_instagram', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_instagram` VARCHAR(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_website`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-instagram', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_telegram', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_telegram` VARCHAR(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_instagram`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-telegram', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_opening_hours', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_opening_hours` VARCHAR(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_telegram`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-hours', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_lat', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_lat` DECIMAL(10,7) DEFAULT NULL AFTER `store_opening_hours`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-lat', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('store_lng', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_lng` DECIMAL(10,7) DEFAULT NULL AFTER `store_lat`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-lng', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!db_has_index('users', 'idx_store_slug') && in_array('store_slug', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD UNIQUE KEY `idx_store_slug` (`store_slug`)");
+        } catch (Throwable $e) {
+            try {
+                DB::query("ALTER TABLE `users` ADD KEY `idx_store_slug` (`store_slug`)");
+            } catch (Throwable $e2) {
+                swapin_debug_log('migration-error-idx-store-slug', ['msg' => $e2->getMessage()]);
+            }
+        }
+    }
+    // Auto-populate empty store_slug from store_name / username
+    try {
+        if (in_array('store_slug', $usersCols) && in_array('store_name', $usersCols)) {
+            $usersToFix = DB::fetchAll("SELECT id, store_name, name FROM users WHERE (store_slug IS NULL OR store_slug = '') AND (store_name IS NOT NULL AND store_name != '') LIMIT 200");
+            foreach ($usersToFix as $u) {
+                $slugBase = trim((string)$u['store_name']) ?: trim((string)$u['name']) ?: ('user-' . (int)$u['id']);
+                $slug = preg_replace('/[^a-zA-Z0-9_\-آ-ی۰-۹]+/u', '-', $slugBase);
+                $slug = trim($slug, '-');
+                if (!$slug) $slug = 'user-' . (int)$u['id'];
+                $finalSlug = $slug;
+                $suffix = 1;
+                while (true) {
+                    $exists = DB::fetch('SELECT id FROM users WHERE store_slug = ? AND id != ?', [$finalSlug, (int)$u['id']]);
+                    if (!$exists) break;
+                    $finalSlug = $slug . '-' . (++$suffix);
+                    if ($suffix > 1000) break;
+                }
+                DB::query('UPDATE users SET store_slug = ? WHERE id = ?', [$finalSlug, (int)$u['id']]);
+            }
+        }
+    } catch (Throwable $e) {
+        swapin_debug_log('migration-error-store-slug-populate', ['msg' => $e->getMessage()]);
+    }
     if (!in_array('subscription_plan', $usersCols)) {
         try {
             DB::query("ALTER TABLE `users` ADD COLUMN `subscription_plan` ENUM('none','bronze','silver','gold') COLLATE utf8mb4_unicode_ci DEFAULT 'none' AFTER `store_name`");

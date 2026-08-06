@@ -5,11 +5,16 @@ require_once __DIR__ . '/../includes/layout.php';
 $user = auth_user();
 $id   = (int)($_GET['id'] ?? 0);
 
+$usersCols = db_table_columns('users');
+$selectStoreCols = '';
+if (in_array('store_name', $usersCols)) $selectStoreCols .= ', u.store_name';
+if (in_array('store_slug', $usersCols)) $selectStoreCols .= ', u.store_slug';
+
 $listing = DB::fetch(
     'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
             u.city AS seller_city, u.credit_balance AS seller_credits, u.verification_level,
             u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug,
-            t.id AS trade_id, t.status AS trade_status, t.user_a_id, t.user_b_id
+            t.id AS trade_id, t.status AS trade_status, t.user_a_id, t.user_b_id' . $selectStoreCols . '
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
@@ -80,7 +85,7 @@ $isSaved = $user ? (bool)DB::fetch(
 $related = DB::fetchAll(
     'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating,
             c.name AS cat_name,
-            (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+            (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb' . $selectStoreCols . '
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
@@ -182,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $listing = DB::fetch(
                     'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
                             u.city AS seller_city, u.credit_balance AS seller_credits, u.verification_level,
-                            u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug
+                            u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug' . $selectStoreCols . '
                      FROM listings l JOIN users u ON u.id = l.user_id JOIN categories c ON c.id = l.category_id WHERE l.id = ?',
                     [$id]
                 );
@@ -300,7 +305,14 @@ render_navbar($user);
 
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.875rem;color:var(--text-muted);">
       <span>فروشنده:</span>
+      <?php if (!empty($listing['store_name']) && !empty($listing['store_slug'])): ?>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <a href="<?= APP_URL ?>/shop/<?= h($listing['store_slug']) ?>" class="badge badge-primary" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-weight:600;"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></a>
+        <strong style="color:var(--dash-navy);font-size:.8125rem;"><?= h($listing['seller_name']) ?></strong>
+      </div>
+      <?php else: ?>
       <strong style="color:var(--dash-navy);"><?= h($listing['seller_name']) ?></strong>
+      <?php endif; ?>
       <?php if ($listing['seller_city']): ?>
       <span>(<?= h($listing['seller_city']) ?>)</span>
       <?php endif; ?>
@@ -324,6 +336,9 @@ render_navbar($user);
     <div class="lv-seller">
       <?= avatar_html($listing['seller_avatar'] ?? null, $listing['seller_name'], 'md') ?>
       <div class="lv-seller__info">
+        <?php if (!empty($listing['store_name']) && !empty($listing['store_slug'])): ?>
+        <a href="<?= APP_URL ?>/shop/<?= h($listing['store_slug']) ?>" class="badge badge-primary lv-store-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-weight:600;margin-bottom:4px;"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></a>
+        <?php endif; ?>
         <div class="lv-seller__name"><a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-seller-name-link"><?= h($listing['seller_name']) ?></a></div>
         <div class="lv-seller__meta">
           <?php if ($listing['seller_city']): ?><span><?= h($listing['seller_city']) ?></span><?php endif; ?>
@@ -578,7 +593,14 @@ render_navbar($user);
 
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.875rem;color:var(--text-muted);">
             <span>فروشنده:</span>
+            <?php if (!empty($listing['store_name']) && !empty($listing['store_slug'])): ?>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <a href="<?= APP_URL ?>/shop/<?= h($listing['store_slug']) ?>" class="badge badge-primary" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-weight:600;"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></a>
+              <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" style="color:var(--dash-navy);text-decoration:none;font-weight:bold;font-size:.8125rem;"><?= h($listing['seller_name']) ?></a>
+            </div>
+            <?php else: ?>
             <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" style="color:var(--dash-navy);text-decoration:none;font-weight:bold;"><?= h($listing['seller_name']) ?></a>
+            <?php endif; ?>
             <?php if ($listing['seller_city']): ?>
             <span>(<?= h($listing['seller_city']) ?>)</span>
             <?php endif; ?>

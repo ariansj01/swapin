@@ -14,6 +14,35 @@ if ($_savedListingIds === null) {
     }
 }
 
+$storeName = null;
+$storeSlug = null;
+if (isset($l['store_name']) && isset($l['store_slug'])) {
+    $storeName = trim((string)$l['store_name']);
+    $storeSlug = trim((string)$l['store_slug']);
+}
+if ((!$storeName || !$storeSlug) && !empty($l['user_id'])) {
+    static $storeCache = [];
+    $uid = (int)$l['user_id'];
+    if (!isset($storeCache[$uid])) {
+        $usersCols = db_table_columns('users');
+        $cols = [];
+        if (in_array('store_name', $usersCols)) $cols[] = 'store_name';
+        if (in_array('store_slug', $usersCols)) $cols[] = 'store_slug';
+        if ($cols) {
+            $row = DB::fetch('SELECT ' . implode(', ', $cols) . ' FROM users WHERE id = ?', [$uid]);
+            $storeCache[$uid] = $row ? [
+                'name' => trim((string)($row['store_name'] ?? '')),
+                'slug' => trim((string)($row['store_slug'] ?? '')),
+            ] : ['name' => '', 'slug' => ''];
+        } else {
+            $storeCache[$uid] = ['name' => '', 'slug' => ''];
+        }
+    }
+    if (empty($storeName)) $storeName = $storeCache[$uid]['name'];
+    if (empty($storeSlug)) $storeSlug = $storeCache[$uid]['slug'];
+}
+$hasStore = $storeName && $storeSlug;
+
 $isSwap   = empty($l['listing_mode']) || $l['listing_mode'] === 'swap' || $l['listing_mode'] === 'both';
 $isSaved  = in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
@@ -65,6 +94,11 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
         <h3 class="listing-card__title"><?= h($l['title']) ?></h3>
         <?php if (!empty($l['cat_name'])): ?>
         <span class="listing-card__cat">دسته: <?= h(category_label($l['cat_slug'] ?? '', $l['cat_name'] ?? '')) ?></span>
+        <?php endif; ?>
+        <?php if ($hasStore): ?>
+        <a href="<?= APP_URL ?>/shop/<?= h($storeSlug) ?>" class="listing-card__store-link" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:.75rem;color:var(--dash-navy);text-decoration:none;margin-top:2px;padding:2px 8px;background:rgba(59,130,246,.1);border-radius:999px;">
+          <i class="bi bi-shop"></i> <?= h($storeName) ?>
+        </a>
         <?php endif; ?>
 
         <!-- <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>

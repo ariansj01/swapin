@@ -73,6 +73,164 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_listings'])) {
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_add_product'])) {
+    csrf_verify_or_fail();
+    $title           = clean($_POST['title']           ?? '');
+    $description     = clean($_POST['description']     ?? '');
+    $category_id     = (int)($_POST['category_id']     ?? 0);
+    $want_category_id = (int)($_POST['want_category_id'] ?? 0);
+    $want_description = clean($_POST['want_description'] ?? '');
+    $listing_mode    = clean($_POST['listing_mode']    ?? 'both');
+    $sell_price      = max(0, (float)($_POST['sell_price']      ?? 0));
+    $estimated_value = max(0, (float)($_POST['estimated_value'] ?? 0));
+
+    if (!in_array($listing_mode, ['sell', 'swap', 'both'], true)) {
+        $listing_mode = 'both';
+    }
+
+    $validationErrors = [];
+    if (mb_strlen($title) < 5) $validationErrors[] = 'نام محصول باید حداقل ۵ کاراکتر باشد';
+    if (mb_strlen($description) < 20) $validationErrors[] = 'توضیحات محصول باید حداقل ۲۰ کاراکتر باشد';
+    if (!$category_id) $validationErrors[] = 'لطفاً دسته‌بندی محصول را انتخاب کنید';
+
+    if (!empty($validationErrors)) {
+        $error = implode(' | ', $validationErrors);
+    } else {
+        $hasImageUpload = false;
+        if (!empty($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
+            foreach ($_FILES['images']['name'] as $i => $name) {
+                if ($name && ($_FILES['images']['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                    $hasImageUpload = true;
+                    break;
+                }
+            }
+        }
+        if (!$hasImageUpload) {
+            $validationErrors[] = 'حداقل یک تصویر برای محصول الزامی است';
+        }
+
+        if (empty($validationErrors)) {
+            $listingId = DB::insert('listings', [
+                'user_id'         => $uid,
+                'category_id'     => $category_id,
+                'title'           => $title,
+                'description'     => $description,
+                'want_in_return'  => $want_description,
+                'listing_mode'    => $listing_mode,
+                'sell_price'      => $sell_price,
+                'estimated_value' => $estimated_value,
+                'condition'       => 'good',
+                'status'          => 'active',
+                'review_status'   => 'pending',
+                'city'            => $user['city'] ?? null,
+            ]);
+
+            $uploadedImages = 0;
+            if (!empty($_FILES['images']['name'][0])) {
+                foreach ($_FILES['images']['tmp_name'] as $i => $tmp) {
+                    if ($uploadedImages >= MAX_IMAGES) break;
+                    if (empty($tmp) || ($_FILES['images']['error'][$i] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                        continue;
+                    }
+                    $file = [
+                        'name'     => $_FILES['images']['name'][$i],
+                        'tmp_name' => $tmp,
+                        'error'    => $_FILES['images']['error'][$i],
+                        'size'     => $_FILES['images']['size'][$i],
+                    ];
+                    $filename = upload_image($file, 'listing');
+                    if ($filename) {
+                        DB::insert('listing_images', [
+                            'listing_id' => $listingId,
+                            'filename'   => $filename,
+                            'is_primary' => $uploadedImages === 0 ? 1 : 0,
+                            'sort_order' => $uploadedImages,
+                        ]);
+                        $uploadedImages++;
+                    }
+                }
+            }
+
+            if ($uploadedImages === 0) {
+                DB::query('DELETE FROM listings WHERE id = ? AND user_id = ?', [$listingId, $uid]);
+                $error = 'آپلود تصاویر ناموفق بود. لطفاً دوباره تلاش کنید.';
+            } else {
+                ai_match_clear_cache($uid);
+                $success = 'محصول شما با موفقیت ثبت شد.';
+                echo '<script>window.location.href = window.location.href;</script>';
+                exit;
+            }
+        } else {
+            $error = implode(' | ', $validationErrors);
+        }
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_save_info'])) {
+    csrf_verify_or_fail();
+    $store_name         = clean($_POST['store_name']         ?? '');
+    $store_description  = clean($_POST['store_description']  ?? '');
+    $store_address      = clean($_POST['store_address']      ?? '');
+    $store_phone        = clean($_POST['store_phone']        ?? '');
+    $store_website      = clean($_POST['store_website']      ?? '');
+    $store_instagram    = clean($_POST['store_instagram']    ?? '');
+    $store_telegram     = clean($_POST['store_telegram']     ?? '');
+    $store_opening_hours = clean($_POST['store_opening_hours'] ?? '');
+    $store_lat          = clean($_POST['store_lat']          ?? '');
+    $store_lng          = clean($_POST['store_lng']          ?? '');
+
+    $updateData = [
+        'store_name'         => $store_name,
+        'store_description'  => $store_description,
+        'store_address'      => $store_address,
+        'store_phone'        => $store_phone,
+        'store_website'      => $store_website,
+        'store_instagram'    => $store_instagram,
+        'store_telegram'     => $store_telegram,
+        'store_opening_hours' => $store_opening_hours,
+        'store_lat'          => $store_lat,
+        'store_lng'          => $store_lng,
+    ];
+
+    $currentStoreName  = $user['store_name']  ?? '';
+    $currentStoreSlug  = $user['store_slug']  ?? '';
+    $slugNeeded = empty($currentStoreSlug) || ($store_name !== $currentStoreName);
+
+    if ($slugNeeded && !empty($store_name)) {
+        $baseSlug = preg_replace('/[^a-zA-Z0-9\-آ-ی ]+/u', '', $store_name);
+        $baseSlug = preg_replace('/\s+/u', '-', trim($baseSlug));
+        $baseSlug = mb_strtolower($baseSlug);
+        $baseSlug = trim($baseSlug, '-');
+
+        if (empty($baseSlug)) {
+            $baseSlug = 'store-' . $uid;
+        }
+
+        $candidate = $baseSlug;
+        $counter = 1;
+        while (true) {
+            $existing = DB::fetch(
+                'SELECT id FROM users WHERE store_slug = ? AND id != ? LIMIT 1',
+                [$candidate, $uid]
+            );
+            if (!$existing) break;
+            $counter++;
+            $candidate = $baseSlug . '-' . $counter;
+        }
+        $updateData['store_slug'] = $candidate;
+    }
+
+    DB::update('users', $updateData, 'id = ?', [$uid]);
+    $user = DB::fetch('SELECT * FROM users WHERE id = ? LIMIT 1', [$uid]);
+    $success = 'اطلاعات فروشگاه با موفقیت ذخیره شد.';
+}
+
+$categories = DB::fetchAll(
+    'SELECT c.*, p.name AS parent_name FROM categories c
+     LEFT JOIN categories p ON p.id = c.parent_id
+     WHERE c.is_active = 1 ORDER BY COALESCE(p.sort_order,c.sort_order), c.sort_order'
+);
+
 $activeCount = can_create_listing_count($user);
 $limit       = get_listing_limit($user);
 $inventory   = DB::fetchAll(
@@ -144,6 +302,11 @@ render_navbar($user);
       <div class="store-header__actions">
         <?php if ($isStore && !empty($user['store_name'])): ?>
         <span class="store-badge-gold"><i class="bi bi-building"></i> <?= h($user['store_name']) ?></span>
+        <?php endif; ?>
+        <?php if (!empty($user['store_slug'])): ?>
+        <a href="<?= APP_URL ?>/shop/<?= h($user['store_slug']) ?>" target="_blank" class="store-btn store-btn--outline">
+          <i class="bi bi-box-arrow-up-right"></i> مشاهده صفحه فروشگاه
+        </a>
         <?php endif; ?>
         <a href="<?= APP_URL ?>/listings/create" class="store-btn store-btn--gradient">
           <i class="bi bi-plus-lg"></i> افزودن محصول جدید
@@ -272,8 +435,37 @@ render_navbar($user);
             </div>
           </div>
           <div class="store-card__body">
-            <div class="store-chart">
-              <canvas id="storeChartCanvas" width="800" height="280"></canvas>
+            <div class="store-chart" style="position: relative;">
+              <canvas id="storeChartCanvas" width="800" height="280" style="cursor: crosshair;"></canvas>
+              <div id="storeChartTooltip" style="
+                position: absolute;
+                pointer-events: none;
+                background: rgba(11,31,77,0.95);
+                color: #fff;
+                padding: 10px 14px;
+                border-radius: 12px;
+                font-size: 13px;
+                line-height: 1.7;
+                white-space: nowrap;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+                opacity: 0;
+                transform: translate(-50%, -120%);
+                transition: opacity 0.15s ease;
+                z-index: 10;
+                font-family: inherit;
+              ">
+                <div id="storeChartTooltip-title" style="font-weight: 700; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px;"></div>
+                <div style="display: flex; gap: 12px;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="display:inline-block; width:10px; height:10px; background:#0B1F4D; border-radius: 50%;"></span>
+                    <span>بازدید: <span id="storeChartTooltip-views" style="font-weight: 700;"></span></span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="display:inline-block; width:10px; height:10px; background:#F5B400; border-radius: 50%;"></span>
+                    <span>درخواست: <span id="storeChartTooltip-reqs" style="font-weight: 700;"></span></span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="store-chart__labels">
               <span>فروردین</span><span>اردیبهشت</span><span>خرداد</span><span>تیر</span>
@@ -403,58 +595,102 @@ render_navbar($user);
             <h3 class="store-card__title"><i class="bi bi-plus-circle"></i> افزودن محصول جدید</h3>
           </div>
           <div class="store-card__body">
-            <div class="store-form-group">
-              <label class="store-form-label">نام محصول</label>
-              <input type="text" class="store-form-input" placeholder="نام محصول را وارد کنید...">
-            </div>
-            <div class="store-form-grid-2">
+            <form method="POST" enctype="multipart/form-data">
+              <?= csrf_field() ?>
               <div class="store-form-group">
-                <label class="store-form-label">دسته‌بندی</label>
-                <select class="store-form-input">
-                  <option>انتخاب دسته‌بندی...</option>
-                  <option>💍 طلا و جواهر</option>
-                  <option>📱 موبایل</option>
-                  <option>💻 لپ‌تاپ</option>
-                  <option>🚲 دوچرخه</option>
-                  <option>📷 دوربین</option>
-                  <option>🏠 لوازم منزل</option>
-                  <option>🚗 خودرو</option>
-                </select>
+                <label class="store-form-label">نام محصول</label>
+                <input type="text" class="store-form-input" name="title" placeholder="نام محصول را وارد کنید..." value="<?= h($_POST['title'] ?? '') ?>">
+              </div>
+              <div class="store-form-grid-2">
+                <div class="store-form-group">
+                  <label class="store-form-label">دسته‌بندی محصول</label>
+                  <select class="store-form-input" name="category_id">
+                    <option value="">انتخاب دسته‌بندی...</option>
+                    <?php
+                    $lastParent = null;
+                    foreach ($categories as $c):
+                      $isChild = !empty($c['parent_id']);
+                      $label = $isChild ? ('&nbsp;&nbsp;&nbsp; ' . $c['name']) : ($c['name']);
+                      $sel = ((int)($_POST['category_id'] ?? 0) === (int)$c['id']) ? 'selected' : '';
+                      if (!$isChild && $lastParent !== null) {
+                        echo '</optgroup>';
+                      }
+                      if (!$isChild) {
+                        $lastParent = (int)$c['id'];
+                        echo '<optgroup label="' . h($c['name']) . '">';
+                      } elseif ($lastParent === null) {
+                        $lastParent = 0;
+                      }
+                      echo '<option value="' . (int)$c['id'] . '" ' . $sel . '>' . $label . '</option>';
+                    endforeach;
+                    if ($lastParent !== null && $lastParent !== 0) {
+                      echo '</optgroup>';
+                    }
+                    ?>
+                  </select>
+                </div>
+                <div class="store-form-group">
+                  <label class="store-form-label">قیمت محصول (فروش) تومان</label>
+                  <input type="text" class="store-form-input" name="sell_price" placeholder="۰" value="<?= h($_POST['sell_price'] ?? '') ?>">
+                </div>
               </div>
               <div class="store-form-group">
-                <label class="store-form-label">قیمت (تومان)</label>
-                <input type="text" class="store-form-input" placeholder="۰">
+                <label class="store-form-label">نوع معامله</label>
+                <div class="store-radio-group">
+                  <label class="store-radio"><input type="radio" name="listing_mode" value="sell" <?= (($_POST['listing_mode'] ?? 'both') === 'sell') ? 'checked' : '' ?>> فقط فروش</label>
+                  <label class="store-radio"><input type="radio" name="listing_mode" value="swap" <?= (($_POST['listing_mode'] ?? 'both') === 'swap') ? 'checked' : '' ?>> فقط معاوضه</label>
+                  <label class="store-radio"><input type="radio" name="listing_mode" value="both" <?= (($_POST['listing_mode'] ?? 'both') === 'both') ? 'checked' : '' ?>> فروش و معاوضه</label>
+                </div>
               </div>
-            </div>
-            <div class="store-form-group">
-              <label class="store-form-label">نوع معامله</label>
-              <div class="store-radio-group">
-                <label class="store-radio"><input type="radio" name="dealType"> فقط فروش</label>
-                <label class="store-radio"><input type="radio" name="dealType"> فقط معاوضه</label>
-                <label class="store-radio"><input type="radio" name="dealType" checked> فروش و معاوضه</label>
+              <div class="store-form-grid-2">
+                <div class="store-form-group">
+                  <label class="store-form-label">دسته‌بندی کالای موردنیاز برای معاوضه</label>
+                  <select class="store-form-input" name="want_category_id">
+                    <option value="">انتخاب دسته‌بندی (اختیاری)...</option>
+                    <?php
+                    $lastParent2 = null;
+                    foreach ($categories as $c):
+                      $isChild = !empty($c['parent_id']);
+                      $label = $isChild ? ('&nbsp;&nbsp;&nbsp; ' . $c['name']) : ($c['name']);
+                      $sel = ((int)($_POST['want_category_id'] ?? 0) === (int)$c['id']) ? 'selected' : '';
+                      if (!$isChild && $lastParent2 !== null) {
+                        echo '</optgroup>';
+                      }
+                      if (!$isChild) {
+                        $lastParent2 = (int)$c['id'];
+                        echo '<optgroup label="' . h($c['name']) . '">';
+                      } elseif ($lastParent2 === null) {
+                        $lastParent2 = 0;
+                      }
+                      echo '<option value="' . (int)$c['id'] . '" ' . $sel . '>' . $label . '</option>';
+                    endforeach;
+                    if ($lastParent2 !== null && $lastParent2 !== 0) {
+                      echo '</optgroup>';
+                    }
+                    ?>
+                  </select>
+                </div>
+                <div class="store-form-group">
+                  <label class="store-form-label">قیمت تخمینی (برای معاوضه) تومان</label>
+                  <input type="text" class="store-form-input" name="estimated_value" placeholder="۰" value="<?= h($_POST['estimated_value'] ?? '') ?>">
+                </div>
               </div>
-            </div>
-            <div class="store-form-grid-2">
               <div class="store-form-group">
-                <label class="store-form-label">موجودی</label>
-                <input type="number" class="store-form-input" value="1">
+                <label class="store-form-label">توضیحات محصول</label>
+                <textarea class="store-form-input" name="description" rows="4" placeholder="توضیحات کامل محصول..."><?= h($_POST['description'] ?? '') ?></textarea>
               </div>
               <div class="store-form-group">
-                <label class="store-form-label">وضعیت</label>
-                <select class="store-form-input">
-                  <option>فعال</option>
-                  <option>ناموجود</option>
-                  <option>فروخته شد</option>
-                </select>
+                <label class="store-form-label">توضیحات کالای موردنیاز</label>
+                <textarea class="store-form-input" name="want_description" rows="3" placeholder="مثلا: فقط گوشی آیفون ۱۴ به بالا با سلامت باتری بالای ۹۰٪..."><?= h($_POST['want_description'] ?? '') ?></textarea>
               </div>
-            </div>
-            <div class="store-form-group">
-              <label class="store-form-label">توضیحات محصول</label>
-              <textarea class="store-form-input" rows="4" placeholder="توضیحات کامل محصول..."></textarea>
-            </div>
-            <button class="store-btn store-btn--gradient w-100">
-              <i class="bi bi-save"></i> ذخیره محصول
-            </button>
+              <div class="store-form-group">
+                <label class="store-form-label">تصاویر محصول (حداقل ۱، حداکثر <?= MAX_IMAGES ?> تصویر)</label>
+                <input type="file" class="store-form-input" name="images[]" multiple accept="image/jpeg,image/png,image/webp">
+              </div>
+              <button type="submit" name="store_add_product" class="store-btn store-btn--gradient w-100">
+                <i class="bi bi-save"></i> ذخیره محصول
+              </button>
+            </form>
 
             <div class="store-divider"><span>یا ثبت گروهی</span></div>
 
@@ -704,50 +940,69 @@ render_navbar($user);
             <h3 class="store-card__title"><i class="bi bi-gear"></i> اطلاعات فروشگاه</h3>
           </div>
           <div class="store-card__body">
-            <div class="store-upload">
-              <div class="store-upload__logo">
-                <i class="bi bi-shop"></i>
-                <button class="store-btn store-btn--sm store-btn--gradient"><i class="bi bi-upload"></i> تغییر لوگو</button>
-              </div>
-            </div>
-            <div class="store-upload-banner">
-              <i class="bi bi-card-image"></i>
-              <div>
-                <div class="store-upload-banner__title">بنر فروشگاه</div>
-                <button class="store-btn store-btn--sm store-btn--outline"><i class="bi bi-upload"></i> آپلود بنر</button>
-              </div>
-            </div>
-            <div class="store-form-group">
-              <label class="store-form-label">توضیحات فروشگاه</label>
-              <textarea class="store-form-input" rows="4" placeholder="معرفی کوتاه فروشگاه شما..."></textarea>
-            </div>
-            <div class="store-form-group">
-              <label class="store-form-label">آدرس فروشگاه</label>
-              <input type="text" class="store-form-input" placeholder="آدرس کامل فروشگاه...">
-            </div>
-            <div class="store-form-grid-2">
+            <form method="POST">
+              <?= csrf_field() ?>
+              <input type="hidden" name="store_lat" value="<?= h($user['store_lat'] ?? '') ?>">
+              <input type="hidden" name="store_lng" value="<?= h($user['store_lng'] ?? '') ?>">
               <div class="store-form-group">
-                <label class="store-form-label">ساعات کاری</label>
-                <input type="text" class="store-form-input" placeholder="شنبه تا پنج‌شنبه ۹-۱۸">
+                <label class="store-form-label">نام فروشگاه</label>
+                <input type="text" class="store-form-input" name="store_name" placeholder="نام فروشگاه شما..." value="<?= h($user['store_name'] ?? '') ?>">
+              </div>
+              <div class="store-upload">
+                <div class="store-upload__logo">
+                  <i class="bi bi-shop"></i>
+                  <button type="button" class="store-btn store-btn--sm store-btn--gradient"><i class="bi bi-upload"></i> تغییر لوگو</button>
+                </div>
+              </div>
+              <div class="store-upload-banner">
+                <i class="bi bi-card-image"></i>
+                <div>
+                  <div class="store-upload-banner__title">بنر فروشگاه</div>
+                  <button type="button" class="store-btn store-btn--sm store-btn--outline"><i class="bi bi-upload"></i> آپلود بنر</button>
+                </div>
               </div>
               <div class="store-form-group">
-                <label class="store-form-label">شماره تماس</label>
-                <input type="text" class="store-form-input" placeholder="۰۲۱-۱۲۳۴۵۶۷۸">
-              </div>
-            </div>
-            <div class="store-form-grid-2">
-              <div class="store-form-group">
-                <label class="store-form-label"><i class="bi bi-whatsapp" style="color:#25D366"></i> واتساپ</label>
-                <input type="text" class="store-form-input" placeholder="۹۸۹۱۲۳۴۵۶۷۸۹">
+                <label class="store-form-label">توضیحات فروشگاه</label>
+                <textarea class="store-form-input" name="store_description" rows="4" placeholder="معرفی کوتاه فروشگاه شما..."><?= h($user['store_description'] ?? '') ?></textarea>
               </div>
               <div class="store-form-group">
-                <label class="store-form-label"><i class="bi bi-instagram" style="color:#E1306C"></i> اینستاگرام</label>
-                <input type="text" class="store-form-input" placeholder="@your_store">
+                <label class="store-form-label">آدرس فروشگاه</label>
+                <input type="text" class="store-form-input" name="store_address" placeholder="آدرس کامل فروشگاه..." value="<?= h($user['store_address'] ?? '') ?>">
               </div>
-            </div>
-            <button class="store-btn store-btn--gradient w-100">
-              <i class="bi bi-check-lg"></i> ذخیره تغییرات
-            </button>
+              <div class="store-form-grid-2">
+                <div class="store-form-group">
+                  <label class="store-form-label">ساعات کاری</label>
+                  <input type="text" class="store-form-input" name="store_opening_hours" placeholder="شنبه تا پنج‌شنبه ۹-۱۸" value="<?= h($user['store_opening_hours'] ?? '') ?>">
+                </div>
+                <div class="store-form-group">
+                  <label class="store-form-label">شماره تماس</label>
+                  <input type="text" class="store-form-input" name="store_phone" placeholder="۰۲۱-۱۲۳۴۵۶۷۸" value="<?= h($user['store_phone'] ?? '') ?>">
+                </div>
+              </div>
+              <div class="store-form-grid-2">
+                <div class="store-form-group">
+                  <label class="store-form-label"><i class="bi bi-globe" style="color:#0B1F4D"></i> وب‌سایت</label>
+                  <input type="text" class="store-form-input" name="store_website" placeholder="https://example.com" value="<?= h($user['store_website'] ?? '') ?>">
+                </div>
+                <div class="store-form-group">
+                  <label class="store-form-label"><i class="bi bi-telegram" style="color:#229ED9"></i> تلگرام</label>
+                  <input type="text" class="store-form-input" name="store_telegram" placeholder="@yourchannel" value="<?= h($user['store_telegram'] ?? '') ?>">
+                </div>
+              </div>
+              <div class="store-form-grid-2">
+                <div class="store-form-group">
+                  <label class="store-form-label"><i class="bi bi-whatsapp" style="color:#25D366"></i> واتساپ</label>
+                  <input type="text" class="store-form-input" placeholder="۹۸۹۱۲۳۴۵۶۷۸۹" value="<?= h($user['store_phone'] ?? '') ?>" disabled>
+                </div>
+                <div class="store-form-group">
+                  <label class="store-form-label"><i class="bi bi-instagram" style="color:#E1306C"></i> اینستاگرام</label>
+                  <input type="text" class="store-form-input" name="store_instagram" placeholder="@your_store" value="<?= h($user['store_instagram'] ?? '') ?>">
+                </div>
+              </div>
+              <button type="submit" name="store_save_info" class="store-btn store-btn--gradient w-100">
+                <i class="bi bi-check-lg"></i> ذخیره تغییرات
+              </button>
+            </form>
           </div>
         </div>
 
@@ -945,36 +1200,48 @@ render_navbar($user);
             <h3 class="store-card__title"><i class="bi bi-info-circle"></i> اطلاعات فروشگاه</h3>
           </div>
           <div class="store-card__body">
-            <div class="store-form-group">
-              <label class="store-form-label">نام فروشگاه</label>
-              <input type="text" class="store-form-input" value="<?= h($user['store_name'] ?? 'فروشگاه من') ?>">
-            </div>
-            <div class="store-form-grid-2">
+            <form method="POST">
+              <?= csrf_field() ?>
+              <input type="hidden" name="store_description" value="<?= h($user['store_description'] ?? '') ?>">
+              <input type="hidden" name="store_address" value="<?= h($user['store_address'] ?? '') ?>">
+              <input type="hidden" name="store_phone" value="<?= h($user['store_phone'] ?? '') ?>">
+              <input type="hidden" name="store_website" value="<?= h($user['store_website'] ?? '') ?>">
+              <input type="hidden" name="store_instagram" value="<?= h($user['store_instagram'] ?? '') ?>">
+              <input type="hidden" name="store_telegram" value="<?= h($user['store_telegram'] ?? '') ?>">
+              <input type="hidden" name="store_opening_hours" value="<?= h($user['store_opening_hours'] ?? '') ?>">
+              <input type="hidden" name="store_lat" value="<?= h($user['store_lat'] ?? '') ?>">
+              <input type="hidden" name="store_lng" value="<?= h($user['store_lng'] ?? '') ?>">
               <div class="store-form-group">
-                <label class="store-form-label">نوع کسب‌وکار</label>
-                <select class="store-form-input">
-                  <option>خرده‌فروش</option>
-                  <option>عمده‌فروش</option>
-                  <option>تولیدی</option>
-                  <option>خدماتی</option>
-                </select>
+                <label class="store-form-label">نام فروشگاه</label>
+                <input type="text" class="store-form-input" name="store_name" value="<?= h($user['store_name'] ?? 'فروشگاه من') ?>">
               </div>
-              <div class="store-form-group">
-                <label class="store-form-label">شماره اقتصادی</label>
-                <input type="text" class="store-form-input" placeholder="شماره اقتصادی (اختیاری)">
+              <div class="store-form-grid-2">
+                <div class="store-form-group">
+                  <label class="store-form-label">نوع کسب‌وکار</label>
+                  <select class="store-form-input">
+                    <option>خرده‌فروش</option>
+                    <option>عمده‌فروش</option>
+                    <option>تولیدی</option>
+                    <option>خدماتی</option>
+                  </select>
+                </div>
+                <div class="store-form-group">
+                  <label class="store-form-label">شماره اقتصادی</label>
+                  <input type="text" class="store-form-input" placeholder="شماره اقتصادی (اختیاری)">
+                </div>
               </div>
-            </div>
-            <div class="store-form-grid-2">
-              <div class="store-form-group">
-                <label class="store-form-label">استان</label>
-                <input type="text" class="store-form-input" placeholder="تهران">
+              <div class="store-form-grid-2">
+                <div class="store-form-group">
+                  <label class="store-form-label">استان</label>
+                  <input type="text" class="store-form-input" placeholder="تهران">
+                </div>
+                <div class="store-form-group">
+                  <label class="store-form-label">شهر</label>
+                  <input type="text" class="store-form-input" placeholder="تهران">
+                </div>
               </div>
-              <div class="store-form-group">
-                <label class="store-form-label">شهر</label>
-                <input type="text" class="store-form-input" placeholder="تهران">
-              </div>
-            </div>
-            <button class="store-btn store-btn--gradient w-100"><i class="bi bi-save"></i> ذخیره اطلاعات</button>
+              <button type="submit" name="store_save_info" class="store-btn store-btn--gradient w-100"><i class="bi bi-save"></i> ذخیره اطلاعات</button>
+            </form>
           </div>
         </div>
 
@@ -1109,6 +1376,7 @@ render_navbar($user);
   if (canvas && canvas.getContext) {
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
+    const monthLabels = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
     const data1 = [12, 19, 25, 22, 30, 28, 35, 42, 38, 45, 50, 48];
     const data2 = [4, 7, 9, 8, 12, 11, 14, 18, 16, 20, 23, 22];
     const max = Math.max(...data1) * 1.15;
@@ -1127,13 +1395,20 @@ render_navbar($user);
       ctx.stroke();
     }
 
-    function drawLine(data, color, fill) {
+    const points = [];
+
+    function drawLine(data, color, fill, dotHighlight) {
       ctx.beginPath();
       ctx.moveTo(pad.l, pad.t + chartH - (data[0] / max * chartH));
+      points[0] = {x: pad.l, ys: pad.t + chartH - (data[0] / max * chartH)};
       for (let i = 1; i < data.length; i++) {
         const x = pad.l + i * xStep;
         const y = pad.t + chartH - (data[i] / max * chartH);
         ctx.lineTo(x, y);
+        points[i] = points[i] || {};
+        points[i].x = x;
+        if (dotHighlight === '#0B1F4D') points[i].y1 = y;
+        else points[i].y2 = y;
       }
       if (fill) {
         ctx.lineTo(pad.l + (data.length-1) * xStep, pad.t + chartH);
@@ -1161,8 +1436,56 @@ render_navbar($user);
       }
     }
 
-    drawLine(data1, '#0B1F4D', 'rgba(11, 31, 77, 0.06)');
-    drawLine(data2, '#F5B400', null);
+    drawLine(data1, '#0B1F4D', 'rgba(11, 31, 77, 0.06)', '#0B1F4D');
+    drawLine(data2, '#F5B400', null, '#F5B400');
+
+    const tooltip = document.getElementById('storeChartTooltip');
+    const ttTitle = document.getElementById('storeChartTooltip-title');
+    const ttViews = document.getElementById('storeChartTooltip-views');
+    const ttReqs  = document.getElementById('storeChartTooltip-reqs');
+
+    function fmtFa(num) {
+      return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, '،');
+    }
+
+    function showTooltip(idx, clientX, clientY) {
+      if (!tooltip || idx < 0 || idx >= monthLabels.length) return hideTooltip();
+      ttTitle.textContent = monthLabels[idx];
+      ttViews.textContent = fmtFa(data1[idx]) + ' بازدید';
+      ttReqs.textContent  = fmtFa(data2[idx]) + ' درخواست';
+      const rect = canvas.getBoundingClientRect();
+      const wrapRect = canvas.parentElement.getBoundingClientRect();
+      const xRatio = canvas.width / rect.width;
+      const canX = (clientX - rect.left) * xRatio;
+      const relX = (clientX - wrapRect.left);
+      const firstY = pad.t + chartH - Math.min(data1[idx], data2[idx]) / max * chartH - 14;
+      const relY = (firstY / canvas.height) * rect.height + (rect.top - wrapRect.top);
+      tooltip.style.left = relX + 'px';
+      tooltip.style.top  = relY + 'px';
+      tooltip.style.opacity = '1';
+    }
+    function hideTooltip() {
+      if (tooltip) tooltip.style.opacity = '0';
+    }
+    function findNearestIdx(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      const xRatio = canvas.width / rect.width;
+      const canX = (clientX - rect.left) * xRatio;
+      let minIdx = -1, minDist = Infinity;
+      for (let i = 0; i < points.length; i++) {
+        if (!points[i]) continue;
+        const d = Math.abs((points[i].x) - canX);
+        if (d < minDist) { minDist = d; minIdx = i; }
+      }
+      return (minDist <= (xStep / 2) + 4) ? minIdx : -1;
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+      const idx = findNearestIdx(e.clientX);
+      if (idx !== -1) showTooltip(idx, e.clientX, e.clientY);
+      else hideTooltip();
+    });
+    canvas.addEventListener('mouseleave', hideTooltip);
   }
 
   window.addEventListener('load', () => window.scrollTo(0, 0));

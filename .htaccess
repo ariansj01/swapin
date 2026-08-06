@@ -50,6 +50,9 @@ Options +MultiViews -Indexes
   # /store OR /store/  →  store/index.php  (also allow /store/anything to go as-is)
   RewriteRule ^store/?$ store/index.php [L,NC,QSA]
 
+  # /shop/<slug>  →  shop/index.php?slug=<slug>  (public store profile page)
+  RewriteRule ^shop/([a-zA-Z0-9_\-آ-ی۰-۹]+)/?$ shop/index.php?slug=$1 [L,NC,QSA]
+
   # /support OR /support/  →  support/index.php
   RewriteRule ^support/?$ support/index.php [L,NC,QSA]
 
