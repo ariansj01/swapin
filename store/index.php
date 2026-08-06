@@ -168,61 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_add_product']))
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_save_info'])) {
     csrf_verify_or_fail();
-    $store_name         = clean($_POST['store_name']         ?? '');
-    $store_description  = clean($_POST['store_description']  ?? '');
-    $store_address      = clean($_POST['store_address']      ?? '');
-    $store_phone        = clean($_POST['store_phone']        ?? '');
-    $store_website      = clean($_POST['store_website']      ?? '');
-    $store_instagram    = clean($_POST['store_instagram']    ?? '');
-    $store_telegram     = clean($_POST['store_telegram']     ?? '');
-    $store_opening_hours = clean($_POST['store_opening_hours'] ?? '');
-    $store_lat          = clean($_POST['store_lat']          ?? '');
-    $store_lng          = clean($_POST['store_lng']          ?? '');
-
-    $updateData = [
-        'store_name'         => $store_name,
-        'store_description'  => $store_description,
-        'store_address'      => $store_address,
-        'store_phone'        => $store_phone,
-        'store_website'      => $store_website,
-        'store_instagram'    => $store_instagram,
-        'store_telegram'     => $store_telegram,
-        'store_opening_hours' => $store_opening_hours,
-        'store_lat'          => $store_lat,
-        'store_lng'          => $store_lng,
-    ];
-
-    $currentStoreName  = $user['store_name']  ?? '';
-    $currentStoreSlug  = $user['store_slug']  ?? '';
-    $slugNeeded = empty($currentStoreSlug) || ($store_name !== $currentStoreName);
-
-    if ($slugNeeded && !empty($store_name)) {
-        $baseSlug = preg_replace('/[^a-zA-Z0-9\-آ-ی ]+/u', '', $store_name);
-        $baseSlug = preg_replace('/\s+/u', '-', trim($baseSlug));
-        $baseSlug = mb_strtolower($baseSlug);
-        $baseSlug = trim($baseSlug, '-');
-
-        if (empty($baseSlug)) {
-            $baseSlug = 'store-' . $uid;
-        }
-
-        $candidate = $baseSlug;
-        $counter = 1;
-        while (true) {
-            $existing = DB::fetch(
-                'SELECT id FROM users WHERE store_slug = ? AND id != ? LIMIT 1',
-                [$candidate, $uid]
-            );
-            if (!$existing) break;
-            $counter++;
-            $candidate = $baseSlug . '-' . $counter;
-        }
-        $updateData['store_slug'] = $candidate;
-    }
-
-    DB::update('users', $updateData, 'id = ?', [$uid]);
-    $user = DB::fetch('SELECT * FROM users WHERE id = ? LIMIT 1', [$uid]);
-    $success = 'اطلاعات فروشگاه با موفقیت ذخیره شد.';
+    $error = 'مدیریت اطلاعات فروشگاه فقط از طریق پنل مدیریت امکان‌پذیر است. لطفاً با ادمین تماس بگیرید.';
 }
 
 $categories = DB::fetchAll(
@@ -934,101 +880,97 @@ render_navbar($user);
 
     <!-- ========== TAB: MANAGEMENT ========== -->
     <div class="store-tab-panel" data-tab-panel="management">
-      <div class="store-grid-2">
+      <div class="store-grid-2" style="grid-template-columns:1fr">
         <div class="store-card">
           <div class="store-card__header">
-            <h3 class="store-card__title"><i class="bi bi-gear"></i> اطلاعات فروشگاه</h3>
+            <h3 class="store-card__title"><i class="bi bi-info-circle-fill"></i> اطلاعات فروشگاه</h3>
           </div>
           <div class="store-card__body">
-            <form method="POST">
-              <?= csrf_field() ?>
-              <input type="hidden" name="store_lat" value="<?= h($user['store_lat'] ?? '') ?>">
-              <input type="hidden" name="store_lng" value="<?= h($user['store_lng'] ?? '') ?>">
-              <div class="store-form-group">
-                <label class="store-form-label">نام فروشگاه</label>
-                <input type="text" class="store-form-input" name="store_name" placeholder="نام فروشگاه شما..." value="<?= h($user['store_name'] ?? '') ?>">
+            <div class="store-alert store-alert--info" style="margin-bottom:24px">
+              <i class="bi bi-shield-lock-fill"></i>
+              <div style="flex:1">
+                <strong>مدیریت اطلاعات فروشگاه فقط از طریق پنل مدیریت امکان‌پذیر است.</strong><br>
+                برای ایجاد فروشگاه یا ویرایش اطلاعات آن، لطفاً با ادمین سایت تماس بگیرید.
               </div>
-              <div class="store-upload">
-                <div class="store-upload__logo">
-                  <i class="bi bi-shop"></i>
-                  <button type="button" class="store-btn store-btn--sm store-btn--gradient"><i class="bi bi-upload"></i> تغییر لوگو</button>
-                </div>
-              </div>
-              <div class="store-upload-banner">
-                <i class="bi bi-card-image"></i>
-                <div>
-                  <div class="store-upload-banner__title">بنر فروشگاه</div>
-                  <button type="button" class="store-btn store-btn--sm store-btn--outline"><i class="bi bi-upload"></i> آپلود بنر</button>
-                </div>
-              </div>
-              <div class="store-form-group">
-                <label class="store-form-label">توضیحات فروشگاه</label>
-                <textarea class="store-form-input" name="store_description" rows="4" placeholder="معرفی کوتاه فروشگاه شما..."><?= h($user['store_description'] ?? '') ?></textarea>
-              </div>
-              <div class="store-form-group">
-                <label class="store-form-label">آدرس فروشگاه</label>
-                <input type="text" class="store-form-input" name="store_address" placeholder="آدرس کامل فروشگاه..." value="<?= h($user['store_address'] ?? '') ?>">
-              </div>
-              <div class="store-form-grid-2">
-                <div class="store-form-group">
-                  <label class="store-form-label">ساعات کاری</label>
-                  <input type="text" class="store-form-input" name="store_opening_hours" placeholder="شنبه تا پنج‌شنبه ۹-۱۸" value="<?= h($user['store_opening_hours'] ?? '') ?>">
-                </div>
-                <div class="store-form-group">
-                  <label class="store-form-label">شماره تماس</label>
-                  <input type="text" class="store-form-input" name="store_phone" placeholder="۰۲۱-۱۲۳۴۵۶۷۸" value="<?= h($user['store_phone'] ?? '') ?>">
-                </div>
-              </div>
-              <div class="store-form-grid-2">
-                <div class="store-form-group">
-                  <label class="store-form-label"><i class="bi bi-globe" style="color:#0B1F4D"></i> وب‌سایت</label>
-                  <input type="text" class="store-form-input" name="store_website" placeholder="https://example.com" value="<?= h($user['store_website'] ?? '') ?>">
-                </div>
-                <div class="store-form-group">
-                  <label class="store-form-label"><i class="bi bi-telegram" style="color:#229ED9"></i> تلگرام</label>
-                  <input type="text" class="store-form-input" name="store_telegram" placeholder="@yourchannel" value="<?= h($user['store_telegram'] ?? '') ?>">
-                </div>
-              </div>
-              <div class="store-form-grid-2">
-                <div class="store-form-group">
-                  <label class="store-form-label"><i class="bi bi-whatsapp" style="color:#25D366"></i> واتساپ</label>
-                  <input type="text" class="store-form-input" placeholder="۹۸۹۱۲۳۴۵۶۷۸۹" value="<?= h($user['store_phone'] ?? '') ?>" disabled>
-                </div>
-                <div class="store-form-group">
-                  <label class="store-form-label"><i class="bi bi-instagram" style="color:#E1306C"></i> اینستاگرام</label>
-                  <input type="text" class="store-form-input" name="store_instagram" placeholder="@your_store" value="<?= h($user['store_instagram'] ?? '') ?>">
-                </div>
-              </div>
-              <button type="submit" name="store_save_info" class="store-btn store-btn--gradient w-100">
-                <i class="bi bi-check-lg"></i> ذخیره تغییرات
-              </button>
-            </form>
-          </div>
-        </div>
+            </div>
 
-        <div class="store-card">
-          <div class="store-card__header">
-            <h3 class="store-card__title"><i class="bi bi-geo-alt"></i> موقعیت و شعب</h3>
-          </div>
-          <div class="store-card__body">
-            <div class="store-map-placeholder">
-              <i class="bi bi-map"></i>
-              <div>نقشه موقعیت فروشگاه</div>
-            </div>
-            <div class="store-branches">
-              <div class="store-branches__title">شعب فروشگاه (امکان ویژه)</div>
-              <div class="store-branch">
-                <div class="store-branch__info">
-                  <i class="bi bi-geo-alt-fill"></i>
-                  <div>
-                    <div class="store-branch__name">شعبه مرکزی</div>
-                    <div class="store-branch__address">تهران، خیابان ولیعصر</div>
-                  </div>
+            <?php if (!empty($user['store_name'])): ?>
+            <div style="background:var(--bg-soft);border-radius:16px;padding:24px;border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+                <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px">
+                  <i class="bi bi-shop"></i>
                 </div>
-                <span class="store-branch__status store-branch__status--active">فعال</span>
+                <div>
+                  <div style="font-size:18px;font-weight:800;color:var(--text)"><?= h($user['store_name']) ?></div>
+                  <?php if (!empty($user['store_slug'])): ?>
+                  <a href="<?= APP_URL ?>/shop/<?= h($user['store_slug']) ?>" target="_blank" style="font-size:13px;color:var(--primary);font-weight:600;text-decoration:none;margin-top:4px;display:inline-flex;align-items:center;gap:4px">
+                    <i class="bi bi-box-arrow-up-right"></i> مشاهده صفحه فروشگاه
+                  </a>
+                  <?php endif; ?>
+                </div>
               </div>
-              <button class="store-btn store-btn--outline w-100"><i class="bi bi-plus-circle"></i> افزودن شعبه جدید</button>
+
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+                <?php if (!empty($user['store_phone'])): ?>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)">
+                  <i class="bi bi-telephone-fill" style="color:var(--primary)"></i>
+                  <span><?= h($user['store_phone']) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($user['store_address'])): ?>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)">
+                  <i class="bi bi-geo-alt-fill" style="color:#E5484D"></i>
+                  <span><?= h($user['store_address']) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($user['store_opening_hours'])): ?>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)">
+                  <i class="bi bi-clock-fill" style="color:var(--accent)"></i>
+                  <span><?= h($user['store_opening_hours']) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($user['store_website'])): ?>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)">
+                  <i class="bi bi-globe" style="color:var(--primary)"></i>
+                  <span><?= h($user['store_website']) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($user['store_instagram'])): ?>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)">
+                  <i class="bi bi-instagram" style="color:#E1306C"></i>
+                  <span><?= h($user['store_instagram']) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($user['store_telegram'])): ?>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)">
+                  <i class="bi bi-telegram" style="color:#229ED9"></i>
+                  <span><?= h($user['store_telegram']) ?></span>
+                </div>
+                <?php endif; ?>
+              </div>
+
+              <?php if (!empty($user['store_description'])): ?>
+              <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">درباره فروشگاه</div>
+                <p style="font-size:14px;color:var(--text-2);line-height:1.8;margin:0"><?= h($user['store_description']) ?></p>
+              </div>
+              <?php endif; ?>
             </div>
+            <?php else: ?>
+            <div style="background:var(--bg-soft);border-radius:16px;padding:40px;text-align:center;border:1px dashed var(--border)">
+              <div style="width:72px;height:72px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+                <i class="bi bi-shop" style="font-size:32px;color:var(--primary)"></i>
+              </div>
+              <h3 style="font-size:18px;font-weight:800;color:var(--text);margin:0 0 8px">حساب فروشگاهی برای شما فعال نشده است</h3>
+              <p style="font-size:14px;color:var(--text-2);margin:0 0 20px;line-height:1.8">
+                برای فعال‌سازی حساب فروشگاهی و ایجاد صفحه اختصاصی فروشگاه،<br>
+                لطفاً از طریق بخش پشتیبانی درخواست خود را ثبت کنید یا با ادمین سایت تماس بگیرید.
+              </p>
+              <a href="<?= APP_URL ?>/auth/store-login" class="store-btn store-btn--outline">
+                <i class="bi bi-box-arrow-in-right"></i> ورود پنل فروشگاه (نام کاربری و رمز)
+              </a>
+            </div>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -1200,48 +1142,44 @@ render_navbar($user);
             <h3 class="store-card__title"><i class="bi bi-info-circle"></i> اطلاعات فروشگاه</h3>
           </div>
           <div class="store-card__body">
-            <form method="POST">
-              <?= csrf_field() ?>
-              <input type="hidden" name="store_description" value="<?= h($user['store_description'] ?? '') ?>">
-              <input type="hidden" name="store_address" value="<?= h($user['store_address'] ?? '') ?>">
-              <input type="hidden" name="store_phone" value="<?= h($user['store_phone'] ?? '') ?>">
-              <input type="hidden" name="store_website" value="<?= h($user['store_website'] ?? '') ?>">
-              <input type="hidden" name="store_instagram" value="<?= h($user['store_instagram'] ?? '') ?>">
-              <input type="hidden" name="store_telegram" value="<?= h($user['store_telegram'] ?? '') ?>">
-              <input type="hidden" name="store_opening_hours" value="<?= h($user['store_opening_hours'] ?? '') ?>">
-              <input type="hidden" name="store_lat" value="<?= h($user['store_lat'] ?? '') ?>">
-              <input type="hidden" name="store_lng" value="<?= h($user['store_lng'] ?? '') ?>">
-              <div class="store-form-group">
-                <label class="store-form-label">نام فروشگاه</label>
-                <input type="text" class="store-form-input" name="store_name" value="<?= h($user['store_name'] ?? 'فروشگاه من') ?>">
+            <div class="store-alert store-alert--info" style="margin-bottom:20px">
+              <i class="bi bi-shield-lock-fill"></i>
+              <div style="flex:1">
+                <strong>مدیریت اطلاعات فروشگاه فقط از طریق پنل مدیریت امکان‌پذیر است.</strong><br>
+                برای تغییرات، لطفاً با ادمین سایت تماس بگیرید.
               </div>
-              <div class="store-form-grid-2">
-                <div class="store-form-group">
-                  <label class="store-form-label">نوع کسب‌وکار</label>
-                  <select class="store-form-input">
-                    <option>خرده‌فروش</option>
-                    <option>عمده‌فروش</option>
-                    <option>تولیدی</option>
-                    <option>خدماتی</option>
-                  </select>
+            </div>
+
+            <?php if (!empty($user['store_name'])): ?>
+            <div style="background:var(--bg-soft);border-radius:12px;padding:18px;border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff">
+                  <i class="bi bi-shop" style="font-size:22px"></i>
                 </div>
-                <div class="store-form-group">
-                  <label class="store-form-label">شماره اقتصادی</label>
-                  <input type="text" class="store-form-input" placeholder="شماره اقتصادی (اختیاری)">
+                <div>
+                  <div style="font-size:16px;font-weight:800;color:var(--text)"><?= h($user['store_name']) ?></div>
+                  <?php if (!empty($user['store_slug'])): ?>
+                  <a href="<?= APP_URL ?>/shop/<?= h($user['store_slug']) ?>" target="_blank" style="font-size:12px;color:var(--primary);font-weight:600;text-decoration:none">
+                    <i class="bi bi-box-arrow-up-right"></i> مشاهده صفحه فروشگاه
+                  </a>
+                  <?php endif; ?>
                 </div>
               </div>
-              <div class="store-form-grid-2">
-                <div class="store-form-group">
-                  <label class="store-form-label">استان</label>
-                  <input type="text" class="store-form-input" placeholder="تهران">
-                </div>
-                <div class="store-form-group">
-                  <label class="store-form-label">شهر</label>
-                  <input type="text" class="store-form-input" placeholder="تهران">
-                </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;color:var(--text-2)">
+                <div><i class="bi bi-telephone-fill" style="color:var(--primary);margin-left:4px"></i> تلفن: <?= !empty($user['store_phone']) ? h($user['store_phone']) : '—' ?></div>
+                <div><i class="bi bi-geo-alt-fill" style="color:#E5484D;margin-left:4px"></i> آدرس: <?= !empty($user['store_address']) ? h(mb_substr($user['store_address'],0,25)) . (mb_strlen($user['store_address'])>25?'...':'') : '—' ?></div>
+                <div><i class="bi bi-clock-fill" style="color:var(--accent);margin-left:4px"></i> ساعات: <?= !empty($user['store_opening_hours']) ? h($user['store_opening_hours']) : '—' ?></div>
+                <div><i class="bi bi-globe" style="color:var(--primary);margin-left:4px"></i> وب‌سایت: <?= !empty($user['store_website']) ? h($user['store_website']) : '—' ?></div>
               </div>
-              <button type="submit" name="store_save_info" class="store-btn store-btn--gradient w-100"><i class="bi bi-save"></i> ذخیره اطلاعات</button>
-            </form>
+            </div>
+            <?php else: ?>
+            <div style="background:var(--bg-soft);border-radius:12px;padding:30px;text-align:center;border:1px dashed var(--border)">
+              <i class="bi bi-shop" style="font-size:36px;color:var(--primary);opacity:.5;margin-bottom:10px;display:block"></i>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">حساب فروشگاهی فعال نیست</div>
+              <div style="font-size:12px;color:var(--text-2)">برای فعال‌سازی با ادمین تماس بگیرید</div>
+            </div>
+            <?php endif; ?>
           </div>
         </div>
 

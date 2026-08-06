@@ -478,6 +478,20 @@ try {
             swapin_debug_log('migration-error-store-slug', ['msg' => $e->getMessage()]);
         }
     }
+    if (!in_array('store_login', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `store_login` VARCHAR(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Store panel login username' AFTER `store_slug`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-login', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!db_has_index('users', 'idx_store_login') && in_array('store_login', db_table_columns('users'))) {
+        try {
+            DB::query("ALTER TABLE `users` ADD UNIQUE KEY `idx_store_login` (`store_login`)");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-idx-store-login', ['msg' => $e->getMessage()]);
+        }
+    }
     if (!in_array('store_description', $usersCols)) {
         try {
             DB::query("ALTER TABLE `users` ADD COLUMN `store_description` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_slug`");

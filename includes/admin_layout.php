@@ -70,6 +70,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'inspections'    => ['/inspections.php', 'بازرسی', 'bi-search', $counts['inspections']],
         'disputes'       => ['/disputes.php', 'اختلافات', 'bi-exclamation-triangle', $counts['disputes']],
         'tickets'        => ['/tickets.php', 'پشتیبانی', 'bi-headset', $counts['tickets']],
+        'stores'         => ['/stores.php', 'فروشگاه‌ها', 'bi-shop', 0],
         'users'          => ['/users.php', 'کاربران', 'bi-people', 0],
     ];
 
@@ -116,4 +117,45 @@ function admin_alert_html(string $msg, string $type = 'success'): string {
     if ($msg === '') return '';
     $cls = $type === 'error' ? 'alert-danger' : 'alert-success';
     return '<div class="alert ' . $cls . ' mb-5"><i class="bi bi-info-circle"></i> ' . h($msg) . '</div>';
+}
+
+/** One-time store panel credentials shown to admin after create / password reset. */
+function admin_set_store_credentials_once(int $userId, string $login, string $password, string $storeName): void {
+    $_SESSION['admin_store_credentials_once'] = [
+        'user_id'    => $userId,
+        'login'      => $login,
+        'password'   => $password,
+        'store_name' => $storeName,
+    ];
+}
+
+function admin_take_store_credentials_once(): ?array {
+    $data = $_SESSION['admin_store_credentials_once'] ?? null;
+    unset($_SESSION['admin_store_credentials_once']);
+    if (!is_array($data) || empty($data['login']) || empty($data['password'])) {
+        return null;
+    }
+    return $data;
+}
+
+function admin_store_credentials_banner_html(?array $creds): string {
+    if ($creds === null) {
+        return '';
+    }
+    $loginUrl = APP_URL . '/auth/store-login';
+    $login = h($creds['login']);
+    $pass = h($creds['password']);
+    $storeName = trim((string)($creds['store_name'] ?? ''));
+    $titleSuffix = $storeName !== '' ? ' — ' . h($storeName) : '';
+    return <<<HTML
+<div class="alert alert-warning mb-5" style="border:2px solid #f0ad4e">
+  <h3 style="margin:0 0 12px;font-size:1.05rem"><i class="bi bi-key-fill"></i> اطلاعات ورود پنل فروشگاه{$titleSuffix}</h3>
+  <p class="fs-sm mb-3" style="opacity:.9">این رمز فقط یک‌بار نمایش داده می‌شود. آن را برای مالک فروشگاه ارسال کنید.</p>
+  <ul style="list-style:none;padding:0;margin:0 0 12px;line-height:2">
+    <li><strong>نام کاربری:</strong> <code dir="ltr" style="user-select:all">{$login}</code></li>
+    <li><strong>رمز عبور:</strong> <code dir="ltr" style="user-select:all">{$pass}</code></li>
+    <li><strong>صفحه ورود:</strong> <a href="{$loginUrl}" target="_blank" rel="noopener">{$loginUrl}</a></li>
+  </ul>
+</div>
+HTML;
 }

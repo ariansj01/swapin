@@ -114,6 +114,104 @@ function is_store_seller(array $user): bool {
     return ($user['seller_type'] ?? 'personal') === 'store';
 }
 
+function store_panel_account(array $user): bool {
+    if (($user['role'] ?? 'user') === 'admin') {
+        return false;
+    }
+    if (is_store_seller($user)) {
+        return true;
+    }
+    $name = trim((string)($user['store_name'] ?? ''));
+    return $name !== '';
+}
+
+function generate_store_panel_password(int $length = 10): string {
+    $length = max(8, min(16, $length));
+    $chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    $max = strlen($chars) - 1;
+    $out = '';
+    for ($i = 0; $i < $length; $i++) {
+        $out .= $chars[random_int(0, $max)];
+    }
+    return $out;
+}
+
+function store_login_from_slug(string $slug, int $userId): string {
+    $login = preg_replace('/[^a-zA-Z0-9_\-]+/', '', $slug);
+    $login = trim((string)$login, '-_');
+    if ($login === '' || strlen($login) < 3) {
+        $login = 'store' . $userId;
+    }
+    if (strlen($login) > 60) {
+        $login = substr($login, 0, 60);
+    }
+    return $login;
+}
+
+function ensure_user_store_login(int $userId, ?string $storeSlug = null): string {
+    if (!db_has_column('users', 'store_login')) {
+        return store_login_from_slug((string)$storeSlug, $userId);
+    }
+    $row = DB::fetch('SELECT store_login, store_slug FROM users WHERE id = ?', [$userId]);
+    if (!$row) {
+        return 'store' . $userId;
+    }
+    $existing = trim((string)($row['store_login'] ?? ''));
+    if ($existing !== '') {
+        return $existing;
+    }
+    $base = store_login_from_slug(trim((string)($storeSlug ?? $row['store_slug'] ?? '')), $userId);
+    $final = $base;
+    $suffix = 1;
+    while (true) {
+        $exists = DB::fetch('SELECT id FROM users WHERE store_login = ? AND id != ?', [$final, $userId]);
+        if (!$exists) {
+            break;
+        }
+        $final = $base . '-' . (++$suffix);
+        if ($suffix > 1000) {
+            $final = 'store' . $userId . '-' . random_int(1000, 9999);
+            break;
+        }
+    }
+    DB::update('users', ['store_login' => $final], 'id = ?', [$userId]);
+    return $final;
+}
+
+function find_user_by_store_panel_login(string $login): ?array {
+    $login = trim($login);
+    if ($login === '') {
+        return null;
+    }
+    if (db_has_column('users', 'store_login')) {
+        $user = DB::fetch(
+            'SELECT * FROM users WHERE is_active = 1 AND store_login = ? LIMIT 1',
+            [$login]
+        );
+        if ($user) {
+            return $user;
+        }
+    }
+    if (db_has_column('users', 'store_slug')) {
+        return DB::fetch(
+            'SELECT * FROM users WHERE is_active = 1 AND store_slug = ? LIMIT 1',
+            [$login]
+        );
+    }
+    return null;
+}
+
+/** @return array{login:string,password:string}|null */
+function issue_store_panel_password(int $userId, ?string $storeSlug = null): ?array {
+    if (!db_has_column('users', 'password_hash')) {
+        return null;
+    }
+    $login = ensure_user_store_login($userId, $storeSlug);
+    $plain = generate_store_panel_password();
+    DB::update('users', ['password_hash' => password_hash($plain, PASSWORD_BCRYPT)], 'id = ?', [$userId]);
+    return ['login' => $login, 'password' => $plain];
+}
+
 function get_listing_limit(array $user): int {
     $sub  = get_active_subscription($user);
     $base = $sub ? (int)$sub['listings_max'] : FREE_LISTING_MAX;

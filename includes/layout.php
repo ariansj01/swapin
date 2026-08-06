@@ -594,6 +594,7 @@ function render_footer(): void {
           <li><a href="{$url}/faq">سوالات متداول</a></li>
           <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
           <li><a href="{$url}/blog">بلاگ</a></li>
+          <li><a href="{$url}/auth/store-login">ورود پنل فروشگاه</a></li>
           <li><a href="{$url}/terms">قوانین و مقررات</a></li>
           <li><a href="{$url}/privacy">حریم خصوصی</a></li>
         </ul>
