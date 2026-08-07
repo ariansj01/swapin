@@ -761,6 +761,39 @@ try {
         }
     }
 
+    if (!db_has_table('store_requests')) {
+        try {
+            DB::query("
+                CREATE TABLE `store_requests` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `status` ENUM('pending','approved','rejected') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+                    `store_name` VARCHAR(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `store_description` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `store_banner` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `store_address` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `store_phone` VARCHAR(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `store_website` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `store_instagram` VARCHAR(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `store_telegram` VARCHAR(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `store_opening_hours` VARCHAR(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `store_lat` DECIMAL(10,7) DEFAULT NULL,
+                    `store_lng` DECIMAL(10,7) DEFAULT NULL,
+                    `admin_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `reviewed_by` INT UNSIGNED DEFAULT NULL,
+                    `reviewed_at` DATETIME DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_store_req_user` (`user_id`),
+                    KEY `idx_store_req_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-requests-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
     // Note: The "10 parent categories + other hidden" migration is no longer
     // applied here at bootstrap. Instead, render_wizard_category_options() in
     // includes/i18n.php calls wizard_ensure_parents_exist() on-demand which
@@ -1338,6 +1371,7 @@ function timeago(string $datetime): string {
 require_once __DIR__ . '/i18n.php';
 require_once __DIR__ . '/listing_validator.php';
 require_once __DIR__ . '/v2.php';
+require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/admin.php';
 require_once __DIR__ . '/support.php';
 require_once __DIR__ . '/google_auth.php';

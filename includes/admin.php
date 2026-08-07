@@ -71,13 +71,19 @@ function admin_pending_counts(): array {
         }
     } catch (Throwable) {}
 
+    $storeRequests = 0;
+    try {
+        $storeRequests = store_request_pending_count();
+    } catch (Throwable) {}
+
     return [
-        'listings'    => $listings,
-        'kyc'         => $kyc,
-        'inspections' => $inspections,
-        'disputes'    => $disputes,
-        'tickets'     => $tickets + $errors,
-        'users'       => $users,
+        'listings'       => $listings,
+        'kyc'            => $kyc,
+        'inspections'    => $inspections,
+        'disputes'       => $disputes,
+        'tickets'        => $tickets + $errors,
+        'store_requests' => $storeRequests,
+        'users'          => $users,
     ];
 }
 

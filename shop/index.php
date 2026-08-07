@@ -5,9 +5,9 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $user = auth_user();
 
-$slug = $_GET['slug'] ?? '';
+$slug = normalize_shop_slug((string)($_GET['slug'] ?? ''));
 
-if (empty($slug)) {
+if ($slug === '') {
     http_response_code(404);
     include __DIR__ . '/../404.php';
     exit;

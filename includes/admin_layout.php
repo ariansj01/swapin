@@ -68,6 +68,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'content'        => ['/content.php', 'مدیریت محتوا', 'bi-pencil-square', 0],
         'listings'       => ['/listings.php', 'آگهی‌ها', 'bi-grid', $counts['listings']],
         'stores'         => ['/stores.php', 'فروشگاه‌ها', 'bi-shop', 0],
+        'store_requests' => ['/store_requests.php', 'درخواست فروشگاه', 'bi-inbox', $counts['store_requests']],
         'kyc'            => ['/kyc.php', 'احراز هویت', 'bi-person-badge', $counts['kyc']],
         'inspections'    => ['/inspections.php', 'بازرسی', 'bi-search', $counts['inspections']],
         'disputes'       => ['/disputes.php', 'اختلافات', 'bi-exclamation-triangle', $counts['disputes']],
