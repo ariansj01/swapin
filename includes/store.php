@@ -8,7 +8,7 @@ function store_request_status_labels(): array {
         'rejected' => 'رد شده',
     ];
 }
-
+ 
 function store_request_pending_count(): int {
     if (!db_has_table('store_requests')) {
         return 0;
