@@ -46,10 +46,10 @@ jobs:
             fi
 
             echo "[4/8] Restoring runtime permissions..."
-            if [ -d storage ]; then
-              find storage -type d -exec chmod 775 {} +
-              find storage -type f -exec chmod 664 {} +
-            fi
+            # if [ -d storage ]; then
+            #   find storage -type d -exec chmod 775 {} +
+            #   find storage -type f -exec chmod 664 {} +
+            # fi
 
             if [ -d uploads ]; then
               sudo find uploads -type d -exec chmod 775 {} +
