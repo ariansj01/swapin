@@ -43,6 +43,13 @@ $sentOffers = (int)(DB::fetch(
     'SELECT COUNT(*) AS c FROM trade_offers WHERE from_user_id = ? AND status = "pending"', [$uid]
 )['c'] ?? 0);
 
+$myOrdersCount = store_orders_enabled()
+    ? (int)(DB::fetch('SELECT COUNT(*) AS c FROM store_orders WHERE buyer_id = ? AND status NOT IN ("pending_payment","canceled")', [$uid])['c'] ?? 0)
+    : 0;
+$activeOrdersCount = store_orders_enabled()
+    ? (int)(DB::fetch('SELECT COUNT(*) AS c FROM store_orders WHERE buyer_id = ? AND status IN ("paid","preparing","shipped")', [$uid])['c'] ?? 0)
+    : 0;
+
 $expiredListingsCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "expired"', [$uid])['c'] ?? 0);
 
 // Recent wallet transactions
@@ -180,8 +187,8 @@ render_navbar($user);
       $statIcons = [
         ['wallet2', 'primary', fmt_num($user['credit_balance']) . ' ' . CREDIT_UNIT, 'موجودی', APP_URL . '/wallet'],
         ['grid', 'info', fmt_num($myListingsCount), 'آگهی فعال', APP_URL . '/listings/my'],
+        ['bag-check', $activeOrdersCount > 0 ? 'warning' : 'info', fmt_num($myOrdersCount), 'سفارش‌های خرید', APP_URL . '/orders/'],
         ['inbox', $pendingOffers > 0 ? 'warning' : 'info', fmt_num($pendingOffers), 'پیشنهاد در انتظار', APP_URL . '/trades?tab=received'],
-        ['arrow-left-right', 'success', fmt_num($completedTrades), 'معامله انجام‌شده', APP_URL . '/trades'],
       ];
       foreach ($statIcons as [$icon, $color, $val, $label, $link]):
       ?>

@@ -138,17 +138,20 @@ try {
                     if (empty($result['success'])) {
                         throw new Exception($result['error'] ?? 'خطا در فعال‌سازی اشتراک');
                     }
+                } elseif ($payment['type'] === 'store_purchase') {
+                    finalize_store_order_payment((int)$payment['id']);
                 } else {
                     throw new Exception('نوع پرداخت نامعتبر');
                 }
 
-                $paymentMeta = [
+                $existingMeta = json_decode($payment['meta'] ?? '', true) ?: [];
+                $paymentMeta = array_merge($existingMeta, [
                     'callback' => [
                         'status' => $status,
                         'mid' => $mid,
                     ],
                     'verify' => $verifyResult['data'] ?? [],
-                ];
+                ]);
                 DB::update('payments', [
                     'status' => 'success',
                     'ref_num' => $refNum,
@@ -217,6 +220,8 @@ render_navbar();
                     کیف پول شما با موفقیت شارژ شد
                 <?php elseif (($payment['type'] ?? '') === 'subscription_purchase'): ?>
                     اشتراک شما با موفقیت فعال شد
+                <?php elseif (($payment['type'] ?? '') === 'store_purchase'): ?>
+                    سفارش شما با موفقیت ثبت شد. فروشگاه به‌زودی کالا را آماده و ارسال می‌کند.
                 <?php else: ?>
                     ارتقای آگهی شما با موفقیت انجام شد
                 <?php endif; ?>
@@ -224,6 +229,12 @@ render_navbar();
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <?php if ($payment['type'] === 'wallet_topup'): ?>
                     <a href="<?= APP_URL ?>/wallet.php" class="btn btn-primary">مشاهده کیف پول</a>
+                <?php elseif ($payment['type'] === 'store_purchase'):
+                    $payMeta = json_decode($payment['meta'] ?? '', true) ?: [];
+                    $orderId = (int)($payMeta['order_id'] ?? 0);
+                ?>
+                    <a href="<?= APP_URL ?>/orders/view.php?id=<?= $orderId ?>" class="btn btn-primary">پیگیری سفارش</a>
+                    <a href="<?= APP_URL ?>/orders/" class="btn btn-outline">سفارش‌های من</a>
                 <?php else: ?>
                     <a href="<?= APP_URL ?>/listings/my.php" class="btn btn-primary">مشاهده آگهی‌ها</a>
                 <?php endif; ?>

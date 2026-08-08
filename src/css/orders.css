@@ -1,0 +1,59 @@
+.order-page-head { margin-bottom: 1.5rem; }
+.order-back { color: var(--text-muted); font-size: .875rem; text-decoration: none; display: inline-block; margin-bottom: .75rem; }
+.order-page-sub { color: var(--text-muted); margin: .5rem 0 0; }
+.order-code-chip { display: inline-block; margin-top: .5rem; padding: .35rem .75rem; border-radius: 999px; background: rgba(11,31,77,.08); font-weight: 700; font-size: .875rem; }
+
+.order-checkout-grid,
+.order-detail-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.25rem; align-items: start; }
+.order-card-title { font-size: 1.05rem; margin: 0 0 1rem; display: flex; align-items: center; gap: .5rem; }
+
+.order-product { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.order-product--lg { margin-top: 1rem; }
+.order-product__thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+.order-product__title { font-weight: 700; margin-bottom: .25rem; }
+.order-product__store { color: var(--text-muted); font-size: .875rem; margin-bottom: .35rem; }
+.order-product__price { color: var(--primary); font-weight: 800; }
+
+.order-summary-row { display: flex; justify-content: space-between; padding-top: 1rem; border-top: 1px solid var(--border); }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.order-status-banner { display: flex; align-items: center; gap: .5rem; padding: .85rem 1rem; border-radius: 12px; font-weight: 700; margin-bottom: 1rem; background: #EFF6FF; color: #1D4ED8; }
+.order-status-banner--preparing { background: #FEF3C7; color: #B45309; }
+.order-status-banner--shipped { background: #ECFEFF; color: #0E7490; }
+.order-status-banner--delivered { background: #ECFDF5; color: #047857; }
+.order-status-banner--canceled { background: #FEF2F2; color: #B91C1C; }
+
+.order-info-block { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.order-info-block h3 { font-size: .95rem; margin: 0 0 .5rem; }
+.order-muted { color: var(--text-muted); font-size: .875rem; }
+
+.order-timeline { list-style: none; margin: 0; padding: 0; }
+.order-timeline__item { position: relative; display: flex; gap: .85rem; padding-bottom: 1.25rem; }
+.order-timeline__item:not(:last-child)::before { content: ''; position: absolute; right: 11px; top: 24px; bottom: 0; width: 2px; background: #E5E7EB; }
+.order-timeline__item.is-done:not(:last-child)::before { background: #10B981; }
+.order-timeline__dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #D1D5DB; background: #fff; flex-shrink: 0; margin-top: 2px; }
+.order-timeline__item.is-done .order-timeline__dot { border-color: #10B981; background: #10B981; }
+.order-timeline__item.is-active .order-timeline__dot { border-color: #F59E0B; box-shadow: 0 0 0 4px rgba(245,158,11,.18); }
+.order-timeline__title { font-weight: 700; }
+.order-timeline__desc { color: var(--text-muted); font-size: .875rem; margin-top: .2rem; }
+.order-timeline__time { color: var(--text-muted); font-size: .8125rem; margin-top: .35rem; }
+
+.order-action-form { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.order-form-title { font-size: .95rem; margin: 0 0 .75rem; }
+
+.order-list { display: flex; flex-direction: column; gap: .85rem; }
+.order-list-item { text-decoration: none; color: inherit; transition: transform .15s ease; }
+.order-list-item:hover { transform: translateY(-1px); }
+.order-list-item .card-body { display: flex; justify-content: space-between; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.order-list-item__main { display: flex; gap: 1rem; align-items: center; min-width: 0; }
+.order-list-item__side { text-align: left; display: flex; flex-direction: column; gap: .35rem; align-items: flex-end; }
+.order-status-pill { display: inline-block; padding: .25rem .65rem; border-radius: 999px; font-size: .8125rem; font-weight: 700; background: #EFF6FF; color: #1D4ED8; }
+.order-status-pill--preparing { background: #FEF3C7; color: #B45309; }
+.order-status-pill--shipped { background: #ECFEFF; color: #0E7490; }
+.order-status-pill--delivered { background: #ECFDF5; color: #047857; }
+
+@media (max-width: 768px) {
+  .order-checkout-grid,
+  .order-detail-grid,
+  .form-grid-2 { grid-template-columns: 1fr; }
+}

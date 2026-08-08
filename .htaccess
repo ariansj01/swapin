@@ -51,6 +51,10 @@ Options +MultiViews -Indexes
   RewriteRule ^store/?$ store/index.php [L,NC,QSA]
   RewriteRule ^store/request/?$ store/request.php [L,NC,QSA]
 
+  RewriteRule ^orders/?$ orders/index.php [L,NC,QSA]
+  RewriteRule ^orders/checkout/?$ orders/checkout.php [L,NC,QSA]
+  RewriteRule ^orders/view/?$ orders/view.php [L,NC,QSA]
+
   # /shop/<slug>  →  shop/index.php?slug=<slug>  (skip existing files like index.php)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

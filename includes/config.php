@@ -794,6 +794,56 @@ try {
         }
     }
 
+    if (!db_has_table('store_orders')) {
+        try {
+            DB::query("
+                CREATE TABLE `store_orders` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `order_code` VARCHAR(24) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `listing_id` INT UNSIGNED NOT NULL,
+                    `buyer_id` INT UNSIGNED NOT NULL,
+                    `seller_id` INT UNSIGNED NOT NULL,
+                    `payment_id` INT UNSIGNED DEFAULT NULL,
+                    `amount` DECIMAL(15,0) UNSIGNED NOT NULL DEFAULT 0,
+                    `status` ENUM('pending_payment','paid','preparing','shipped','delivered','canceled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending_payment',
+                    `recipient_name` VARCHAR(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `recipient_phone` VARCHAR(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `shipping_address` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `shipping_city` VARCHAR(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `postal_code` VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `shipping_method` ENUM('post','tipax','courier','in_person') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `tracking_code` VARCHAR(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `buyer_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `seller_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `paid_at` DATETIME DEFAULT NULL,
+                    `shipped_at` DATETIME DEFAULT NULL,
+                    `delivered_at` DATETIME DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uq_store_orders_code` (`order_code`),
+                    KEY `idx_store_orders_buyer` (`buyer_id`),
+                    KEY `idx_store_orders_seller` (`seller_id`),
+                    KEY `idx_store_orders_listing` (`listing_id`),
+                    KEY `idx_store_orders_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-orders-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    if (db_has_table('payments')) {
+        $paymentTableInfo = DB::fetch("SHOW CREATE TABLE `payments`");
+        if ($paymentTableInfo && !empty($paymentTableInfo['Create Table']) && strpos($paymentTableInfo['Create Table'], "'store_purchase'") === false) {
+            try {
+                DB::query("ALTER TABLE `payments` MODIFY COLUMN `type` ENUM('wallet_topup','listing_promotion','subscription_purchase','store_purchase') COLLATE utf8mb4_unicode_ci NOT NULL");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-payments-store-purchase', ['msg' => $e->getMessage()]);
+            }
+        }
+    }
+
     // Note: The "10 parent categories + other hidden" migration is no longer
     // applied here at bootstrap. Instead, render_wizard_category_options() in
     // includes/i18n.php calls wizard_ensure_parents_exist() on-demand which
@@ -1372,6 +1422,7 @@ require_once __DIR__ . '/i18n.php';
 require_once __DIR__ . '/listing_validator.php';
 require_once __DIR__ . '/v2.php';
 require_once __DIR__ . '/store.php';
+require_once __DIR__ . '/store_orders.php';
 require_once __DIR__ . '/admin.php';
 require_once __DIR__ . '/support.php';
 require_once __DIR__ . '/google_auth.php';

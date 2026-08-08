@@ -204,8 +204,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-$canBuy  = false; // سواَپین — فقط معاوضه، بدون خرید مستقیم
-$buyKbc  = 0;
+$canBuy  = listing_can_cash_buy($listing, $user);
+$buyPrice = $canBuy ? (float)$listing['sell_price'] : 0;
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
 $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
@@ -321,7 +321,12 @@ render_navbar($user);
       <?php endif; ?>
     </div>
     <div class="lv-price-row">
-      <?php if ((float)$listing['estimated_value'] > 0): ?>
+      <?php if ($canBuy): ?>
+      <div>
+        <span class="lv-price-label">قیمت فروش</span>
+        <span class="lv-price"><?= fmt_credit($buyPrice) ?></span>
+      </div>
+      <?php elseif ((float)$listing['estimated_value'] > 0): ?>
       <div>
         <span class="lv-price-label">ارزش تقریبی</span>
         <span class="lv-price"><?= fmt_credit((float)$listing['estimated_value']) ?></span>
@@ -420,7 +425,24 @@ render_navbar($user);
   <?php endif; ?>
 
   <!-- Bottom bar -->
-  <?php if ($canOfferMobile): ?>
+  <?php if ($canBuy && !$isOwner && $listing['status'] === 'active'): ?>
+  <div class="lv-bottom-bar lv-bottom-bar--dual">
+    <?php if ($user): ?>
+    <a href="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--buy">
+      <i class="bi bi-cart-check"></i> خرید نقدی
+    </a>
+    <?php else: ?>
+    <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--buy">
+      <i class="bi bi-cart-check"></i> ورود برای خرید
+    </a>
+    <?php endif; ?>
+    <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && $canOfferMobile): ?>
+    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" <?= !$user ? 'data-login-href="' . h($loginRedirect) . '"' : '' ?>>
+      <i class="bi bi-arrow-left-right"></i> معاوضه
+    </button>
+    <?php endif; ?>
+  </div>
+  <?php elseif ($canOfferMobile): ?>
   <div class="lv-bottom-bar">
     <?php if (!$user): ?>
     <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" data-login-href="<?= h($loginRedirect) ?>">
@@ -611,7 +633,12 @@ render_navbar($user);
             <span class="badge badge-primary"><i class="bi bi-star-fill"></i> <?= fmt_num((float)$listing['seller_rating'], 1) ?></span>
             <?php endif; ?>
           </div>
-          <?php if ((float)$listing['estimated_value'] > 0): ?>
+          <?php if ($canBuy): ?>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <span style="font-size:.8125rem;color:var(--lv-muted)">قیمت فروش</span>
+            <strong style="font-size:1.35rem;color:var(--lv-navy)"><?= fmt_credit($buyPrice) ?></strong>
+          </div>
+          <?php elseif ((float)$listing['estimated_value'] > 0): ?>
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
             <span style="font-size:.8125rem;color:var(--lv-muted)">ارزش تقریبی</span>
             <strong style="font-size:1.35rem;color:var(--lv-navy)"><?= fmt_credit((float)$listing['estimated_value']) ?></strong>
@@ -679,6 +706,20 @@ render_navbar($user);
           <div class="alert alert-warning" style="margin:0">این آگهی فعلاً برای معامله در دسترس نیست.</div>
         </section>
         <?php else: ?>
+        <?php if ($canBuy): ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-cart-check"></i> خرید نقدی</h3>
+          <p class="fs-sm mb-4" style="color:var(--text-muted)">پرداخت آنلاین و ثبت آدرس ارسال — پیگیری مرحله‌به‌مرحله مثل فروشگاه‌های آنلاین.</p>
+          <?php if ($user): ?>
+          <a href="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>" class="lv-btn lv-btn--primary w-100">
+            <i class="bi bi-credit-card"></i> خرید با قیمت <?= fmt_credit($buyPrice) ?>
+          </a>
+          <?php else: ?>
+          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary w-100"><i class="bi bi-box-arrow-in-left"></i> ورود برای خرید</a>
+          <?php endif; ?>
+        </section>
+        <?php endif; ?>
+        <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-send"></i> ارسال پیشنهاد</h3>
 
@@ -742,6 +783,7 @@ render_navbar($user);
           </form>
           <?php endif; ?>
         </section>
+        <?php endif; ?>
         <?php endif; ?>
 
         <section class="lv-action-card">

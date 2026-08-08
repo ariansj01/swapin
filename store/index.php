@@ -299,6 +299,23 @@ if (empty($notifications)) {
 }
 
 $storeNotifs = [];
+
+$sellerOrders = store_orders_enabled()
+    ? DB::fetchAll(
+        'SELECT o.*, l.title AS listing_title,
+                (SELECT filename FROM listing_images WHERE listing_id=l.id AND is_primary=1 LIMIT 1) AS listing_thumb,
+                u.name AS buyer_name
+         FROM store_orders o
+         JOIN listings l ON l.id = o.listing_id
+         JOIN users u ON u.id = o.buyer_id
+         WHERE o.seller_id = ? AND o.status NOT IN ("pending_payment","canceled")
+         ORDER BY o.created_at DESC
+         LIMIT 50',
+        [$uid]
+    )
+    : [];
+$pendingSellerOrders = count(array_filter($sellerOrders, fn($o) => in_array($o['status'], ['paid', 'preparing'], true)));
+
 foreach ($allPendingOffers as $_nOffer) {
     $_type = $_hasOfferType ? (string)($_nOffer['offer_type'] ?? 'item') : 'item';
     $storeNotifs[] = [
@@ -309,6 +326,21 @@ foreach ($allPendingOffers as $_nOffer) {
         'time'  => timeago($_nOffer['created_at']),
         'unread'=> true,
         'link'  => APP_URL . '/store/?tab=requests&subtab=' . ($_type === 'buy' ? 'buy-requests' : 'swap-requests'),
+    ];
+}
+
+foreach (array_slice($sellerOrders, 0, 10) as $_sOrder) {
+    if (!in_array($_sOrder['status'], ['paid', 'preparing', 'shipped'], true)) {
+        continue;
+    }
+    $storeNotifs[] = [
+        'icon'  => 'bi-bag-check',
+        'type'  => 'offer',
+        'title' => 'سفارش خرید نقدی',
+        'desc'  => 'خریدار «' . ($_sOrder['buyer_name'] ?? '') . '» — «' . ($_sOrder['listing_title'] ?? '') . '» (' . store_order_status_label($_sOrder['status']) . ')',
+        'time'  => timeago($_sOrder['created_at']),
+        'unread'=> in_array($_sOrder['status'], ['paid', 'preparing'], true),
+        'link'  => APP_URL . '/orders/view.php?id=' . (int)$_sOrder['id'],
     ];
 }
 
@@ -376,6 +408,12 @@ render_navbar($user);
         <i class="bi bi-inbox"></i> درخواست‌ها
         <?php if ($pendingBuyOffers + $pendingSwapOffers > 0): ?>
         <span class="store-tab__badge"><?= $pendingBuyOffers + $pendingSwapOffers ?></span>
+        <?php endif; ?>
+      </button>
+      <button class="store-tab" data-tab="orders">
+        <i class="bi bi-bag-check"></i> سفارش‌های فروش
+        <?php if ($pendingSellerOrders > 0): ?>
+        <span class="store-tab__badge"><?= $pendingSellerOrders ?></span>
         <?php endif; ?>
       </button>
       <button class="store-tab" data-tab="messages">
@@ -958,6 +996,53 @@ render_navbar($user);
             <?php endforeach; ?>
             <?php endif; ?>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TAB: ORDERS (cash sales) ========== -->
+    <div class="store-tab-panel" data-tab-panel="orders">
+      <div class="store-card">
+        <div class="store-card__header">
+          <h3 class="store-card__title"><i class="bi bi-bag-check"></i> سفارش‌های خرید نقدی</h3>
+        </div>
+        <div class="store-card__body store-card__body--nopad">
+          <?php if (empty($sellerOrders)): ?>
+          <div class="store-empty">
+            <i class="bi bi-bag"></i>
+            <p>هنوز سفارش نقدی ثبت نشده است.</p>
+          </div>
+          <?php else: ?>
+          <div class="store-requests">
+            <?php foreach ($sellerOrders as $order): ?>
+            <div class="store-request">
+              <div class="store-request__buyer">
+                <div class="store-avatar"><?= h(user_initial($order['buyer_name'])) ?></div>
+                <div>
+                  <div class="store-request__name"><?= h($order['buyer_name']) ?></div>
+                  <div class="store-request__time"><?= h($order['order_code']) ?> — <?= timeago($order['created_at']) ?></div>
+                </div>
+              </div>
+              <div class="store-request__product">
+                <div class="store-request__label">محصول</div>
+                <div class="store-request__title"><?= h($order['listing_title']) ?></div>
+              </div>
+              <div class="store-request__price">
+                <div class="store-request__label">مبلغ</div>
+                <div class="store-request__amount"><?= fmt_credit((float)$order['amount']) ?></div>
+              </div>
+              <div class="store-request__status store-request__status--<?= in_array($order['status'], ['paid','preparing'], true) ? 'pending' : ($order['status'] === 'delivered' ? 'accepted' : 'pending') ?>">
+                <?= h(store_order_status_label($order['status'])) ?>
+              </div>
+              <div class="store-request__actions">
+                <a href="<?= APP_URL ?>/orders/view.php?id=<?= (int)$order['id'] ?>" class="store-btn store-btn--sm store-btn--navy">
+                  <i class="bi bi-eye"></i> مدیریت و ارسال
+                </a>
+              </div>
+            </div>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>
