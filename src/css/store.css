@@ -996,6 +996,34 @@ textarea.store-form-input {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.store-request__actions--forms {
+  flex-direction: column;
+  min-width: 220px;
+}
+
+.store-offer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.store-offer-form + .store-offer-form {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--store-border, #E5E7EB);
+}
+
+a.store-product__offers {
+  text-decoration: none;
+  color: inherit;
+}
+
+a.store-product__offers:hover {
+  opacity: 0.85;
 }
 
 /* Swap request specific */

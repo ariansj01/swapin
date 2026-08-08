@@ -96,7 +96,7 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
         <span class="listing-card__cat">دسته: <?= h(category_label($l['cat_slug'] ?? '', $l['cat_name'] ?? '')) ?></span>
         <?php endif; ?>
         <?php if ($hasStore): ?>
-        <a href="<?= APP_URL ?>/shop/<?= h($storeSlug) ?>" class="listing-card__store-link" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:.75rem;color:var(--dash-navy);text-decoration:none;margin-top:2px;padding:2px 8px;background:rgba(59,130,246,.1);border-radius:999px;">
+        <a href="<?= APP_URL ?>/shop/<?= h($storeSlug) ?>" class="listing-card__store-link" onclick="event.stopPropagation()" style="width: 65%;display:inline-flex;align-items:center;gap:3px;font-size:.75rem;color:var(--dash-navy);text-decoration:none;margin-top:2px;padding:2px 8px;background:rgba(59,130,246,.1);border-radius:999px;">
           <i class="bi bi-shop"></i> <?= h($storeName) ?>
         </a>
         <?php endif; ?>

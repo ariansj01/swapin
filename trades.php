@@ -60,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
     }
 }
 
-// Auto redirect to latest trade only if not POST and no trade in GET
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['trade'])) {
+// Auto redirect to latest trade only when browsing default tab (not received/offers/etc.)
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['trade']) && ($tab === 'active' || $tab === '')) {
     $latestTrade = DB::fetch("SELECT id FROM trades WHERE user_a_id = ? OR user_b_id = ? ORDER BY created_at DESC LIMIT 1", [$uid, $uid]);
     if ($latestTrade) {
         header('Location: ' . APP_URL . '/trades/view.php?id=' . $latestTrade['id']);

@@ -171,6 +171,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_save_info'])) {
     $error = 'مدیریت اطلاعات فروشگاه فقط از طریق پنل مدیریت امکان‌پذیر است. لطفاً با ادمین تماس بگیرید.';
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
+    csrf_verify_or_fail();
+    $offerId = (int)($_POST['offer_id'] ?? 0);
+    $action  = clean($_POST['action'] ?? '');
+    $message = clean($_POST['message'] ?? '');
+
+    if ($offerId && in_array($action, ['accept', 'reject'], true)) {
+        $offer = DB::fetch(
+            'SELECT o.*, l.user_id AS listing_owner, l.title AS listing_title
+             FROM trade_offers o
+             JOIN listings l ON l.id = o.listing_id
+             WHERE o.id = ? AND l.user_id = ? AND o.status = "pending"',
+            [$offerId, $uid]
+        );
+
+        if (!$offer) {
+            $error = 'پیشنهاد یافت نشد یا دسترسی ندارید.';
+        } elseif ($action === 'accept') {
+            if (empty($message)) {
+                $error = 'لطفاً پیامی برای طرفین بنویسید.';
+            } else {
+                $result = accept_trade_offer($offerId, $uid, $message);
+                if (isset($result['error'])) {
+                    $error = $result['error'];
+                } else {
+                    header('Location: ' . APP_URL . '/trades/view.php?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
+                    exit;
+                }
+            }
+        } elseif ($action === 'reject') {
+            if (empty($message)) {
+                $error = 'لطفاً پیامی برای طرفین بنویسید.';
+            } else {
+                DB::query('UPDATE trade_offers SET status = "rejected" WHERE id = ?', [$offerId]);
+                DB::insert('messages', [
+                    'thread_id'    => 'offer_reject_' . $offerId,
+                    'from_user_id' => $uid,
+                    'to_user_id'   => $offer['from_user_id'],
+                    'offer_id'     => $offerId,
+                    'body'         => $message,
+                ]);
+                $success = 'پیشنهاد رد شد.';
+            }
+        }
+    }
+}
+
 $categories = DB::fetchAll(
     'SELECT c.*, p.name AS parent_name FROM categories c
      LEFT JOIN categories p ON p.id = c.parent_id
@@ -191,22 +238,36 @@ $inventory   = DB::fetchAll(
 $totalValue = array_sum(array_map(fn($r) => (float)$r['estimated_value'], $inventory));
 
 $_hasOfferType = db_has_column('trade_offers', 'offer_type');
-if ($_hasOfferType) {
-    $pendingBuyOffers = (int)(DB::fetch(
-        'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.offer_type = "buy" AND o.status = "pending"',
-        [$uid]
-    )['c'] ?? 0);
-    $pendingSwapOffers = (int)(DB::fetch(
-        'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.offer_type IN ("swap","item") AND o.status = "pending"',
-        [$uid]
-    )['c'] ?? 0);
-} else {
-    $_totalPending = (int)(DB::fetch(
-        'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "pending"',
-        [$uid]
-    )['c'] ?? 0);
-    $pendingBuyOffers = 0;
-    $pendingSwapOffers = $_totalPending;
+
+$_offerBaseSql = 'SELECT o.*, l.title AS listing_title, l.estimated_value AS listing_value, l.id AS listing_id_v,
+            (SELECT filename FROM listing_images WHERE listing_id=l.id AND is_primary=1 LIMIT 1) AS listing_thumb,
+            u.name AS from_name, u.avatar AS from_avatar, u.rating AS from_rating,
+            ol.title AS offer_listing_title, ol.estimated_value AS offer_listing_value, ol.id AS offer_listing_id_v,
+            (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb
+     FROM trade_offers o
+     JOIN listings l ON l.id = o.listing_id
+     JOIN users u ON u.id = o.from_user_id
+     LEFT JOIN listings ol ON ol.id = o.offer_listing_id
+     WHERE l.user_id = ? AND o.status = "pending"
+     ORDER BY o.created_at DESC';
+
+$allPendingOffers = DB::fetchAll($_offerBaseSql, [$uid]);
+$buyOffersList  = [];
+$swapOffersList = [];
+foreach ($allPendingOffers as $_offerRow) {
+    $_type = $_hasOfferType ? (string)($_offerRow['offer_type'] ?? 'item') : 'item';
+    if ($_type === 'buy') {
+        $buyOffersList[] = $_offerRow;
+    } else {
+        $swapOffersList[] = $_offerRow;
+    }
+}
+$pendingBuyOffers  = count($buyOffersList);
+$pendingSwapOffers = count($swapOffersList);
+
+$requestsSubtab = clean($_GET['subtab'] ?? '');
+if (!in_array($requestsSubtab, ['buy-requests', 'swap-requests'], true)) {
+    $requestsSubtab = ($pendingSwapOffers > 0 && $pendingBuyOffers === 0) ? 'swap-requests' : 'buy-requests';
 }
 
 $completedTrades = (int)(DB::fetch(
@@ -219,18 +280,44 @@ foreach ($inventory as $item) {
     $totalVisits += (int)($item['view_count'] ?? 0);
 }
 
-$notifications = [
-    ['icon' => 'bi-arrow-left-right', 'text' => 'یک درخواست معاوضه جدید برای «مبل راحتی» دریافت کردید', 'time' => '۱۰ دقیقه پیش'],
-    ['icon' => 'bi-heart-fill', 'text' => 'محصول شما «لپ‌تاپ Dell» توسط ۳ کاربر پسندیده شد', 'time' => '۱ ساعت پیش'],
-    ['icon' => 'bi-lightning-charge', 'text' => 'پیشنهاد جدید برای «گوشی iPhone ۱۵» دریافت کردید', 'time' => '۳ ساعت پیش'],
-];
+$notifications = [];
+foreach (array_slice($swapOffersList, 0, 5) as $_nOffer) {
+    $notifications[] = [
+        'icon' => 'bi-arrow-left-right',
+        'text' => 'درخواست معاوضه از «' . ($_nOffer['from_name'] ?? '') . '» برای «' . ($_nOffer['listing_title'] ?? '') . '»',
+        'time' => timeago($_nOffer['created_at']),
+        'link' => APP_URL . '/store/?tab=requests&subtab=swap-requests',
+    ];
+}
+if (empty($notifications)) {
+    $notifications[] = [
+        'icon' => 'bi-inbox',
+        'text' => 'درخواست معاوضه جدیدی ندارید.',
+        'time' => '',
+        'link' => APP_URL . '/store/?tab=requests',
+    ];
+}
+
+$storeNotifs = [];
+foreach ($allPendingOffers as $_nOffer) {
+    $_type = $_hasOfferType ? (string)($_nOffer['offer_type'] ?? 'item') : 'item';
+    $storeNotifs[] = [
+        'icon'  => $_type === 'buy' ? 'bi-cart-check' : 'bi-arrow-left-right',
+        'type'  => $_type === 'buy' ? 'offer' : 'swap',
+        'title' => $_type === 'buy' ? 'درخواست خرید جدید' : 'درخواست معاوضه جدید',
+        'desc'  => 'کاربر «' . ($_nOffer['from_name'] ?? '') . '» برای «' . ($_nOffer['listing_title'] ?? '') . '» درخواست فرستاد.',
+        'time'  => timeago($_nOffer['created_at']),
+        'unread'=> true,
+        'link'  => APP_URL . '/store/?tab=requests&subtab=' . ($_type === 'buy' ? 'buy-requests' : 'swap-requests'),
+    ];
+}
 
 $chartData = [12, 19, 25, 22, 30, 28, 35, 42, 38, 45, 50, 48];
 
 render_head('پنل فروشگاه');
 render_navbar($user);
 ?>
-<link rel="stylesheet" href="<?= APP_URL ?>/src/css/store.css">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/store.css?v=<?= @filemtime(__DIR__ . '/../src/css/store.css') ?: time() ?>">
 
 <div class="store-page">
   <div class="store-container">
@@ -424,20 +511,22 @@ render_navbar($user);
         <div class="store-card">
           <div class="store-card__header">
             <h3 class="store-card__title"><i class="bi bi-bell"></i> اعلان‌های اخیر</h3>
-            <a href="#" class="store-card__link">مشاهده همه</a>
+            <a href="<?= APP_URL ?>/store/?tab=notifications" class="store-card__link">مشاهده همه</a>
           </div>
           <div class="store-card__body">
             <div class="store-notifications">
               <?php foreach ($notifications as $n): ?>
-              <div class="store-notification">
+              <a href="<?= h($n['link'] ?? '#') ?>" class="store-notification" style="text-decoration:none;color:inherit">
                 <div class="store-notification__icon">
                   <i class="bi <?= $n['icon'] ?>"></i>
                 </div>
                 <div class="store-notification__content">
-                  <div class="store-notification__text"><?= $n['text'] ?></div>
-                  <div class="store-notification__time"><?= $n['time'] ?></div>
+                  <div class="store-notification__text"><?= h($n['text']) ?></div>
+                  <?php if (!empty($n['time'])): ?>
+                  <div class="store-notification__time"><?= h($n['time']) ?></div>
+                  <?php endif; ?>
                 </div>
-              </div>
+              </a>
               <?php endforeach; ?>
             </div>
           </div>
@@ -687,7 +776,7 @@ render_navbar($user);
                 </div>
                 <div class="store-product__actions">
                   <?php if ((int)$item['pending_offers'] > 0): ?>
-                  <span class="store-product__offers"><i class="bi bi-inbox"></i> <?= (int)$item['pending_offers'] ?></span>
+                  <a href="<?= APP_URL ?>/store/?tab=requests&amp;subtab=swap-requests" class="store-product__offers" title="مشاهده درخواست‌های معاوضه"><i class="bi bi-inbox"></i> <?= (int)$item['pending_offers'] ?></a>
                   <?php endif; ?>
                   <a href="<?= APP_URL ?>/listings/edit?id=<?= $item['id'] ?>" class="store-btn store-btn--sm store-btn--outline"><i class="bi bi-pencil"></i></a>
                   <a href="<?= APP_URL ?>/listings/view?id=<?= $item['id'] ?>" class="store-btn store-btn--sm store-btn--navy"><i class="bi bi-eye"></i></a>
@@ -706,112 +795,168 @@ render_navbar($user);
     <div class="store-tab-panel" data-tab-panel="requests">
       <div class="store-card">
         <div class="store-subtabs">
-          <button class="store-subtab is-active" data-subtab="buy-requests">
+          <button class="store-subtab<?= $requestsSubtab === 'buy-requests' ? ' is-active' : '' ?>" data-subtab="buy-requests">
             <i class="bi bi-cart-check"></i> درخواست‌های خرید (<?= $pendingBuyOffers ?>)
           </button>
-          <button class="store-subtab" data-subtab="swap-requests">
+          <button class="store-subtab<?= $requestsSubtab === 'swap-requests' ? ' is-active' : '' ?>" data-subtab="swap-requests">
             <i class="bi bi-arrow-left-right"></i> درخواست‌های معاوضه (<?= $pendingSwapOffers ?>)
           </button>
         </div>
 
-        <div class="store-subtab-panel is-active" data-subtab-panel="buy-requests">
+        <div class="store-subtab-panel<?= $requestsSubtab === 'buy-requests' ? ' is-active' : '' ?>" data-subtab-panel="buy-requests">
           <div class="store-requests">
+            <?php if (empty($buyOffersList)): ?>
+            <div class="store-empty">
+              <i class="bi bi-inbox"></i>
+              <p>هنوز درخواست خریدی دریافت نشده است.</p>
+            </div>
+            <?php else: ?>
+            <?php foreach ($buyOffersList as $offer): ?>
             <div class="store-request">
               <div class="store-request__buyer">
-                <div class="store-avatar">ع</div>
+                <div class="store-avatar"><?= h(user_initial($offer['from_name'])) ?></div>
                 <div>
-                  <div class="store-request__name">علی رضایی</div>
-                  <div class="store-request__time">امروز، ساعت ۱۴:۳۰</div>
+                  <div class="store-request__name"><?= h($offer['from_name']) ?></div>
+                  <div class="store-request__time"><?= persian_datetime($offer['created_at']) ?></div>
                 </div>
               </div>
               <div class="store-request__product">
                 <div class="store-request__label">محصول درخواستی</div>
-                <div class="store-request__title">لپ‌تاپ Dell XPS ۱۵</div>
+                <div class="store-request__title"><?= h($offer['listing_title']) ?></div>
               </div>
               <div class="store-request__price">
                 <div class="store-request__label">مبلغ پیشنهادی</div>
-                <div class="store-request__amount">۴۵,۰۰۰,۰۰۰ تومان</div>
+                <div class="store-request__amount"><?= fmt_credit(abs((float)$offer['offer_credit'])) ?></div>
               </div>
               <div class="store-request__status store-request__status--pending">در انتظار</div>
-              <div class="store-request__actions">
-                <a href="<?= APP_URL ?>/trades" class="store-btn store-btn--sm store-btn--navy"><i class="bi bi-chat-dots"></i> چت</a>
-                <button class="store-btn store-btn--sm store-btn--success"><i class="bi bi-check"></i> قبول</button>
-                <button class="store-btn store-btn--sm store-btn--danger"><i class="bi bi-x"></i> رد</button>
+              <div class="store-request__actions store-request__actions--forms">
+                <form method="POST" class="store-offer-form">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="offer_id" value="<?= (int)$offer['id'] ?>">
+                  <input type="hidden" name="action" value="accept">
+                  <textarea name="message" class="store-form-input store-form-input--sm" rows="2" required placeholder="پیام پذیرش..."></textarea>
+                  <button type="submit" class="store-btn store-btn--sm store-btn--success"><i class="bi bi-check"></i> قبول و ورود به اتاق امن</button>
+                </form>
+                <form method="POST" class="store-offer-form">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="offer_id" value="<?= (int)$offer['id'] ?>">
+                  <input type="hidden" name="action" value="reject">
+                  <textarea name="message" class="store-form-input store-form-input--sm" rows="2" required placeholder="پیام رد..."></textarea>
+                  <button type="submit" class="store-btn store-btn--sm store-btn--danger"><i class="bi bi-x"></i> رد</button>
+                </form>
               </div>
             </div>
-            <div class="store-request">
-              <div class="store-request__buyer">
-                <div class="store-avatar store-avatar--orange">م</div>
-                <div>
-                  <div class="store-request__name">مریم احمدی</div>
-                  <div class="store-request__time">دیروز، ساعت ۱۹:۱۵</div>
-                </div>
-              </div>
-              <div class="store-request__product">
-                <div class="store-request__label">محصول درخواستی</div>
-                <div class="store-request__title">گوشی iPhone ۱۵ پرو</div>
-              </div>
-              <div class="store-request__price">
-                <div class="store-request__label">مبلغ پیشنهادی</div>
-                <div class="store-request__amount">۷۸,۰۰۰,۰۰۰ تومان</div>
-              </div>
-              <div class="store-request__status store-request__status--pending">در انتظار</div>
-              <div class="store-request__actions">
-                <a href="<?= APP_URL ?>/trades" class="store-btn store-btn--sm store-btn--navy"><i class="bi bi-chat-dots"></i> چت</a>
-                <button class="store-btn store-btn--sm store-btn--success"><i class="bi bi-check"></i> قبول</button>
-                <button class="store-btn store-btn--sm store-btn--danger"><i class="bi bi-x"></i> رد</button>
-              </div>
-            </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
           </div>
         </div>
 
-        <div class="store-subtab-panel" data-subtab-panel="swap-requests">
+        <div class="store-subtab-panel<?= $requestsSubtab === 'swap-requests' ? ' is-active' : '' ?>" data-subtab-panel="swap-requests">
           <div class="store-requests">
+            <?php if (empty($swapOffersList)): ?>
+            <div class="store-empty">
+              <i class="bi bi-arrow-left-right"></i>
+              <p>هنوز درخواست معاوضه‌ای دریافت نشده است.</p>
+            </div>
+            <?php else: ?>
+            <?php foreach ($swapOffersList as $offer):
+              $offerImages = !empty($offer['offer_listing_id_v'])
+                  ? DB::fetchAll(
+                      'SELECT filename FROM listing_images WHERE listing_id = ? ORDER BY is_primary DESC, sort_order LIMIT 3',
+                      [(int)$offer['offer_listing_id_v']]
+                  )
+                  : [];
+            ?>
             <div class="store-request store-request--swap">
               <div class="store-request__swap-cols">
                 <div class="store-request__swap-col">
                   <div class="store-request__label">محصول شما</div>
                   <div class="store-swap-product">
-                    <div class="store-swap-product__thumb"><i class="bi bi-laptop"></i></div>
+                    <div class="store-swap-product__thumb">
+                      <?php if (!empty($offer['listing_thumb'])): ?>
+                      <img src="<?= UPLOAD_URL . h($offer['listing_thumb']) ?>" alt="<?= h($offer['listing_title']) ?>" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                      <?php else: ?>
+                      <i class="bi bi-box"></i>
+                      <?php endif; ?>
+                    </div>
                     <div>
-                      <div class="store-swap-product__name">لپ‌تاپ Dell XPS ۱۵</div>
-                      <div class="store-swap-product__price">ارزش: ۴۵,۰۰۰,۰۰۰ تومان</div>
+                      <div class="store-swap-product__name"><?= h($offer['listing_title']) ?></div>
+                      <div class="store-swap-product__price">ارزش: <?= fmt_credit((float)$offer['listing_value']) ?></div>
                     </div>
                   </div>
                 </div>
                 <div class="store-request__swap-arrow"><i class="bi bi-arrow-left-right"></i></div>
                 <div class="store-request__swap-col">
                   <div class="store-request__label">کالای پیشنهادی مشتری</div>
+                  <?php if ($offer['offer_listing_title']): ?>
                   <div class="store-swap-product">
-                    <div class="store-swap-product__thumb store-swap-product__thumb--gold"><i class="bi bi-gem"></i></div>
+                    <div class="store-swap-product__thumb store-swap-product__thumb--gold">
+                      <?php if (!empty($offer['offer_listing_thumb'])): ?>
+                      <img src="<?= UPLOAD_URL . h($offer['offer_listing_thumb']) ?>" alt="<?= h($offer['offer_listing_title']) ?>" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                      <?php else: ?>
+                      <i class="bi bi-gem"></i>
+                      <?php endif; ?>
+                    </div>
                     <div>
-                      <div class="store-swap-product__name">دستبند طلای ۱۸ عیار</div>
-                      <div class="store-swap-product__price">ارزش پیشنهادی: ۴۲,۰۰۰,۰۰۰ تومان</div>
+                      <div class="store-swap-product__name"><?= h($offer['offer_listing_title']) ?></div>
+                      <div class="store-swap-product__price">ارزش: <?= fmt_credit((float)($offer['offer_listing_value'] ?? 0)) ?></div>
                     </div>
                   </div>
+                  <?php if ($offerImages): ?>
                   <div class="store-swap-gallery">
-                    <div class="store-swap-gallery__item"><i class="bi bi-image"></i></div>
-                    <div class="store-swap-gallery__item"><i class="bi bi-image"></i></div>
-                    <div class="store-swap-gallery__item"><i class="bi bi-image"></i></div>
+                    <?php foreach ($offerImages as $img): ?>
+                    <div class="store-swap-gallery__item">
+                      <img src="<?= UPLOAD_URL . h($img['filename']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                    </div>
+                    <?php endforeach; ?>
                   </div>
+                  <?php endif; ?>
+                  <?php else: ?>
+                  <div class="store-swap-product">
+                    <div class="store-swap-product__thumb store-swap-product__thumb--gold"><i class="bi bi-chat-left-text"></i></div>
+                    <div>
+                      <div class="store-swap-product__name">پیشنهاد بدون کالا</div>
+                      <?php if ($offer['message']): ?>
+                      <div class="store-swap-product__price"><?= h(mb_strimwidth($offer['message'], 0, 80, '…')) ?></div>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                  <?php endif; ?>
+                  <?php if ((float)$offer['offer_credit'] != 0.0): ?>
+                  <div class="store-swap-product__price" style="margin-top:8px">
+                    <?= (float)$offer['offer_credit'] > 0 ? 'افزایش اعتبار: ' : 'کسر اعتبار: ' ?><?= fmt_credit(abs((float)$offer['offer_credit'])) ?>
+                  </div>
+                  <?php endif; ?>
                 </div>
               </div>
               <div class="store-request__footer">
                 <div class="store-request__buyer store-request__buyer--inline">
-                  <div class="store-avatar">ک</div>
+                  <div class="store-avatar"><?= h(user_initial($offer['from_name'])) ?></div>
                   <div>
-                    <div class="store-request__name">کیا محمدی</div>
-                    <div class="store-request__time">۲ ساعت پیش</div>
+                    <div class="store-request__name"><?= h($offer['from_name']) ?></div>
+                    <div class="store-request__time"><?= persian_datetime($offer['created_at']) ?></div>
                   </div>
                 </div>
-                <div class="store-request__actions">
-                  <a href="<?= APP_URL ?>/trades" class="store-btn store-btn--sm store-btn--navy"><i class="bi bi-chat-dots"></i> چت</a>
-                  <button class="store-btn store-btn--sm store-btn--outline"><i class="bi bi-lightning"></i> پیشنهاد جدید</button>
-                  <button class="store-btn store-btn--sm store-btn--success"><i class="bi bi-check"></i> قبول</button>
-                  <button class="store-btn store-btn--sm store-btn--danger"><i class="bi bi-x"></i> رد</button>
+                <div class="store-request__actions store-request__actions--forms">
+                  <form method="POST" class="store-offer-form">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="offer_id" value="<?= (int)$offer['id'] ?>">
+                    <input type="hidden" name="action" value="accept">
+                    <textarea name="message" class="store-form-input store-form-input--sm" rows="2" required placeholder="پیام پذیرش..."></textarea>
+                    <button type="submit" class="store-btn store-btn--sm store-btn--success"><i class="bi bi-check"></i> قبول و ورود به اتاق امن</button>
+                  </form>
+                  <form method="POST" class="store-offer-form">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="offer_id" value="<?= (int)$offer['id'] ?>">
+                    <input type="hidden" name="action" value="reject">
+                    <textarea name="message" class="store-form-input store-form-input--sm" rows="2" required placeholder="پیام رد..."></textarea>
+                    <button type="submit" class="store-btn store-btn--sm store-btn--danger"><i class="bi bi-x"></i> رد</button>
+                  </form>
                 </div>
               </div>
             </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -1107,28 +1252,25 @@ render_navbar($user);
         </div>
         <div class="store-card__body store-card__body--nopad">
           <div class="store-notifications-list">
-            <?php
-            $allNotifs = [
-              ['icon' => 'bi-arrow-left-right', 'type' => 'swap', 'title' => 'درخواست معاوضه جدید', 'desc' => 'کاربر «کیا محمدی» برای «مبل راحتی» درخواست معاوضه فرستاد.', 'time' => '۱۰ دقیقه پیش', 'unread' => true],
-              ['icon' => 'bi-heart-fill', 'type' => 'like', 'title' => 'محصول پسندیده شد', 'desc' => '«لپ‌تاپ Dell XPS ۱۵» توسط ۳ کاربر جدید پسندیده شد.', 'time' => '۱ ساعت پیش', 'unread' => true],
-              ['icon' => 'bi-lightning-charge', 'type' => 'offer', 'title' => 'پیشنهاد جدید', 'desc' => 'پیشنهاد جدید برای «گوشی iPhone ۱۵ پرو» دریافت کردید.', 'time' => '۳ ساعت پیش', 'unread' => true],
-              ['icon' => 'bi-check-circle-fill', 'type' => 'success', 'title' => 'معامله موفق', 'desc' => 'معامله «ساعت هوشمند» با موفقیت به پایان رسید.', 'time' => 'دیروز', 'unread' => false],
-              ['icon' => 'bi-star-half', 'type' => 'review', 'title' => 'نظر جدید', 'desc' => 'مشتری «رضا کریمی» نظر ۵ ستاره برای شما ثبت کرد.', 'time' => '۲ روز پیش', 'unread' => false],
-              ['icon' => 'bi-upload', 'type' => 'info', 'title' => 'آگهی تایید شد', 'desc' => 'آگهی «دوربین کانن» توسط کارشناسان تایید گردید.', 'time' => '۳ روز پیش', 'unread' => false],
-            ];
-            foreach ($allNotifs as $n):
-            ?>
-            <div class="store-notification-item <?= $n['unread'] ? 'is-unread' : '' ?>">
-              <div class="store-notification-item__icon store-notification-item__icon--<?= $n['type'] ?>">
-                <i class="bi <?= $n['icon'] ?>"></i>
+            <?php if (empty($storeNotifs)): ?>
+            <div class="store-empty">
+              <i class="bi bi-bell"></i>
+              <p>اعلان جدیدی ندارید.</p>
+            </div>
+            <?php else: ?>
+            <?php foreach ($storeNotifs as $n): ?>
+            <a href="<?= h($n['link']) ?>" class="store-notification-item <?= $n['unread'] ? 'is-unread' : '' ?>" style="text-decoration:none;color:inherit;display:flex">
+              <div class="store-notification-item__icon store-notification-item__icon--<?= h($n['type']) ?>">
+                <i class="bi <?= h($n['icon']) ?>"></i>
               </div>
               <div class="store-notification-item__content">
-                <div class="store-notification-item__title"><?= $n['title'] ?></div>
-                <div class="store-notification-item__desc"><?= $n['desc'] ?></div>
-                <div class="store-notification-item__time"><?= $n['time'] ?></div>
+                <div class="store-notification-item__title"><?= h($n['title']) ?></div>
+                <div class="store-notification-item__desc"><?= h($n['desc']) ?></div>
+                <div class="store-notification-item__time"><?= h($n['time']) ?></div>
               </div>
-            </div>
+            </a>
             <?php endforeach; ?>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -1297,18 +1439,33 @@ render_navbar($user);
     });
   });
 
-  const subtabs = document.querySelectorAll('.store-subtab');
-  const subpanels = document.querySelectorAll('.store-subtab-panel');
-  subtabs.forEach(st => {
-    st.addEventListener('click', () => {
-      const target = st.dataset.subtab;
-      subtabs.forEach(s => s.classList.remove('is-active'));
-      subpanels.forEach(sp => sp.classList.remove('is-active'));
-      st.classList.add('is-active');
-      const sp = document.querySelector(`[data-subtab-panel="${target}"]`);
-      if (sp) sp.classList.add('is-active');
+  const requestsCard = document.querySelector('[data-tab-panel="requests"] .store-card');
+  if (requestsCard) {
+    const subtabs = requestsCard.querySelectorAll('.store-subtab');
+    const subpanels = requestsCard.querySelectorAll('.store-subtab-panel');
+    subtabs.forEach(st => {
+      st.addEventListener('click', () => {
+        const target = st.dataset.subtab;
+        subtabs.forEach(s => s.classList.remove('is-active'));
+        subpanels.forEach(sp => sp.classList.remove('is-active'));
+        st.classList.add('is-active');
+        const sp = requestsCard.querySelector(`[data-subtab-panel="${target}"]`);
+        if (sp) sp.classList.add('is-active');
+      });
     });
-  });
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab');
+  if (tabParam) {
+    const tabBtn = document.querySelector(`.store-tab[data-tab="${tabParam}"]`);
+    if (tabBtn) tabBtn.click();
+  }
+  const subtabParam = urlParams.get('subtab');
+  if (subtabParam && requestsCard) {
+    const subtabBtn = requestsCard.querySelector(`.store-subtab[data-subtab="${subtabParam}"]`);
+    if (subtabBtn) subtabBtn.click();
+  }
 
   const canvas = document.getElementById('storeChartCanvas');
   if (canvas && canvas.getContext) {
