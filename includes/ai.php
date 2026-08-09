@@ -503,9 +503,11 @@ function ai_match_listing_payload(array $row): array {
 /** @return array{user_listing:array,candidates:array}|null */
 function ai_match_context(int $userId, ?int $listingId = null): ?array {
     $myListings = DB::fetchAll(
-        'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug FROM listings l
+        'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug, c.parent_id AS cat_parent_id
+         FROM listings l
          JOIN categories c ON c.id = l.category_id
          WHERE l.user_id = ? AND l.status = "active" AND l.listing_mode IN ("swap","both")
+           AND (l.review_status = "approved" OR l.review_status IS NULL)
          ORDER BY l.created_at DESC',
         [$userId]
     );
@@ -524,16 +526,17 @@ function ai_match_context(int $userId, ?int $listingId = null): ?array {
     }
     $userListing ??= $myListings[0];
 
-    $ruleMatches = find_swap_matches($userId, 25);
+    $ruleMatches = find_swap_matches($userId, 30);
     $candidates  = [];
     foreach ($ruleMatches as $m) {
-        if ((int) ($m['match_listing_id'] ?? 0) !== (int) $userListing['id']) {
-            continue;
+        if ((int) ($m['match_listing_id'] ?? 0) === (int) $userListing['id']) {
+            $candidates[] = $m;
         }
-        $candidates[] = $m;
     }
-    if (empty($candidates)) {
-        $candidates = array_slice($ruleMatches, 0, 15);
+
+    // When a specific listing is selected, never mix in matches for other user listings.
+    if (empty($candidates) && !$listingId) {
+        $candidates = array_slice($ruleMatches, 0, 12);
     }
 
     return [
@@ -579,7 +582,10 @@ function ai_match_format_row(array $candidate, int $score, string $tradeType, st
 
 function ai_match_from_rules(array $candidates, int $limit = 8): array {
     $out = [];
-    foreach (array_slice($candidates, 0, $limit) as $c) {
+    foreach ($candidates as $c) {
+        if ((int)($c['match_score'] ?? 0) < 40) {
+            continue;
+        }
         $tradeType = ($c['want_type'] ?? '') === 'credit' ? 'credit' : 'direct';
         $out[] = ai_match_format_row(
             $c,
@@ -588,6 +594,9 @@ function ai_match_from_rules(array $candidates, int $limit = 8): array {
             ai_match_rule_reason($c),
             'rules'
         );
+        if (count($out) >= $limit) {
+            break;
+        }
     }
     return $out;
 }
@@ -709,6 +718,10 @@ function ai_match_listings(int $userId, ?int $listingId = null, int $limit = 8):
             if (isset($seen[$lid])) {
                 continue;
             }
+            if ((int)($c['match_score'] ?? 0) < 40) {
+                continue;
+            }
+            $seen[$lid] = true;
             $out[] = ai_match_format_row(
                 $c,
                 (int) ($c['match_score'] ?? 45),

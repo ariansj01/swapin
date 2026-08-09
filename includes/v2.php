@@ -1032,19 +1032,27 @@ function listing_wants_score(array $listing, array $target): int {
     return max(0, min(100, $score));
 }
 
-/** Category match score (0–100). Same main category = 92-100, parent/child = 55, else 0. */
+/** Category match score (0–100). Same category = 96, shared parent = 44–58. */
 function listing_category_score(array $a, array $b): int {
     $aCat = (int)($a['category_id'] ?? 0);
     $bCat = (int)($b['category_id'] ?? 0);
-    if ($aCat <= 0 || $bCat <= 0) return 0;
+    if ($aCat <= 0 || $bCat <= 0) {
+        return 0;
+    }
     if ($aCat === $bCat) {
         return 96;
     }
-    $aParent = (int)($a['parent_id'] ?? 0);
-    $bParent = (int)($b['parent_id'] ?? 0);
-    if ($aParent > 0 && $aParent === $bCat) return 58;
-    if ($bParent > 0 && $bParent === $aCat) return 58;
-    if ($aParent > 0 && $aParent === $bParent) return 44;
+    $aParent = (int)($a['cat_parent_id'] ?? 0);
+    $bParent = (int)($b['cat_parent_id'] ?? 0);
+    if ($aParent > 0 && $aParent === $bCat) {
+        return 58;
+    }
+    if ($bParent > 0 && $bParent === $aCat) {
+        return 58;
+    }
+    if ($aParent > 0 && $bParent > 0 && $aParent === $bParent) {
+        return 44;
+    }
     return 0;
 }
 
@@ -1079,7 +1087,7 @@ function listing_success_probability_score(array $candidate, array $mine, bool $
     $verified = $candidate['seller_verified'] ?? null;
     $rating   = (float)($candidate['seller_rating'] ?? 0);
     $trades   = (int)($candidate['seller_completed_trades'] ?? 0);
-    if ($verified === 'verified' || $verified === 'full' || !empty($candidate['is_verified'])) {
+    if ($verified === 'approved' || $verified === 'verified' || $verified === 'full' || !empty($candidate['is_verified'])) {
         $base += 10;
     }
     if ($rating >= 4.5) $base += 8;
@@ -1096,34 +1104,69 @@ function listing_success_probability_score(array $candidate, array $mine, bool $
     return max(0, min(100, $base));
 }
 
-/** Loose match: same category or keyword overlap (for surfacing suggestions) */
+/** Loose match: same category or meaningful keyword overlap in want text */
 function listing_loose_match(array $a, array $b): bool {
-    if (listing_wants_item($a, $b) || listing_wants_item($b, $a)) return true;
-    if (!empty($a['category_id']) && (int)$a['category_id'] === (int)($b['category_id'] ?? 0)) {
+    if (listing_wants_item($a, $b) || listing_wants_item($b, $a)) {
         return true;
     }
+    if (!empty($a['category_id']) && (int)$a['category_id'] === (int)($b['category_id'] ?? 0)) {
+        return !empty(trim((string)($a['want_in_return'] ?? ''))) || !empty(trim((string)($b['want_in_return'] ?? '')));
+    }
+    $stopWords = ['برای', 'با', 'یک', 'عدد', 'نو', 'خوب', 'عالی', 'مدل', 'اصل', 'و'];
     $words = preg_split('/\s+/u', mb_strtolower($b['title'] ?? '')) ?: [];
     foreach ($words as $w) {
-        if (mb_strlen($w) >= 3 && mb_strpos(mb_strtolower($a['want_in_return'] ?? ''), $w) !== false) {
+        if (mb_strlen($w) < 3 || in_array($w, $stopWords, true)) {
+            continue;
+        }
+        if (mb_strpos(mb_strtolower($a['want_in_return'] ?? ''), $w) !== false) {
             return true;
         }
     }
     return false;
 }
 
+/** Minimum quality bar so weak/irrelevant pairs are not shown as swap suggestions. */
+function swap_match_passes_quality_filter(
+    int $weightedScore,
+    bool $mutual,
+    bool $theyWantMine,
+    bool $iWantTheirs,
+    int $scoreNeed,
+    int $scoreCat,
+    int $scoreValue
+): bool {
+    if ($weightedScore < 40) {
+        return false;
+    }
+    if ($mutual) {
+        return $weightedScore >= 42;
+    }
+    if ($theyWantMine || $iWantTheirs) {
+        return $weightedScore >= 45 && $scoreNeed >= 18;
+    }
+    // Loose match only — require stronger category/value alignment
+    return $weightedScore >= 52
+        && ($scoreCat >= 44 || $scoreNeed >= 22)
+        && $scoreValue >= 35;
+}
+
 function find_swap_matches(int $userId, int $limit = 6): array {
     $myListings = DB::fetchAll(
-        'SELECT l.*, c.name AS cat_name FROM listings l
+        'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug, c.parent_id AS cat_parent_id
+         FROM listings l
          JOIN categories c ON c.id = l.category_id
-         WHERE l.user_id = ? AND l.status = "active" AND l.listing_mode IN ("swap","both")',
+         WHERE l.user_id = ? AND l.status = "active" AND l.listing_mode IN ("swap","both")
+           AND (l.review_status = "approved" OR l.review_status IS NULL)',
         [$userId]
     );
-    if (empty($myListings)) return [];
+    if (empty($myListings)) {
+        return [];
+    }
 
     $pool = DB::fetchAll(
-        'SELECT l.*, u.name AS seller_name, c.name AS cat_name,
+        'SELECT l.*, u.name AS seller_name, c.name AS cat_name, c.slug AS cat_slug, c.parent_id AS cat_parent_id,
                 u.kyc_status AS seller_verified,
-                IFNULL((SELECT AVG(rating) FROM trade_ratings WHERE rated_user_id = u.id),0) AS seller_rating,
+                COALESCE(u.rating, 0) AS seller_rating,
                 (SELECT COUNT(*) FROM trades WHERE (user_a_id = u.id OR user_b_id = u.id) AND status = "completed") AS seller_completed_trades,
                 (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
          FROM listings l
@@ -1165,6 +1208,18 @@ function find_swap_matches(int $userId, int $limit = 6): array {
             }
             $weightedScore = max(0, min(100, $weightedScore));
 
+            if (!swap_match_passes_quality_filter(
+                $weightedScore,
+                $mutual,
+                $theyWantMine,
+                $iWantTheirs,
+                $score_need,
+                $score_cat,
+                $score_value
+            )) {
+                continue;
+            }
+
             $matches[] = array_merge($c, [
                 'match_score'       => $weightedScore,
                 'score_need'        => $score_need,
@@ -1193,9 +1248,11 @@ function find_swap_matches(int $userId, int $limit = 6): array {
 
 function find_triangular_swaps(int $userId, int $limit = 4): array {
     $myListings = DB::fetchAll(
-        'SELECT l.*, c.name AS cat_name FROM listings l
+        'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug, c.parent_id AS cat_parent_id
+         FROM listings l
          JOIN categories c ON c.id = l.category_id
-         WHERE l.user_id = ? AND l.status = "active" AND l.listing_mode IN ("swap","both")',
+         WHERE l.user_id = ? AND l.status = "active" AND l.listing_mode IN ("swap","both")
+           AND (l.review_status = "approved" OR l.review_status IS NULL)',
         [$userId]
     );
     if (empty($myListings)) return [];
