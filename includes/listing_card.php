@@ -49,7 +49,7 @@ $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
 $promotionMeta = function_exists('listing_active_promotion_meta') ? listing_active_promotion_meta($l) : null;
 $promotionClass = $promotionMeta['card_class'] ?? '';
 ?>
-<article class="listing-card <?= h($promotionClass) ?>">
+<article class="listing-card <?= h($promotionClass) ?>" style="height: 100%;">
   <div class="listing-card__header">
     <div class="listing-card__header-start">
       <?php if (!empty($l['want_in_return'])): ?>
