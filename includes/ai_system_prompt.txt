@@ -116,6 +116,24 @@ Use only provided candidate_listings data and never invent candidates.
   ]
 }
 
+## Need Search Mode (when mode=need_search):
+Extract search intent from user's natural-language need in Persian.
+{
+  "type": "need_search",
+  "keywords": ["keyword1", "keyword2"],
+  "category_slug": "electronics|null",
+  "city_hint": "تهران|null",
+  "price_min": 0,
+  "price_max": 0,
+  "want_type": "item|service|credit|null",
+  "summary": "One-line Persian summary of what user wants"
+}
+
+- keywords: 2-6 meaningful Persian/English terms from the need (no stop words)
+- category_slug: best matching platform category slug or null
+- price range optional (0 = ignore)
+- want_type only if clearly implied
+
 ---
 
 # DECISION RULES
@@ -125,6 +143,7 @@ Use only provided candidate_listings data and never invent candidates.
 - If task is unclear and mode=chat → Chat Mode
 - If mode=pricing → Pricing Mode only
 - If mode=matching → Matching Mode only
+- If mode=need_search → Need Search Mode only
 
 ---
 

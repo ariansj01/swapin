@@ -230,6 +230,7 @@ function render_navbar(?array $user = null): void {
 
     $navItems = [
         ['/#home-steps', 'چگونه کار می‌کند؟', 'bi-lightbulb', ''],
+        ['/shops', 'فروشگاه‌ها', 'bi-shop', ''],
         ['/trades', 'اتاق امن', 'bi-shield-lock', ''],
         ['/about', 'درباره ما', 'bi-question-circle', ''],
         ['/contact', 'تماس با ما', 'bi-envelope', ''],
@@ -271,6 +272,7 @@ HTML;
           <i class="bi bi-stars"></i> دستیار AI <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
         <div class="dropdown-menu" id="ai-dropdown">
+          <a href="{$url}/search/ai" class="dropdown-item"><i class="bi bi-search-heart"></i> جستجوی هوشمند</a>
           <a href="{$url}/ai/chat" class="dropdown-item"><i class="bi bi-chat-dots-fill"></i> چت با دستیار</a>
           <a href="{$url}/ai-assistant" class="dropdown-item"><i class="bi bi-info-circle-fill"></i> دستیار هوشمند چیست؟</a>
         </div>
@@ -487,6 +489,10 @@ function render_mobile_bottom_nav(?array $user = null): void {
         <i class="bi bi-info-circle-fill"></i>
         <span>آشنایی با دستیار</span>
       </a>
+      <a href="{$url}/search/ai" class="mobile-ai-submenu__item" role="menuitem">
+        <i class="bi bi-search-heart"></i>
+        <span>جستجوی هوشمند</span>
+      </a>
       <a href="{$aiChat}" class="mobile-ai-submenu__item" role="menuitem">
         <i class="bi bi-chat-dots-fill"></i>
         <span>گفتگو با دستیار</span>
@@ -594,6 +600,8 @@ function render_footer(): void {
           <li><a href="{$url}/faq">سوالات متداول</a></li>
           <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
           <li><a href="{$url}/blog">بلاگ</a></li>
+          <li><a href="{$url}/shops">فروشگاه‌ها</a></li>
+          <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
           <li><a href="{$url}/store/request">ثبت درخواست فروشگاه</a></li>
           <li><a href="{$url}/auth/store-login">ورود پنل فروشگاه</a></li>
           <li><a href="{$url}/terms">قوانین و مقررات</a></li>
@@ -623,6 +631,9 @@ function render_footer(): void {
 </footer>
 HTML;
     render_support_widget($user);
+    if ($user) {
+        echo '<script src="' . $url . '/src/js/push-alerts.js?v=' . (@filemtime(__DIR__ . '/../src/js/push-alerts.js') ?: time()) . '"></script>';
+    }
     echo <<<HTML
 <script src="{$url}/src/js/app.js?v=<?= filemtime(__DIR__ . '/../src/js/app.js') ?>"></script>
 </body>

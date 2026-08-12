@@ -844,6 +844,76 @@ try {
         }
     }
 
+    if (!db_has_table('saved_searches')) {
+        try {
+            DB::query("
+                CREATE TABLE `saved_searches` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `title` VARCHAR(160) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `need_text` TEXT COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `keywords` VARCHAR(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `city` VARCHAR(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `category_id` INT UNSIGNED DEFAULT NULL,
+                    `price_min` INT UNSIGNED DEFAULT NULL,
+                    `price_max` INT UNSIGNED DEFAULT NULL,
+                    `want_type` VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `filters_json` JSON DEFAULT NULL,
+                    `alert_enabled` TINYINT(1) NOT NULL DEFAULT 1,
+                    `last_notified_at` DATETIME DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_saved_searches_user` (`user_id`),
+                    KEY `idx_saved_searches_alert` (`alert_enabled`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-saved-searches-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    if (!db_has_table('saved_search_hits')) {
+        try {
+            DB::query("
+                CREATE TABLE `saved_search_hits` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `saved_search_id` INT UNSIGNED NOT NULL,
+                    `listing_id` INT UNSIGNED NOT NULL,
+                    `notified_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uq_saved_search_hit` (`saved_search_id`, `listing_id`),
+                    KEY `idx_saved_search_hits_listing` (`listing_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-saved-search-hits-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    if (!db_has_table('notifications')) {
+        try {
+            DB::query("
+                CREATE TABLE `notifications` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `type` VARCHAR(40) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'info',
+                    `title` VARCHAR(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `body` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `link` VARCHAR(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `meta_json` JSON DEFAULT NULL,
+                    `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_notifications_user` (`user_id`),
+                    KEY `idx_notifications_read` (`user_id`, `is_read`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-notifications-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
     // Note: The "10 parent categories + other hidden" migration is no longer
     // applied here at bootstrap. Instead, render_wizard_category_options() in
     // includes/i18n.php calls wizard_ensure_parents_exist() on-demand which
@@ -1423,6 +1493,7 @@ require_once __DIR__ . '/listing_validator.php';
 require_once __DIR__ . '/v2.php';
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/store_orders.php';
+require_once __DIR__ . '/saved_searches.php';
 require_once __DIR__ . '/admin.php';
 require_once __DIR__ . '/support.php';
 require_once __DIR__ . '/google_auth.php';

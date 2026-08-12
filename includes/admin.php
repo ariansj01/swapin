@@ -108,6 +108,10 @@ function admin_approve_listing(int $listingId, string $note = ''): void {
         'review_note'   => $note ?: null,
         'updated_at'    => date('Y-m-d H:i:s'),
     ], 'id = ?', [$listingId]);
+
+    if (function_exists('process_saved_search_alerts_for_listing')) {
+        process_saved_search_alerts_for_listing($listingId);
+    }
 }
 
 function admin_reject_listing(int $listingId, string $note): void {

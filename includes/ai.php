@@ -804,3 +804,170 @@ function ai_sanitize_match_payload_for_client(array $data): array {
     }
     return $data;
 }
+
+/**
+ * Parse user need text into search filters (AI with rule fallback).
+ *
+ * @return array{keywords:array,category_id:?int,city:?string,price_min:?int,price_max:?int,want_type:?string,summary:string,source:string}
+ */
+function ai_parse_need_search(string $needText, ?string $city = null): array {
+    $needText = trim($needText);
+    $fallback = [
+        'keywords'    => array_values(array_filter(preg_split('/\s+/u', saved_search_extract_keywords($needText)) ?: [])),
+        'category_id' => null,
+        'city'        => $city ?: null,
+        'price_min'   => null,
+        'price_max'   => null,
+        'want_type'   => null,
+        'summary'     => mb_strimwidth($needText, 0, 120, '…'),
+        'source'      => 'rules',
+    ];
+
+    if (mb_strlen($needText) < 3) {
+        return $fallback;
+    }
+
+    if (!ai_is_configured()) {
+        return $fallback;
+    }
+
+    $categories = DB::fetchAll(
+        'SELECT id, slug, name FROM categories WHERE is_active = 1 AND (parent_id IS NULL OR parent_id = 0) ORDER BY sort_order'
+    );
+    $catPayload = array_map(static fn($c) => [
+        'slug' => $c['slug'],
+        'name' => $c['name'],
+    ], $categories);
+
+    $result = ai_call('need_search', [
+        'need_text'  => $needText,
+        'city_hint'  => $city,
+        'categories' => $catPayload,
+        'instruction'=> 'Extract search filters from the user need. Respond with need_search JSON only.',
+    ]);
+    $parsed = ai_parse_json_response($result['parsed']);
+    if (!$parsed || ($parsed['type'] ?? '') !== 'need_search') {
+        return $fallback;
+    }
+
+    $keywords = [];
+    foreach (($parsed['keywords'] ?? []) as $kw) {
+        $kw = trim((string)$kw);
+        if (mb_strlen($kw) >= 2) {
+            $keywords[] = $kw;
+        }
+    }
+    if (empty($keywords)) {
+        $keywords = $fallback['keywords'];
+    }
+
+    $categoryId = null;
+    $slug = trim((string)($parsed['category_slug'] ?? ''));
+    if ($slug && $slug !== 'null') {
+        $cat = DB::fetch('SELECT id FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [$slug]);
+        $categoryId = $cat ? (int)$cat['id'] : null;
+    }
+
+    $cityHint = trim((string)($parsed['city_hint'] ?? ''));
+    if ($cityHint && $cityHint !== 'null' && !$city) {
+        foreach (iran_cities() as $c) {
+            if (mb_stripos($c, $cityHint) !== false || mb_stripos($cityHint, $c) !== false) {
+                $city = $c;
+                break;
+            }
+        }
+    }
+
+    $priceMin = max(0, (int)($parsed['price_min'] ?? 0)) ?: null;
+    $priceMax = max(0, (int)($parsed['price_max'] ?? 0)) ?: null;
+    $wantType = trim((string)($parsed['want_type'] ?? ''));
+    if ($wantType === 'null' || $wantType === '') {
+        $wantType = null;
+    }
+
+    return [
+        'keywords'    => $keywords,
+        'category_id' => $categoryId,
+        'city'        => $city ?: null,
+        'price_min'   => $priceMin,
+        'price_max'   => $priceMax,
+        'want_type'   => $wantType,
+        'summary'     => trim((string)($parsed['summary'] ?? '')) ?: $fallback['summary'],
+        'source'      => ai_public_mode($result['provider'] ?? 'rules'),
+    ];
+}
+
+/**
+ * Search listings by natural-language need.
+ *
+ * @return array{listings:array,filters:array,total:int,source:string}
+ */
+function ai_search_listings_by_need(string $needText, ?string $city = null, int $limit = 24): array {
+    $filters = ai_parse_need_search($needText, $city);
+    $whereClauses = [listing_public_sql('l'), 'l.listing_mode != "sell"'];
+    $params = [];
+
+    if (!empty($filters['city'])) {
+        $whereClauses[] = 'l.city LIKE ?';
+        $params[] = '%' . $filters['city'] . '%';
+    }
+    if (!empty($filters['category_id'])) {
+        $whereClauses[] = '(l.category_id = ? OR c.parent_id = ?)';
+        $params[] = $filters['category_id'];
+        $params[] = $filters['category_id'];
+    }
+    if (!empty($filters['price_min'])) {
+        $whereClauses[] = 'l.estimated_value >= ?';
+        $params[] = $filters['price_min'];
+    }
+    if (!empty($filters['price_max'])) {
+        $whereClauses[] = 'l.estimated_value <= ?';
+        $params[] = $filters['price_max'];
+    }
+    if (!empty($filters['want_type'])) {
+        $whereClauses[] = 'l.want_type = ?';
+        $params[] = $filters['want_type'];
+    }
+
+    $keywords = $filters['keywords'];
+    if (!empty($keywords)) {
+        $kwClauses = [];
+        foreach ($keywords as $kw) {
+            $kwClauses[] = '(l.title LIKE ? OR l.description LIKE ? OR l.want_in_return LIKE ? OR c.name LIKE ?)';
+            $like = '%' . $kw . '%';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+        $whereClauses[] = '(' . implode(' OR ', $kwClauses) . ')';
+    }
+
+    $where = 'WHERE ' . implode(' AND ', $whereClauses);
+    $total = (int)(DB::fetch(
+        "SELECT COUNT(*) AS c FROM listings l JOIN categories c ON c.id = l.category_id {$where}",
+        $params
+    )['c'] ?? 0);
+
+    $listings = DB::fetchAll(
+        "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
+                u.store_name, u.store_slug,
+                c.name AS cat_name, c.slug AS cat_slug,
+                (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+         FROM listings l
+         JOIN users u ON u.id = l.user_id
+         JOIN categories c ON c.id = l.category_id
+         {$where}
+         ORDER BY (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC
+         LIMIT ?",
+        [...$params, $limit]
+    );
+
+    return [
+        'listings' => $listings,
+        'filters'  => $filters,
+        'total'    => $total,
+        'source'   => $filters['source'],
+    ];
+}
+

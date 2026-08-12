@@ -128,6 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             request_expert_inspection($listingId, (int) $admin['id']);
         }
 
+        if (function_exists('process_saved_search_alerts_for_listing')) {
+            process_saved_search_alerts_for_listing((int)$listingId);
+        }
+
         ai_match_clear_cache((int) $admin['id']);
         admin_set_flash('آگهی ادمین با موفقیت ثبت و مستقیم منتشر شد.');
         header('Location: ' . APP_URL . '/admin/create_listing.php');

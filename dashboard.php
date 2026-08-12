@@ -175,7 +175,13 @@ render_navbar($user);
 <?php render_user_panel_open($user, 'dashboard'); ?>
   <div class="dash-panel">
     <?php render_panel_page_header('سلام، ' . explode(' ', $user['name'])[0] . '!', 'خلاصه حساب شما و میان‌برهای سریع', APP_URL . '/', 'بازگشت به خانه'); ?>
-    <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px">
+    <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px;display:flex;gap:.5rem;flex-wrap:wrap">
+      <a href="<?= APP_URL ?>/search/ai" class="btn btn-outline btn-sm">
+        <i class="bi bi-stars"></i> جستجوی هوشمند
+      </a>
+      <a href="<?= APP_URL ?>/search/saved" class="btn btn-outline btn-sm">
+        <i class="bi bi-bookmark-star"></i> جستجوهای ذخیره‌شده
+      </a>
       <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
