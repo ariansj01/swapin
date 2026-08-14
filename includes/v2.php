@@ -18,39 +18,7 @@ function validate_national_id(string $nid): bool {
 }
 
 function submit_kyc(int $userId, array $data): array {
-    $errors = [];
-    $nid    = clean($data['national_id'] ?? '');
-    $bank   = clean($data['bank_account'] ?? '');
-    $type   = clean($data['seller_type'] ?? 'personal');
-    $store  = clean($data['store_name'] ?? '');
-
-    if (!$nid || !validate_national_id($nid)) {
-        $errors['national_id'] = 'کد ملی معتبر ۱۰ رقمی وارد کنید';
-    }
-    if (!$bank || !preg_match('/^IR?\d{24}$|^(\d{10,30})$/', str_replace([' ', '-'], '', $bank))) {
-        $errors['bank_account'] = 'شماره شبا یا حساب بانکی معتبر وارد کنید';
-    }
-    if (!in_array($type, ['personal', 'store'], true)) {
-        $errors['seller_type'] = 'نوع فروشنده نامعتبر است';
-    }
-    if ($type === 'store' && mb_strlen($store) < 2) {
-        $errors['store_name'] = 'نام فروشگاه الزامی است';
-    }
-    if (empty($data['id_card_image'])) {
-        $errors['id_card_image'] = 'تصویر کارت ملی الزامی است';
-    }
-
-    if (empty($errors)) {
-        DB::update('users', [
-            'national_id'   => $nid,
-            'bank_account'  => str_replace([' ', '-'], '', $bank),
-            'id_card_image' => $data['id_card_image'],
-            'seller_type'   => $type,
-            'store_name'    => $type === 'store' ? $store : null,
-            'kyc_status'    => 'pending',
-        ], 'id = ?', [$userId]);
-    }
-    return $errors;
+    return kyc_submit($userId, $data);
 }
 
 function user_kyc_approved(array $user): bool {
@@ -379,6 +347,19 @@ function accept_trade_offer(int $offerId, int $ownerId, string $message): array 
     );
     if (!$offer) {
         return ['error' => 'پیشنهاد یافت نشد یا دسترسی ندارید.'];
+    }
+
+    $owner = DB::fetch('SELECT * FROM users WHERE id = ?', [$ownerId]);
+    $buyer = DB::fetch('SELECT * FROM users WHERE id = ?', [(int)$offer['from_user_id']]);
+    $tradeValue = kyc_trade_value_from_listings(
+        ['estimated_value' => $offer['listing_a_value'] ?? 0],
+        $offer['offer_listing_id'] ? ['estimated_value' => $offer['listing_b_value'] ?? 0] : null
+    );
+    if ($owner && ($err = kyc_check_trade($owner, $tradeValue))) {
+        return ['error' => $err];
+    }
+    if ($buyer && ($err = kyc_check_trade($buyer, $tradeValue))) {
+        return ['error' => 'طرف مقابل: ' . $err];
     }
 
     $existing = DB::fetch('SELECT id FROM trades WHERE offer_id = ?', [$offerId]);
@@ -733,7 +714,11 @@ function listing_mode_label(string $mode): string {
     };
 }
 
+// Legacy kyc_status (none/pending/approved/rejected) + tier labels when available
 function kyc_status_label(string $status): string {
+    if (function_exists('kyc_status_labels') && isset(kyc_status_labels()[$status])) {
+        return kyc_tier_status_label($status);
+    }
     return match ($status) {
         'pending'  => 'در انتظار بررسی',
         'approved' => 'تأیید شده',

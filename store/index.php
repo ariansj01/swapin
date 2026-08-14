@@ -277,8 +277,16 @@ $completedTrades = (int)(DB::fetch(
 
 $totalVisits = 0;
 foreach ($inventory as $item) {
-    $totalVisits += (int)($item['view_count'] ?? 0);
+    $totalVisits += (int)($item['views'] ?? $item['view_count'] ?? 0);
 }
+
+$storeReports   = store_reports_stats($uid);
+$storeChartData = store_monthly_chart_data($uid);
+$storeTopProducts = store_top_products($uid, 5);
+$storeCategories  = store_category_breakdown($uid);
+$kycUi = kyc_store_status_ui($user);
+$chartViews    = array_column($storeChartData, 'views');
+$chartRequests = array_column($storeChartData, 'requests');
 
 $notifications = [];
 foreach (array_slice($swapOffersList, 0, 5) as $_nOffer) {
@@ -344,7 +352,7 @@ foreach (array_slice($sellerOrders, 0, 10) as $_sOrder) {
     ];
 }
 
-$chartData = [12, 19, 25, 22, 30, 28, 35, 42, 38, 45, 50, 48];
+$chartData = $chartViews;
 
 render_head('پنل فروشگاه');
 render_navbar($user);
@@ -1215,17 +1223,7 @@ render_navbar($user);
         <div class="store-card__body">
           <div class="store-categories-grid">
             <?php
-            $categories = [
-              ['icon' => 'bi-gem', 'name' => 'طلا و جواهر', 'count' => 12, 'color' => 'gold'],
-              ['icon' => 'bi-phone', 'name' => 'موبایل', 'count' => 28, 'color' => 'blue'],
-              ['icon' => 'bi-laptop', 'name' => 'لپ‌تاپ', 'count' => 15, 'color' => 'navy'],
-              ['icon' => 'bi-bicycle', 'name' => 'دوچرخه', 'count' => 8, 'color' => 'green'],
-              ['icon' => 'bi-camera', 'name' => 'دوربین', 'count' => 6, 'color' => 'purple'],
-              ['icon' => 'bi-house', 'name' => 'لوازم منزل', 'count' => 35, 'color' => 'orange'],
-              ['icon' => 'bi-car-front', 'name' => 'خودرو', 'count' => 4, 'color' => 'red'],
-              ['icon' => 'bi-plus-lg', 'name' => 'افزودن دسته', 'count' => null, 'color' => 'empty'],
-            ];
-            foreach ($categories as $cat):
+            foreach ($storeCategories as $cat):
             ?>
             <div class="store-category-card <?= $cat['color'] === 'empty' ? 'is-empty' : '' ?>">
               <div class="store-category-card__icon store-category-card__icon--<?= $cat['color'] ?>">
@@ -1255,35 +1253,35 @@ render_navbar($user);
         <div class="store-stat-card">
           <div class="store-stat-card__icon store-stat-card__icon--green"><i class="bi bi-percent"></i></div>
           <div class="store-stat-card__content">
-            <div class="store-stat-card__value">۱۲٪</div>
+            <div class="store-stat-card__value"><?= $storeReports['conversion_rate'] ?>٪</div>
             <div class="store-stat-card__label">نرخ تبدیل بازدید به درخواست</div>
           </div>
         </div>
         <div class="store-stat-card">
           <div class="store-stat-card__icon store-stat-card__icon--gold"><i class="bi bi-trophy"></i></div>
           <div class="store-stat-card__content">
-            <div class="store-stat-card__value">لپ‌تاپ Dell</div>
+            <div class="store-stat-card__value"><?= h(mb_strimwidth($storeReports['top_product'], 0, 28, '…')) ?></div>
             <div class="store-stat-card__label">محبوب‌ترین محصول</div>
           </div>
         </div>
         <div class="store-stat-card">
           <div class="store-stat-card__icon store-stat-card__icon--purple"><i class="bi bi-arrow-left-right"></i></div>
           <div class="store-stat-card__content">
-            <div class="store-stat-card__value">مبل راحتی</div>
+            <div class="store-stat-card__value"><?= h(mb_strimwidth($storeReports['top_swap_product'], 0, 28, '…')) ?></div>
             <div class="store-stat-card__label">بیشترین درخواست معاوضه</div>
           </div>
         </div>
         <div class="store-stat-card">
           <div class="store-stat-card__icon store-stat-card__icon--orange"><i class="bi bi-telephone"></i></div>
           <div class="store-stat-card__content">
-            <div class="store-stat-card__value">۴۷</div>
+            <div class="store-stat-card__value"><?= number_format($storeReports['contact_count']) ?></div>
             <div class="store-stat-card__label">تعداد تماس‌ها</div>
           </div>
         </div>
         <div class="store-stat-card">
           <div class="store-stat-card__icon store-stat-card__icon--navy"><i class="bi bi-bar-chart"></i></div>
           <div class="store-stat-card__content">
-            <div class="store-stat-card__value">۳۲٪</div>
+            <div class="store-stat-card__value"><?= ($storeReports['growth_percent'] >= 0 ? '+' : '') . $storeReports['growth_percent'] ?>٪</div>
             <div class="store-stat-card__label">رشد نسبت به ماه قبل</div>
           </div>
         </div>
@@ -1295,16 +1293,13 @@ render_navbar($user);
         </div>
         <div class="store-card__body store-card__body--nopad">
           <div class="store-top-products">
-            <?php
-            $topProducts = [
-              ['rank' => 1, 'name' => 'گوشی iPhone ۱۵ پرو', 'views' => 1250, 'offers' => 24],
-              ['rank' => 2, 'name' => 'لپ‌تاپ Dell XPS ۱۵', 'views' => 980, 'offers' => 18],
-              ['rank' => 3, 'name' => 'مبل راحتی ۶ نفره', 'views' => 870, 'offers' => 31],
-              ['rank' => 4, 'name' => 'ساعت هوشمند Apple Watch', 'views' => 650, 'offers' => 12],
-              ['rank' => 5, 'name' => 'دوربین کانن EOS R', 'views' => 540, 'offers' => 9],
-            ];
-            foreach ($topProducts as $p):
-            ?>
+            <?php if (empty($storeTopProducts)): ?>
+            <div class="store-empty">
+              <i class="bi bi-box-seam"></i>
+              <p>هنوز محصولی برای نمایش آمار ندارید.</p>
+            </div>
+            <?php else: ?>
+            <?php foreach ($storeTopProducts as $p): ?>
             <div class="store-top-product">
               <div class="store-top-product__rank store-top-product__rank--<?= $p['rank'] <= 3 ? 'top' : 'normal' ?>">
                 <?= $p['rank'] === 1 ? '🥇' : ($p['rank'] === 2 ? '🥈' : ($p['rank'] === 3 ? '🥉' : $p['rank'])) ?>
@@ -1319,6 +1314,7 @@ render_navbar($user);
               <div class="store-top-product__bar"><div style="width:<?= (100 - ($p['rank']-1)*18) ?>%"></div></div>
             </div>
             <?php endforeach; ?>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -1415,30 +1411,24 @@ render_navbar($user);
             <h3 class="store-card__title"><i class="bi bi-shield-check"></i> احراز هویت و حساب بانکی</h3>
           </div>
           <div class="store-card__body">
-            <div class="store-kyc-status store-kyc-status--verified">
-              <i class="bi bi-patch-check-fill"></i>
+            <div class="store-kyc-status <?= h($kycUi['class']) ?>">
+              <i class="bi <?= h($kycUi['icon']) ?>"></i>
               <div>
-                <div class="store-kyc-status__title">وضعیت احراز هویت</div>
-                <div class="store-kyc-status__desc">مدارک شما تایید شده است</div>
+                <div class="store-kyc-status__title"><?= h($kycUi['title']) ?></div>
+                <div class="store-kyc-status__desc"><?= h($kycUi['desc']) ?></div>
               </div>
             </div>
+            <?php if (!empty($user['bank_account'])): ?>
             <div class="store-divider"></div>
             <div class="store-form-group">
               <label class="store-form-label">شماره شبا</label>
-              <input type="text" class="store-form-input" dir="ltr" placeholder="IRXXXXXXXXXXXXXXXXXXXX">
+              <input type="text" class="store-form-input" dir="ltr" value="<?= h(mask_bank_account($user['bank_account'])) ?>" readonly>
             </div>
-            <div class="store-form-grid-2">
-              <div class="store-form-group">
-                <label class="store-form-label">صاحب حساب</label>
-                <input type="text" class="store-form-input" value="<?= h($user['full_name'] ?? '') ?>">
-              </div>
-              <div class="store-form-group">
-                <label class="store-form-label">نام بانک</label>
-                <select class="store-form-input">
-                  <option>ملی</option><option>ملت</option><option>پاسارگاد</option>
-                  <option>قرض‌الحسنه رسالت</option><option>سامان</option>
-                </select>
-              </div>
+            <?php endif; ?>
+            <div class="store-form-group" style="margin-top:12px">
+              <a href="<?= APP_URL ?>/profile/edit.php" class="store-btn store-btn--outline w-100">
+                <i class="bi bi-shield-check"></i> مدیریت احراز هویت
+              </a>
             </div>
             <div class="store-divider"></div>
             <div class="store-form-group">
@@ -1557,9 +1547,9 @@ render_navbar($user);
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
     const monthLabels = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-    const data1 = [12, 19, 25, 22, 30, 28, 35, 42, 38, 45, 50, 48];
-    const data2 = [4, 7, 9, 8, 12, 11, 14, 18, 16, 20, 23, 22];
-    const max = Math.max(...data1) * 1.15;
+    const data1 = <?= json_encode(array_map('intval', $chartViews), JSON_UNESCAPED_UNICODE) ?>;
+    const data2 = <?= json_encode(array_map('intval', $chartRequests), JSON_UNESCAPED_UNICODE) ?>;
+    const max = Math.max(...data1, ...data2, 1) * 1.15;
     const pad = {t: 30, r: 30, b: 30, l: 40};
     const chartW = W - pad.l - pad.r;
     const chartH = H - pad.t - pad.b;

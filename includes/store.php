@@ -309,3 +309,184 @@ function normalize_shop_slug(string $slug): string {
     $slug = preg_replace('/[\x00-\x1F\x7F]+/u', '', $slug) ?? '';
     return trim($slug);
 }
+
+/** @return array<int, array{month_key:string,views:int,requests:int}> */
+function store_monthly_chart_data(int $userId): array {
+    $months = [];
+    for ($i = 11; $i >= 0; $i--) {
+        $ts    = strtotime(date('Y-m-01') . " -$i months");
+        $start = date('Y-m-01 00:00:00', $ts);
+        $end   = date('Y-m-t 23:59:59', $ts);
+
+        $offers = (int)(DB::fetch(
+            'SELECT COUNT(*) AS c FROM trade_offers o
+             JOIN listings l ON l.id = o.listing_id
+             WHERE l.user_id = ? AND o.created_at BETWEEN ? AND ?',
+            [$userId, $start, $end]
+        )['c'] ?? 0);
+
+        $messages = (int)(DB::fetch(
+            'SELECT COUNT(*) AS c FROM messages m
+             JOIN listings l ON l.user_id = ?
+             WHERE m.to_user_id = ? AND m.created_at BETWEEN ? AND ?',
+            [$userId, $userId, $start, $end]
+        )['c'] ?? 0);
+
+        $months[] = [
+            'month_key' => date('Y-m', $ts),
+            'views'     => max($offers * 3, $messages),
+            'requests'  => $offers,
+        ];
+    }
+    return $months;
+}
+
+/** @return array<string, mixed> */
+function store_reports_stats(int $userId): array {
+    $totals = DB::fetch(
+        'SELECT COALESCE(SUM(l.views), 0) AS total_views,
+                COUNT(DISTINCT o.id) AS total_offers
+         FROM listings l
+         LEFT JOIN trade_offers o ON o.listing_id = l.id
+         WHERE l.user_id = ?',
+        [$userId]
+    ) ?: ['total_views' => 0, 'total_offers' => 0];
+
+    $totalViews  = (int)($totals['total_views'] ?? 0);
+    $totalOffers = (int)($totals['total_offers'] ?? 0);
+    $conversion  = $totalViews > 0 ? round(($totalOffers / $totalViews) * 100, 1) : 0.0;
+
+    $topViewed = DB::fetch(
+        'SELECT title, views FROM listings WHERE user_id = ? AND status != "deleted" ORDER BY views DESC LIMIT 1',
+        [$userId]
+    );
+
+    $topSwap = DB::fetch(
+        'SELECT l.title, COUNT(o.id) AS offer_count
+         FROM listings l
+         JOIN trade_offers o ON o.listing_id = l.id
+         WHERE l.user_id = ? AND o.status IN ("pending","accepted")
+           AND (o.offer_type IS NULL OR o.offer_type IN ("item","swap","message"))
+         GROUP BY l.id
+         ORDER BY offer_count DESC
+         LIMIT 1',
+        [$userId]
+    );
+
+    $contacts = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM messages WHERE to_user_id = ?',
+        [$userId]
+    )['c'] ?? 0);
+
+    $thisMonth = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM trade_offers o
+         JOIN listings l ON l.id = o.listing_id
+         WHERE l.user_id = ? AND o.created_at >= DATE_FORMAT(NOW(), "%Y-%m-01")',
+        [$userId]
+    )['c'] ?? 0);
+
+    $lastMonth = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM trade_offers o
+         JOIN listings l ON l.id = o.listing_id
+         WHERE l.user_id = ?
+           AND o.created_at >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), "%Y-%m-01")
+           AND o.created_at < DATE_FORMAT(NOW(), "%Y-%m-01")',
+        [$userId]
+    )['c'] ?? 0);
+
+    $growth = 0.0;
+    if ($lastMonth > 0) {
+        $growth = round((($thisMonth - $lastMonth) / $lastMonth) * 100, 1);
+    } elseif ($thisMonth > 0) {
+        $growth = 100.0;
+    }
+
+    return [
+        'total_views'      => $totalViews,
+        'total_offers'     => $totalOffers,
+        'conversion_rate'  => $conversion,
+        'top_product'      => (string)($topViewed['title'] ?? '—'),
+        'top_swap_product' => (string)($topSwap['title'] ?? '—'),
+        'contact_count'    => $contacts,
+        'growth_percent'   => $growth,
+    ];
+}
+
+/** @return array<int, array{rank:int,name:string,views:int,offers:int}> */
+function store_top_products(int $userId, int $limit = 5): array {
+    $rows = DB::fetchAll(
+        'SELECT l.title, l.views,
+                (SELECT COUNT(*) FROM trade_offers o WHERE o.listing_id = l.id) AS offers
+         FROM listings l
+         WHERE l.user_id = ? AND l.status != "deleted"
+         ORDER BY l.views DESC, offers DESC
+         LIMIT ' . (int)$limit,
+        [$userId]
+    );
+
+    $out = [];
+    $rank = 1;
+    foreach ($rows as $row) {
+        $out[] = [
+            'rank'   => $rank++,
+            'name'   => (string)$row['title'],
+            'views'  => (int)($row['views'] ?? 0),
+            'offers' => (int)($row['offers'] ?? 0),
+        ];
+    }
+    return $out;
+}
+
+/** @return array<int, array{icon:string,name:string,count:int,color:string}> */
+function store_category_breakdown(int $userId): array {
+    $colors = ['gold', 'blue', 'navy', 'green', 'purple', 'orange', 'red'];
+    $icons  = [
+        'طلا' => 'bi-gem', 'جواهر' => 'bi-gem',
+        'موبایل' => 'bi-phone', 'گوشی' => 'bi-phone',
+        'لپ' => 'bi-laptop', 'کامپیوتر' => 'bi-laptop',
+        'دوچرخه' => 'bi-bicycle',
+        'دوربین' => 'bi-camera',
+        'خودرو' => 'bi-car-front',
+        'مبل' => 'bi-house', 'منزل' => 'bi-house',
+    ];
+
+    $rows = DB::fetchAll(
+        'SELECT c.name, c.icon AS cat_icon, COUNT(l.id) AS cnt
+         FROM listings l
+         JOIN categories c ON c.id = l.category_id
+         WHERE l.user_id = ? AND l.status = "active"
+         GROUP BY c.id
+         ORDER BY cnt DESC
+         LIMIT 7',
+        [$userId]
+    );
+
+    $out = [];
+    $i   = 0;
+    foreach ($rows as $row) {
+        $name = (string)$row['name'];
+        $icon = !empty($row['cat_icon']) ? $row['cat_icon'] : 'bi-tag';
+        foreach ($icons as $needle => $ic) {
+            if (mb_strpos($name, $needle) !== false) {
+                $icon = $ic;
+                break;
+            }
+        }
+        $out[] = [
+            'icon'  => $icon,
+            'name'  => $name,
+            'count' => (int)$row['cnt'],
+            'color' => $colors[$i % count($colors)],
+        ];
+        $i++;
+    }
+
+    $out[] = [
+        'icon'  => 'bi-plus-lg',
+        'name'  => 'افزودن دسته',
+        'count' => null,
+        'color' => 'empty',
+    ];
+
+    return $out;
+}

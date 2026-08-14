@@ -4,16 +4,16 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $user = require_auth();
 
-// KYC Wall - disabled by request
-// if (($user['kyc_status'] ?? 'none') !== 'approved') {
-//     render_full_page_modal(
-//         'احراز هویت لازم است',
-//         'برای ثبت آگهی، ابتدا باید هویت شما تایید شود.',
-//         'رفتن به صفحه احراز هویت',
-//         APP_URL . '/profile/edit.php',
-//         'bi-shield-check'
-//     );
-// }
+if ($listingErr = kyc_check_listing_action($user)) {
+    render_full_page_modal(
+        'تأیید موبایل لازم است',
+        $listingErr,
+        'رفتن به صفحه احراز هویت',
+        APP_URL . '/profile/edit.php',
+        'bi-phone-fill'
+    );
+}
+
 $errors = [];
 $vals = [
     'title'           => '',

@@ -1490,6 +1490,7 @@ function timeago(string $datetime): string {
 
 require_once __DIR__ . '/i18n.php';
 require_once __DIR__ . '/listing_validator.php';
+require_once __DIR__ . '/kyc_service.php';
 require_once __DIR__ . '/v2.php';
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/store_orders.php';

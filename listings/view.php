@@ -141,6 +141,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 
             if (!$offerError) {
+                $offerListing = $offerListingId
+                    ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$offerListingId])
+                    : null;
+                $tradeValue = kyc_trade_value_from_listings(
+                    $listing,
+                    $offerListing
+                );
+                if ($kycErr = kyc_check_trade($user, $tradeValue)) {
+                    $offerError = $kycErr;
+                }
+            }
+
+            if (!$offerError) {
                 $offerTypeInsert = 'item';
                 if ($offerType === 'message') {
                     $offerTypeInsert = 'message';

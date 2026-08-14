@@ -79,13 +79,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $uploaded = upload_private_image($_FILES['id_card_image'], 'kyc');
             if ($uploaded) $idCard = $uploaded;
         }
+        $birthCert = $user['birth_cert_image'] ?? null;
+        if (!empty($_FILES['birth_cert_image']['name'])) {
+            $uploaded = upload_private_image($_FILES['birth_cert_image'], 'kyc');
+            if ($uploaded) $birthCert = $uploaded;
+        }
+        $selfie = $user['selfie_image'] ?? null;
+        if (!empty($_FILES['selfie_image']['name'])) {
+            $uploaded = upload_private_image($_FILES['selfie_image'], 'kyc');
+            if ($uploaded) $selfie = $uploaded;
+        }
 
         $kycErrors = submit_kyc($user['id'], [
-            'national_id'   => $_POST['national_id'] ?? '',
-            'bank_account'  => $_POST['bank_account'] ?? '',
-            'seller_type'   => $_POST['seller_type'] ?? 'personal',
-            'store_name'    => $_POST['store_name'] ?? '',
-            'id_card_image' => $idCard,
+            'national_id'      => $_POST['national_id'] ?? '',
+            'bank_account'     => $_POST['bank_account'] ?? '',
+            'seller_type'      => $_POST['seller_type'] ?? 'personal',
+            'store_name'       => $_POST['store_name'] ?? '',
+            'id_card_image'    => $idCard,
+            'birth_cert_image' => $birthCert,
+            'selfie_image'     => $selfie,
         ]);
         $errors = array_merge($errors, $kycErrors);
         if (empty($errors)) {
@@ -114,24 +126,37 @@ render_user_panel_open($user, 'settings');
     <?php endif; ?>
 
     <!-- KYC Status -->
+    <?php $kycInfo = kyc_public_info($user); ?>
     <div class="settings-kyc-bar">
         <div style="font-size:2rem;color:var(--primary-light)"><i class="bi bi-shield-check"></i></div>
         <div style="flex:1">
-          <div class="fw-700">وضعیت KYC</div>
-          <div class="fs-sm" style="color:var(--text-muted)">
+          <div class="fw-700">وضعیت احراز هویت</div>
+          <div class="fs-sm" style="color:var(--text-muted);display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
             <?php
-            $kyc = $user['kyc_status'] ?? 'none';
-            $kycBadge = match($kyc) {
-                'approved' => 'success',
-                'pending'  => 'warning',
-                'rejected' => 'danger',
-                default    => 'info',
+            $tierBadge = match($kycInfo['status']) {
+                'IDENTITY_VERIFIED', 'ADVANCED_VERIFIED' => 'success',
+                'IDENTITY_PENDING', 'MANUAL_REVIEW' => 'warning',
+                'IDENTITY_REJECTED' => 'danger',
+                'PHONE_VERIFIED' => 'info',
+                default => 'info',
             };
             ?>
-            <span class="badge badge-<?= $kycBadge ?>"><?= h(kyc_status_label($kyc)) ?></span>
+            <span class="badge badge-<?= $tierBadge ?>"><?= h($kycInfo['label']) ?></span>
+            <?php if ($kycInfo['phone_verified']): ?>
+            <span class="badge badge-success"><i class="bi bi-phone-fill"></i> موبایل</span>
+            <?php endif; ?>
+            <?php if ($kycInfo['advanced_verified']): ?>
+            <span class="badge badge-warning"><i class="bi bi-shield-lock"></i> سطح ۲</span>
+            <?php elseif ($kycInfo['identity_verified']): ?>
+            <span class="badge badge-success"><i class="bi bi-person-badge"></i> سطح ۱</span>
+            <?php endif; ?>
           </div>
+          <p class="fs-xs" style="color:var(--text-muted);margin:8px 0 0">
+            معاملات زیر <?= number_format(KYC_VALUE_THRESHOLD) ?> تومان → سطح ۱ |
+            بالاتر → سطح ۲ (کارت ملی + شناسنامه + سلفی)
+          </p>
         </div>
-        <?php if ($kyc === 'approved'): ?>
+        <?php if ($kycInfo['identity_verified']): ?>
         <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> فروشنده تأیید‌شده</span>
         <?php endif; ?>
     </div>
@@ -247,7 +272,7 @@ render_user_panel_open($user, 'settings');
             </div>
 
             <div class="form-group">
-              <label class="form-label">تصویر کارت ملی <span class="required">*</span></label>
+              <label class="form-label">تصویر کارت ملی <span class="required">*</span> <small>(سطح ۱)</small></label>
               <?php if (!empty($user['id_card_image'])): ?>
               <div class="mb-2">
                 <img src="<?= private_media_url((int)$user['id']) ?>" alt="کارت ملی" style="max-height:80px;border-radius:var(--radius-sm);border:1px solid var(--border)">
@@ -257,9 +282,22 @@ render_user_panel_open($user, 'settings');
               <?php if (isset($errors['id_card_image'])): ?><div class="invalid-feedback"><?= h($errors['id_card_image']) ?></div><?php endif; ?>
             </div>
 
-            <button type="submit" class="btn btn-accent w-100" <?= $kyc === 'pending' ? 'disabled' : '' ?>>
+            <div class="form-group">
+              <label class="form-label">تصویر شناسنامه <small>(سطح ۲ — معاملات بالای <?= number_format(KYC_VALUE_THRESHOLD) ?> تومان)</small></label>
+              <input type="file" name="birth_cert_image" class="form-control" accept="image/*">
+              <?php if (isset($errors['birth_cert_image'])): ?><div class="invalid-feedback"><?= h($errors['birth_cert_image']) ?></div><?php endif; ?>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">تصویر سلفی با کارت ملی <small>(سطح ۲)</small></label>
+              <input type="file" name="selfie_image" class="form-control" accept="image/*">
+              <?php if (isset($errors['selfie_image'])): ?><div class="invalid-feedback"><?= h($errors['selfie_image']) ?></div><?php endif; ?>
+            </div>
+
+            <?php $kycLegacy = $user['kyc_status'] ?? 'none'; ?>
+            <button type="submit" class="btn btn-accent w-100" <?= $kycLegacy === 'pending' ? 'disabled' : '' ?>>
               <i class="bi bi-shield-check"></i>
-              <?= $kyc === 'none' ? 'ارسال مدارک KYC' : 'به‌روزرسانی مدارک KYC' ?>
+              <?= $kycLegacy === 'none' ? 'ارسال مدارک KYC' : 'به‌روزرسانی مدارک KYC' ?>
             </button>
           </form>
         </div>

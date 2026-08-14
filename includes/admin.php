@@ -88,18 +88,11 @@ function admin_pending_counts(): array {
 }
 
 function admin_approve_kyc(int $userId, string $note = ''): void {
-    DB::update('users', [
-        'kyc_status'         => 'approved',
-        'kyc_note'           => $note ?: null,
-        'verification_level' => 3,
-    ], 'id = ?', [$userId]);
+    kyc_admin_approve($userId, $note);
 }
 
 function admin_reject_kyc(int $userId, string $note): void {
-    DB::update('users', [
-        'kyc_status' => 'rejected',
-        'kyc_note'   => $note,
-    ], 'id = ?', [$userId]);
+    kyc_admin_reject($userId, $note);
 }
 
 function admin_approve_listing(int $listingId, string $note = ''): void {

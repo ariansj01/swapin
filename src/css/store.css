@@ -345,7 +345,7 @@
 /* ========== STATS GRID ========== */
 .store-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -1575,6 +1575,22 @@ a.store-product__offers:hover {
 }
 
 .store-kyc-status--verified > i { color: #059669; }
+
+.store-kyc-status--pending {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+
+.store-kyc-status--pending > i { color: #D97706; }
+
+.store-kyc-status--rejected {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #991B1B;
+}
+
+.store-kyc-status--rejected > i { color: #DC2626; }
 
 .store-kyc-status__title {
   font-weight: 700;

@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $kycUser = $id ? DB::fetch('SELECT * FROM users WHERE id = ?', [$id]) : null;
 
 $list = DB::fetchAll(
-    'SELECT id, name, email, phone, kyc_status, seller_type, store_name, national_id, created_at, updated_at
+    'SELECT id, name, email, phone, kyc_status, kyc_level, seller_type, store_name, national_id, created_at, updated_at
      FROM users WHERE kyc_status IN ("pending","approved","rejected")
      ORDER BY FIELD(kyc_status,"pending","rejected","approved"), updated_at DESC LIMIT 100'
 );
@@ -46,26 +46,49 @@ ob_start();
   <h1>احراز هویت (KYC)</h1>
 </div>
 
-<?php if ($kycUser && in_array($kycUser['kyc_status'], ['pending','approved','rejected'], true)): ?>
+<?php if ($kycUser && in_array($kycUser['kyc_status'], ['pending','approved','rejected'], true)):
+  $kycDetail = kyc_public_info($kycUser);
+  $kycRisk   = kyc_compute_risk((int)$kycUser['id']);
+?>
 <div class="admin-detail-grid mb-6">
   <div class="card">
     <div class="card-header"><h3 style="margin:0"><?= h($kycUser['name']) ?></h3></div>
     <div class="card-body fs-sm" style="display:grid;gap:var(--sp-2)">
       <div><strong>ایمیل:</strong> <?= h($kycUser['email']) ?></div>
-      <div><strong>تلفن:</strong> <?= h($kycUser['phone']) ?></div>
+      <div><strong>تلفن:</strong> <?= h($kycUser['phone']) ?> <?= !empty($kycUser['phone_verified_at']) ? '(تأییدشده)' : '' ?></div>
       <div><strong>کد ملی:</strong> <?= h(mask_national_id($kycUser['national_id'] ?: '')) ?></div>
       <div><strong>شبا/حساب:</strong> <?= h(mask_bank_account($kycUser['bank_account'] ?: '')) ?></div>
       <div><strong>نوع:</strong> <?= ($kycUser['seller_type'] ?? '') === 'store' ? 'فروشگاه — ' . h($kycUser['store_name'] ?? '') : 'شخصی' ?></div>
-      <div><strong>وضعیت:</strong> <?= $kycLabels[$kycUser['kyc_status']] ?? $kycUser['kyc_status'] ?></div>
+      <div><strong>سطح احراز:</strong> <?= h($kycDetail['label']) ?> (سطح <?= (int)$kycDetail['level'] ?>)</div>
+      <div><strong>ریسک:</strong> <?= h($kycRisk['level']) ?> (<?= (int)$kycRisk['score'] ?>/100)
+        <?php if (!empty($kycRisk['reasons'])): ?>
+        — <?= h(implode('، ', $kycRisk['reasons'])) ?>
+        <?php endif; ?>
+      </div>
+      <?php if (!empty($kycUser['kyc_manual_review'])): ?>
+      <div><span class="badge badge-warning">نیاز به بررسی دستی</span></div>
+      <?php endif; ?>
       <?php if ($kycUser['kyc_note']): ?>
       <div><strong>یادداشت:</strong> <?= h($kycUser['kyc_note']) ?></div>
       <?php endif; ?>
       <?php if ($kycUser['id_card_image']): ?>
       <div style="margin-top:var(--sp-3)">
-        <strong>تصویر کارت ملی:</strong><br>
+        <strong>تصویر کارت ملی (سطح ۱):</strong><br>
         <a href="<?= private_media_url($kycUser['id']) ?>" target="_blank">
           <img src="<?= private_media_url($kycUser['id']) ?>" alt="کارت ملی" style="max-width:100%;max-height:320px;margin-top:var(--sp-2);border-radius:var(--radius-md);border:1px solid var(--border)">
         </a>
+      </div>
+      <?php endif; ?>
+      <?php if (!empty($kycUser['birth_cert_image'])): ?>
+      <div style="margin-top:var(--sp-3)">
+        <strong>تصویر شناسنامه (سطح ۲):</strong><br>
+        <span class="fs-xs" style="color:var(--text-muted)">فایل: <?= h($kycUser['birth_cert_image']) ?></span>
+      </div>
+      <?php endif; ?>
+      <?php if (!empty($kycUser['selfie_image'])): ?>
+      <div style="margin-top:var(--sp-3)">
+        <strong>سلفی (سطح ۲):</strong><br>
+        <span class="fs-xs" style="color:var(--text-muted)">فایل: <?= h($kycUser['selfie_image']) ?></span>
       </div>
       <?php endif; ?>
     </div>
@@ -110,7 +133,11 @@ ob_start();
         <td><?= h($u['name']) ?></td>
         <td><?= h($u['email']) ?></td>
         <td><?= ($u['seller_type'] ?? '') === 'store' ? 'فروشگاه' : 'شخصی' ?></td>
-        <td><span class="badge badge-<?= match($u['kyc_status']) { 'pending'=>'warning','approved'=>'success','rejected'=>'danger', default=>'info' } ?>"><?= $kycLabels[$u['kyc_status']] ?? $u['kyc_status'] ?></span></td>
+        <td><span class="badge badge-<?= match($u['kyc_status']) { 'pending'=>'warning','approved'=>'success','rejected'=>'danger', default=>'info' } ?>"><?= $kycLabels[$u['kyc_status']] ?? $u['kyc_status'] ?></span>
+        <?php if (($u['kyc_status'] ?? '') === 'approved'): ?>
+        <span class="badge badge-info">سطح <?= (int)($u['kyc_level'] ?? 1) ?></span>
+        <?php endif; ?>
+        </td>
         <td class="fs-xs"><?= persian_date($u['updated_at'] ?? $u['created_at']) ?></td>
         <td><a href="?id=<?= $u['id'] ?>" class="btn btn-sm btn-outline">بررسی</a></td>
       </tr>

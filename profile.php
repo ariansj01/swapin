@@ -13,6 +13,10 @@ $usersCols = db_table_columns('users');
 $selectCols = ['id', 'name', 'email', 'city', 'bio', 'avatar', 'rating', 'rating_count', 'verification_level', 'credit_balance', 'created_at'];
 
 if (in_array('kyc_status', $usersCols)) $selectCols[] = 'kyc_status';
+if (in_array('kyc_level', $usersCols)) $selectCols[] = 'kyc_level';
+if (in_array('phone_verified_at', $usersCols)) $selectCols[] = 'phone_verified_at';
+if (in_array('kyc_manual_review', $usersCols)) $selectCols[] = 'kyc_manual_review';
+if (in_array('kyc_risk_level', $usersCols)) $selectCols[] = 'kyc_risk_level';
 if (in_array('seller_type', $usersCols)) $selectCols[] = 'seller_type';
 if (in_array('store_name', $usersCols)) $selectCols[] = 'store_name';
 if (in_array('subscription_plan', $usersCols)) $selectCols[] = 'subscription_plan';
@@ -60,6 +64,7 @@ $reviews = DB::fetchAll(
 );
 
 $swapScore = compute_swap_score($profileId);
+$kycPublic = kyc_public_info($profile);
 
 render_head(h($profile['name']) . ' — پروفایل');
 render_panel_styles();
@@ -83,11 +88,14 @@ render_navbar($currentUser);
               <?php if ($profile['city']): ?>
               <span class="badge badge-primary"><i class="bi bi-geo-alt"></i> <?= h($profile['city']) ?></span>
               <?php endif; ?>
-              <?php if ($profile['verification_level'] >= 2): ?>
-              <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
+              <?php if ($kycPublic['phone_verified']): ?>
+              <span class="badge badge-info"><i class="bi bi-phone-fill"></i> موبایل تأییدشده</span>
               <?php endif; ?>
-              <?php if (array_key_exists('kyc_status', $profile) && $profile['kyc_status'] === 'approved'): ?>
-              <span class="badge badge-success"><i class="bi bi-shield-check"></i> KYC تأییدشده</span>
+              <?php if ($kycPublic['identity_verified']): ?>
+              <span class="badge badge-success"><i class="bi bi-shield-check"></i> <?= h($kycPublic['advanced_verified'] ? 'احراز سطح ۲' : 'احراز سطح ۱') ?></span>
+              <?php endif; ?>
+              <?php if ($profile['verification_level'] >= 2 && !$kycPublic['identity_verified']): ?>
+              <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
               <?php endif; ?>
               <?php if (array_key_exists('subscription_plan', $profile) && $profile['subscription_plan'] !== 'none'): ?>
               <span class="badge badge-warning"><i class="bi bi-gem"></i> <?= h([
