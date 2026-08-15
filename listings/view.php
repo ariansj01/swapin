@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/geo.php';
 
 $user = auth_user();
 $id   = (int)($_GET['id'] ?? 0);
@@ -234,6 +235,7 @@ $tradeAccepted = $user && $listing['trade_id']
     && ((int)$user['id'] === (int)$listing['user_a_id'] || (int)$user['id'] === (int)$listing['user_b_id']);
 $canOfferMobile = !$isOwner && $listing['status'] === 'active' && !$myOffer && !$tradeAccepted;
 $loginRedirect = APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $id);
+$showNearbySection = listing_has_coordinates($listing);
 
 render_head($listing['title'], $metaDesc, [
     'canonical' => $listingUrl,
@@ -253,6 +255,10 @@ render_navbar($user);
 ?>
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-view-mobile.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-view-mobile.css') ?>">
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-view-desktop-new.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-view-desktop-new.css') ?>">
+<?php if ($showNearbySection): ?>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-nearby.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-nearby.css') ?>">
+<?php endif; ?>
 
 <?php if (isset($_GET['pending']) || $reviewStatus === 'pending'): ?>
 <div class="alert alert-warning" style="border-radius:0;border-inline-start:0;border-inline-end:0">
@@ -425,6 +431,12 @@ render_navbar($user);
     </section>
     <?php endif; ?>
   </div>
+
+  <?php if ($showNearbySection): ?>
+  <div class="container" style="padding-bottom:var(--sp-4)">
+    <?php $nearbyListingId = $id; include __DIR__ . '/../includes/listing_nearby_section.php'; ?>
+  </div>
+  <?php endif; ?>
 
   <?php if ($related): ?>
   <section class="lv-related" aria-label="آگهی‌های مشابه">
@@ -671,6 +683,10 @@ render_navbar($user);
           <?php endif; ?>
         </section>
 
+        <?php if ($showNearbySection): ?>
+        <?php $nearbyListingId = $id; include __DIR__ . '/../includes/listing_nearby_section.php'; ?>
+        <?php endif; ?>
+
         <?php if ($related): ?>
         <section class="lv-related-section" aria-label="آگهی‌های مشابه">
           <h3 class="lv-related-title">آگهی‌های مشابه</h3>
@@ -913,5 +929,9 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 <script src="<?= APP_URL ?>/src/js/listing-view-mobile.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-view-mobile.js') ?>"></script>
+<?php if ($showNearbySection): ?>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="<?= APP_URL ?>/src/js/listing-nearby.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-nearby.js') ?>"></script>
+<?php endif; ?>
 
 <?php render_footer(); ?>

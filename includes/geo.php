@@ -273,10 +273,9 @@ function find_nearby_listings(float $lat, float $lng, float $radiusKm = 10.0, in
     $lngDelta = $radiusKm / (111.0 * max(cos(deg2rad($lat)), 0.2));
 
     $params = [
-        $lat - $latDelta,
-        $lat + $latDelta,
-        $lng - $lngDelta,
-        $lng + $lngDelta,
+        $lat, $lng, $lat,
+        $lat - $latDelta, $lat + $latDelta, $lng - $lngDelta, $lng + $lngDelta,
+        $lat, $lng, $lat, $radiusKm,
     ];
 
     $excludeSql = '';
@@ -287,19 +286,27 @@ function find_nearby_listings(float $lat, float $lng, float $radiusKm = 10.0, in
 
     $params[] = $limit;
 
+    $distanceSql = '(6371 * acos(LEAST(1, GREATEST(-1,
+        cos(radians(?)) * cos(radians(l.latitude)) * cos(radians(l.longitude) - radians(?))
+        + sin(radians(?)) * sin(radians(l.latitude))
+    ))))';
+
     return DB::fetchAll(
         "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
                 c.name AS cat_name, c.slug AS cat_slug,
-                (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+                (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb,
+                {$distanceSql} AS distance_km
          FROM listings l
          JOIN users u ON u.id = l.user_id
          JOIN categories c ON c.id = l.category_id
          WHERE " . listing_public_sql('l') . "
+           AND l.listing_mode != 'sell'
            AND l.latitude IS NOT NULL AND l.longitude IS NOT NULL
            AND l.latitude BETWEEN ? AND ?
            AND l.longitude BETWEEN ? AND ?
+           AND {$distanceSql} <= ?
            {$excludeSql}
-         ORDER BY l.created_at DESC
+         ORDER BY distance_km ASC, l.created_at DESC
          LIMIT ?",
         $params
     );

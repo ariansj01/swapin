@@ -1650,6 +1650,20 @@ if (!defined('AI_VALUATE_USER_LIMIT')) {
 if (!defined('AI_VALUATE_USER_WINDOW')) {
     define('AI_VALUATE_USER_WINDOW', 900);
 }
+if (!defined('LISTING_NEARBY_DEFAULT_RADIUS_KM')) {
+    define('LISTING_NEARBY_DEFAULT_RADIUS_KM', 15.0);
+}
+if (!defined('LISTING_NEARBY_MAX_RADIUS_KM')) {
+    define('LISTING_NEARBY_MAX_RADIUS_KM', 50.0);
+}
+if (!defined('LISTING_SWAP_SUGGESTIONS_LIMIT')) {
+    define('LISTING_SWAP_SUGGESTIONS_LIMIT', 6);
+}
+if (!defined('LISTING_SWAP_AI_POOL_LIMIT')) {
+    define('LISTING_SWAP_AI_POOL_LIMIT', 12);
+}
 require_once __DIR__ . '/ai.php';
+require_once __DIR__ . '/listing_nearby.php';
+require_once __DIR__ . '/listing_swap_suggestions.php';
 require_once __DIR__ . '/google_auth.php';
 require_once __DIR__ . '/sep_payment.php';
