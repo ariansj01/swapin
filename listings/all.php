@@ -8,6 +8,7 @@ if (isset($_SERVER["REQUEST_URI"]) && preg_match("#^/listings/all\.php(?:\?|$)#"
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/i18n.php';
+require_once __DIR__ . '/../includes/geo.php';
 
 $user = auth_user();
 
@@ -15,12 +16,20 @@ $user = auth_user();
 $search    = clean($_GET['q']          ?? '');
 $catSlug   = clean($_GET['cat']        ?? '');
 $city      = clean($_GET['city']       ?? '');
+$locMode   = clean($_GET['loc']        ?? '');
+$nearbyCitiesRaw = clean($_GET['nearby_cities'] ?? '');
+$nearbyCitiesList = ($locMode === 'nearby') ? parse_nearby_cities_param($nearbyCitiesRaw) : [];
 $wantType  = clean($_GET['want']       ?? '');
 $condition = clean($_GET['condition']  ?? '');
 $pmin      = (int)($_GET['price_min']  ?? 0);
 $pmax      = (int)($_GET['price_max']  ?? 0);
 $sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
 $page      = max(1, (int)($_GET['page'] ?? 1));
+
+if ($locMode === 'nearby' && $nearbyCitiesList === []) {
+    $locMode = '';
+    $nearbyCitiesRaw = '';
+}
 
 // دسته‌بندی
 $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [$catSlug]) : null;
@@ -41,7 +50,13 @@ if ($catId) {
     $params[] = $catId;
     $params[] = $catId;
 }
-if ($city) {
+if ($locMode === 'nearby' && $nearbyCitiesList !== []) {
+    $cityPlaceholders = implode(',', array_fill(0, count($nearbyCitiesList), '?'));
+    $whereClauses[] = "l.city IN ({$cityPlaceholders})";
+    foreach ($nearbyCitiesList as $nearbyCity) {
+        $params[] = $nearbyCity;
+    }
+} elseif ($city) {
     $whereClauses[] = 'l.city LIKE ?';
     $params[] = "%{$city}%";
 }
@@ -93,12 +108,21 @@ $listings = DB::fetchAll(
 
 // متادیتا
 $title = 'همه آگهی‌ها';
-if ($category) $title = 'آگهی‌های ' . category_label($category['slug'], $category['name']);
-if ($search)   $title = 'نتایج برای «' . $search . '»';
+if ($category) {
+    $title = 'آگهی‌های ' . category_label($category['slug'], $category['name']);
+}
+if ($locMode === 'nearby' && $nearbyCitiesList !== []) {
+    $title = format_nearby_cities_title($nearbyCitiesList);
+} elseif ($city) {
+    $title = 'آگهی‌های شهر ' . $city;
+}
+if ($search) {
+    $title = 'نتایج برای «' . $search . '»';
+}
 $desc = 'فهرست کامل آگهی‌ها با فیلتر بر اساس دسته‌بندی، شهر، وضعیت و قیمت';
 
 $canonical = APP_URL . '/listings/';
-if ($category && !$search && !$city && !$wantType && !$condition && $pmin === 0 && $pmax === 0 && $sort === 'new' && $page === 1) {
+if ($category && !$search && !$city && $locMode !== 'nearby' && !$wantType && !$condition && $pmin === 0 && $pmax === 0 && $sort === 'new' && $page === 1) {
     $canonical = category_url($category['slug']);
 }
 
@@ -138,6 +162,8 @@ render_navbar($user);
           <form method="GET" action="<?= APP_URL ?>/listings/all.php" class="d-flex gap-2 align-center">
             <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
             <input type="hidden" name="city" value="<?= h($city) ?>">
+            <input type="hidden" name="loc" value="<?= h($locMode) ?>">
+            <input type="hidden" name="nearby_cities" value="<?= h($nearbyCitiesRaw) ?>">
             <input type="hidden" name="want" value="<?= h($wantType) ?>">
             <input type="hidden" name="condition" value="<?= h($condition) ?>">
             <input type="hidden" name="price_min" value="<?= $pmin > 0 ? (int)$pmin : '' ?>">
@@ -162,11 +188,12 @@ render_navbar($user);
           <li style="cursor: pointer;padding: 12px;border: 1px solid #e1e1e1;border-radius: 8px;margin: 3px 0;">
             <?php 
             $baseCatUrl = category_url($c['slug']);
-            $hasOtherFilters = $search || $city || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new';
+            $hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new';
             if ($hasOtherFilters) {
                 $catLink = APP_URL . '/listings/all.php?cat=' . h($c['slug']) . 
                     ($search ? '&q=' . urlencode($search) : '') .
                     ($city ? '&city=' . urlencode($city) : '') .
+                    ($locMode === 'nearby' && $nearbyCitiesRaw ? '&loc=nearby&nearby_cities=' . urlencode($nearbyCitiesRaw) : '') .
                     ($wantType ? '&want=' . urlencode($wantType) : '') .
                     ($condition ? '&condition=' . urlencode($condition) : '') .
                     ($pmin > 0 ? '&price_min=' . $pmin : '') .
@@ -182,12 +209,26 @@ render_navbar($user);
         </ul>
 
         <h3 class="all-listings-sidebar__subtitle">فیلترهای دیگر</h3>
-        <form method="GET" action="<?= APP_URL ?>/listings/all.php" class="all-listings-filters">
+        <form method="GET" action="<?= APP_URL ?>/listings/all.php" class="all-listings-filters" id="all-listings-filters">
           <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
           <?php if ($search): ?><input type="hidden" name="q" value="<?= h($search) ?>"><?php endif; ?>
+          <input type="hidden" name="nearby_cities" id="nearby-cities" value="<?= h($nearbyCitiesRaw) ?>">
+
+          <label class="fs-xs" for="loc-mode">مکان</label>
+          <select id="loc-mode" name="loc" class="form-control">
+            <option value="" <?= $locMode !== 'nearby' ? 'selected' : '' ?>>همه شهرها</option>
+            <option value="nearby" <?= $locMode === 'nearby' ? 'selected' : '' ?>>شهرهای اطراف من 📍</option>
+          </select>
+          <div id="loc-filter-alert" class="alert alert-warning mt-2" role="alert" hidden></div>
+          <?php if ($locMode === 'nearby' && $nearbyCitiesList !== []): ?>
+          <p class="fs-xs text-muted mt-2 mb-0">
+            <i class="bi bi-geo-alt"></i>
+            نمایش آگهی‌های: <?= h(implode('، ', array_slice($nearbyCitiesList, 0, 5))) ?><?= count($nearbyCitiesList) > 5 ? ' و ...' : '' ?>
+          </p>
+          <?php endif; ?>
 
           <label class="fs-xs" for="city">شهر</label>
-          <select id="city" name="city" class="form-control">
+          <select id="city" name="city" class="form-control" <?= $locMode === 'nearby' ? 'disabled' : '' ?>>
             <option value="">همه شهرها</option>
             <?= render_city_options($city) ?>
           </select>

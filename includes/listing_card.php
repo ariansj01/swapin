@@ -144,7 +144,7 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
       <span><i class="bi bi-eye"></i> بازدید: <?= number_format((int)($l['views'] ?? 0)) ?></span>
       <span>وضعیت: <?= condition_label($l['condition'] ?? '') ?></span>
       <?php if (!empty($l['city'])): ?>
-      <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?></span>
+      <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? '، ' . h($l['neighborhood']) : '' ?></span>
       <?php endif; ?>
     </div>
 

@@ -1067,6 +1067,115 @@ function initFilterModal() {
   overlay.addEventListener('click', closeModal);
 }
 
+function initListingsLocationFilter() {
+  const form = document.getElementById('all-listings-filters');
+  const locSelect = document.getElementById('loc-mode');
+  const nearbyInput = document.getElementById('nearby-cities');
+  const citySelect = document.getElementById('city');
+  const alertBox = document.getElementById('loc-filter-alert');
+
+  if (!form || !locSelect || !nearbyInput) return;
+
+  const appUrl = getAppUrl() || window.location.origin;
+
+  function showAlert(message) {
+    if (!alertBox) return;
+    alertBox.textContent = message;
+    alertBox.hidden = false;
+  }
+
+  function hideAlert() {
+    if (!alertBox) return;
+    alertBox.hidden = true;
+    alertBox.textContent = '';
+  }
+
+  function resetToAllCities() {
+    locSelect.value = '';
+    nearbyInput.value = '';
+    if (citySelect) citySelect.disabled = false;
+  }
+
+  function buildFilterUrl(extraParams = {}) {
+    const params = new URLSearchParams(new FormData(form));
+    params.delete('page');
+
+    if (locSelect.value !== 'nearby') {
+      params.delete('loc');
+      params.delete('nearby_cities');
+    }
+
+    Object.entries(extraParams).forEach(([key, value]) => {
+      if (value === '' || value === null || value === undefined) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+
+    const qs = params.toString();
+    return `${appUrl}/listings/all.php${qs ? `?${qs}` : ''}`;
+  }
+
+  locSelect.addEventListener('change', () => {
+    hideAlert();
+
+    if (locSelect.value !== 'nearby') {
+      nearbyInput.value = '';
+      if (citySelect) citySelect.disabled = false;
+      window.location.href = buildFilterUrl({ loc: '', nearby_cities: '' });
+      return;
+    }
+
+    if (citySelect) {
+      citySelect.value = '';
+      citySelect.disabled = true;
+    }
+
+    if (!navigator.geolocation) {
+      showAlert('مرورگر شما از موقعیت مکانی پشتیبانی نمی‌کند. فیلتر به حالت «همه شهرها» برگشت.');
+      resetToAllCities();
+      return;
+    }
+
+    locSelect.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(
+            `${appUrl}/api/nearby_cities.php?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`,
+            { credentials: 'same-origin' }
+          );
+          const data = await res.json();
+
+          if (!res.ok || !data.ok || !Array.isArray(data.cities) || !data.cities.length) {
+            throw new Error(data.error || 'no_cities_found');
+          }
+
+          nearbyInput.value = data.cities.join(',');
+          window.location.href = buildFilterUrl({
+            loc: 'nearby',
+            nearby_cities: nearbyInput.value,
+            city: '',
+          });
+        } catch {
+          showAlert('شهر نزدیکی یافت نشد. فیلتر به حالت «همه شهرها» برگشت.');
+          resetToAllCities();
+          locSelect.disabled = false;
+        }
+      },
+      () => {
+        showAlert('دسترسی به موقعیت مکانی رد شد. فیلتر به حالت «همه شهرها» برگشت.');
+        resetToAllCities();
+        locSelect.disabled = false;
+      },
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+    );
+  });
+}
+
 /* ── OTP / verification input — one box per digit ──────────────────────── */
 function initOtpInputs() {
   const faDigits = { '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
@@ -1303,6 +1412,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initStepsReveal();
   initListingsSliderArrows();
   initFilterModal();
+  initListingsLocationFilter();
   initOtpInputs();
 
   // Restore active tab from URL

@@ -257,7 +257,7 @@ function send_security_headers(): void {
     header('X-Frame-Options: SAMEORIGIN');
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+    header('Permissions-Policy: geolocation=(self), microphone=(), camera=()');
     if (app_is_production()) {
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
     }

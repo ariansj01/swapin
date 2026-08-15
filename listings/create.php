@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/geo.php';
 
 $user = require_auth();
 
@@ -21,6 +22,9 @@ $vals = [
     'category_id'     => 0,
     'condition'       => 'good',
     'city'            => '',
+    'latitude'        => '',
+    'longitude'       => '',
+    'neighborhood'    => '',
     'want_categories' => [],
     'want_description' => '',
     'custom_value'    => 0,
@@ -62,6 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'category_id'     => (int)($_POST['category_id']     ?? 0),
         'condition'       => clean($_POST['condition']       ?? 'good'),
         'city'            => clean($_POST['city']            ?? ''),
+        'latitude'        => clean($_POST['latitude']        ?? ''),
+        'longitude'       => clean($_POST['longitude']       ?? ''),
+        'neighborhood'    => clean($_POST['neighborhood']    ?? ''),
         'want_categories' => $_POST['want_categories']       ?? [],
         'want_description' => clean($_POST['want_description'] ?? ''),
         'custom_value'    => (int)($_POST['custom_value']    ?? 0),
@@ -78,9 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$vals['category_id']) $errors['category_id'] = 'لطفا دسته‌بندی را انتخاب کنید';
     if ($vals['category_id'] && !wizard_validate_category_id($vals['category_id'])) $errors['category_id'] = 'دسته‌بندی انتخاب‌شده نامعتبر است';
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
-    if ($vals['city'] && !in_array($vals['city'], iran_cities(), true)) {
-        $errors['city'] = 'لطفاً شهر را از فهرست انتخاب کنید';
+
+    $location = listing_location_from_request($vals);
+    foreach (validate_listing_location($location) as $field => $msg) {
+        $errors[$field] = $msg;
     }
+    $vals = array_merge($vals, $location);
 
     if (empty($errors)) {
         $hasImageUpload = false;
@@ -99,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         // Insert listing
-        $listingId = DB::insert('listings', [
+        $listingId = DB::insert('listings', array_merge([
             'user_id'          => $user['id'],
             'category_id'      => $vals['category_id'],
             'title'            => $vals['title'],
@@ -114,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'city'             => $vals['city'] ?: null,
             'status'           => 'active',
             'review_status'    => 'pending',
-        ]);
+        ], listing_location_db_payload($location)));
 
         // Handle image uploads
         $uploadedImages = 0;
@@ -266,7 +276,7 @@ render_navbar($user);
           </div>
 
           <div class="wizard-form-group">
-            <label class="wizard-form-label" for="step3-city">شهر</label>
+            <label class="wizard-form-label" for="step3-city">شهر *</label>
             <select name="city" id="step3-city" class="wizard-form-select <?= isset($errors['city']) ? 'is-invalid' : '' ?>">
               <option value="">انتخاب شهر</option>
               <?= render_city_options($vals['city']) ?>
@@ -275,6 +285,19 @@ render_navbar($user);
             <div class="invalid-feedback"><?= h($errors['city']) ?></div>
             <?php endif; ?>
           </div>
+
+          <?php
+          $picker = [
+              'prefix'    => 'step3',
+              'city'      => $vals['city'],
+              'latitude'  => $vals['latitude'],
+              'longitude' => $vals['longitude'],
+              'neighborhood' => $vals['neighborhood'],
+              'errors'    => $errors,
+              'city_select_id' => 'step3-city',
+          ];
+          include __DIR__ . '/../includes/listing_location_picker.php';
+          ?>
         </div>
 
         <!-- Step 4: What do you want in exchange? -->
@@ -369,8 +392,9 @@ render_navbar($user);
           </div>
           
           <div class="review-section">
-            <p class="review-label">شهر</p>
+            <p class="review-label">شهر و موقعیت</p>
             <p class="review-value" id="step7-city"></p>
+            <p class="review-value fs-sm" id="step7-neighborhood" style="color:var(--text-muted)"></p>
           </div>
           
           <div class="review-section">
@@ -410,7 +434,11 @@ render_navbar($user);
   </div>
 </div>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-wizard.css">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-location.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-location.css') ?>">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="<?= APP_URL ?>/src/js/listing-location.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-location.js') ?>"></script>
 <script>
 let currentStep = 1;
 const totalSteps = 7;
@@ -463,9 +491,11 @@ function initStep3Fields() {
   const catSelect = document.getElementById('step3-category');
   const condSelect = document.getElementById('step3-condition');
   const cityInput = document.getElementById('step3-city');
+  const locationPicker = document.querySelector('.listing-location-picker');
   if (catSelect) catSelect.addEventListener('change', updateButtons);
   if (condSelect) condSelect.addEventListener('change', updateButtons);
-  if (cityInput) cityInput.addEventListener('input', updateButtons);
+  if (cityInput) cityInput.addEventListener('change', updateButtons);
+  locationPicker?.addEventListener('listing-location-change', updateButtons);
 }
 
 function initStep1Counters() {
@@ -589,9 +619,16 @@ function validateCurrentStep() {
     case 2:
       return uploadedFiles.filter(Boolean).length > 0;
 
-    case 3:
+    case 3: {
       const catId = document.getElementById('step3-category').value;
-      return !!catId;
+      const city = document.getElementById('step3-city').value.trim();
+      const lat = document.getElementById('step3-latitude').value.trim();
+      const lng = document.getElementById('step3-longitude').value.trim();
+      const neighborhood = document.getElementById('step3-neighborhood-hidden')?.value.trim()
+        || document.getElementById('step3-neighborhood')?.value.trim()
+        || document.getElementById('step3-neighborhood-text')?.value.trim();
+      return !!catId && !!city && !!lat && !!lng && !!neighborhood;
+    }
 
     case 4:
       return exchangeCategories.size > 0;
@@ -608,6 +645,13 @@ function validateCurrentStep() {
 
 function goToStep(step) {
   if (step < 1 || step > totalSteps) return;
+
+  if (step === 3) {
+    setTimeout(() => {
+      document.querySelectorAll('.listing-location-picker .listing-location-picker__map')
+        .forEach(() => window.dispatchEvent(new Event('resize')));
+    }, 120);
+  }
   
   // Hide all steps
   document.querySelectorAll('.wizard-step').forEach(el => el.style.display = 'none');
@@ -689,6 +733,15 @@ function populateReview() {
   
   const cityVal = document.getElementById('step3-city').value;
   document.getElementById('step7-city').textContent = cityVal || 'نامشخص';
+  const neighborhoodVal = document.getElementById('step3-neighborhood-hidden')?.value
+    || document.getElementById('step3-neighborhood')?.value
+    || document.getElementById('step3-neighborhood-text')?.value
+    || '';
+  const latVal = document.getElementById('step3-latitude')?.value || '';
+  const lngVal = document.getElementById('step3-longitude')?.value || '';
+  document.getElementById('step7-neighborhood').textContent = neighborhoodVal
+    ? `محله ${neighborhoodVal}${latVal && lngVal ? ` — ${latVal}, ${lngVal}` : ''}`
+    : 'موقعیت روی نقشه انتخاب نشده';
 
   // Step 4 & 5
   document.getElementById('step7-want-cats').textContent = [...exchangeCategories].join('، ');

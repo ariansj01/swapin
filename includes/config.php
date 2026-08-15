@@ -397,6 +397,34 @@ try {
     if (!in_array('ai_promo_until', $listingsColumns)) {
         DB::query('ALTER TABLE `listings` ADD COLUMN `ai_promo_until` TIMESTAMP NULL DEFAULT NULL AFTER `targeted_until`');
     }
+    if (!in_array('latitude', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `latitude` DECIMAL(10,7) DEFAULT NULL AFTER `city`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-latitude', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('longitude', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `longitude` DECIMAL(10,7) DEFAULT NULL AFTER `latitude`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-longitude', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('neighborhood', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `neighborhood` VARCHAR(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `longitude`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-neighborhood', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!db_has_index('listings', 'idx_listing_geo') && db_has_column('listings', 'latitude') && db_has_column('listings', 'longitude')) {
+        try {
+            DB::query('ALTER TABLE `listings` ADD KEY `idx_listing_geo` (`latitude`, `longitude`)');
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-idx-listing-geo', ['msg' => $e->getMessage()]);
+        }
+    }
     if (!db_has_index('listings', 'idx_review_status') && in_array('review_status', $listingsColumns)) {
         try {
             DB::query("ALTER TABLE `listings` ADD KEY `idx_review_status` (`review_status`)");

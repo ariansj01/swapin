@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/geo.php';
 
 $user = require_auth();
 $uid  = $user['id'];
@@ -41,6 +42,9 @@ $vals   = [
     'listing_mode'    => $listing['listing_mode'] ?? 'swap',
     'sell_price'      => $listing['sell_price'] ?? 0,
     'city'            => $listing['city'] ?? '',
+    'latitude'        => $listing['latitude'] ?? '',
+    'longitude'       => $listing['longitude'] ?? '',
+    'neighborhood'    => $listing['neighborhood'] ?? '',
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -56,6 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['listing_mode']    = clean($_POST['listing_mode']    ?? 'swap');
     $vals['sell_price']      = max(0, min((float)($_POST['sell_price']    ?? 0), 99999999999999.00));
     $vals['city']            = clean($_POST['city']            ?? '');
+    $vals['latitude']        = clean($_POST['latitude']        ?? '');
+    $vals['longitude']       = clean($_POST['longitude']       ?? '');
+    $vals['neighborhood']    = clean($_POST['neighborhood']    ?? '');
 
     // Validate (same rules as create.php)
     if (mb_strlen($vals['title']) < 5)
@@ -78,8 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['listing_mode'] = 'حالت آگهی نامعتبر است.';
     if (in_array($vals['listing_mode'], ['sell','both'], true) && $vals['sell_price'] <= 0)
         $errors['sell_price'] = 'قیمت فروش الزامی است.';
-    if ($vals['city'] && !in_array($vals['city'], iran_cities(), true))
-        $errors['city'] = 'لطفاً شهر را از فهرست انتخاب کنید.';
+
+    $location = listing_location_from_request($vals);
+    foreach (validate_listing_location($location) as $field => $msg) {
+        $errors[$field] = $msg;
+    }
+    $vals = array_merge($vals, $location);
 
     $contentErrors = validate_listing_content([
         'title'           => $vals['title'],
@@ -106,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'listing_mode'    => $vals['listing_mode'],
             'sell_price'      => in_array($vals['listing_mode'], ['sell','both'], true) ? $vals['sell_price'] : 0,
             'city'            => $vals['city'] ?: null,
-        ], $reviewUpdate), 'id = ? AND user_id = ?', [$id, $uid]);
+        ], listing_location_db_payload($location), $reviewUpdate), 'id = ? AND user_id = ?', [$id, $uid]);
 
         // Handle image deletions
         $deleteIds = $_POST['delete_images'] ?? [];
@@ -250,7 +261,7 @@ render_navbar($user);
             <div class="form-hint"><span id="desc-count"><?= mb_strlen($vals['description']) ?></span> کاراکتر</div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5)">
+          <div style="display:grid;grid-template-columns:1fr;gap:var(--sp-5)">
             <div class="form-group">
               <label class="form-label" for="estimated_value">ارزش تقریبی (<?= CREDIT_UNIT ?>)</label>
               <input type="number" class="form-control" id="estimated_value" name="estimated_value"
@@ -258,8 +269,9 @@ render_navbar($user);
                      placeholder="0" min="0" step="1">
               <div class="form-hint">برای تطبیق هوشمند کمک می‌کند</div>
             </div>
+
             <div class="form-group">
-              <label class="form-label" for="city">شهر</label>
+              <label class="form-label" for="city">شهر <span class="required">*</span></label>
               <select id="city" name="city" class="form-control <?= isset($errors['city']) ? 'is-invalid' : '' ?>">
                 <option value="">انتخاب شهر</option>
                 <?= render_city_options($vals['city']) ?>
@@ -268,6 +280,22 @@ render_navbar($user);
               <div class="invalid-feedback"><?= h($errors['city']) ?></div>
               <?php endif; ?>
             </div>
+
+            <?php
+            $picker = [
+                'prefix'         => 'edit',
+                'city'           => $vals['city'],
+                'latitude'       => $vals['latitude'],
+                'longitude'      => $vals['longitude'],
+                'neighborhood'   => $vals['neighborhood'],
+                'errors'         => $errors,
+                'city_select_id' => 'city',
+                'control_class'  => 'form-control',
+                'label_class'    => 'form-label',
+                'input_class'    => 'form-control',
+            ];
+            include __DIR__ . '/../includes/listing_location_picker.php';
+            ?>
           </div>
 
         </div>
@@ -405,6 +433,11 @@ render_navbar($user);
     </form>
   </div>
 </div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-location.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-location.css') ?>">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="<?= APP_URL ?>/src/js/listing-location.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-location.js') ?>"></script>
 
 <script>
 // Character counters

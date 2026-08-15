@@ -394,7 +394,7 @@ render_navbar($user);
         <span class="lv-chip"><i class="bi bi-search"></i> <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?></span>
         <?php endif; ?>
         <?php if ($listing['city']): ?>
-        <span class="lv-chip"><i class="bi bi-geo-alt"></i> <?= h($listing['city']) ?></span>
+        <span class="lv-chip"><i class="bi bi-geo-alt"></i> <?= h($listing['city']) ?><?= !empty($listing['neighborhood']) ? ' — ' . h($listing['neighborhood']) : '' ?></span>
         <?php endif; ?>
       </div>
     </section>
@@ -620,7 +620,7 @@ render_navbar($user);
             <span class="lv-chip lv-chip--info"><i class="bi bi-search"></i> <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?></span>
             <?php endif; ?>
             <?php if ($listing['city']): ?>
-            <span class="lv-chip lv-chip--primary"><i class="bi bi-geo-alt"></i> <?= h($listing['city']) ?></span>
+            <span class="lv-chip lv-chip--primary"><i class="bi bi-geo-alt"></i> <?= h($listing['city']) ?><?= !empty($listing['neighborhood']) ? ' — ' . h($listing['neighborhood']) : '' ?></span>
             <?php endif; ?>
             <span class="lv-chip lv-chip--primary"><i class="bi bi-eye"></i> <?= fmt_num((int)$listing['views']) ?> بازدید</span>
             <span class="lv-chip lv-chip--primary"><i class="bi bi-clock"></i> <?= timeago($listing['created_at']) ?></span>
