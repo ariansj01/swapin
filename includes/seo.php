@@ -2,11 +2,48 @@
 // includes/seo.php — SEO helpers (JSON-LD, canonical)
 
 function seo_canonical(?string $override = null): string {
-    if ($override) {
-        return $override;
+    if ($override !== null && $override !== '') {
+        return seo_resolve_canonical($override);
     }
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
     return rtrim(APP_URL, '/') . $path;
+}
+
+function seo_is_valid_canonical_url(string $url): bool {
+    $url = trim($url);
+    if ($url === '') {
+        return false;
+    }
+    if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+        return (bool) filter_var($url, FILTER_VALIDATE_URL);
+    }
+
+    return str_starts_with($url, '/');
+}
+
+/**
+ * Return a safe canonical URL — ignore non-URL values (e.g. page titles stored by mistake).
+ */
+function seo_resolve_canonical(?string $override, ?string $fallback = null): string {
+    $fallback ??= seo_canonical();
+    $override = trim((string) $override);
+
+    if ($override === '' || !seo_is_valid_canonical_url($override)) {
+        return $fallback;
+    }
+
+    if (str_starts_with($override, '/')) {
+        return rtrim(APP_URL, '/') . $override;
+    }
+
+    return $override;
+}
+
+/** Normalize canonical before persisting in CMS/admin forms. */
+function seo_sanitize_stored_canonical(string $url): string {
+    $url = trim($url);
+
+    return ($url !== '' && seo_is_valid_canonical_url($url)) ? $url : '';
 }
 
 function seo_json_ld_website(): array {

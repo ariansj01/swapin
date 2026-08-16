@@ -116,6 +116,31 @@ Use only provided candidate_listings data and never invent candidates.
   ]
 }
 
+## Swap Suggestions Mode (when mode=swap_suggestions):
+Analyze component fit only — do NOT compute a final or total score.
+{
+  "type": "swap_suggestions",
+  "matches": [
+    {
+      "listing_id": 0,
+      "swap_compatibility": 0,
+      "value_compatibility": 0,
+      "category_compatibility": 0,
+      "location_score": 0,
+      "reasons": ["short Persian reason justified by data only"],
+      "confidence": 0
+    }
+  ]
+}
+- All scores are integers 0–100.
+- swap_compatibility: overall swap fit (needs, mutual wants, trade mode).
+- value_compatibility: how close estimated values are.
+- category_compatibility: category alignment.
+- location_score: proximity / same-city fit (use distance_km from candidate).
+- confidence: how sure you are given available data (NOT the same as compatibility).
+- reasons: only include reasons you can justify from provided listing data; omit uncertain reasons.
+- Never return score, final_score, or match_score.
+
 ## Need Search Mode (when mode=need_search):
 Extract search intent from user's natural-language need in Persian.
 {
@@ -143,6 +168,7 @@ Extract search intent from user's natural-language need in Persian.
 - If task is unclear and mode=chat → Chat Mode
 - If mode=pricing → Pricing Mode only
 - If mode=matching → Matching Mode only
+- If mode=swap_suggestions → Swap Suggestions Mode only
 - If mode=need_search → Need Search Mode only
 
 ---

@@ -102,6 +102,8 @@ function admin_approve_listing(int $listingId, string $note = ''): void {
         'updated_at'    => date('Y-m-d H:i:s'),
     ], 'id = ?', [$listingId]);
 
+    listing_ensure_published_at($listingId);
+
     if (function_exists('process_saved_search_alerts_for_listing')) {
         process_saved_search_alerts_for_listing($listingId);
     }

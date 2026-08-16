@@ -293,7 +293,7 @@ function find_nearby_listings(float $lat, float $lng, float $radiusKm = 10.0, in
 
     return DB::fetchAll(
         "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
-                c.name AS cat_name, c.slug AS cat_slug,
+                c.name AS cat_name, c.slug AS cat_slug, c.parent_id AS cat_parent_id,
                 (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb,
                 {$distanceSql} AS distance_km
          FROM listings l

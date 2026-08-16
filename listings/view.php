@@ -236,6 +236,9 @@ $tradeAccepted = $user && $listing['trade_id']
 $canOfferMobile = !$isOwner && $listing['status'] === 'active' && !$myOffer && !$tradeAccepted;
 $loginRedirect = APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $id);
 $showNearbySection = listing_has_coordinates($listing);
+$showSwapSuggestions = $showNearbySection && ($listing['listing_mode'] ?? 'swap') !== 'sell';
+$swapCanOffer = $isOwner && listing_swap_offer_listing_swappable($listing);
+$swapSourceTitle = (string) ($listing['title'] ?? '');
 
 render_head($listing['title'], $metaDesc, [
     'canonical' => $listingUrl,
@@ -257,6 +260,8 @@ render_navbar($user);
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-view-desktop-new.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-view-desktop-new.css') ?>">
 <?php if ($showNearbySection): ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<?php endif; ?>
+<?php if ($showSwapSuggestions || $showNearbySection): ?>
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-nearby.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-nearby.css') ?>">
 <?php endif; ?>
 
@@ -419,6 +424,12 @@ render_navbar($user);
         <?php endif; ?>
       </div>
     </section>
+    <?php endif; ?>
+
+    <?php if ($showSwapSuggestions): ?>
+    <div class="container lv-swap-cta-wrap">
+      <?php $swapListingId = $id; include __DIR__ . '/../includes/listing_swap_suggestions_section.php'; ?>
+    </div>
     <?php endif; ?>
 
     <?php if ($isOwner): ?>
@@ -683,6 +694,10 @@ render_navbar($user);
           <?php endif; ?>
         </section>
 
+        <?php if ($showSwapSuggestions): ?>
+        <?php $swapListingId = $id; include __DIR__ . '/../includes/listing_swap_suggestions_section.php'; ?>
+        <?php endif; ?>
+
         <?php if ($showNearbySection): ?>
         <?php $nearbyListingId = $id; include __DIR__ . '/../includes/listing_nearby_section.php'; ?>
         <?php endif; ?>
@@ -931,6 +946,8 @@ document.addEventListener('keydown', function(e) {
 <script src="<?= APP_URL ?>/src/js/listing-view-mobile.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-view-mobile.js') ?>"></script>
 <?php if ($showNearbySection): ?>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<?php endif; ?>
+<?php if ($showSwapSuggestions || $showNearbySection): ?>
 <script src="<?= APP_URL ?>/src/js/listing-nearby.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-nearby.js') ?>"></script>
 <?php endif; ?>
 

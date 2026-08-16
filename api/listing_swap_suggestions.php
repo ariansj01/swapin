@@ -42,4 +42,23 @@ if (!$result['ok']) {
 $result['suggestions'] = array_map('listing_swap_sanitize_suggestion', $result['suggestions'] ?? []);
 $result['source'] = ai_public_mode($result['source'] ?? 'rules');
 
+$user = auth_user();
+if ($user && !empty($result['suggestions'])) {
+    $sourceListing = listing_nearby_load_source($listingId);
+    if ($sourceListing && (int) $sourceListing['user_id'] === (int) $user['id']) {
+        $result['suggestions'] = listing_swap_offer_enrich_suggestions(
+            $result['suggestions'],
+            (int) $user['id'],
+            $listingId,
+            $sourceListing
+        );
+        $result['offer_context'] = [
+            'source_listing_id'   => $listingId,
+            'source_title'        => (string) ($sourceListing['title'] ?? ''),
+            'can_send_offer'      => listing_swap_offer_listing_swappable($sourceListing),
+            'default_message'     => listing_swap_offer_default_message(),
+        ];
+    }
+}
+
 echo json_encode($result, JSON_UNESCAPED_UNICODE);

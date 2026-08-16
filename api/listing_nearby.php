@@ -18,6 +18,8 @@ rate_limit_ip_or_fail('listing_nearby', 120, 3600, true);
 $listingId = (int) ($_GET['listing_id'] ?? 0);
 $radiusKm  = isset($_GET['radius_km']) ? (float) $_GET['radius_km'] : null;
 $limit     = min(50, max(1, (int) ($_GET['limit'] ?? 24)));
+$sort      = isset($_GET['sort']) ? (string) $_GET['sort'] : null;
+$smartRadius = !empty($_GET['smart_radius']);
 
 if ($listingId <= 0) {
     http_response_code(422);
@@ -25,7 +27,7 @@ if ($listingId <= 0) {
     exit;
 }
 
-$result = listing_nearby_fetch($listingId, $radiusKm, $limit);
+$result = listing_nearby_fetch($listingId, $smartRadius ? null : $radiusKm, $limit, $sort, $smartRadius);
 
 if (!$result['ok']) {
     $code = match ($result['error'] ?? '') {

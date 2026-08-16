@@ -23,7 +23,10 @@ render_head(
     $page['meta_title'] ?: $page['title'],
     $page['meta_description'] ?? '',
     [
-        'canonical' => $page['canonical_url'] ?: APP_URL . '/page/' . $page['slug'],
+        'canonical' => seo_resolve_canonical(
+            $page['canonical_url'] ?? '',
+            APP_URL . '/page/' . $page['slug']
+        ),
         'robots' => ($page['index_status'] ?? 'index') === 'noindex'
             ? 'noindex,nofollow'
             : 'index,follow'

@@ -919,6 +919,37 @@ try {
         }
     }
 
+    if (!db_has_table('listing_swap_feedback')) {
+        try {
+            DB::query("
+                CREATE TABLE `listing_swap_feedback` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `source_listing_id` INT UNSIGNED NOT NULL,
+                    `suggested_listing_id` INT UNSIGNED NOT NULL,
+                    `feedback` ENUM('positive','negative') COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `reason` VARCHAR(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `match_score` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+                    `suggestion_source` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'rules',
+                    `swap_compatibility` TINYINT UNSIGNED DEFAULT NULL,
+                    `value_compatibility` TINYINT UNSIGNED DEFAULT NULL,
+                    `category_compatibility` TINYINT UNSIGNED DEFAULT NULL,
+                    `location_score` TINYINT UNSIGNED DEFAULT NULL,
+                    `confidence` TINYINT UNSIGNED DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uq_swap_feedback_user_pair` (`user_id`, `source_listing_id`, `suggested_listing_id`),
+                    KEY `idx_swap_feedback_source` (`source_listing_id`),
+                    KEY `idx_swap_feedback_suggested` (`suggested_listing_id`),
+                    KEY `idx_swap_feedback_feedback` (`feedback`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-swap-feedback-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
     if (!db_has_table('notifications')) {
         try {
             DB::query("
@@ -939,6 +970,15 @@ try {
             ");
         } catch (Throwable $e) {
             swapin_debug_log('migration-error-notifications-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    if (db_has_table('listings') && !in_array('published_at', db_table_columns('listings'), true)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `published_at` DATETIME DEFAULT NULL AFTER `created_at`");
+            DB::query('UPDATE `listings` SET `published_at` = `created_at` WHERE `published_at` IS NULL');
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listings-published-at', ['msg' => $e->getMessage()]);
         }
     }
 
@@ -1656,14 +1696,56 @@ if (!defined('LISTING_NEARBY_DEFAULT_RADIUS_KM')) {
 if (!defined('LISTING_NEARBY_MAX_RADIUS_KM')) {
     define('LISTING_NEARBY_MAX_RADIUS_KM', 50.0);
 }
+if (!defined('LISTING_NEARBY_POOL_LIMIT')) {
+    define('LISTING_NEARBY_POOL_LIMIT', 60);
+}
+if (!defined('LISTING_NEARBY_SMART_MIN_RESULTS')) {
+    define('LISTING_NEARBY_SMART_MIN_RESULTS', 3);
+}
+if (!defined('LISTING_NEARBY_SMART_MIN_RELEVANT')) {
+    define('LISTING_NEARBY_SMART_MIN_RELEVANT', 2);
+}
+if (!defined('LISTING_NEARBY_SMART_RELEVANT_SCORE')) {
+    define('LISTING_NEARBY_SMART_RELEVANT_SCORE', 50);
+}
 if (!defined('LISTING_SWAP_SUGGESTIONS_LIMIT')) {
     define('LISTING_SWAP_SUGGESTIONS_LIMIT', 6);
 }
 if (!defined('LISTING_SWAP_AI_POOL_LIMIT')) {
     define('LISTING_SWAP_AI_POOL_LIMIT', 12);
 }
+if (!defined('LISTING_SWAP_FINAL_SWAP_WEIGHT')) {
+    define('LISTING_SWAP_FINAL_SWAP_WEIGHT', 0.82);
+}
+if (!defined('LISTING_SWAP_FINAL_LOCATION_WEIGHT')) {
+    define('LISTING_SWAP_FINAL_LOCATION_WEIGHT', 0.18);
+}
+if (!defined('LISTING_SWAP_AI_MAX_REASONS')) {
+    define('LISTING_SWAP_AI_MAX_REASONS', 5);
+}
+if (!defined('LISTING_SWAP_AI_MIN_VALID_MATCHES')) {
+    define('LISTING_SWAP_AI_MIN_VALID_MATCHES', 2);
+}
+if (!defined('LISTING_FRESHNESS_SCORE_TODAY')) {
+    define('LISTING_FRESHNESS_SCORE_TODAY', 100);
+}
+if (!defined('LISTING_FRESHNESS_SCORE_3D')) {
+    define('LISTING_FRESHNESS_SCORE_3D', 85);
+}
+if (!defined('LISTING_FRESHNESS_SCORE_7D')) {
+    define('LISTING_FRESHNESS_SCORE_7D', 65);
+}
+if (!defined('LISTING_FRESHNESS_SCORE_OLD')) {
+    define('LISTING_FRESHNESS_SCORE_OLD', 40);
+}
+if (!defined('LISTING_SWAP_OFFER_MESSAGE_MAX')) {
+    define('LISTING_SWAP_OFFER_MESSAGE_MAX', 500);
+}
 require_once __DIR__ . '/ai.php';
+require_once __DIR__ . '/listing_freshness.php';
 require_once __DIR__ . '/listing_nearby.php';
 require_once __DIR__ . '/listing_swap_suggestions.php';
+require_once __DIR__ . '/listing_swap_feedback.php';
+require_once __DIR__ . '/listing_swap_offers.php';
 require_once __DIR__ . '/google_auth.php';
 require_once __DIR__ . '/sep_payment.php';

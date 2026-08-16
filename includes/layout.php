@@ -73,7 +73,7 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     }
     $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواَپین مبادله کنید — بازار تعویض هوشمند.';
     $url       = APP_URL;
-    $canonical = h($seo['canonical'] ?? seo_canonical());
+    $canonical = h(seo_resolve_canonical($seo['canonical'] ?? null));
     $ogImage   = h($seo['og_image'] ?? LOGO_URL);
     $ogType    = h($seo['og_type'] ?? 'website');
     $robots    = h($seo['robots'] ?? 'index, follow');

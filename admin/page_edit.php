@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/seo.php';
 require_once __DIR__ . '/../includes/admin_layout.php';
 
 $admin = require_admin();
@@ -37,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'featured_image' => clean($_POST['featured_image'] ?? ''),
             'meta_title' => clean($_POST['meta_title'] ?? ''),
             'meta_description' => clean($_POST['meta_description'] ?? ''),
-            'canonical_url' => clean($_POST['canonical_url'] ?? ''),
+            'canonical_url' => seo_sanitize_stored_canonical(clean($_POST['canonical_url'] ?? '')),
             'faq_json' => json_encode($faqs, JSON_UNESCAPED_UNICODE),
             'internal_links' => clean($_POST['internal_links'] ?? ''),
             'status' => $status,
@@ -106,7 +107,7 @@ ob_start();
 
 <div class="form-group">
 <label>Canonical URL</label>
-<input class="form-control" name="canonical_url" value="<?= h($page['canonical_url']) ?>">
+<input class="form-control" name="canonical_url" value="<?= h($page['canonical_url']) ?>" placeholder="https://swaapin.ir/page/about-us — خالی = آدرس پیش‌فرض">
 </div>
 
 <div class="form-group">
