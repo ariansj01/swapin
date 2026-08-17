@@ -40,3 +40,6 @@ Allow: /blog/wp-admin/admin-ajax.php
 
 Sitemap: https://swaapin.ir/sitemap.xml
 Sitemap: https://swaapin.ir/blog/wp-sitemap.xml
+
+Disallow: /trades
+Disallow: /trades.php

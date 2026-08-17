@@ -38,11 +38,42 @@ $isAdmin = $user && is_admin_user($user);
 $reviewStatus = $listing['review_status'] ?? 'approved';
 
 if ($listing['status'] !== 'active' && !$isOwner && !$isAdmin) {
-    http_response_code(404);
-    render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
-    render_navbar($user);
-    echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-exclamation-circle"></i><h1>آگهی یافت نشد</h1><p>این آگهی دیگر در دسترس نیست.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
-    render_footer();
+
+
+    $similar = DB::fetch(
+        'SELECT id
+         FROM listings
+         WHERE category_id = ?
+         AND status = "active"
+         AND review_status = "approved"
+         AND id != ?
+         ORDER BY updated_at DESC
+         LIMIT 1',
+        [
+            $listing['category_id'],
+            $listing['id']
+        ]
+    );
+
+
+    if ($similar) {
+
+        header(
+            'Location: ' . APP_URL . '/listings/view?id=' . (int)$similar['id'],
+            true,
+            301
+        );
+
+    } else {
+
+        header(
+            'Location: ' . APP_URL . '/listings',
+            true,
+            301
+        );
+
+    }
+
     exit;
 }
 
