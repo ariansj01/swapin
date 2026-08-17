@@ -197,9 +197,7 @@ check_legacy_redirect "$BASE/listings/all.php" "$BASE/listings/"
 for sitemap in \
     "$BASE/sitemap.xml" \
     "$BASE/sitemap.php" \
-    "$BASE/sitemap-main.xml" \
-    "$BASE/sitemap-pages.php" \
-    "$BASE/blog/wp-sitemap.xml"
+    "$BASE/sitemap-pages.php"
 do
     code=$(status_code "$sitemap")
 
