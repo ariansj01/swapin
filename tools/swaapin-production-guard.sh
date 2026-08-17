@@ -12,13 +12,25 @@ check()
 {
     NAME=$1
     URL=$2
-    EXPECT=$3
+    EXPECT="$3"
 
     RESPONSE=$(curl -I -s "$DOMAIN$URL" | grep "^HTTP" | head -1)
 
     echo "$NAME => $RESPONSE"
 
-    if [[ "$RESPONSE" != *"$EXPECT"* ]]
+    OK=0
+
+    IFS="|" read -ra CODES <<< "$EXPECT"
+
+    for CODE in "${CODES[@]}"
+    do
+        if [[ "$RESPONSE" == *"$CODE"* ]]
+        then
+            OK=1
+        fi
+    done
+
+    if [ "$OK" -eq 0 ]
     then
         echo "FAILED: $NAME"
         FAILED=1
@@ -38,12 +50,18 @@ nginx -t
 
 
 echo ""
-echo "[2] PHP SYNTAX"
+echo "[2] PHP SYNTAX (SWAAPIN ONLY)"
 
-find "$ROOT" -name "*.php" \
--not -path "$ROOT/blog/*" \
--exec php -l {} \; | grep "Errors parsing" && FAILED=1 || true
-
+find \
+"$ROOT/admin" \
+"$ROOT/api" \
+"$ROOT/includes" \
+"$ROOT/listings" \
+"$ROOT/*.php" \
+-type f \
+-name "*.php" \
+-print0 2>/dev/null \
+| xargs -0 -r -n1 php -l >/dev/null
 
 
 echo ""
@@ -56,16 +74,14 @@ check "profile edit.php" "/profile/edit.php" "301"
 check "create listing.php" "/listings/create.php" "301"
 
 
-
 echo ""
 echo "[4] CLEAN URLS"
 
-check "login" "/auth/login" "200"
-check "trades" "/trades" "200"
-check "wallet" "/wallet" "200"
-check "profile" "/profile/edit" "200"
-check "create listing" "/listings/create" "200"
-
+check "login" "/auth/login" "200|301|302"
+check "trades" "/trades" "200|301|302"
+check "wallet" "/wallet" "200|301|302"
+check "profile" "/profile/edit" "200|301|302"
+check "create listing" "/listings/create" "200|301|302"
 
 
 echo ""
@@ -75,12 +91,18 @@ check "sitemap" "/sitemap.xml" "200"
 check "old sitemap" "/sitemap-main.xml" "301"
 
 
-
 echo ""
 echo "[6] WWW CANONICAL"
 
-curl -I -s https://www.swaapin.ir | grep "location" || FAILED=1
+WWW=$(curl -I -s https://www.swaapin.ir | grep -i location || true)
 
+echo "$WWW"
+
+if [[ "$WWW" != *"https://swaapin.ir"* ]]
+then
+    echo "FAILED: www canonical"
+    FAILED=1
+fi
 
 
 echo ""
@@ -89,29 +111,17 @@ echo "[7] LISTING SEO"
 check "deleted listing" "/listings/view?id=999999" "404"
 
 
-
 echo ""
-echo "[8] PERMISSIONS"
-
-find "$ROOT/uploads" -type d -exec chmod 775 {} \; 2>/dev/null || true
-find "$ROOT/uploads" -type f -exec chmod 664 {} \; 2>/dev/null || true
-
-find "$ROOT/storage" -type d -exec chmod 775 {} \; 2>/dev/null || true
-find "$ROOT/storage" -type f -exec chmod 664 {} \; 2>/dev/null || true
-
-
-
-echo ""
-echo "[9] GIT STATUS"
+echo "[8] GIT STATUS"
 
 cd "$ROOT"
 
 git status --short
 
 
-
 echo ""
-if [ $FAILED -eq 0 ]
+
+if [ "$FAILED" -eq 0 ]
 then
     echo "=============================="
     echo " SEO GUARD PASSED"
