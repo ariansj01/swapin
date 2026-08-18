@@ -156,6 +156,9 @@ function kyc_check_trade(array $user, float $estimatedValue): ?string {
     if (empty($user['phone_verified_at'])) {
         return 'برای پیشنهاد و معامله، ابتدا شماره موبایل خود را تأیید کنید.';
     }
+    if (!user_profile_is_complete($user)) {
+        return 'برای پیشنهاد و معامله، ابتدا پروفایل خود را تکمیل کنید (نام و شهر).';
+    }
     if (!kyc_can_offer_and_trade($user)) {
         return 'برای پیشنهاد و معامله، احراز هویت سطح ۱ (کد ملی) لازم است.';
     }
@@ -177,6 +180,9 @@ function kyc_check_listing_action(array $user): ?string {
     }
     if (empty($user['phone_verified_at'])) {
         return 'برای ثبت آگهی و چت، ابتدا شماره موبایل خود را تأیید کنید.';
+    }
+    if (!user_profile_is_complete($user)) {
+        return 'برای ثبت آگهی، ابتدا پروفایل خود را تکمیل کنید (نام و شهر).';
     }
     return null;
 }

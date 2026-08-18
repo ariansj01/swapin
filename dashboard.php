@@ -133,9 +133,20 @@ render_navbar($user);
 
 <?php if (isset($_GET['welcome'])): ?>
 <div class="alert alert-success" style="border-radius:0;border-left:0;border-right:0">
-  <div class="container">
-    <!-- <i class="bi bi-stars"></i>
-    <strong>به <?= APP_NAME ?> خوش آمدید!</strong> مبلغ <strong><?= fmt_num(WELCOME_BONUS) ?> <?= CREDIT_UNIT ?></strong> به عنوان پاداش خوش‌آمدگویی به کیف پول شما اضافه شد. با ثبت اولین آگهی شروع کنید! -->
+  <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
+    <i class="bi bi-stars"></i>
+    <span><strong>به <?= APP_NAME ?> خوش آمدید!</strong> برای ثبت آگهی یا معامله، پروفایل خود را تکمیل کنید.</span>
+    <?php if (!user_profile_is_complete($user)): ?>
+    <a href="<?= APP_URL ?>/profile/edit" class="btn btn-accent btn-sm ms-auto">تکمیل پروفایل</a>
+    <?php endif; ?>
+  </div>
+</div>
+<?php elseif (!user_profile_is_complete($user)): ?>
+<div class="alert alert-info" style="border-radius:0;border-left:0;border-right:0">
+  <div class="container d-flex align-center gap-3" style="flex-wrap:wrap">
+    <i class="bi bi-person-circle"></i>
+    <span>برای ثبت آگهی یا معامله، <strong>نام و شهر</strong> خود را در پروفایل وارد کنید.</span>
+    <a href="<?= APP_URL ?>/profile/edit" class="btn btn-accent btn-sm ms-auto">تکمیل پروفایل</a>
   </div>
 </div>
 <?php endif; ?>

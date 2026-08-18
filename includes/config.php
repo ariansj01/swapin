@@ -1302,6 +1302,59 @@ function logout_user(): void {
     unset($_SESSION['_csrf']);
 }
 
+function user_profile_is_complete(array $user): bool {
+    $name = trim((string)($user['name'] ?? ''));
+    $city = trim((string)($user['city'] ?? ''));
+    if (mb_strlen($name) < 2) {
+        return false;
+    }
+    return $city !== '' && in_array($city, iran_cities(), true);
+}
+
+function register_phone_user(string $phoneIntl): int {
+    return (int) DB::insert('users', db_filter_row('users', [
+        'name'               => '',
+        'email'              => null,
+        'phone'              => $phoneIntl,
+        'phone_verified_at'  => date('Y-m-d H:i:s'),
+        'city'               => null,
+        'password_hash'      => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT),
+        'verification_level' => 1,
+        'credit_balance'     => 0,
+    ]));
+}
+
+function notify_profile_completion(int $userId): void {
+    if (!db_has_table('notifications')) {
+        return;
+    }
+    $existing = DB::fetch(
+        'SELECT id FROM notifications WHERE user_id = ? AND type = ? AND is_read = 0 LIMIT 1',
+        [$userId, 'profile']
+    );
+    if ($existing) {
+        return;
+    }
+    DB::insert('notifications', [
+        'user_id' => $userId,
+        'type'    => 'profile',
+        'title'   => 'پروفایل خود را تکمیل کنید',
+        'body'    => 'برای ثبت آگهی یا معامله، نام و شهر خود را در پروفایل وارد کنید.',
+        'link'    => APP_URL . '/profile/edit',
+        'is_read' => 0,
+    ]);
+}
+
+function dismiss_profile_completion_notifications(int $userId): void {
+    if (!db_has_table('notifications')) {
+        return;
+    }
+    DB::query(
+        'UPDATE notifications SET is_read = 1 WHERE user_id = ? AND type = ? AND is_read = 0',
+        [$userId, 'profile']
+    );
+}
+
 function app_url(string $path = ''): string {
     $path = ltrim($path, '/');
     return $path === '' ? APP_URL . '/' : APP_URL . '/' . $path;

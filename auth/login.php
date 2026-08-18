@@ -129,10 +129,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dest = $redir ? APP_URL . $redir : APP_URL . '/';
                 header('Location: ' . $dest); exit;
             } else {
-                // New user - redirect to complete profile
-                $_SESSION['new_user_phone'] = $phoneIntl;
-                unset($_SESSION['last_otp_send']);
-                header('Location: ' . APP_URL . '/auth/complete-profile' . ($redir ? '?redirect=' . urlencode($redir) : '')); exit;
+                $uid = register_phone_user($phoneIntl);
+                login_user($uid);
+                notify_profile_completion($uid);
+                unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
+                $dest = $redir ? APP_URL . $redir : APP_URL . '/?welcome=1';
+                header('Location: ' . $dest); exit;
             }
         } else {
             swapin_debug_log('otp-verify-failed', [

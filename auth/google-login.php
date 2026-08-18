@@ -47,6 +47,10 @@ try {
 
     unset($_SESSION['auth_error'], $_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
 
+    if ((bool) ($result['is_new'] ?? false)) {
+        notify_profile_completion((int) $result['user_id']);
+    }
+
     $dest = APP_URL . '/';
     if ($redir) {
         $dest = APP_URL . $redir;

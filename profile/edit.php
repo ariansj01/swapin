@@ -62,6 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bio  = clean($_POST['bio'] ?? '');
 
         if (mb_strlen($name) < 2) $errors['name'] = 'نام باید حداقل ۲ کاراکتر باشد';
+        if (!$city || !in_array($city, iran_cities(), true)) {
+            $errors['city'] = 'لطفاً شهر را از فهرست انتخاب کنید';
+        }
         if (empty($errors)) {
             DB::update('users', [
                 'name' => $name,
@@ -70,6 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ], 'id = ?', [$user['id']]);
             $success = 'پروفایل به‌روزرسانی شد.';
             $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$user['id']]);
+            if (user_profile_is_complete($user)) {
+                dismiss_profile_completion_notifications((int) $user['id']);
+            }
         }
     }
 
@@ -123,6 +129,13 @@ render_user_panel_open($user, 'settings');
 
     <?php if ($success): ?>
     <div class="alert alert-success mb-5"><i class="bi bi-check-circle"></i> <?= h($success) ?></div>
+    <?php endif; ?>
+
+    <?php if (!user_profile_is_complete($user)): ?>
+    <div class="alert alert-info mb-5">
+      <i class="bi bi-person-circle"></i>
+      برای ثبت آگهی یا معامله، نام و شهر خود را در فرم زیر تکمیل کنید.
+    </div>
     <?php endif; ?>
 
     <!-- KYC Status -->

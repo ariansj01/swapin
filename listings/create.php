@@ -8,11 +8,11 @@ $listingProviderType = is_store_seller($user) ? user_provider_type($user) : 'nor
 
 if ($listingErr = kyc_check_listing_action($user)) {
     render_full_page_modal(
-        'تأیید موبایل لازم است',
+        'تکمیل پروفایل لازم است',
         $listingErr,
-        'رفتن به صفحه احراز هویت',
-        APP_URL . '/profile/edit.php',
-        'bi-phone-fill'
+        'رفتن به پروفایل',
+        APP_URL . '/profile/edit',
+        'bi-person-fill'
     );
 }
 
