@@ -224,7 +224,7 @@ if (!empty($storeUser['store_banner'])) {
 
                 <section class="store-main">
                     <?php if (!empty($storeUser['store_description'])): ?>
-                    <div class="card mb-5 p-4">
+                    <div class="card mb-5 p-4" style="padding: 15px;">
                         <h3 class="store-sidebar__title mb-3"><i class="bi bi-file-text"></i> درباره فروشگاه</h3>
                         <div class="store-description">
                             <?= nl2br(h($storeUser['store_description'])) ?>

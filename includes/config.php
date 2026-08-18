@@ -109,6 +109,54 @@ try {
             swapin_debug_log('migration-error-buy-price', ['msg' => $e->getMessage()]);
         }
     }
+    $tradeOffersCols = db_table_columns('trade_offers');
+    if (!in_array('flow_type', $tradeOffersCols)) {
+        try {
+            DB::query("ALTER TABLE `trade_offers` ADD COLUMN `flow_type` ENUM('user_to_user','user_to_store') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user_to_user' AFTER `offer_type`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-flow-type', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('counter_offer_credit', $tradeOffersCols)) {
+        try {
+            DB::query("ALTER TABLE `trade_offers` ADD COLUMN `counter_offer_credit` DECIMAL(15,0) DEFAULT NULL COMMENT 'Store counter-offer cash diff in Toman' AFTER `offer_credit`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-counter-offer-credit', ['msg' => $e->getMessage()]);
+        }
+    }
+    try {
+        $toStatusInfo = DB::fetch("SHOW CREATE TABLE `trade_offers`");
+        if ($toStatusInfo && !empty($toStatusInfo['Create Table'])) {
+            $createSql = $toStatusInfo['Create Table'];
+            $needsNegotiating = (strpos($createSql, "'negotiating'") === false);
+            $needsCounter = (strpos($createSql, "'counter_offered'") === false);
+            if ($needsNegotiating || $needsCounter) {
+                DB::query("ALTER TABLE `trade_offers` MODIFY COLUMN `status` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending'");
+            }
+        }
+    } catch (Throwable $e) {
+        swapin_debug_log('migration-error-offer-status', ['msg' => $e->getMessage()]);
+    }
+    if (!db_has_table('store_offer_messages')) {
+        try {
+            DB::query("
+                CREATE TABLE `store_offer_messages` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `offer_id` INT UNSIGNED NOT NULL,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `type` ENUM('text','counter_offer','system') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'text',
+                    `body` TEXT COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `meta` JSON DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_store_offer_msg_offer` (`offer_id`),
+                    KEY `idx_store_offer_msg_user` (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-offer-messages', ['msg' => $e->getMessage()]);
+        }
+    }
 
     // Add onboarding columns to users table if they don't exist
     $usersColumns = db_table_columns('users');
@@ -1822,5 +1870,6 @@ require_once __DIR__ . '/listing_nearby.php';
 require_once __DIR__ . '/listing_swap_suggestions.php';
 require_once __DIR__ . '/listing_swap_feedback.php';
 require_once __DIR__ . '/listing_swap_offers.php';
+require_once __DIR__ . '/store_swap_offers.php';
 require_once __DIR__ . '/google_auth.php';
 require_once __DIR__ . '/sep_payment.php';

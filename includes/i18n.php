@@ -240,12 +240,14 @@ function want_type_label(string $type): string {
 
 function offer_status_label(string $status): string {
     return match ($status) {
-        'pending'   => 'در انتظار',
-        'accepted'  => 'پذیرفته‌شده',
-        'rejected'  => 'رد شده',
-        'cancelled' => 'لغو شده',
-        'completed' => 'تکمیل‌شده',
-        default     => $status,
+        'pending'         => 'در انتظار',
+        'negotiating'     => 'در حال مذاکره',
+        'counter_offered' => 'پیشنهاد جدید',
+        'accepted'        => 'پذیرفته‌شده',
+        'rejected'        => 'رد شده',
+        'cancelled'       => 'لغو شده',
+        'completed'       => 'تکمیل‌شده',
+        default           => $status,
     };
 }
 

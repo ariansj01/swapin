@@ -35,6 +35,7 @@ function panel_nav_items(array $user): array {
         'my'           => [$url . '/listings/my',          'آگهی‌های من',   'bi-grid',            0],
         'promote'      => [$promote,                       'ارتقای آگهی',   'bi-rocket-takeoff',  0],
         'saved'        => [$url . '/listings/saved',        'علاقه‌مندی‌ها', 'bi-heart',           0],
+        'store_offers' => [$url . '/store-offers',         'معاوضه با فروشگاه', 'bi-shop',       0],
         'trades'       => [$url . '/trades',               'اتاق معامله',   'bi-shield-lock',     $counts['offers']],
         'wallet'       => [$url . '/wallet',               'کیف پول',       'bi-wallet2',         0],
         'subscription' => [$url . '/subscription',        'اشتراک',        'bi-gem',             0],

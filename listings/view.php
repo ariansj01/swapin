@@ -10,6 +10,7 @@ $usersCols = db_table_columns('users');
 $selectStoreCols = '';
 if (in_array('store_name', $usersCols)) $selectStoreCols .= ', u.store_name';
 if (in_array('store_slug', $usersCols)) $selectStoreCols .= ', u.store_slug';
+if (in_array('seller_type', $usersCols)) $selectStoreCols .= ', u.seller_type';
 
 $listing = DB::fetch(
     'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
@@ -94,9 +95,25 @@ $images = DB::fetchAll('SELECT * FROM listing_images WHERE listing_id = ? ORDER 
 
 // Existing offers from current user
 $myOffer = $user ? DB::fetch(
-    'SELECT * FROM trade_offers WHERE listing_id = ? AND from_user_id = ? AND status = "pending" LIMIT 1',
+    'SELECT * FROM trade_offers
+     WHERE listing_id = ? AND from_user_id = ? AND (flow_type IS NULL OR flow_type = "user_to_user")
+       AND status = "pending" LIMIT 1',
     [$id, $user['id']]
 ) : null;
+
+$myStoreOffer = null;
+if ($user && store_swap_flow_enabled()) {
+    $activeStatuses = store_swap_active_statuses();
+    $statusPh = implode(',', array_fill(0, count($activeStatuses), '?'));
+    $myStoreOffer = DB::fetch(
+        "SELECT * FROM trade_offers
+         WHERE listing_id = ? AND from_user_id = ? AND flow_type = 'user_to_store'
+           AND status IN ({$statusPh}) LIMIT 1",
+        array_merge([$id, $user['id']], $activeStatuses)
+    );
+}
+
+$hasPendingOffer = $myOffer || $myStoreOffer;
 
 // User's active listings for offer
 $myListings = $user ? DB::fetchAll(
@@ -138,8 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'make_offer') {
         if ($listing['user_id'] == $user['id']) {
             $offerError = 'نمی‌توانید برای آگهی خودتان پیشنهاد بدهید.';
-        } elseif ($myOffer) {
-            $offerError = 'شما از قبل یک پیشنهاد در انتظار برای این آگهی دارید.';
+        } elseif ($hasPendingOffer) {
+            $offerError = 'شما از قبل یک پیشنهاد فعال برای این آگهی دارید.';
         } else {
             $offerType = clean($_POST['offer_type'] ?? 'message');
             $offerListingId = (int)($_POST['offer_listing_id'] ?? 0) ?: null;
@@ -251,6 +268,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 $canBuy  = listing_can_cash_buy($listing, $user);
 $buyPrice = $canBuy ? (float)$listing['sell_price'] : 0;
+$isStoreSwappable = listing_is_store_swappable($listing);
+$hasBothBuySwap = $canBuy && ($listing['listing_mode'] ?? 'swap') !== 'sell';
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
 $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
@@ -264,7 +283,9 @@ $wantChips = array_values(array_filter(array_map(
 )));
 $tradeAccepted = $user && $listing['trade_id']
     && ((int)$user['id'] === (int)$listing['user_a_id'] || (int)$user['id'] === (int)$listing['user_b_id']);
-$canOfferMobile = !$isOwner && $listing['status'] === 'active' && !$myOffer && !$tradeAccepted;
+$canOfferMobile = !$isOwner && $listing['status'] === 'active' && !$hasPendingOffer && !$tradeAccepted;
+$storeSwapUrl = APP_URL . '/store-offers/create.php?listing_id=' . $id;
+$storeOfferViewUrl = $myStoreOffer ? APP_URL . '/store-offers/view.php?id=' . (int) $myStoreOffer['id'] : '';
 $loginRedirect = APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $id);
 $showNearbySection = listing_has_coordinates($listing);
 $showSwapSuggestions = $showNearbySection && ($listing['listing_mode'] ?? 'swap') !== 'sell';
@@ -387,7 +408,9 @@ render_navbar($user);
         <span class="lv-price"><?= fmt_credit((float)$listing['estimated_value']) ?></span>
       </div>
       <?php endif; ?>
-      <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
+      <?php if ($hasBothBuySwap): ?>
+      <span class="lv-badge-swap" style="background:rgba(37,99,235,.1);color:var(--accent,#2563eb)"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
+      <?php elseif (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
       <span class="lv-badge-swap"><i class="bi bi-arrow-left-right"></i> امکان معاوضه</span>
       <?php endif; ?>
     </div>
@@ -504,9 +527,21 @@ render_navbar($user);
     </a>
     <?php endif; ?>
     <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && $canOfferMobile): ?>
+    <?php if ($isStoreSwappable): ?>
+    <?php if ($user): ?>
+    <a href="<?= $storeSwapUrl ?>" class="lv-bottom-bar__btn">
+      <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
+    </a>
+    <?php else: ?>
+    <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn">
+      <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
+    </a>
+    <?php endif; ?>
+    <?php else: ?>
     <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" <?= !$user ? 'data-login-href="' . h($loginRedirect) . '"' : '' ?>>
       <i class="bi bi-arrow-left-right"></i> معاوضه
     </button>
+    <?php endif; ?>
     <?php endif; ?>
   </div>
   <?php elseif ($canOfferMobile): ?>
@@ -524,6 +559,12 @@ render_navbar($user);
       <i class="bi bi-plus-circle"></i> ثبت کالا برای پیشنهاد
     </a>
     <?php endif; ?>
+  </div>
+  <?php elseif ($myStoreOffer): ?>
+  <div class="lv-bottom-bar">
+    <a href="<?= $storeOfferViewUrl ?>" class="lv-bottom-bar__btn" style="text-decoration:none">
+      <i class="bi bi-hourglass-split"></i> مشاهده پیشنهاد معاوضه
+    </a>
   </div>
   <?php elseif ($myOffer): ?>
   <div class="lv-bottom-bar">
@@ -667,7 +708,9 @@ render_navbar($user);
           <div class="lv-meta-top">
             <span class="lv-chip lv-chip--primary"><i class="bi bi-tag"></i> <?= h($listing['cat_name']) ?></span>
             <span class="lv-chip lv-chip--success"><i class="bi bi-check-circle"></i> <?= condition_label($listing['condition']) ?></span>
-            <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
+            <?php if ($hasBothBuySwap): ?>
+            <span class="lv-chip lv-chip--gold"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
+            <?php elseif (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
             <span class="lv-chip lv-chip--gold"><i class="bi bi-arrow-left-right"></i> قابل معاوضه</span>
             <?php endif; ?>
             <?php if (!empty($listing['inspection_status']) && $listing['inspection_status'] !== 'none'): ?>
@@ -770,6 +813,14 @@ render_navbar($user);
             <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="alert-link">مشاهده معامله</a>
           </div>
         </section>
+        <?php elseif ($myStoreOffer): ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-hourglass-split"></i> پیشنهاد معاوضه با فروشگاه</h3>
+          <div class="alert alert-success" style="margin:0">
+            <?= h(store_swap_offer_status_label((string) $myStoreOffer['status'])) ?>
+            <a href="<?= $storeOfferViewUrl ?>" class="alert-link">مشاهده پیشنهاد</a>
+          </div>
+        </section>
         <?php elseif ($myOffer): ?>
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-hourglass-split"></i> وضعیت پیشنهاد</h3>
@@ -795,6 +846,19 @@ render_navbar($user);
         </section>
         <?php endif; ?>
         <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
+        <?php if ($isStoreSwappable): ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه با فروشگاه</h3>
+          <p class="fs-sm mb-4" style="color:var(--text-muted)">کالای خود را انتخاب کنید و در صورت نیاز مبلغ تکمیلی پیشنهاد دهید.</p>
+          <?php if ($user): ?>
+          <a href="<?= $storeSwapUrl ?>" class="lv-btn lv-btn--primary w-100">
+            <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
+          </a>
+          <?php else: ?>
+          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary w-100"><i class="bi bi-box-arrow-in-left"></i> ورود برای پیشنهاد معاوضه</a>
+          <?php endif; ?>
+        </section>
+        <?php else: ?>
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-send"></i> ارسال پیشنهاد</h3>
 
@@ -858,6 +922,7 @@ render_navbar($user);
           </form>
           <?php endif; ?>
         </section>
+        <?php endif; ?>
         <?php endif; ?>
         <?php endif; ?>
 

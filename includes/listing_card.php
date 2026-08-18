@@ -44,6 +44,12 @@ if ((!$storeName || !$storeSlug) && !empty($l['user_id'])) {
 $hasStore = $storeName && $storeSlug;
 
 $isSwap   = empty($l['listing_mode']) || $l['listing_mode'] === 'swap' || $l['listing_mode'] === 'both';
+$listingMode = trim((string)($l['listing_mode'] ?? ''));
+if ($listingMode === '') {
+    $listingMode = 'swap';
+}
+$hasSellCta = in_array($listingMode, ['sell', 'both'], true);
+$hasSwapCta = in_array($listingMode, ['swap', 'both'], true);
 $isSaved  = in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
 $promotionMeta = function_exists('listing_active_promotion_meta') ? listing_active_promotion_meta($l) : null;
@@ -92,6 +98,9 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
     <div class="listing-card__product">
       <div class="listing-card__details">
         <h3 class="listing-card__title"><?= h($l['title']) ?></h3>
+        <?php if ($hasStore && $hasSellCta && $hasSwapCta): ?>
+        <span class="listing-card__badge listing-card__badge--both" style="display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;color:var(--accent,#2563eb);background:rgba(37,99,235,.1);padding:2px 8px;border-radius:999px;margin-bottom:4px"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
+        <?php endif; ?>
         <?php if (!empty($l['cat_name'])): ?>
         <span class="listing-card__cat">دسته: <?= h(category_label($l['cat_slug'] ?? '', $l['cat_name'] ?? '')) ?></span>
         <?php endif; ?>
@@ -148,10 +157,17 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
       <?php endif; ?>
     </div>
 
-    <div class="listing-card__cta">
-      <span class="listing-card__cta-btn">
-        <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
+    <div class="listing-card__cta<?= ($hasSellCta && $hasSwapCta) ? ' listing-card__cta--dual' : '' ?>">
+      <?php if ($hasSellCta): ?>
+      <span class="listing-card__cta-btn listing-card__cta-btn--buy">
+        <i class="bi bi-cart-check"></i> خرید کالا
       </span>
+      <?php endif; ?>
+      <?php if ($hasSwapCta): ?>
+      <span class="listing-card__cta-btn<?= $hasSellCta ? ' listing-card__cta-btn--swap' : '' ?>">
+        <i class="bi bi-arrow-left-right"></i> <?= $hasSellCta ? 'معاوضه' : 'پیشنهاد معاوضه' ?>
+      </span>
+      <?php endif; ?>
     </div>
   </a>
 </article>

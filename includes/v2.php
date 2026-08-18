@@ -336,13 +336,16 @@ function get_trade_contract(int $tradeId): ?array {
 }
 
 function accept_trade_offer(int $offerId, int $ownerId, string $message): array {
+    $flowCol = db_has_column('trade_offers', 'flow_type') ? ', o.flow_type' : '';
     $offer = DB::fetch(
         'SELECT o.*, l.user_id AS listing_owner, l.title AS listing_title, l.estimated_value AS listing_a_value,
-                ol.estimated_value AS listing_b_value
+                ol.estimated_value AS listing_b_value' . $flowCol . '
          FROM trade_offers o
          JOIN listings l ON l.id = o.listing_id
          LEFT JOIN listings ol ON ol.id = o.offer_listing_id
-         WHERE o.id = ? AND l.user_id = ? AND o.status = "pending"',
+         WHERE o.id = ? AND l.user_id = ?
+           AND (o.status = "pending"
+                OR (o.flow_type = "user_to_store" AND o.status = "accepted"))',
         [$offerId, $ownerId]
     );
     if (!$offer) {

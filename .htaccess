@@ -55,6 +55,13 @@ Options +MultiViews -Indexes
   RewriteRule ^orders/checkout/?$ orders/checkout.php [L,NC,QSA]
   RewriteRule ^orders/view/?$ orders/view.php [L,NC,QSA]
 
+  RewriteRule ^store-offers/?$ store-offers/index.php [L,NC,QSA]
+  RewriteRule ^store-offers/create/?$ store-offers/create.php [L,NC,QSA]
+  RewriteRule ^store-offers/view/?$ store-offers/view.php [L,NC,QSA]
+  RewriteRule ^store-offers/success/?$ store-offers/success.php [L,NC,QSA]
+  RewriteRule ^store-offers/confirm/?$ store-offers/confirm.php [L,NC,QSA]
+  RewriteRule ^store-offers/complete/?$ store-offers/complete.php [L,NC,QSA]
+
   RewriteRule ^shops/?$ shops/index.php [L,NC,QSA]
   RewriteRule ^search/ai/?$ search/ai.php [L,NC,QSA]
   RewriteRule ^search/saved/?$ search/saved.php [L,NC,QSA]

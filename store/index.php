@@ -181,16 +181,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
     $message = clean($_POST['message'] ?? '');
 
     if ($offerId && in_array($action, ['accept', 'reject'], true)) {
+        $flowCol = db_has_column('trade_offers', 'flow_type') ? ', o.flow_type' : '';
         $offer = DB::fetch(
-            'SELECT o.*, l.user_id AS listing_owner, l.title AS listing_title
+            'SELECT o.*, l.user_id AS listing_owner, l.title AS listing_title' . $flowCol . '
              FROM trade_offers o
              JOIN listings l ON l.id = o.listing_id
-             WHERE o.id = ? AND l.user_id = ? AND o.status = "pending"',
+             WHERE o.id = ? AND l.user_id = ?',
             [$offerId, $uid]
         );
 
         if (!$offer) {
             $error = 'پیشنهاد یافت نشد یا دسترسی ندارید.';
+        } elseif (($offer['flow_type'] ?? 'user_to_user') === 'user_to_store') {
+            $storeUser = DB::fetch('SELECT * FROM users WHERE id = ?', [$uid]);
+            if ($action === 'accept') {
+                $result = store_swap_offer_store_accept($offerId, $storeUser ?: ['id' => $uid], $message ?: null);
+                if (isset($result['error'])) {
+                    $error = $result['error'];
+                } else {
+                    header('Location: ' . APP_URL . '/store-offers/view.php?id=' . $offerId);
+                    exit;
+                }
+            } else {
+                $result = store_swap_offer_reject($offerId, $storeUser ?: ['id' => $uid], $message ?: null);
+                $error = $result['error'] ?? '';
+                $success = isset($result['ok']) ? 'پیشنهاد رد شد.' : '';
+            }
+        } elseif (($offer['status'] ?? '') !== 'pending') {
+            $error = 'این پیشنهاد دیگر در انتظار پاسخ نیست.';
         } elseif ($action === 'accept') {
             if (empty($message)) {
                 $error = 'لطفاً پیامی برای طرفین بنویسید.';
@@ -242,16 +260,19 @@ $totalValue = array_sum(array_map(fn($r) => (float)$r['estimated_value'], $inven
 
 $_hasOfferType = db_has_column('trade_offers', 'offer_type');
 
+$_hasFlowType = db_has_column('trade_offers', 'flow_type');
+$_flowCol = $_hasFlowType ? ', o.flow_type' : '';
+
 $_offerBaseSql = 'SELECT o.*, l.title AS listing_title, l.estimated_value AS listing_value, l.id AS listing_id_v,
             (SELECT filename FROM listing_images WHERE listing_id=l.id AND is_primary=1 LIMIT 1) AS listing_thumb,
             u.name AS from_name, u.avatar AS from_avatar, u.rating AS from_rating,
             ol.title AS offer_listing_title, ol.estimated_value AS offer_listing_value, ol.id AS offer_listing_id_v,
-            (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb
+            (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb' . $_flowCol . '
      FROM trade_offers o
      JOIN listings l ON l.id = o.listing_id
      JOIN users u ON u.id = o.from_user_id
      LEFT JOIN listings ol ON ol.id = o.offer_listing_id
-     WHERE l.user_id = ? AND o.status = "pending"
+     WHERE l.user_id = ? AND o.status IN ("pending","negotiating","counter_offered","accepted")
      ORDER BY o.created_at DESC';
 
 $allPendingOffers = DB::fetchAll($_offerBaseSql, [$uid]);
@@ -297,7 +318,9 @@ foreach (array_slice($swapOffersList, 0, 5) as $_nOffer) {
         'icon' => 'bi-arrow-left-right',
         'text' => 'درخواست معاوضه از «' . ($_nOffer['from_name'] ?? '') . '» برای «' . ($_nOffer['listing_title'] ?? '') . '»',
         'time' => timeago($_nOffer['created_at']),
-        'link' => APP_URL . '/store/?tab=requests&subtab=swap-requests',
+        'link' => (($_nOffer['flow_type'] ?? 'user_to_user') === 'user_to_store')
+            ? APP_URL . '/store-offers/view.php?id=' . (int) ($_nOffer['id'] ?? 0)
+            : APP_URL . '/store/?tab=requests&subtab=swap-requests',
     ];
 }
 if (empty($notifications)) {
@@ -336,7 +359,11 @@ foreach ($allPendingOffers as $_nOffer) {
         'desc'  => 'کاربر «' . ($_nOffer['from_name'] ?? '') . '» برای «' . ($_nOffer['listing_title'] ?? '') . '» درخواست فرستاد.',
         'time'  => timeago($_nOffer['created_at']),
         'unread'=> true,
-        'link'  => APP_URL . '/store/?tab=requests&subtab=' . ($_type === 'buy' ? 'buy-requests' : 'swap-requests'),
+        'link'  => $_type === 'buy'
+            ? APP_URL . '/store/?tab=requests&subtab=buy-requests'
+            : ((($_nOffer['flow_type'] ?? 'user_to_user') === 'user_to_store')
+                ? APP_URL . '/store-offers/view.php?id=' . (int) ($_nOffer['id'] ?? 0)
+                : APP_URL . '/store/?tab=requests&subtab=swap-requests'),
     ];
 }
 
@@ -963,6 +990,12 @@ render_navbar($user);
                   </div>
                 </div>
                 <div class="store-request__actions store-request__actions--forms">
+                  <?php if (($offer['flow_type'] ?? 'user_to_user') === 'user_to_store'): ?>
+                  <a href="<?= APP_URL ?>/store-offers/view.php?id=<?= (int)$offer['id'] ?>" class="store-btn store-btn--sm store-btn--primary">
+                    <i class="bi bi-chat-dots"></i> مدیریت و مذاکره
+                  </a>
+                  <span class="store-request__status store-request__status--pending"><?= h(store_swap_offer_status_label((string)($offer['status'] ?? 'pending'))) ?></span>
+                  <?php else: ?>
                   <form method="POST" class="store-offer-form">
                     <?= csrf_field() ?>
                     <input type="hidden" name="offer_id" value="<?= (int)$offer['id'] ?>">
@@ -977,6 +1010,7 @@ render_navbar($user);
                     <textarea name="message" class="store-form-input store-form-input--sm" rows="2" required placeholder="پیام رد..."></textarea>
                     <button type="submit" class="store-btn store-btn--sm store-btn--danger"><i class="bi bi-x"></i> رد</button>
                   </form>
+                  <?php endif; ?>
                 </div>
               </div>
             </div>

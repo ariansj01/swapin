@@ -1924,6 +1924,18 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   margin-top: auto;
 }
 
+.listing-card__cta--dual {
+  display: flex;
+  gap: 8px;
+}
+
+.listing-card__cta--dual .listing-card__cta-btn {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  font-size: .8125rem;
+}
+
 .listing-card__cta-btn {
   display: flex;
   align-items: center;
@@ -1948,6 +1960,20 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .listing-card:hover .listing-card__cta-btn i { color: var(--accent); }
 
 .listing-card__cta-btn i { color: var(--accent-dark); font-size: 1rem; }
+
+.listing-card__cta-btn--buy {
+  border-color: var(--accent);
+  color: var(--accent-dark, var(--accent));
+}
+
+.listing-card:hover .listing-card__cta-btn--buy {
+  background: var(--accent);
+  color: #fff;
+}
+
+.listing-card:hover .listing-card__cta-btn--buy i {
+  color: #fff;
+}
 
 /* ── 13. Avatar ────────────────────────────────────────────────────────── */
 .avatar {
