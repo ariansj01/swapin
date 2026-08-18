@@ -5,6 +5,8 @@ require_once __DIR__ . '/../includes/layout.php';
 $user   = require_auth();
 $uid    = (int)$user['id'];
 $isStore = is_store_seller($user);
+$providerType = user_provider_type($user);
+$panelCopy = store_panel_copy($providerType);
 $success = '';
 $error   = '';
 
@@ -110,7 +112,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_add_product']))
         }
 
         if (empty($validationErrors)) {
-            $listingId = DB::insert('listings', [
+            $listingAttrs = listing_attrs_from_input($providerType, $_POST);
+            $listingId = DB::insert('listings', array_merge([
                 'user_id'         => $uid,
                 'category_id'     => $category_id,
                 'title'           => $title,
@@ -123,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_add_product']))
                 'status'          => 'active',
                 'review_status'   => 'pending',
                 'city'            => $user['city'] ?? null,
-            ]);
+            ], listing_attrs_db_payload($listingAttrs)));
 
             $uploadedImages = 0;
             if (!empty($_FILES['images']['name'][0])) {
@@ -156,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_add_product']))
                 $error = 'آپلود تصاویر ناموفق بود. لطفاً دوباره تلاش کنید.';
             } else {
                 ai_match_clear_cache($uid);
-                $success = 'محصول شما با موفقیت ثبت شد.';
+                $success = $panelCopy['item_singular'] . ' شما با موفقیت ثبت شد.';
                 echo '<script>window.location.href = window.location.href;</script>';
                 exit;
             }
@@ -353,8 +356,9 @@ foreach (array_slice($sellerOrders, 0, 10) as $_sOrder) {
 }
 
 $chartData = $chartViews;
+$storeTabs = store_panel_tabs($providerType, $pendingBuyOffers + $pendingSwapOffers, $pendingSellerOrders);
 
-render_head('پنل فروشگاه');
+render_head($panelCopy['panel_title']);
 render_navbar($user);
 ?>
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/store.css?v=<?= @filemtime(__DIR__ . '/../src/css/store.css') ?: time() ?>">
@@ -368,8 +372,8 @@ render_navbar($user);
           <i class="bi bi-shop"></i>
         </div>
         <div>
-          <h1 class="store-header__title">پنل فروشگاه</h1>
-          <p class="store-header__subtitle">مدیریت کامل فروشگاه، محصولات، درخواست‌ها و آمار فروش</p>
+          <h1 class="store-header__title"><?= h($panelCopy['panel_title']) ?></h1>
+          <p class="store-header__subtitle"><?= h($panelCopy['panel_subtitle']) ?></p>
         </div>
       </div>
       <div class="store-header__actions">
@@ -382,7 +386,7 @@ render_navbar($user);
         </a>
         <?php endif; ?>
         <a href="<?= APP_URL ?>/listings/create" class="store-btn store-btn--gradient">
-          <i class="bi bi-plus-lg"></i> افزودن محصول جدید
+          <i class="bi bi-plus-lg"></i> <?= h($panelCopy['add_item']) ?>
         </a>
       </div>
     </div>
@@ -406,42 +410,14 @@ render_navbar($user);
     <?php endif; ?>
 
     <div class="store-tabs">
-      <button class="store-tab is-active" data-tab="dashboard">
-        <i class="bi bi-speedometer2"></i> داشبورد اصلی
-      </button>
-      <button class="store-tab" data-tab="products">
-        <i class="bi bi-box-seam"></i> محصولات
-      </button>
-      <button class="store-tab" data-tab="requests">
-        <i class="bi bi-inbox"></i> درخواست‌ها
-        <?php if ($pendingBuyOffers + $pendingSwapOffers > 0): ?>
-        <span class="store-tab__badge"><?= $pendingBuyOffers + $pendingSwapOffers ?></span>
+      <?php foreach ($storeTabs as $i => $tab): ?>
+      <button class="store-tab<?= $i === 0 ? ' is-active' : '' ?>" data-tab="<?= h($tab['id']) ?>">
+        <i class="bi <?= h($tab['icon']) ?>"></i> <?= h($tab['label']) ?>
+        <?php if (!empty($tab['badge'])): ?>
+        <span class="store-tab__badge"><?= (int)$tab['badge'] ?></span>
         <?php endif; ?>
       </button>
-      <button class="store-tab" data-tab="orders">
-        <i class="bi bi-bag-check"></i> سفارش‌های فروش
-        <?php if ($pendingSellerOrders > 0): ?>
-        <span class="store-tab__badge"><?= $pendingSellerOrders ?></span>
-        <?php endif; ?>
-      </button>
-      <button class="store-tab" data-tab="messages">
-        <i class="bi bi-chat-dots"></i> پیام‌ها
-      </button>
-      <button class="store-tab" data-tab="management">
-        <i class="bi bi-gear"></i> مدیریت فروشگاه
-      </button>
-      <button class="store-tab" data-tab="categories">
-        <i class="bi bi-grid-3x3-gap"></i> دسته‌بندی‌ها
-      </button>
-      <button class="store-tab" data-tab="reports">
-        <i class="bi bi-graph-up-arrow"></i> گزارش‌ها
-      </button>
-      <button class="store-tab" data-tab="notifications">
-        <i class="bi bi-bell"></i> اعلان‌ها
-      </button>
-      <button class="store-tab" data-tab="settings">
-        <i class="bi bi-sliders"></i> تنظیمات
-      </button>
+      <?php endforeach; ?>
     </div>
 
     <!-- ========== TAB: DASHBOARD ========== -->
@@ -454,7 +430,7 @@ render_navbar($user);
           </div>
           <div class="store-stat-card__content">
             <div class="store-stat-card__value"><?= $activeCount ?> <span class="store-stat-card__total">/ <?= $limit ?></span></div>
-            <div class="store-stat-card__label">تعداد محصولات فعال</div>
+            <div class="store-stat-card__label"><?= h($panelCopy['active_items']) ?></div>
           </div>
         </div>
         <div class="store-stat-card">
@@ -472,25 +448,27 @@ render_navbar($user);
           </div>
           <div class="store-stat-card__content">
             <div class="store-stat-card__value"><?= $pendingSwapOffers ?></div>
-            <div class="store-stat-card__label">درخواست‌های معاوضه</div>
+            <div class="store-stat-card__label"><?= h($panelCopy['swap_offers']) ?></div>
           </div>
         </div>
+        <?php if ($panelCopy['show_buy_offers'] === '1'): ?>
         <div class="store-stat-card">
           <div class="store-stat-card__icon store-stat-card__icon--orange">
             <i class="bi bi-cart-check"></i>
           </div>
           <div class="store-stat-card__content">
             <div class="store-stat-card__value"><?= $pendingBuyOffers ?></div>
-            <div class="store-stat-card__label">درخواست‌های خرید</div>
+            <div class="store-stat-card__label"><?= h($panelCopy['buy_offers']) ?></div>
           </div>
         </div>
+        <?php endif; ?>
         <div class="store-stat-card">
           <div class="store-stat-card__icon store-stat-card__icon--green">
             <i class="bi bi-check-circle"></i>
           </div>
           <div class="store-stat-card__content">
             <div class="store-stat-card__value"><?= $completedTrades ?></div>
-            <div class="store-stat-card__label">فروش نهایی</div>
+            <div class="store-stat-card__label"><?= h($panelCopy['completed_trades']) ?></div>
           </div>
         </div>
         <div class="store-stat-card">
@@ -499,7 +477,7 @@ render_navbar($user);
           </div>
           <div class="store-stat-card__content">
             <div class="store-stat-card__value"><?= fmt_credit($totalValue) ?></div>
-            <div class="store-stat-card__label">ارزش کل موجودی</div>
+            <div class="store-stat-card__label"><?= h($panelCopy['inventory_value']) ?></div>
           </div>
         </div>
       </div>
@@ -673,18 +651,19 @@ render_navbar($user);
       <div class="store-grid-2">
         <div class="store-card">
           <div class="store-card__header">
-            <h3 class="store-card__title"><i class="bi bi-plus-circle"></i> افزودن محصول جدید</h3>
+            <h3 class="store-card__title"><i class="bi bi-plus-circle"></i> <?= h($panelCopy['add_item']) ?></h3>
           </div>
           <div class="store-card__body">
             <form method="POST" enctype="multipart/form-data">
               <?= csrf_field() ?>
               <div class="store-form-group">
-                <label class="store-form-label">نام محصول</label>
-                <input type="text" class="store-form-input" name="title" placeholder="نام محصول را وارد کنید..." value="<?= h($_POST['title'] ?? '') ?>">
+                <label class="store-form-label">نام <?= h($panelCopy['item_singular']) ?></label>
+                <input type="text" class="store-form-input" name="title" placeholder="نام <?= h($panelCopy['item_singular']) ?> را وارد کنید..." value="<?= h($_POST['title'] ?? '') ?>">
               </div>
+              <?= render_listing_type_fields($providerType, listing_attrs_from_input($providerType, $_POST)) ?>
               <div class="store-form-grid-2">
                 <div class="store-form-group">
-                  <label class="store-form-label">دسته‌بندی محصول</label>
+                  <label class="store-form-label">دسته‌بندی <?= h($panelCopy['item_singular']) ?></label>
                   <select class="store-form-input" name="category_id">
                     <option value="">انتخاب دسته‌بندی...</option>
                     <?php
@@ -757,8 +736,8 @@ render_navbar($user);
                 </div>
               </div>
               <div class="store-form-group">
-                <label class="store-form-label">توضیحات محصول</label>
-                <textarea class="store-form-input" name="description" rows="4" placeholder="توضیحات کامل محصول..."><?= h($_POST['description'] ?? '') ?></textarea>
+                <label class="store-form-label">توضیحات <?= h($panelCopy['item_singular']) ?></label>
+                <textarea class="store-form-input" name="description" rows="4" placeholder="توضیحات کامل <?= h($panelCopy['item_singular']) ?>..."><?= h($_POST['description'] ?? '') ?></textarea>
               </div>
               <div class="store-form-group">
                 <label class="store-form-label">توضیحات کالای موردنیاز</label>
@@ -769,7 +748,7 @@ render_navbar($user);
                 <input type="file" class="store-form-input" name="images[]" multiple accept="image/jpeg,image/png,image/webp">
               </div>
               <button type="submit" name="store_add_product" class="store-btn store-btn--gradient w-100">
-                <i class="bi bi-save"></i> ذخیره محصول
+                <i class="bi bi-save"></i> ذخیره <?= h($panelCopy['item_singular']) ?>
               </button>
             </form>
 

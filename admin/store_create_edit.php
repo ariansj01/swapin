@@ -66,6 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (db_has_column('users', 'seller_type')) {
             $updateData['seller_type'] = 'store';
         }
+        if (db_has_column('users', 'provider_type')) {
+            $updateData['provider_type'] = normalize_provider_type($_POST['provider_type'] ?? 'normal_store');
+        }
         if (db_has_column('users', 'store_name')) {
             $updateData['store_name'] = clean($storeName);
         }
@@ -215,6 +218,11 @@ $ownerExtraStr = $ownerExtra ? (' (' . implode(' - ', $ownerExtra) . ')') : '';
 <input class="form-control" value="<?= h($ownerLabel . $ownerExtraStr) ?>" disabled>
 </div>
 <?php endif; ?>
+
+<div class="form-group">
+<label>نوع کسب‌وکار <span style="color:red">*</span></label>
+<?= render_provider_type_select('provider_type', $_POST['provider_type'] ?? ($storeUser['provider_type'] ?? 'normal_store')) ?>
+</div>
 
 <div class="form-group">
 <label>نام فروشگاه <span style="color:red">*</span></label>

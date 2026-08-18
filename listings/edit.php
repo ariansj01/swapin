@@ -6,6 +6,7 @@ require_once __DIR__ . '/../includes/geo.php';
 $user = require_auth();
 $uid  = $user['id'];
 $id   = (int)($_GET['id'] ?? 0);
+$listingProviderType = is_store_seller($user) ? user_provider_type($user) : 'normal_store';
 
 // Load listing and verify ownership
 $listing = DB::fetch(
@@ -46,6 +47,7 @@ $vals   = [
     'longitude'       => $listing['longitude'] ?? '',
     'neighborhood'    => $listing['neighborhood'] ?? '',
 ];
+$listingAttrValues = listing_attrs_decode($listing['listing_attrs'] ?? null);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
@@ -106,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ? ['review_status' => 'pending', 'review_note' => null]
             : [];
 
+        $listingAttrs = listing_attrs_from_input($listingProviderType, $_POST);
         DB::update('listings', array_merge([
             'category_id'     => $vals['category_id'],
             'title'           => $vals['title'],
@@ -117,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'listing_mode'    => $vals['listing_mode'],
             'sell_price'      => in_array($vals['listing_mode'], ['sell','both'], true) ? $vals['sell_price'] : 0,
             'city'            => $vals['city'] ?: null,
-        ], listing_location_db_payload($location), $reviewUpdate), 'id = ? AND user_id = ?', [$id, $uid]);
+        ], listing_location_db_payload($location), listing_attrs_db_payload($listingAttrs), $reviewUpdate), 'id = ? AND user_id = ?', [$id, $uid]);
 
         // Handle image deletions
         $deleteIds = $_POST['delete_images'] ?? [];
@@ -296,6 +299,8 @@ render_navbar($user);
             ];
             include __DIR__ . '/../includes/listing_location_picker.php';
             ?>
+
+            <?= render_listing_type_fields($listingProviderType, array_merge($listingAttrValues, listing_attrs_from_input($listingProviderType, $_POST ?? [])), 'form') ?>
           </div>
 
         </div>

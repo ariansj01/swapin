@@ -4,6 +4,7 @@ require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/geo.php';
 
 $user = require_auth();
+$listingProviderType = is_store_seller($user) ? user_provider_type($user) : 'normal_store';
 
 if ($listingErr = kyc_check_listing_action($user)) {
     render_full_page_modal(
@@ -109,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         // Insert listing
+        $listingAttrs = listing_attrs_from_input($listingProviderType, $_POST);
         $listingId = DB::insert('listings', array_merge([
             'user_id'          => $user['id'],
             'category_id'      => $vals['category_id'],
@@ -124,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'city'             => $vals['city'] ?: null,
             'status'           => 'active',
             'review_status'    => 'pending',
-        ], listing_location_db_payload($location)));
+        ], listing_location_db_payload($location), listing_attrs_db_payload($listingAttrs)));
 
         // Handle image uploads
         $uploadedImages = 0;
@@ -298,6 +300,8 @@ render_navbar($user);
           ];
           include __DIR__ . '/../includes/listing_location_picker.php';
           ?>
+
+          <?= render_listing_type_fields($listingProviderType, listing_attrs_from_input($listingProviderType, $_POST ?? []), 'wizard') ?>
         </div>
 
         <!-- Step 4: What do you want in exchange? -->

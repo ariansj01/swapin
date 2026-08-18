@@ -103,6 +103,7 @@ ob_start();
   <div class="card" style="padding:24px">
     <h2 style="margin:0 0 16px;font-size:1.1rem"><?= h($detail['store_name']) ?></h2>
     <div class="fs-sm" style="line-height:2;color:var(--text-muted)">
+      <div><strong>نوع کسب‌وکار:</strong> <?= h(provider_type_labels()[normalize_provider_type($detail['provider_type'] ?? 'normal_store')] ?? '—') ?></div>
       <div><strong>درخواست‌دهنده:</strong> <?= h($detail['user_name']) ?></div>
       <div><strong>ایمیل:</strong> <?= h($detail['user_email'] ?? '—') ?></div>
       <div><strong>تلفن کاربر:</strong> <?= h($detail['user_phone'] ?? '—') ?></div>
@@ -170,6 +171,7 @@ ob_start();
     <thead>
       <tr>
         <th>#</th>
+        <th>نوع</th>
         <th>فروشگاه</th>
         <th>کاربر</th>
         <th>تلفن</th>
@@ -180,11 +182,12 @@ ob_start();
     </thead>
     <tbody>
       <?php if (empty($requests)): ?>
-      <tr><td colspan="7" class="text-muted">درخواستی یافت نشد.</td></tr>
+      <tr><td colspan="8" class="text-muted">درخواستی یافت نشد.</td></tr>
       <?php endif; ?>
       <?php foreach ($requests as $r): ?>
       <tr>
         <td><?= (int)$r['id'] ?></td>
+        <td class="fs-xs"><?= h(provider_type_labels()[normalize_provider_type($r['provider_type'] ?? 'normal_store')] ?? '—') ?></td>
         <td><strong><?= h($r['store_name']) ?></strong></td>
         <td><?= h($r['user_name']) ?></td>
         <td class="fs-xs"><?= h($r['store_phone'] ?: $r['user_phone']) ?></td>

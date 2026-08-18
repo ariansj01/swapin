@@ -1,6 +1,231 @@
 <?php
 /** Store profile + registration request helpers. */
 
+function provider_type_labels(): array {
+    return [
+        'normal_store' => 'فروشگاه عادی',
+        'real_estate'  => 'مشاور / آژانس املاک',
+        'car_dealer'   => 'نمایشگاه خودرو',
+        'corporate'    => 'کسب‌وکار شرکتی',
+    ];
+}
+
+function normalize_provider_type(?string $type): string {
+    $labels = provider_type_labels();
+    return isset($labels[$type ?? '']) ? (string)$type : 'normal_store';
+}
+
+function user_provider_type(array $user): string {
+    return normalize_provider_type($user['provider_type'] ?? 'normal_store');
+}
+
+/** @return array<string, array{id:string,icon:string,label:string,show:bool,badge?:int}> */
+function store_panel_tabs(string $providerType, int $requestBadge = 0, int $orderBadge = 0): array {
+    $tabs = [
+        'dashboard'     => ['id' => 'dashboard',     'icon' => 'bi-speedometer2',    'label' => 'داشبورد اصلی',      'show' => true],
+        'products'      => ['id' => 'products',      'icon' => 'bi-box-seam',        'label' => 'محصولات',           'show' => true],
+        'requests'      => ['id' => 'requests',      'icon' => 'bi-inbox',           'label' => 'درخواست‌ها',        'show' => true, 'badge' => $requestBadge],
+        'orders'        => ['id' => 'orders',        'icon' => 'bi-bag-check',       'label' => 'سفارش‌های فروش',    'show' => true, 'badge' => $orderBadge],
+        'messages'      => ['id' => 'messages',      'icon' => 'bi-chat-dots',       'label' => 'پیام‌ها',           'show' => true],
+        'management'    => ['id' => 'management',    'icon' => 'bi-gear',            'label' => 'مدیریت فروشگاه',    'show' => true],
+        'categories'    => ['id' => 'categories',    'icon' => 'bi-grid-3x3-gap',    'label' => 'دسته‌بندی‌ها',      'show' => true],
+        'reports'       => ['id' => 'reports',       'icon' => 'bi-graph-up-arrow',  'label' => 'گزارش‌ها',          'show' => true],
+        'notifications' => ['id' => 'notifications', 'icon' => 'bi-bell',            'label' => 'اعلان‌ها',          'show' => true],
+        'settings'      => ['id' => 'settings',      'icon' => 'bi-sliders',         'label' => 'تنظیمات',           'show' => true],
+    ];
+
+    switch (normalize_provider_type($providerType)) {
+        case 'real_estate':
+            $tabs['products']['label'] = 'املاک';
+            $tabs['products']['icon'] = 'bi-building';
+            $tabs['requests']['label'] = 'پیشنهادهای معاوضه';
+            $tabs['orders']['show'] = false;
+            $tabs['messages']['label'] = 'مشتریان';
+            $tabs['management']['show'] = false;
+            $tabs['categories']['show'] = false;
+            $tabs['notifications']['show'] = false;
+            break;
+        case 'car_dealer':
+            $tabs['products']['label'] = 'خودروها';
+            $tabs['products']['icon'] = 'bi-car-front';
+            $tabs['requests']['label'] = 'پیشنهادهای معاوضه';
+            $tabs['messages']['label'] = 'مشتریان';
+            $tabs['management']['show'] = false;
+            $tabs['categories']['show'] = false;
+            $tabs['notifications']['show'] = false;
+            break;
+        case 'corporate':
+            break;
+        default:
+            $tabs['orders']['label'] = 'سفارش‌ها';
+            break;
+    }
+
+    return array_values(array_filter($tabs, fn($t) => $t['show']));
+}
+
+/** @return array<string, string> */
+function store_panel_copy(string $providerType): array {
+    switch (normalize_provider_type($providerType)) {
+        case 'real_estate':
+            return [
+                'panel_title'       => 'پنل املاک',
+                'panel_subtitle'    => 'مدیریت املاک، مشتریان، پیشنهادهای معاوضه و گزارش‌ها',
+                'add_item'          => 'افزودن ملک جدید',
+                'item_singular'     => 'ملک',
+                'items_plural'      => 'املاک',
+                'active_items'      => 'املاک فعال',
+                'inventory_value'   => 'ارزش کل موجودی',
+                'swap_offers'       => 'پیشنهادهای معاوضه',
+                'buy_offers'        => 'درخواست‌های خرید',
+                'completed_trades'  => 'معاملات',
+                'show_buy_offers'   => '0',
+            ];
+        case 'car_dealer':
+            return [
+                'panel_title'       => 'پنل نمایشگاه خودرو',
+                'panel_subtitle'    => 'مدیریت خودروها، موجودی، مشتریان و پیشنهادهای معاوضه',
+                'add_item'          => 'افزودن خودرو جدید',
+                'item_singular'     => 'خودرو',
+                'items_plural'      => 'خودروها',
+                'active_items'      => 'خودروهای موجود',
+                'inventory_value'   => 'ارزش کل موجودی',
+                'swap_offers'       => 'پیشنهادهای معاوضه',
+                'buy_offers'        => 'درخواست‌های خرید',
+                'completed_trades'  => 'معاملات',
+                'show_buy_offers'   => '0',
+            ];
+        case 'corporate':
+            return [
+                'panel_title'       => 'پنل کسب‌وکار',
+                'panel_subtitle'    => 'مدیریت محصولات، سفارش‌ها، مشتریان و گزارش‌ها',
+                'add_item'          => 'افزودن محصول جدید',
+                'item_singular'     => 'محصول',
+                'items_plural'      => 'محصولات',
+                'active_items'      => 'محصولات',
+                'inventory_value'   => 'ارزش کل موجودی',
+                'swap_offers'       => 'درخواست‌های معاوضه',
+                'buy_offers'        => 'سفارش‌ها',
+                'completed_trades'  => 'فروش',
+                'show_buy_offers'   => '1',
+            ];
+        default:
+            return [
+                'panel_title'       => 'پنل فروشگاه',
+                'panel_subtitle'    => 'مدیریت کامل فروشگاه، محصولات، درخواست‌ها و آمار فروش',
+                'add_item'          => 'افزودن محصول جدید',
+                'item_singular'     => 'محصول',
+                'items_plural'      => 'محصولات',
+                'active_items'      => 'محصولات',
+                'inventory_value'   => 'ارزش کل موجودی',
+                'swap_offers'       => 'درخواست‌های معاوضه',
+                'buy_offers'        => 'سفارش‌ها',
+                'completed_trades'  => 'فروش',
+                'show_buy_offers'   => '1',
+            ];
+    }
+}
+
+/** @return array<string, array{label:string,type:string,placeholder?:string}> */
+function listing_type_field_defs(string $providerType): array {
+    switch (normalize_provider_type($providerType)) {
+        case 'real_estate':
+            return [
+                'area_sqm'     => ['label' => 'متراژ (متر مربع)', 'type' => 'number', 'placeholder' => 'مثلاً ۱۲۰'],
+                'rooms'        => ['label' => 'تعداد اتاق', 'type' => 'number', 'placeholder' => 'مثلاً ۳'],
+                'parking'      => ['label' => 'پارکینگ', 'type' => 'text', 'placeholder' => 'دارد / ندارد'],
+                'floor'        => ['label' => 'طبقه', 'type' => 'text', 'placeholder' => 'مثلاً ۴'],
+                'build_year'   => ['label' => 'سال ساخت', 'type' => 'number', 'placeholder' => 'مثلاً ۱۳۹۸'],
+            ];
+        case 'car_dealer':
+            return [
+                'brand'        => ['label' => 'برند', 'type' => 'text', 'placeholder' => 'مثلاً تویوتا'],
+                'model'        => ['label' => 'مدل', 'type' => 'text', 'placeholder' => 'مثلاً کرولا'],
+                'car_year'     => ['label' => 'سال', 'type' => 'number', 'placeholder' => 'مثلاً ۱۴۰۱'],
+                'mileage_km'   => ['label' => 'کارکرد (کیلومتر)', 'type' => 'number', 'placeholder' => 'مثلاً ۴۵۰۰۰'],
+                'color'        => ['label' => 'رنگ', 'type' => 'text', 'placeholder' => 'مثلاً سفید'],
+            ];
+        default:
+            return [];
+    }
+}
+
+/** @return array<string, string> */
+function listing_attrs_from_input(string $providerType, array $input): array {
+    $attrs = [];
+    foreach (listing_type_field_defs($providerType) as $key => $def) {
+        $val = trim((string)($input['listing_attr_' . $key] ?? ''));
+        if ($val !== '') {
+            $attrs[$key] = clean($val);
+        }
+    }
+    return $attrs;
+}
+
+/** @return array<string, mixed> */
+function listing_attrs_decode(?string $json): array {
+    if ($json === null || $json === '') {
+        return [];
+    }
+    $decoded = json_decode($json, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+/** @return array<string, mixed> */
+function listing_attrs_db_payload(array $attrs): array {
+    if (!db_has_column('listings', 'listing_attrs')) {
+        return [];
+    }
+    return ['listing_attrs' => empty($attrs) ? null : json_encode($attrs, JSON_UNESCAPED_UNICODE)];
+}
+
+function render_listing_type_fields(string $providerType, array $values = [], string $cssPrefix = 'store'): string {
+    $defs = listing_type_field_defs($providerType);
+    if (empty($defs)) {
+        return '';
+    }
+
+    $html = '<div class="' . h($cssPrefix) . '-type-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px">';
+    foreach ($defs as $key => $def) {
+        $name = 'listing_attr_' . $key;
+        $val = h((string)($values[$key] ?? ''));
+        $labelClass = match ($cssPrefix) {
+            'wizard' => 'wizard-form-label',
+            'form'   => 'form-label',
+            default  => $cssPrefix . '-form-label',
+        };
+        $inputClass = match ($cssPrefix) {
+            'wizard' => 'wizard-form-input',
+            'form'   => 'form-control',
+            default  => $cssPrefix . '-form-input',
+        };
+        $groupClass = match ($cssPrefix) {
+            'wizard' => 'wizard-form-group',
+            'form'   => 'form-group',
+            default  => $cssPrefix . '-form-group',
+        };
+        $html .= '<div class="' . h($groupClass) . '">';
+        $html .= '<label class="' . h($labelClass) . '">' . h($def['label']) . '</label>';
+        $html .= '<input type="' . h($def['type']) . '" class="' . h($inputClass) . '" name="' . h($name) . '"';
+        if (!empty($def['placeholder'])) {
+            $html .= ' placeholder="' . h($def['placeholder']) . '"';
+        }
+        $html .= ' value="' . $val . '">';
+        $html .= '</div>';
+    }
+    $html .= '</div>';
+    return $html;
+}
+
+function render_provider_type_select(string $name, string $selected = 'normal_store', string $inputClass = 'form-control'): string {
+    $html = '<select name="' . h($name) . '" class="' . h($inputClass) . '" required>';
+    foreach (provider_type_labels() as $value => $label) {
+        $html .= '<option value="' . h($value) . '"' . ($selected === $value ? ' selected' : '') . '>' . h($label) . '</option>';
+    }
+    $html .= '</select>';
+    return $html;
+}
+
 function store_request_status_labels(): array {
     return [
         'pending'  => 'در انتظار بررسی',
@@ -51,6 +276,7 @@ function user_store_request_block_reason(array $user): ?string {
 function store_fields_from_input(array $input): array {
     return [
         'store_name'          => trim((string)($input['store_name'] ?? '')),
+        'provider_type'       => normalize_provider_type($input['provider_type'] ?? 'normal_store'),
         'store_description'   => trim((string)($input['store_description'] ?? '')),
         'store_address'       => trim((string)($input['store_address'] ?? '')),
         'store_phone'         => trim((string)($input['store_phone'] ?? '')),
@@ -117,6 +343,9 @@ function save_store_profile(int $userId, array $fields, ?array $bannerFile = nul
 
     if (db_has_column('users', 'seller_type')) {
         $updateData['seller_type'] = 'store';
+    }
+    if (db_has_column('users', 'provider_type')) {
+        $updateData['provider_type'] = normalize_provider_type($fields['provider_type'] ?? 'normal_store');
     }
     if (db_has_column('users', 'store_name')) {
         $updateData['store_name'] = $cleanName;
@@ -214,7 +443,7 @@ function create_store_request(int $userId, array $input, ?array $bannerFile = nu
         $bannerName = upload_image($bannerFile, 'store');
     }
 
-    $requestId = DB::insert('store_requests', [
+    $requestData = [
         'user_id'             => $userId,
         'status'              => 'pending',
         'store_name'          => clean($fields['store_name']),
@@ -228,7 +457,12 @@ function create_store_request(int $userId, array $input, ?array $bannerFile = nu
         'store_opening_hours' => clean($fields['store_opening_hours']),
         'store_lat'           => $fields['store_lat'] !== '' ? (float)$fields['store_lat'] : null,
         'store_lng'           => $fields['store_lng'] !== '' ? (float)$fields['store_lng'] : null,
-    ]);
+    ];
+    if (db_has_column('store_requests', 'provider_type')) {
+        $requestData['provider_type'] = $fields['provider_type'];
+    }
+
+    $requestId = DB::insert('store_requests', $requestData);
 
     return ['ok' => true, 'request_id' => (int)$requestId];
 }
@@ -252,6 +486,7 @@ function approve_store_request(int $requestId, int $adminId): array {
     $userId = (int)$req['user_id'];
     $fields = [
         'store_name'          => $req['store_name'],
+        'provider_type'       => $req['provider_type'] ?? 'normal_store',
         'store_description'   => $req['store_description'] ?? '',
         'store_address'       => $req['store_address'] ?? '',
         'store_phone'         => $req['store_phone'] ?? '',

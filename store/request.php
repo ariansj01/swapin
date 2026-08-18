@@ -89,6 +89,11 @@ render_navbar($user);
         <?= csrf_field() ?>
 
         <div class="form-group">
+          <label class="form-label">نوع کسب‌وکار <span style="color:var(--danger)">*</span></label>
+          <?= render_provider_type_select('provider_type', $fields['provider_type'] ?? 'normal_store') ?>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">نام فروشگاه <span style="color:var(--danger)">*</span></label>
           <input type="text" class="form-control" name="store_name" required maxlength="120"
                  value="<?= h($fields['store_name']) ?>">

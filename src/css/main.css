@@ -1780,9 +1780,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .listing-card__media {
   flex-shrink: 0;
-  width: 180px;
-  min-width: 180px;
-  height: 180px;
+  width: 135px;
+  min-width: 135px;
+  height: 135px;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--bg);

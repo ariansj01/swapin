@@ -418,6 +418,13 @@ try {
             swapin_debug_log('migration-error-listing-neighborhood', ['msg' => $e->getMessage()]);
         }
     }
+    if (!in_array('listing_attrs', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `listing_attrs` JSON DEFAULT NULL COMMENT 'Type-specific fields (real estate, car, etc.)' AFTER `neighborhood`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-attrs', ['msg' => $e->getMessage()]);
+        }
+    }
     if (!db_has_index('listings', 'idx_listing_geo') && db_has_column('listings', 'latitude') && db_has_column('listings', 'longitude')) {
         try {
             DB::query('ALTER TABLE `listings` ADD KEY `idx_listing_geo` (`latitude`, `longitude`)');
@@ -490,6 +497,13 @@ try {
             DB::query("ALTER TABLE `users` ADD COLUMN `seller_type` ENUM('personal','store') COLLATE utf8mb4_unicode_ci DEFAULT 'personal' AFTER `kyc_status`");
         } catch (Throwable $e) {
             swapin_debug_log('migration-error-seller-type', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('provider_type', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `provider_type` ENUM('normal_store','real_estate','car_dealer','corporate') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal_store' AFTER `seller_type`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-provider-type', ['msg' => $e->getMessage()]);
         }
     }
     if (!in_array('store_name', $usersCols)) {
@@ -797,6 +811,7 @@ try {
                     `user_id` INT UNSIGNED NOT NULL,
                     `status` ENUM('pending','approved','rejected') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
                     `store_name` VARCHAR(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `provider_type` ENUM('normal_store','real_estate','car_dealer','corporate') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal_store',
                     `store_description` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
                     `store_banner` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
                     `store_address` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -819,6 +834,13 @@ try {
             ");
         } catch (Throwable $e) {
             swapin_debug_log('migration-error-store-requests-create', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (db_has_table('store_requests') && !db_has_column('store_requests', 'provider_type')) {
+        try {
+            DB::query("ALTER TABLE `store_requests` ADD COLUMN `provider_type` ENUM('normal_store','real_estate','car_dealer','corporate') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal_store' AFTER `store_name`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-store-req-provider-type', ['msg' => $e->getMessage()]);
         }
     }
 
