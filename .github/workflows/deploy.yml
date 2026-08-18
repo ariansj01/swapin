@@ -75,12 +75,12 @@ jobs:
 
             echo "[8/8] Running production SEO guard..."
 
-            if [ ! -x "$APP_DIR/tools/seo-production-check.sh" ]; then
+            if [ ! -x "$APP_DIR/tools/swaapin-production-guard.sh" ]; then
               echo "ERROR: SEO production guard is missing or not executable."
               exit 1
             fi
 
-            "$APP_DIR/tools/seo-production-check.sh"
+            "$APP_DIR/tools/swaapin-production-guard.sh"
 
             echo
             echo "========================================"
