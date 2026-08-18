@@ -116,7 +116,7 @@ render_navbar($user);
         </a>
         <div class="shop-card__body">
           <div class="shop-card__profile">
-            <p class="shop-card__desc"><?= h(mb_strimwidth($store['store_description'], 0, 50, '…')) ?></p>
+            <!-- <p class="shop-card__desc"><?= h(mb_strimwidth($store['store_description'], 0, 50, '…')) ?></p> -->
             <?= avatar_html($store['avatar'] ?? null, $name, 'md') ?>
             <div>
               <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
