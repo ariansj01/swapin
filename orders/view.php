@@ -79,14 +79,39 @@ render_navbar($user);
               <div class="order-product__store">
                 <?= $isBuyer ? 'فروشگاه: ' . h($order['store_name'] ?: $order['seller_name']) : 'خریدار: ' . h($order['buyer_name']) ?>
               </div>
-              <div class="order-product__price"><?= fmt_credit((float)$order['amount']) ?></div>
+              <?php
+                $itemPrice   = (float)$order['amount'];
+                $shipCost    = (float)($order['shipping_cost'] ?? 0);
+                $orderTotal  = $itemPrice + $shipCost;
+              ?>
+              <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px;">
+                <div style="display:flex;justify-content:space-between;gap:16px;font-size:.875rem;color:var(--text-muted);">
+                  <span>قیمت کالا</span><span><?= fmt_credit($itemPrice) ?></span>
+                </div>
+                <?php if ($shipCost > 0): ?>
+                <div style="display:flex;justify-content:space-between;gap:16px;font-size:.875rem;color:var(--text-muted);">
+                  <span>هزینه ارسال</span><span><?= fmt_credit($shipCost) ?></span>
+                </div>
+                <?php else: ?>
+                <div style="display:flex;justify-content:space-between;gap:16px;font-size:.875rem;color:#10B981;font-weight:700;">
+                  <span>هزینه ارسال</span><span>✓ رایگان</span>
+                </div>
+                <?php endif; ?>
+                <div style="display:flex;justify-content:space-between;gap:16px;font-weight:800;color:var(--primary);font-size:1.05rem;padding-top:4px;border-top:1px dashed var(--border);margin-top:4px;">
+                  <span>مبلغ کل پرداخت‌شده</span><span><?= fmt_credit($orderTotal) ?></span>
+                </div>
+              </div>
             </div>
           </div>
 
           <div class="order-info-block">
             <h3>آدرس ارسال</h3>
-            <p><?= h($order['recipient_name']) ?> — <?= h($order['recipient_phone']) ?></p>
-            <p><?= h($order['shipping_city']) ?><?= $order['postal_code'] ? ' — ' . h($order['postal_code']) : '' ?></p>
+            <p><?= h($order['recipient_name']) ?> — <span dir="ltr"><?= h($order['recipient_phone']) ?></span></p>
+            <p>
+              <?= !empty($order['shipping_province']) ? h($order['shipping_province']) . ' — ' : '' ?>
+              <?= h($order['shipping_city']) ?>
+              <?= $order['postal_code'] ? ' — کد پستی: <span dir="ltr">' . h($order['postal_code']) . '</span>' : '' ?>
+            </p>
             <p><?= nl2br(h($order['shipping_address'])) ?></p>
             <?php if ($order['buyer_note']): ?>
             <p class="order-muted"><strong>توضیح خریدار:</strong> <?= h($order['buyer_note']) ?></p>

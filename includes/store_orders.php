@@ -5,6 +5,122 @@ function store_orders_enabled(): bool {
     return db_has_table('store_orders');
 }
 
+function iran_provinces(): array {
+    return [
+        'آذربایجان شرقی','آذربایجان غربی','اردبیل','اصفهان','البرز','ایلام','بوشهر','تهران','چهارمحال و بختیاری',
+        'خراسان جنوبی','خراسان رضوی','خراسان شمالی','خوزستان','زنجان','سمنان','سیستان و بلوچستان','فارس','قزوین',
+        'قم','کردستان','کرمان','کرمانشاه','کهگیلویه و بویراحمد','گلستان','گیلان','لرستان','مازندران','مرکزی',
+        'هرمزگان','همدان','یزد'
+    ];
+}
+
+function iran_cities_by_province(string $province): array {
+    $map = [
+        'تهران' => ['تهران','شهریار','ملارد','اسلام‌شهر','کرج','قائم‌شهر','شهریار','پاکدشت','رباط‌کریم','نسیم‌شهر','بهارستان'],
+        'اصفهان' => ['اصفهان','کاشان','نجف‌آباد','شاهین‌شهر','فلاورجان','خمینی‌شهر','مبارکه','بروجن','نایین','تودشک'],
+        'فارس' => ['شیراز','مرودشت','سروستان','جهرم','فسا','لار','داراب','کازرون','آباده','فراشبند'],
+        'خراسان رضوی' => ['مشهد','نیشابور','سبزوار','تربت‌جام','کاشمر','تایباد','مردهک','قوچان','چناران','گناباد'],
+        'خوزستان' => ['اهواز','اهواز','بندرماهشهر','آبادان','کریم‌آباد','بهبهان','شوش','اندیمشک','هویزه','خرمشهر'],
+        'گیلان' => ['رشت','بندرانزلی','لاهیجان','چابکسار','آستارا','رودسر','رودبار','مساله','فومن','صومعه‌سرا'],
+        'مازندران' => ['ساری','بابل','نوشهر','تنکابن','بندرگز','چالوس','کلاردشت','قائم‌شهر','جویبار','آمل'],
+        'البرز' => ['کرج','نظرآباد','محمدشهر','کمال‌شهر','هشتگرد','آبیک','ساوجبلاغ','طالقان'],
+        'قم' => ['قم','جعفرآباد','کهک'],
+        'سمنان' => ['سمنان','دامغان','شاهرود','گرمسار','مهدیشهر','بسطام'],
+        'زنجان' => ['زنجان','خرم‌دره','قیدار','ابهر','ماهو'],
+        'گلستان' => ['گرگان','بندرترکمن','گنبدکاووس','علی‌آباد','کلاله','مینودشت'],
+        'آذربایجان شرقی' => ['تبریز','مراغه','میانه','مرند','بناب','ملکان','سهند','شبستر'],
+        'آذربایجان غربی' => ['ارومیه','خوی','مهاباد','بوکان','سردشت','نقاده','ماکو','میاندوآب'],
+        'اردبیل' => ['اردبیل','پارس‌آباد','مغان','کلیبر','نمین','سرعین'],
+        'هرمزگان' => ['بندرعباس','قشم','کیش','میناب','یرند','بندرلنگه','جاسک','سیریک'],
+        'بوشهر' => ['بوشهر','برازجان','جم','دشتی','دیر','گناوه','کنگان'],
+        'کرمان' => ['کرمان','رفسنجان','سیرجان','زرند','کوهبنان','بافت','شهربابک'],
+        'یزد' => ['یزد','میبد','اشکذر','مهریز','طبس','اردکان'],
+        'لرستان' => ['خرم‌آباد','بروجرد','دلفان','الیگودرز','کوهدشت','نورآباد'],
+        'کردستان' => ['سنندج','ساوه‌قزوین'?: 'ساوه','مریوان','بانه','دیواندره','قروه'],
+        'کرمانشاه' => ['کرمانشاه','اسلام‌آبادغرب','کنگاور','سرپل‌ذهاب','سنقر','صحنه'],
+        'همدان' => ['همدان','ملایر','نهاوند','تویسرکان','کبودراهنگ','رزن'],
+        'قزوین' => ['قزوین','الوند','تاکستان','بلداجی','محمدیه','آبیک'],
+        'مرکزی' => ['اراک','ساوه','محلات','آشتیان','شازند','خمین'],
+        'ایلام' => ['ایلام','دهلران','ایوان','مهران','آبدانان','دره‌شهر'],
+        'چهارمحال و بختیاری' => ['شهرکرد','بروجن','سبزکوه','فارسان','کوهرنگ'],
+        'کهگیلویه و بویراحمد' => ['یاسوج','دهدشت','لیکک','گچساران'],
+        'خراسان شمالی' => ['بجنورد','شیروان','اسفراین','تربت‌حیدریه','گرمه'],
+        'خراسان جنوبی' => ['بیرجند','قائنات','طبس‌مسینا','سربیشه','نهبندان'],
+        'سیستان و بلوچستان' => ['زاهدان','زابل','چابهار','کنارک','ایرانشهر','سراوان','نیک‌شهر'],
+    ];
+    return $map[$province] ?? [];
+}
+
+function shipping_method_list(): array {
+    return [
+        ['key' => 'post',      'label' => 'پست پیشتاز',   'eta' => '۲ تا ۳ روز کاری', 'default_cost' => 50000,   'free_threshold' => 5000000],
+        ['key' => 'tipax',     'label' => 'تیپاکس',        'eta' => '۳ تا ۵ روز کاری', 'default_cost' => 120000,  'free_threshold' => 10000000],
+        ['key' => 'courier',   'label' => 'پیک شهری',     'eta' => '۱ تا ۲ روز کاری', 'default_cost' => 80000,   'free_threshold' => 7000000],
+        ['key' => 'in_person', 'label' => 'تحویل حضوری',  'eta' => 'هماهنگ با فروشنده', 'default_cost' => 0,     'free_threshold' => 0],
+    ];
+}
+
+function calculate_shipping_cost(string $method, float $orderAmount, ?float $sellerLat = null, ?float $sellerLng = null, ?string $province = null): int {
+    foreach (shipping_method_list() as $m) {
+        if ($m['key'] === $method) {
+            $threshold = (float)$m['free_threshold'];
+            if ($threshold > 0 && $orderAmount >= $threshold) {
+                return 0;
+            }
+            return (int)$m['default_cost'];
+        }
+    }
+    return 0;
+}
+
+function user_addresses(int $userId): array {
+    if (!db_has_table('user_addresses')) return [];
+    return DB::fetchAll(
+        'SELECT * FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, id DESC',
+        [$userId]
+    );
+}
+
+function user_default_address(int $userId): ?array {
+    $all = user_addresses($userId);
+    if (!$all) return null;
+    foreach ($all as $a) { if (!empty($a['is_default'])) return $a; }
+    return $all[0] ?? null;
+}
+
+function save_user_address(int $userId, array $data, bool $asDefault = false): int {
+    if (!db_has_table('user_addresses')) {
+        throw new RuntimeException('جدول آدرس‌ها ایجاد نشده است.');
+    }
+    $recipientName  = clean($data['recipient_name']  ?? '');
+    $recipientPhone = clean($data['recipient_phone'] ?? '');
+    $province       = clean($data['province']       ?? '');
+    $city           = clean($data['city']           ?? '');
+    $address        = clean($data['address']        ?? '');
+    $postalCode     = clean($data['postal_code']    ?? '');
+    $title          = clean($data['title']          ?? '');
+    if (mb_strlen($recipientName) < 3) throw new Exception('نام گیرنده کوتاه است.');
+    if (!preg_match('/^09\d{9}$/', preg_replace('/\D/','',$recipientPhone))) throw new Exception('شماره موبایل گیرنده معتبر نیست.');
+    if (mb_strlen($city) < 2) throw new Exception('شهر را انتخاب کنید.');
+    if (mb_strlen($address) < 10) throw new Exception('آدرس کوتاه است.');
+
+    if ($asDefault) {
+        DB::query('UPDATE user_addresses SET is_default = 0 WHERE user_id = ?', [$userId]);
+    }
+    $id = DB::insert('user_addresses', [
+        'user_id'         => $userId,
+        'title'           => $title ?: null,
+        'recipient_name'  => $recipientName,
+        'recipient_phone' => $recipientPhone,
+        'province'        => $province ?: null,
+        'city'            => $city,
+        'address'         => $address,
+        'postal_code'     => $postalCode ?: null,
+        'is_default'      => $asDefault ? 1 : (user_addresses($userId) ? 0 : 1),
+    ]);
+    return $id;
+}
+
 function listing_can_cash_buy(array $listing, ?array $buyer = null): bool {
     if (!store_orders_enabled()) {
         return false;
@@ -144,7 +260,7 @@ function create_store_order_checkout(int $listingId, int $buyerId, array $shippi
     }
 
     $listing = DB::fetch(
-        'SELECT l.*, u.seller_type, u.store_name
+        'SELECT l.*, u.seller_type, u.store_name, u.store_lat, u.store_lng
          FROM listings l JOIN users u ON u.id = l.user_id
          WHERE l.id = ?',
         [$listingId]
@@ -161,12 +277,14 @@ function create_store_order_checkout(int $listingId, int $buyerId, array $shippi
         return ['error' => 'این محصول برای خرید نقدی در دسترس نیست.'];
     }
 
-    $recipientName = clean($shipping['recipient_name'] ?? '');
-    $recipientPhone = clean($shipping['recipient_phone'] ?? '');
+    $recipientName   = clean($shipping['recipient_name']   ?? '');
+    $recipientPhone  = clean($shipping['recipient_phone']  ?? '');
     $shippingAddress = clean($shipping['shipping_address'] ?? '');
-    $shippingCity = clean($shipping['shipping_city'] ?? '');
-    $postalCode = clean($shipping['postal_code'] ?? '');
-    $buyerNote = clean($shipping['buyer_note'] ?? '');
+    $shippingProvince= clean($shipping['shipping_province'] ?? $shipping['province'] ?? '');
+    $shippingCity    = clean($shipping['shipping_city']    ?? $shipping['city'] ?? '');
+    $postalCode      = clean($shipping['postal_code']      ?? '');
+    $buyerNote       = clean($shipping['buyer_note']       ?? '');
+    $shippingMethod  = clean($shipping['shipping_method']  ?? '');
 
     if (mb_strlen($recipientName) < 3) {
         return ['error' => 'نام گیرنده را وارد کنید.'];
@@ -181,39 +299,74 @@ function create_store_order_checkout(int $listingId, int $buyerId, array $shippi
         return ['error' => 'شهر را وارد کنید.'];
     }
 
-    $amount = (int)round((float)$listing['sell_price']);
-    if ($amount <= 0) {
+    $amount       = (int)round((float)$listing['sell_price']);
+    $shippingCost = 0;
+    if ($shippingMethod) {
+        $shippingCost = calculate_shipping_cost(
+            $shippingMethod,
+            (float)$amount,
+            $listing['store_lat'] ?? null,
+            $listing['store_lng'] ?? null,
+            $shippingProvince ?: null
+        );
+    }
+    $totalAmount  = $amount + $shippingCost;
+    if ($totalAmount <= 0) {
         return ['error' => 'قیمت فروش محصول نامعتبر است.'];
+    }
+
+    // Save user address if requested
+    if (!empty($shipping['save_address'])) {
+        try {
+            save_user_address($buyerId, [
+                'title'           => clean($shipping['address_title'] ?? ''),
+                'recipient_name'  => $recipientName,
+                'recipient_phone' => $recipientPhone,
+                'province'        => $shippingProvince,
+                'city'            => $shippingCity,
+                'address'         => $shippingAddress,
+                'postal_code'     => $postalCode,
+            ], !empty($shipping['set_default_address']));
+        } catch (Throwable $e) {
+            // non-fatal: just log
+            swapin_debug_log('checkout_save_address_failed', ['msg' => $e->getMessage()]);
+        }
     }
 
     $orderCode = generate_store_order_code();
     $orderId = DB::insert('store_orders', [
-        'order_code'       => $orderCode,
-        'listing_id'       => $listingId,
-        'buyer_id'         => $buyerId,
-        'seller_id'        => (int)$listing['user_id'],
-        'amount'           => $amount,
-        'status'           => 'pending_payment',
-        'recipient_name'   => $recipientName,
-        'recipient_phone'  => $recipientPhone,
-        'shipping_address' => $shippingAddress,
-        'shipping_city'    => $shippingCity,
-        'postal_code'      => $postalCode ?: null,
-        'buyer_note'       => $buyerNote ?: null,
+        'order_code'        => $orderCode,
+        'listing_id'        => $listingId,
+        'buyer_id'          => $buyerId,
+        'seller_id'         => (int)$listing['user_id'],
+        'amount'            => $amount,
+        'shipping_cost'     => $shippingCost,
+        'status'            => 'pending_payment',
+        'recipient_name'    => $recipientName,
+        'recipient_phone'   => $recipientPhone,
+        'shipping_address'  => $shippingAddress,
+        'shipping_province' => $shippingProvince ?: null,
+        'shipping_city'     => $shippingCity,
+        'postal_code'       => $postalCode ?: null,
+        'shipping_method'   => $shippingMethod ?: null,
+        'buyer_note'        => $buyerNote ?: null,
     ]);
 
     require_once __DIR__ . '/sep_payment.php';
     $resNum = SEPPayment::generateResNum();
     $meta = json_encode([
-        'order_id'   => $orderId,
-        'listing_id' => $listingId,
-        'order_code' => $orderCode,
+        'order_id'      => $orderId,
+        'listing_id'    => $listingId,
+        'order_code'    => $orderCode,
+        'amount'        => $amount,
+        'shipping_cost' => $shippingCost,
+        'total_amount'  => $totalAmount,
     ], JSON_UNESCAPED_UNICODE);
 
     $paymentId = DB::insert('payments', [
         'user_id' => $buyerId,
         'type'    => 'store_purchase',
-        'amount'  => $amount,
+        'amount'  => $totalAmount,
         'res_num' => $resNum,
         'status'  => 'pending',
         'meta'    => $meta,
@@ -221,17 +374,20 @@ function create_store_order_checkout(int $listingId, int $buyerId, array $shippi
     DB::update('store_orders', ['payment_id' => $paymentId], 'id = ?', [$orderId]);
 
     $redirectUrl = APP_URL . '/payment_callback';
-    $tokenResult = SEPPayment::getToken($amount, $resNum, $redirectUrl, $buyer['phone'] ?? null);
+    $tokenResult = SEPPayment::getToken($totalAmount, $resNum, $redirectUrl, $buyer['phone'] ?? null);
     if (!$tokenResult || empty($tokenResult['token'])) {
         DB::update('store_orders', ['status' => 'canceled'], 'id = ?', [$orderId]);
         return ['error' => 'خطا در اتصال به درگاه پرداخت.'];
     }
 
     return [
-        'order_id'   => $orderId,
-        'payment_id' => $paymentId,
-        'token'      => $tokenResult['token'],
-        'order_code' => $orderCode,
+        'order_id'      => $orderId,
+        'payment_id'    => $paymentId,
+        'token'         => $tokenResult['token'],
+        'order_code'    => $orderCode,
+        'amount'        => $amount,
+        'shipping_cost' => $shippingCost,
+        'total_amount'  => $totalAmount,
     ];
 }
 

@@ -1052,6 +1052,52 @@ try {
         }
     }
 
+    // ─── user_addresses for saved shipping addresses ─────────────────────
+    if (!db_has_table('user_addresses')) {
+        try {
+            DB::query("
+                CREATE TABLE `user_addresses` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `title` VARCHAR(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'منزل، کار،...',
+                    `recipient_name` VARCHAR(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `recipient_phone` VARCHAR(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `province` VARCHAR(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `city` VARCHAR(80) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `address` TEXT COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `postal_code` VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `is_default` TINYINT(1) NOT NULL DEFAULT 0,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_user_addr_user` (`user_id`),
+                    CONSTRAINT `fk_user_addr_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-user-addresses-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // ─── Add shipping_province & shipping_cost to store_orders ───────────
+    if (db_has_table('store_orders')) {
+        $soCols = db_table_columns('store_orders');
+        if (!in_array('shipping_province', $soCols)) {
+            try {
+                DB::query("ALTER TABLE `store_orders` ADD COLUMN `shipping_province` VARCHAR(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `shipping_city`");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-so-province', ['msg' => $e->getMessage()]);
+            }
+        }
+        if (!in_array('shipping_cost', $soCols)) {
+            try {
+                DB::query("ALTER TABLE `store_orders` ADD COLUMN `shipping_cost` DECIMAL(15,0) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Shipping fee in Toman' AFTER `amount`");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-so-shipping-cost', ['msg' => $e->getMessage()]);
+            }
+        }
+    }
+
     // Note: The "10 parent categories + other hidden" migration is no longer
     // applied here at bootstrap. Instead, render_wizard_category_options() in
     // includes/i18n.php calls wizard_ensure_parents_exist() on-demand which
