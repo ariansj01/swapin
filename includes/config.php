@@ -190,6 +190,21 @@ try {
     if (!db_has_index('users', 'uq_google_id')) {
         DB::query('ALTER TABLE `users` ADD UNIQUE KEY `uq_google_id` (`google_id`)');
     }
+
+    try {
+        $usersColInfo = DB::fetch(
+            "SELECT COLUMN_TYPE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email' LIMIT 1"
+        );
+        if ($usersColInfo && strtoupper($usersColInfo['IS_NULLABLE']) === 'NO') {
+            $colType = $usersColInfo['COLUMN_TYPE'] ?: 'VARCHAR(255)';
+            DB::query(
+                "ALTER TABLE `users` MODIFY COLUMN `email` {$colType} COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'User email address (NULL when registered by phone)'"
+            );
+            swapin_debug_log('migration-users-email-nullable', ['applied' => true, 'type' => $colType]);
+        }
+    } catch (Throwable $e) {
+        swapin_debug_log('migration-users-email-nullable-failed', ['msg' => $e->getMessage()]);
+    }
     
     // Create payments table for SEP gateway
     if (!db_has_table('payments')) {
