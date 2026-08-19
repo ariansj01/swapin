@@ -381,6 +381,17 @@
     transition: transform 0.15s ease, opacity 0.15s ease;
   }
 
+  .lv-bottom-bar--dual .lv-bottom-bar__btn:not(.lv-bottom-bar__btn--buy) {
+    background: #fff;
+    color: var(--lv-navy);
+    border: 1.5px solid var(--lv-gold);
+    box-shadow: none;
+  }
+
+  .lv-bottom-bar--dual .lv-bottom-bar__btn:not(.lv-bottom-bar__btn--buy) i {
+    color: var(--lv-gold);
+  }
+
   .lv-bottom-bar__btn:active { transform: scale(0.98); }
   .lv-bottom-bar__btn:disabled {
     opacity: 0.55;

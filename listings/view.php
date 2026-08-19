@@ -518,22 +518,22 @@ render_navbar($user);
   <?php if ($canBuy && !$isOwner && $listing['status'] === 'active'): ?>
   <div class="lv-bottom-bar lv-bottom-bar--dual">
     <?php if ($user): ?>
-    <a href="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--buy">
+    <a href="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--buy" data-navigate="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>">
       <i class="bi bi-cart-check"></i> خرید نقدی
     </a>
     <?php else: ?>
-    <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--buy">
+    <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--buy" data-navigate="<?= $loginRedirect ?>">
       <i class="bi bi-cart-check"></i> ورود برای خرید
     </a>
     <?php endif; ?>
     <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && $canOfferMobile): ?>
     <?php if ($isStoreSwappable): ?>
     <?php if ($user): ?>
-    <a href="<?= $storeSwapUrl ?>" class="lv-bottom-bar__btn">
+    <a href="<?= $storeSwapUrl ?>" class="lv-bottom-bar__btn" data-navigate="<?= $storeSwapUrl ?>">
       <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
     </a>
     <?php else: ?>
-    <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn">
+    <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn" data-navigate="<?= $loginRedirect ?>">
       <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
     </a>
     <?php endif; ?>
@@ -555,14 +555,14 @@ render_navbar($user);
       <i class="bi bi-send"></i> ارسال پیشنهاد
     </button>
     <?php else: ?>
-    <a href="<?= APP_URL ?>/listings/create.php" class="lv-bottom-bar__btn" style="text-decoration:none">
+    <a href="<?= APP_URL ?>/listings/create.php" class="lv-bottom-bar__btn" style="text-decoration:none" data-navigate="<?= APP_URL ?>/listings/create.php">
       <i class="bi bi-plus-circle"></i> ثبت کالا برای پیشنهاد
     </a>
     <?php endif; ?>
   </div>
   <?php elseif ($myStoreOffer): ?>
   <div class="lv-bottom-bar">
-    <a href="<?= $storeOfferViewUrl ?>" class="lv-bottom-bar__btn" style="text-decoration:none">
+    <a href="<?= $storeOfferViewUrl ?>" class="lv-bottom-bar__btn" style="text-decoration:none" data-navigate="<?= $storeOfferViewUrl ?>">
       <i class="bi bi-hourglass-split"></i> مشاهده پیشنهاد معاوضه
     </a>
   </div>
@@ -834,37 +834,37 @@ render_navbar($user);
         <?php else: ?>
         <?php if ($canBuy): ?>
         <section class="lv-offer-card">
-          <h3 class="lv-offer-title"><i class="bi bi-cart-check"></i> خرید نقدی</h3>
+          <h3 class="lv-offer-title"><i class="bi bi-cart-check" style="color:var(--lv-navy)"></i> خرید نقدی</h3>
           <p class="fs-sm mb-4" style="color:var(--text-muted)">پرداخت آنلاین و ثبت آدرس ارسال — پیگیری مرحله‌به‌مرحله مثل فروشگاه‌های آنلاین.</p>
           <?php if ($user): ?>
-          <a href="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>" class="lv-btn lv-btn--primary w-100">
+          <a href="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>" class="lv-btn lv-btn--primary w-100" data-navigate="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>">
             <i class="bi bi-credit-card"></i> خرید با قیمت <?= fmt_credit($buyPrice) ?>
           </a>
           <?php else: ?>
-          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary w-100"><i class="bi bi-box-arrow-in-left"></i> ورود برای خرید</a>
+          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary w-100" data-navigate="<?= $loginRedirect ?>"><i class="bi bi-box-arrow-in-left"></i> ورود برای خرید</a>
           <?php endif; ?>
         </section>
         <?php endif; ?>
         <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
         <?php if ($isStoreSwappable): ?>
         <section class="lv-offer-card">
-          <h3 class="lv-offer-title"><i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه با فروشگاه</h3>
+          <h3 class="lv-offer-title"><i class="bi bi-arrow-left-right" style="color:var(--lv-gold)"></i> پیشنهاد معاوضه با فروشگاه</h3>
           <p class="fs-sm mb-4" style="color:var(--text-muted)">کالای خود را انتخاب کنید و در صورت نیاز مبلغ تکمیلی پیشنهاد دهید.</p>
           <?php if ($user): ?>
-          <a href="<?= $storeSwapUrl ?>" class="lv-btn lv-btn--primary w-100">
+          <a href="<?= $storeSwapUrl ?>" class="lv-btn lv-btn--outline lv-btn--swap w-100" data-navigate="<?= $storeSwapUrl ?>">
             <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
           </a>
           <?php else: ?>
-          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary w-100"><i class="bi bi-box-arrow-in-left"></i> ورود برای پیشنهاد معاوضه</a>
+          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--outline lv-btn--swap w-100" data-navigate="<?= $loginRedirect ?>"><i class="bi bi-box-arrow-in-left"></i> ورود برای پیشنهاد معاوضه</a>
           <?php endif; ?>
         </section>
         <?php else: ?>
         <section class="lv-offer-card">
-          <h3 class="lv-offer-title"><i class="bi bi-send"></i> ارسال پیشنهاد</h3>
+          <h3 class="lv-offer-title"><i class="bi bi-send" style="color:var(--lv-gold)"></i> ارسال پیشنهاد</h3>
 
           <?php if (!$user): ?>
           <p class="fs-sm mb-4" style="color:var(--text-muted)">برای ارسال پیشنهاد وارد شوید.</p>
-          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary">ورود برای پیشنهاد</a>
+          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--outline lv-btn--swap" data-navigate="<?= $loginRedirect ?>"><i class="bi bi-box-arrow-in-left"></i> ورود برای پیشنهاد</a>
           <?php else: ?>
           <?php if ($offerError): ?>
           <div class="alert alert-danger mb-4"><i class="bi bi-exclamation-circle"></i> <?= h($offerError) ?></div>
@@ -916,7 +916,7 @@ render_navbar($user);
               <textarea class="lv-offer-textarea" name="message" id="lv-offer-message" placeholder="در مورد پیشنهادتان کمی توضیح بدهید..."></textarea>
             </div>
 
-            <button type="submit" class="lv-btn lv-btn--primary">
+            <button type="submit" class="lv-btn lv-btn--outline lv-btn--swap">
               <i class="bi bi-send"></i> ارسال پیشنهاد
             </button>
           </form>
@@ -949,6 +949,15 @@ render_navbar($user);
 const offerTypeInput = document.getElementById('lv-offer-type-input');
 const offerItemSection = document.getElementById('lv-offer-item-section');
 const offerTypeButtons = document.querySelectorAll('.lv-offer-type');
+
+document.querySelectorAll('[data-navigate]').forEach(function (el) {
+  el.addEventListener('click', function (e) {
+    const url = el.getAttribute('data-navigate');
+    if (!url) return;
+    e.preventDefault();
+    window.location.href = url;
+  });
+});
 
 function lvSetOfferType(type) {
   if (!offerTypeInput) return;
