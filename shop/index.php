@@ -37,7 +37,7 @@ $listings = DB::fetchAll(
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
      WHERE l.user_id = ? AND l.status = "active" AND l.review_status = "approved"
-     ORDER BY (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC',
+     ORDER BY (l.vip_until > NOW()) DESC, (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC, l.id DESC',
     [(int)$storeUser['id']]
 );
 

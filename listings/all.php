@@ -79,9 +79,9 @@ if ($pmax > 0 && $pmax >= $pmin) {
 
 $where   = 'WHERE ' . implode(' AND ', $whereClauses);
 $orderBy = match($sort) {
-    'old'   => 'l.created_at ASC',
-    'value' => 'l.estimated_value DESC',
-    default => '(l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC',
+    'old'   => 'l.created_at ASC, l.id ASC',
+    'value' => 'l.estimated_value DESC, l.id DESC',
+    default => '(l.vip_until > NOW()) DESC, (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC, l.id DESC',
 };
 
 // شمارش و دریافت داده

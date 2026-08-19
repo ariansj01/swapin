@@ -618,6 +618,25 @@ function initConfirmForms() {
   });
 }
 
+/* ── Global forced navigation handler (for data-navigate attr) ─────────── */
+function initNavigateHandlers() {
+  document.addEventListener('click', function(e) {
+    const clickedInteractive = e.target.closest('a, button, [data-save-toggle], input, select, textarea, label, [data-bs-toggle]');
+    const navEl = e.target.closest('[data-navigate]');
+    if (!navEl) return;
+    if (clickedInteractive && clickedInteractive !== navEl) {
+      if (!clickedInteractive.hasAttribute('data-navigate')) {
+        return;
+      }
+    }
+    const url = navEl.getAttribute('data-navigate');
+    if (!url) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = url;
+  });
+}
+
 /* ── Main init ──────────────────────────────────────────────────────────── */
 /* ── Mobile nav drawer ─────────────────────────────────────────────────── */
 function initMobileNav() {
@@ -1375,6 +1394,9 @@ function initScrollReset() {
 initScrollReset();
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Global forced navigation handler (data-navigate) — register ASAP (before everything else via capture), but also here
+  initNavigateHandlers();
+
   // Prevent back buttons from accidentally triggering other clicks
   document.querySelectorAll('.dash-back-btn, .trade-room__back, .promote-back-link, .btn').forEach(btn => {
     // Check if the button has a bi-arrow-right icon

@@ -52,9 +52,9 @@ if ($wantType) {
 
 $where   = 'WHERE ' . implode(' AND ', $whereClauses);
 $orderBy = match($sort) {
-    'old'   => 'l.created_at ASC',
-    'value' => 'l.estimated_value DESC',
-    default => '(l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC',
+    'old'   => 'l.created_at ASC, l.id ASC',
+    'value' => 'l.estimated_value DESC, l.id DESC',
+    default => '(l.vip_until > NOW()) DESC, (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC, l.id DESC',
 };
 
 // #region debug-point homepage-500-before-queries
@@ -99,7 +99,7 @@ if (!$search && !$catSlug && $page === 1) {
         'l.listing_mode != "sell"',
         '(l.featured_until > NOW() OR l.bump_until > NOW() OR l.vip_until > NOW())',
     ];
-    $premiumOrderBy = '(l.vip_until > NOW()) DESC, (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC';
+    $premiumOrderBy = '(l.vip_until > NOW()) DESC, (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC, l.id DESC';
     $premiumListings = DB::fetchAll(
         "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
                 c.name AS cat_name, c.slug AS cat_slug,

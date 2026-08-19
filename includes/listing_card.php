@@ -2,6 +2,13 @@
 // includes/listing_card.php
 // Expects $l = listing row with seller/category data, $user = current auth user
 
+/** @var array $l Listing row (injected by caller scope) */
+/** @var array|null $user Current authenticated user (injected by caller scope) */
+
+if (!isset($l) || !is_array($l) || empty($l['id'])) {
+    return;
+}
+
 static $_savedListingIds = null;
 if ($_savedListingIds === null) {
     $_savedListingIds = [];
@@ -50,12 +57,12 @@ if ($listingMode === '') {
 }
 $hasSellCta = in_array($listingMode, ['sell', 'both'], true);
 $hasSwapCta = in_array($listingMode, ['swap', 'both'], true);
-$isSaved  = in_array((int)$l['id'], $_savedListingIds, true);
+$isSaved  = isset($l['id']) && in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
 $promotionMeta = function_exists('listing_active_promotion_meta') ? listing_active_promotion_meta($l) : null;
 $promotionClass = $promotionMeta['card_class'] ?? '';
 ?>
-<article class="listing-card <?= h($promotionClass) ?>" style="height: 100%;">
+<article class="listing-card <?= h($promotionClass) ?>" style="height: 100%; cursor: pointer;" data-navigate="<?= $cardHref ?>">
   <div class="listing-card__header">
     <div class="listing-card__header-start">
       <?php if (!empty($l['want_in_return'])): ?>
@@ -82,19 +89,21 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
             data-save-toggle="<?= $isSaved ? 'true' : 'false' ?>"
             data-listing-id="<?= (int)$l['id'] ?>"
             aria-label="<?= $isSaved ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها' ?>"
-            aria-pressed="<?= $isSaved ? 'true' : 'false' ?>">
+            aria-pressed="<?= $isSaved ? 'true' : 'false' ?>"
+            onclick="event.stopPropagation()">
       <i class="bi bi-<?= $isSaved ? 'heart-fill' : 'heart' ?>"></i>
     </button>
     <?php else: ?>
     <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode('/listings/view?id=' . $l['id']) ?>"
        class="listing-card__favorite"
-       aria-label="ورود برای ذخیره">
+       aria-label="ورود برای ذخیره"
+       onclick="event.stopPropagation()">
       <i class="bi bi-heart"></i>
     </a>
     <?php endif; ?>
   </div>
 
-  <a href="<?= $cardHref ?>" class="listing-card__link">
+  <div class="listing-card__link">
     <div class="listing-card__product">
       <div class="listing-card__details">
         <h3 class="listing-card__title"><?= h($l['title']) ?></h3>
@@ -158,16 +167,30 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
     </div>
 
     <div class="listing-card__cta<?= ($hasSellCta && $hasSwapCta) ? ' listing-card__cta--dual' : '' ?>">
-      <?php if ($hasSellCta): ?>
-      <span class="listing-card__cta-btn listing-card__cta-btn--buy">
+      <?php if ($hasSellCta):
+        $buyUrl = (!empty($currentUser['id']))
+          ? (APP_URL . '/orders/checkout.php?listing_id=' . $l['id'])
+          : (APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $l['id']));
+      ?>
+      <a href="<?= $buyUrl ?>"
+         class="listing-card__cta-btn listing-card__cta-btn--buy"
+         data-navigate="<?= $buyUrl ?>"
+         onclick="event.stopPropagation()"
+         style="text-decoration:none">
         <i class="bi bi-cart-check"></i> خرید کالا
-      </span>
+      </a>
       <?php endif; ?>
-      <?php if ($hasSwapCta): ?>
-      <span class="listing-card__cta-btn<?= $hasSellCta ? ' listing-card__cta-btn--swap' : '' ?>">
+      <?php if ($hasSwapCta):
+        $swapUrl = APP_URL . '/listings/view?id=' . $l['id'];
+      ?>
+      <a href="<?= $swapUrl ?>"
+         class="listing-card__cta-btn<?= $hasSellCta ? ' listing-card__cta-btn--swap' : '' ?>"
+         data-navigate="<?= $swapUrl ?>"
+         onclick="event.stopPropagation()"
+         style="text-decoration:none">
         <i class="bi bi-arrow-left-right"></i> <?= $hasSellCta ? 'معاوضه' : 'پیشنهاد معاوضه' ?>
-      </span>
+      </a>
       <?php endif; ?>
     </div>
-  </a>
+  </div>
 </article>
