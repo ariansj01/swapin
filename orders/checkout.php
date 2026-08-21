@@ -444,7 +444,7 @@ render_navbar($user);
       <!-- Navigation Buttons (Desktop) -->
       <div class="ex-actions ex-actions--row ex-hidden-mobile">
         <?php if ($step > 1): ?>
-          <button type="submit" name="nav" value="prev_step" class="ex-btn ex-btn--outline" style="flex: 0 0 160px;">
+          <button type="submit" name="nav" value="prev_step" class="ex-btn ex-btn--outline" style="flex: 0 0 160px; width: 20%;">
             <i class="bi bi-arrow-right"></i> بازگشت
           </button>
         <?php endif; ?>
