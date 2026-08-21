@@ -102,96 +102,176 @@ $cashDiff = (float) preg_replace('/[^\d.]/', '', (string) ($_POST['cash_differen
 $storeValue = (float) ($listing['estimated_value'] ?: $listing['sell_price'] ?: 0);
 $userValue = $pickedListing ? (float) $pickedListing['estimated_value'] : 0;
 
+$diff = $storeValue - $userValue;
+$suggestedCash = $diff > 0 ? $diff : 0;
+
 render_head('پیشنهاد معاوضه | ' . h($listing['title']), '', ['robots' => 'noindex, nofollow']);
 render_navbar($user);
 ?>
-<link rel="stylesheet" href="<?= APP_URL ?>/src/css/store-offers.css?v=<?= @filemtime(__DIR__ . '/../src/css/store-offers.css') ?: time() ?>">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/exchange-flow.css?v=<?= @filemtime(__DIR__ . '/../src/css/exchange-flow.css') ?: time() ?>">
 
-<div class="section-sm">
-  <div class="so-page">
-    <div class="so-head">
-      <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="so-back"><i class="bi bi-arrow-right"></i> بازگشت به محصول</a>
-      <h1 class="so-title">پیشنهاد معاوضه</h1>
-      <p class="so-subtitle">چه کالایی برای معاوضه پیشنهاد می‌دهید؟<br>کالای خود را از لیست انتخاب کنید.</p>
+<div class="ex-page">
+  <div class="ex-container">
+
+    <div class="ex-header">
+      <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="ex-header__back">
+        <i class="bi bi-arrow-right"></i>
+        بازگشت به محصول
+      </a>
+      <h1 class="ex-header__title">پیشنهاد معاوضه</h1>
+      <p class="ex-header__subtitle">کالای خود را انتخاب کرده و پیشنهاد خود را برای فروشگاه ارسال کنید.</p>
     </div>
 
-    <div class="so-steps" aria-hidden="true">
-      <div class="so-step<?= $step >= 1 ? ' is-active' : '' ?><?= $step > 1 ? ' is-done' : '' ?>">۱</div>
-      <div class="so-step-line<?= $step > 1 ? ' is-done' : '' ?>"></div>
-      <div class="so-step<?= $step >= 2 ? ' is-active' : '' ?><?= $step > 2 ? ' is-done' : '' ?>">۲</div>
+    <div class="ex-stepper">
+      <div class="ex-stepper__progress" style="width:<?= $step > 1 ? '100%' : '50%' ?>"></div>
+      <div class="ex-step <?= $step >= 1 ? 'is-done' : '' ?> <?= $step === 1 ? 'is-active' : '' ?>">
+        <div class="ex-step__circle">۱</div>
+        <div class="ex-step__label">انتخاب کالا</div>
+      </div>
+      <div class="ex-step <?= $step > 1 ? 'is-done' : '' ?> <?= $step === 2 ? 'is-active' : '' ?>">
+        <div class="ex-step__circle">۲</div>
+        <div class="ex-step__label">بررسی و ارسال</div>
+      </div>
+      <div class="ex-step is-locked">
+        <div class="ex-step__circle">۳</div>
+        <div class="ex-step__label">پاسخ فروشگاه</div>
+      </div>
     </div>
 
     <?php if ($error): ?>
-    <div class="so-alert so-alert--error"><i class="bi bi-exclamation-circle"></i> <?= h($error) ?></div>
+    <div class="ex-alert ex-alert--danger">
+      <i class="bi bi-exclamation-circle-fill ex-alert__icon"></i>
+      <?= h($error) ?>
+    </div>
     <?php endif; ?>
 
-    <div class="so-card">
-      <div class="so-card__label">محصول فروشگاه</div>
-      <div class="so-item">
+    <div class="ex-card">
+      <div class="ex-card__label"><i class="bi bi-shop-window"></i> محصول فروشگاه</div>
+      <div class="ex-product">
         <?php if (!empty($listing['thumb'])): ?>
-        <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="" class="so-item__thumb">
+        <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="" class="ex-product__thumb">
         <?php else: ?>
-        <div class="so-item__thumb so-item__thumb--empty"><i class="bi bi-box"></i></div>
+        <div class="ex-product__thumb ex-product__thumb--empty"><i class="bi bi-box"></i></div>
         <?php endif; ?>
-        <div>
-          <div class="so-item__title"><?= h($listing['title']) ?></div>
-          <div class="so-item__meta"><?= h($listing['store_name'] ?? '') ?></div>
+        <div class="ex-product__info">
+          <div class="ex-product__title"><?= h($listing['title']) ?></div>
+          <div class="ex-product__meta">
+            <span class="ex-product__chip"><i class="bi bi-shop"></i> <?= h($listing['store_name'] ?? 'فروشگاه') ?></span>
+            <?php if (!empty($listing['condition'])): ?>
+            <span class="ex-product__chip"><?= condition_label($listing['condition']) ?></span>
+            <?php endif; ?>
+          </div>
           <?php if ($storeValue > 0): ?>
-          <div class="so-item__price">ارزش تقریبی: <?= fmt_credit($storeValue) ?></div>
+          <div class="ex-product__price">
+            <span class="ex-product__price-label">ارزش تقریبی:</span>
+            <?= fmt_credit($storeValue) ?>
+          </div>
           <?php endif; ?>
         </div>
       </div>
     </div>
 
     <?php if ($step === 1): ?>
-    <form method="POST">
+    <form method="POST" id="step1Form">
       <?= csrf_field() ?>
       <input type="hidden" name="listing_id" value="<?= $listingId ?>">
       <input type="hidden" name="step" value="2">
       <input type="hidden" name="go_review" value="1">
+      <input type="hidden" name="offer_listing_id" id="pickedListingId" value="<?= $pickedId ?>">
+      <input type="hidden" name="cash_difference" id="cashDiffInput" value="<?= h((string) ($_POST['cash_difference'] ?? '')) ?>">
 
       <?php if ($myListings): ?>
-      <div class="so-card">
-        <div class="so-card__label">کالای شما</div>
-        <?php foreach ($myListings as $ml): ?>
-        <label class="so-item-pick<?= (int) $ml['id'] === $pickedId ? ' is-selected' : '' ?>">
-          <input type="radio" name="offer_listing_id" value="<?= (int) $ml['id'] ?>" <?= (int) $ml['id'] === $pickedId ? 'checked' : '' ?> required>
-          <?php if ($ml['thumb']): ?>
-          <img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt="" class="so-item__thumb">
-          <?php else: ?>
-          <div class="so-item__thumb so-item__thumb--empty"><i class="bi bi-image"></i></div>
-          <?php endif; ?>
-          <div>
-            <div class="so-item__title"><?= h($ml['title']) ?></div>
-            <div class="so-item__meta"><?= h($ml['cat_name']) ?> · <?= condition_label($ml['condition']) ?></div>
-            <?php if ((float) $ml['estimated_value'] > 0): ?>
-            <div class="so-item__price"><?= fmt_credit((float) $ml['estimated_value']) ?></div>
+      <div class="ex-card">
+        <div class="ex-flex-between" style="margin-bottom:16px">
+          <div class="ex-card__label" style="margin-bottom:0"><i class="bi bi-box-seam"></i> کالای شما — انتخاب کنید</div>
+          <button type="button" class="ex-btn ex-btn--outline ex-btn--sm" id="so-open-quick-listing" style="width:auto">
+            <i class="bi bi-plus-lg"></i>
+            کالای جدید
+          </button>
+        </div>
+
+        <div class="ex-picklist">
+          <?php foreach ($myListings as $ml): ?>
+          <label class="ex-pick<?= (int) $ml['id'] === $pickedId ? ' is-selected' : '' ?>" data-id="<?= (int) $ml['id'] ?>">
+            <input type="radio" class="ex-pick__radio" name="offer_listing_radio" value="<?= (int) $ml['id'] ?>" <?= (int) $ml['id'] === $pickedId ? 'checked' : '' ?>>
+            <div class="ex-pick__check"></div>
+            <?php if ($ml['thumb']): ?>
+            <img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt="" class="ex-pick__thumb">
+            <?php else: ?>
+            <div class="ex-pick__thumb ex-pick__thumb--empty"><i class="bi bi-image"></i></div>
             <?php endif; ?>
-          </div>
+            <div class="ex-pick__info">
+              <div class="ex-pick__title"><?= h($ml['title']) ?></div>
+              <div class="ex-pick__meta">
+                <span><?= h($ml['cat_name']) ?></span>
+                <span><?= condition_label($ml['condition']) ?></span>
+              </div>
+              <?php if ((float) $ml['estimated_value'] > 0): ?>
+              <div class="ex-pick__price"><?= fmt_credit((float) $ml['estimated_value']) ?></div>
+              <?php endif; ?>
+            </div>
+          </label>
+          <?php endforeach; ?>
+        </div>
+      </div>
+
+      <div class="ex-card">
+        <label class="ex-form-label" for="cash_difference">
+          <i class="bi bi-cash-stack"></i>
+          مبلغ تکمیلی
+          <span style="font-weight:500;color:var(--ex-muted);font-size:.75rem">(در صورت نیاز)</span>
         </label>
-        <?php endforeach; ?>
-      </div>
-
-      <div class="so-card">
-        <label class="so-input-label" for="cash_difference">مبلغ تکمیلی (اختیاری)</label>
-        <input type="text" class="form-control" id="cash_difference" name="cash_difference"
-               inputmode="numeric" placeholder="مثلاً ۲,۰۰۰,۰۰۰" value="<?= h((string) ($_POST['cash_difference'] ?? '')) ?>">
-        <p class="so-item__meta" style="margin-top:8px">در صورت کمتر بودن ارزش کالای شما، مابه‌التفاوت را وارد کنید.</p>
-      </div>
-
-      <div class="so-actions">
-        <button type="submit" class="so-btn so-btn--primary">ادامه — بررسی پیشنهاد <i class="bi bi-arrow-left"></i></button>
-        <button type="button" class="so-btn so-btn--outline" id="so-open-quick-listing">ثبت کالای جدید</button>
+        <div class="ex-input-amount">
+          <input type="text" class="form-control" id="cash_difference" name="cash_difference_display"
+                 inputmode="numeric" placeholder="مثلاً ۲,۰۰۰,۰۰۰"
+                 value="<?= h((string) ($_POST['cash_difference'] ?? '')) ?>"
+                 style="padding:14px 16px;border-radius:var(--ex-radius-md);border:2px solid var(--ex-border);font-size:1rem;font-weight:700;font-family:inherit">
+          <div class="ex-input-amount__suffix">تومان</div>
+        </div>
+        <?php if ($suggestedCash > 0): ?>
+        <button type="button" class="ex-chip ex-chip--gold" id="suggestedCashBtn" style="margin-top:10px;cursor:pointer;border:none;font-family:inherit">
+          <i class="bi bi-magic"></i>
+          پیشنهاد خودکار: مبلغ <?= fmt_credit($suggestedCash) ?>
+        </button>
+        <?php endif; ?>
+        <p class="ex-form-hint">
+          <i class="bi bi-info-circle"></i>
+          در صورت کمتر بودن ارزش کالای شما نسبت به محصول فروشگاه، مابه‌التفاوت را به صورت مبلغ نقدی وارد کنید.
+        </p>
       </div>
       <?php else: ?>
-      <div class="so-card so-alert--info">
-        <p><i class="bi bi-box-seam"></i> هنوز کالایی برای پیشنهاد ندارید. یک کالا ثبت کنید تا بتوانید پیشنهاد معاوضه بدهید.</p>
+      <div class="ex-card">
+        <div class="ex-empty">
+          <div class="ex-empty__icon"><i class="bi bi-box-seam"></i></div>
+          <h3 class="ex-empty__title">هنوز کالایی برای پیشنهاد ندارید</h3>
+          <p class="ex-empty__desc">یک کالا ثبت کنید تا بتوانید پیشنهاد معاوضه بدهید. این فرآیند فقط چند لحظه طول می‌کشد.</p>
+          <button type="button" class="ex-btn ex-btn--cta" style="max-width:320px;margin:0 auto" id="so-open-quick-listing-empty">
+            <i class="bi bi-plus-circle-fill"></i>
+            ثبت کالا و ادامه
+          </button>
+        </div>
       </div>
-      <div class="so-actions">
-        <button type="button" class="so-btn so-btn--gold" id="so-open-quick-listing"><i class="bi bi-plus-circle"></i> ثبت کالا و ادامه</button>
+      <?php endif; ?>
+
+      <?php if ($myListings): ?>
+      <div class="ex-sticky-bar ex-visible-mobile">
+        <div class="ex-sticky-bar__inner">
+          <button type="submit" class="ex-btn ex-btn--cta ex-btn--lg">
+            ادامه — بررسی پیشنهاد
+            <i class="bi bi-arrow-left"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="ex-actions ex-hidden-mobile">
+        <button type="submit" class="ex-btn ex-btn--cta ex-btn--lg">
+          ادامه — بررسی پیشنهاد
+          <i class="bi bi-arrow-left"></i>
+        </button>
       </div>
       <?php endif; ?>
     </form>
+
     <?php else: ?>
     <form method="POST">
       <?= csrf_field() ?>
@@ -200,97 +280,209 @@ render_navbar($user);
       <input type="hidden" name="cash_difference" value="<?= h((string) $cashDiff) ?>">
       <input type="hidden" name="submit_offer" value="1">
 
-      <div class="so-card">
-        <h2 class="so-title" style="font-size:1.1rem;margin-bottom:4px">بررسی پیشنهاد</h2>
-        <p class="so-subtitle" style="margin-bottom:16px">پیشنهاد شما به فروشگاه — لطفاً جزئیات را قبل از ارسال بررسی کنید.</p>
+      <div class="ex-card">
+        <div class="ex-card__title">بررسی پیشنهاد</div>
+        <p class="ex-card__subtitle">پیشنهاد شما به فروشگاه — لطفاً جزئیات را قبل از ارسال بررسی کنید.</p>
 
-        <div class="so-swap-row">
-          <div>
-            <div class="so-card__label">کالای فروشگاه</div>
-            <div class="so-item__title"><?= h($listing['title']) ?></div>
-            <div class="so-item__price"><?= fmt_credit($storeValue) ?></div>
+        <div class="ex-swap-grid">
+          <div class="ex-swap-col">
+            <div class="ex-swap-col__label">کالای شما</div>
+            <?php if (!empty($pickedListing['thumb'])): ?>
+            <img src="<?= UPLOAD_URL . h($pickedListing['thumb']) ?>" alt="" class="ex-swap-col__thumb">
+            <?php else: ?>
+            <div class="ex-swap-col__thumb" style="display:flex;align-items:center;justify-content:center;color:var(--ex-muted);font-size:1.75rem">
+              <i class="bi bi-box"></i>
+            </div>
+            <?php endif; ?>
+            <div class="ex-swap-col__title"><?= h($pickedListing['title'] ?? '—') ?></div>
+            <div class="ex-swap-col__price"><?= fmt_credit($userValue) ?></div>
           </div>
-          <div class="so-swap-icon"><i class="bi bi-arrow-left-right"></i></div>
-          <div>
-            <div class="so-card__label">کالای شما</div>
-            <div class="so-item__title"><?= h($pickedListing['title'] ?? '—') ?></div>
-            <div class="so-item__price"><?= fmt_credit($userValue) ?></div>
+          <div class="ex-swap-icon">
+            <div class="ex-swap-icon__wrapper">
+              <i class="bi bi-arrow-left-right"></i>
+            </div>
+          </div>
+          <div class="ex-swap-col">
+            <div class="ex-swap-col__label">محصول فروشگاه</div>
+            <?php if (!empty($listing['thumb'])): ?>
+            <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="" class="ex-swap-col__thumb">
+            <?php else: ?>
+            <div class="ex-swap-col__thumb" style="display:flex;align-items:center;justify-content:center;color:var(--ex-muted);font-size:1.75rem">
+              <i class="bi bi-box"></i>
+            </div>
+            <?php endif; ?>
+            <div class="ex-swap-col__title"><?= h($listing['title']) ?></div>
+            <div class="ex-swap-col__price"><?= fmt_credit($storeValue) ?></div>
           </div>
         </div>
 
-        <div class="so-cash-box">
-          <div class="so-cash-row"><span>ارزش کالای شما</span><strong><?= fmt_credit($userValue) ?></strong></div>
-          <div class="so-cash-row"><span>ارزش محصول فروشگاه</span><strong><?= fmt_credit($storeValue) ?></strong></div>
-          <div class="so-cash-row"><span>مبلغ تکمیلی شما</span><strong><?= fmt_credit($cashDiff) ?></strong></div>
+        <div class="ex-cash-box ex-cash-box--highlight" style="margin-top:20px">
+          <div class="ex-cash-row">
+            <span>ارزش کالای شما</span>
+            <strong><?= fmt_credit($userValue) ?></strong>
+          </div>
+          <div class="ex-cash-row">
+            <span>ارزش محصول فروشگاه</span>
+            <strong><?= fmt_credit($storeValue) ?></strong>
+          </div>
+          <div class="ex-cash-row">
+            <span>مبلغ تکمیلی شما</span>
+            <strong><?= fmt_credit($cashDiff) ?></strong>
+          </div>
+          <div class="ex-cash-total">
+            <span>مجموع ارزش پیشنهادی شما</span>
+            <strong><?= fmt_credit($userValue + $cashDiff) ?></strong>
+          </div>
         </div>
 
-        <div class="so-alert so-alert--info" style="margin-top:16px;margin-bottom:0">
-          <i class="bi bi-info-circle"></i> با ارسال این پیشنهاد، فروشگاه آن را بررسی خواهد کرد.
+        <div class="ex-alert ex-alert--info" style="margin-top:16px;margin-bottom:0">
+          <i class="bi bi-info-circle-fill ex-alert__icon"></i>
+          با ارسال این پیشنهاد، فروشگاه آن را بررسی خواهد کرد. شما می‌توانید از طریق همین صفحه گفت‌وگو کنید و روند را پیگیری کنید.
         </div>
       </div>
 
-      <div class="so-actions">
-        <button type="submit" class="so-btn so-btn--gold"><i class="bi bi-send"></i> ارسال پیشنهاد</button>
-        <a href="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" class="so-btn so-btn--outline">بازگشت و ویرایش</a>
+      <div class="ex-sticky-bar ex-visible-mobile">
+        <div class="ex-sticky-bar__inner">
+          <div class="ex-sticky-bar__row">
+            <a href="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>">
+              ویرایش
+            </a>
+            <button type="submit" class="ex-btn ex-btn--cta ex-btn--lg">
+              <i class="bi bi-send-fill"></i>
+              ارسال پیشنهاد
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ex-actions ex-actions--row-sm ex-hidden-mobile">
+        <a href="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" style="flex:1">
+          <i class="bi bi-pencil"></i>
+          بازگشت و ویرایش
+        </a>
+        <button type="submit" class="ex-btn ex-btn--cta ex-btn--lg" style="flex:2">
+          <i class="bi bi-send-fill"></i>
+          ارسال پیشنهاد به فروشگاه
+        </button>
       </div>
     </form>
     <?php endif; ?>
+
   </div>
 </div>
 
-<div class="so-modal-backdrop" id="so-quick-modal" role="dialog" aria-modal="true">
-  <div class="so-modal">
-    <h2 class="so-modal__title">ثبت کالا برای پیشنهاد</h2>
+<div class="ex-modal-backdrop" id="so-quick-modal" role="dialog" aria-modal="true">
+  <div class="ex-modal">
+    <div class="ex-modal__header">
+      <h3 class="ex-modal__title"><i class="bi bi-plus-circle" style="color:var(--ex-gold-dark);margin-left:6px"></i> ثبت کالا برای پیشنهاد</h3>
+      <button type="button" class="ex-modal__close" id="so-close-quick-modal" aria-label="بستن">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
     <form method="POST" enctype="multipart/form-data">
       <?= csrf_field() ?>
       <input type="hidden" name="listing_id" value="<?= $listingId ?>">
       <input type="hidden" name="quick_listing" value="1">
-      <div class="form-group mb-3">
-        <label class="so-input-label">عنوان</label>
-        <input type="text" name="title" class="form-control" required minlength="5">
+
+      <div class="ex-form-group">
+        <label class="ex-form-label">عنوان کالا</label>
+        <input type="text" name="title" class="form-control" required minlength="5"
+               style="padding:14px 16px;border-radius:var(--ex-radius-md);border:2px solid var(--ex-border);font-family:inherit;font-size:.9375rem">
       </div>
-      <div class="form-group mb-3">
-        <label class="so-input-label">توضیحات</label>
-        <textarea name="description" class="form-control" rows="3" required minlength="10"></textarea>
+
+      <div class="ex-form-group">
+        <label class="ex-form-label">توضیحات کوتاه</label>
+        <textarea name="description" class="form-control" rows="3" required minlength="10"
+                  style="padding:14px 16px;border-radius:var(--ex-radius-md);border:2px solid var(--ex-border);font-family:inherit;font-size:.9375rem;resize:vertical"></textarea>
       </div>
-      <div class="form-group mb-3">
-        <label class="so-input-label">دسته‌بندی</label>
-        <select name="category_id" class="form-control" required>
+
+      <div class="ex-form-group">
+        <label class="ex-form-label">دسته‌بندی</label>
+        <select name="category_id" class="form-control" required
+                style="padding:14px 16px;border-radius:var(--ex-radius-md);border:2px solid var(--ex-border);font-family:inherit;font-size:.9375rem">
           <option value="">انتخاب کنید</option>
           <?php foreach ($categories as $cat): ?>
           <option value="<?= (int) $cat['id'] ?>"><?= h($cat['name']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
-      <div class="form-group mb-3">
-        <label class="so-input-label">ارزش تقریبی (تومان)</label>
-        <input type="text" name="estimated_value" class="form-control" inputmode="numeric" required>
+
+      <div class="ex-form-group">
+        <label class="ex-form-label">ارزش تقریبی (تومان)</label>
+        <input type="text" name="estimated_value" class="form-control" inputmode="numeric" required
+               style="padding:14px 16px;border-radius:var(--ex-radius-md);border:2px solid var(--ex-border);font-family:inherit;font-size:.9375rem">
       </div>
-      <div class="form-group mb-3">
-        <label class="so-input-label">تصویر</label>
-        <input type="file" name="image" class="form-control" accept="image/*">
+
+      <div class="ex-form-group">
+        <label class="ex-form-label">تصویر کالا</label>
+        <input type="file" name="image" class="form-control" accept="image/*"
+               style="padding:12px;border-radius:var(--ex-radius-md);border:2px solid var(--ex-border);font-family:inherit">
       </div>
-      <div class="so-actions">
-        <button type="submit" class="so-btn so-btn--primary">ثبت و انتخاب</button>
-        <button type="button" class="so-btn so-btn--outline" id="so-close-quick-modal">انصراف</button>
+
+      <div class="ex-actions" style="margin-top:24px">
+        <button type="submit" class="ex-btn ex-btn--primary">
+          <i class="bi bi-check-lg"></i>
+          ثبت و انتخاب کالا
+        </button>
+        <button type="button" class="ex-btn ex-btn--outline" id="so-close-quick-modal-2">
+          انصراف
+        </button>
       </div>
     </form>
   </div>
 </div>
 
 <script>
-document.querySelectorAll('.so-item-pick').forEach(function(el) {
-  el.addEventListener('click', function() {
-    document.querySelectorAll('.so-item-pick').forEach(function(x) { x.classList.remove('is-selected'); });
-    el.classList.add('is-selected');
-    el.querySelector('input[type=radio]').checked = true;
+document.querySelectorAll('[data-navigate]').forEach(function (el) {
+  el.addEventListener('click', function (e) {
+    const url = el.getAttribute('data-navigate');
+    if (!url) return;
+    e.preventDefault();
+    window.location.href = url;
   });
 });
+
+document.querySelectorAll('.ex-pick').forEach(function(el) {
+  el.addEventListener('click', function() {
+    var id = el.getAttribute('data-id');
+    document.querySelectorAll('.ex-pick').forEach(function(x) { x.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+    document.getElementById('pickedListingId').value = id;
+    var radio = el.querySelector('input[type=radio]');
+    if (radio) radio.checked = true;
+  });
+});
+
 var modal = document.getElementById('so-quick-modal');
-document.getElementById('so-open-quick-listing')?.addEventListener('click', function() { modal.classList.add('is-open'); });
-document.getElementById('so-close-quick-modal')?.addEventListener('click', function() { modal.classList.remove('is-open'); });
+var openBtns = [document.getElementById('so-open-quick-listing'), document.getElementById('so-open-quick-listing-empty')];
+var closeBtns = [document.getElementById('so-close-quick-modal'), document.getElementById('so-close-quick-modal-2')];
+
+openBtns.forEach(function(btn) {
+  btn?.addEventListener('click', function() { modal.classList.add('is-open'); });
+});
+closeBtns.forEach(function(btn) {
+  btn?.addEventListener('click', function() { modal.classList.remove('is-open'); });
+});
 modal?.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('is-open'); });
+
 <?php if (!$myListings && !$error): ?>modal?.classList.add('is-open');<?php endif; ?>
+
+var suggestedBtn = document.getElementById('suggestedCashBtn');
+var cashInput = document.getElementById('cash_difference');
+var cashDiffInput = document.getElementById('cashDiffInput');
+var suggestedCash = <?= $suggestedCash ?>;
+
+suggestedBtn?.addEventListener('click', function() {
+  if (cashInput) {
+    cashInput.value = suggestedCash.toLocaleString('en-US');
+    cashDiffInput.value = suggestedCash;
+  }
+});
+
+cashInput?.addEventListener('input', function() {
+  var val = this.value.replace(/[^\d]/g, '');
+  cashDiffInput.value = val;
+});
 </script>
 
 <?php render_footer(); ?>
