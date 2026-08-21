@@ -781,6 +781,7 @@
   font-size: 1.0625rem;
   min-height: 58px;
   border-radius: var(--ex-radius-lg);
+  width: 25px;
 }
 
 /* ============================================
@@ -1679,7 +1680,7 @@
 .ex-page,
 .ex-container,
 .ex-card {
-  max-width: 100%;
+  max-width: 92%;
   overflow-x: hidden;
   box-sizing: border-box;
 }

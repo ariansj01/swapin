@@ -133,205 +133,190 @@ $stepTitles = [
 render_head($stepTitles[$step] . ' | ' . h($listing['title']));
 render_navbar($user);
 ?>
-<link rel="stylesheet" href="<?= APP_URL ?>/src/css/orders.css?v=<?= @filemtime(__DIR__ . '/../src/css/orders.css') ?: time() ?>">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/exchange-flow.css?v=<?= @filemtime(__DIR__ . '/../src/css/exchange-flow.css') ?: time() ?>">
 <style>
-  .co-stepper{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 28px;padding:16px 20px;background:#fff;border-radius:20px;box-shadow:var(--card-shadow,0 1px 2px rgba(16,24,40,.05));}
-  .co-step{display:flex;align-items:center;gap:10px;flex:1;}
-  .co-step__dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.9rem;flex-shrink:0;background:#E5E7EB;color:#6B7280;border:2px solid #E5E7EB;transition:all .2s ease;}
-  .co-step.is-done .co-step__dot{background:#10B981;border-color:#10B981;color:#fff;}
-  .co-step.is-active .co-step__dot{background:var(--primary,#2563eb);border-color:var(--primary,#2563eb);color:#fff;box-shadow:0 0 0 6px rgba(37,99,235,.1);}
-  .co-step__label{font-size:.875rem;font-weight:700;color:#6B7280;white-space:nowrap;}
-  .co-step.is-done .co-step__label{color:#065F46;}
-  .co-step.is-active .co-step__label{color:var(--dash-navy,#0B1F4D);}
-  .co-step__line{flex:1;height:2px;background:#E5E7EB;border-radius:2px;}
-  .co-step.is-done + .co-step__line,
-  .co-step__line.is-done{background:#10B981;}
-
-  .addr-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px;}
-  .addr-card{border:2px solid var(--border);border-radius:16px;padding:14px 16px;cursor:pointer;transition:all .15s;position:relative;}
-  .addr-card:hover{border-color:var(--primary,.25);}
-  .addr-card.is-selected{border-color:var(--primary,#2563eb);background:rgba(37,99,235,.04);}
-  .addr-card__title{font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
-  .addr-card__def{font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(16,185,129,.12);color:#059669;}
-  .addr-card__meta{font-size:.8125rem;color:var(--text-muted);line-height:1.7;}
-  .addr-card__radio{position:absolute;top:12px;left:12px;width:18px;height:18px;accent-color:var(--primary,#2563eb);}
-
-  .ship-methods{display:grid;gap:12px;}
-  .ship-method{border:2px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:14px;}
-  .ship-method:hover{border-color:rgba(37,99,235,.4);}
-  .ship-method.is-selected{border-color:var(--primary,#2563eb);background:rgba(37,99,235,.04);}
-  .ship-method__icon{width:44px;height:44px;border-radius:12px;background:rgba(37,99,235,.08);color:var(--primary,#2563eb);display:grid;place-items:center;flex-shrink:0;font-size:1.2rem;}
-  .ship-method__body{flex:1;min-width:0;}
-  .ship-method__label{font-weight:800;margin-bottom:2px;}
-  .ship-method__eta{font-size:.8125rem;color:var(--text-muted);}
-  .ship-method__price{font-weight:800;color:var(--dash-navy);font-size:1rem;flex-shrink:0;}
-  .ship-method__price.is-free{color:#10B981;}
-
-  .chk-summary{border:1px solid var(--border);border-radius:16px;padding:16px;background:#FAFBFC;}
-  .chk-summary__row{display:flex;justify-content:space-between;padding:8px 0;font-size:.95rem;}
-  .chk-summary__row:last-child{padding-top:14px;margin-top:4px;border-top:1px dashed var(--border);font-weight:800;font-size:1.1rem;color:var(--dash-navy);}
-  .chk-summary__row.muted span:first-child{color:var(--text-muted);}
-
-  .chk-nav-btns{display:flex;gap:10px;margin-top:20px;}
-  .chk-nav-btns .btn{flex:1;}
-
-  .review-address{background:#f9fafb;border:1px dashed var(--border);border-radius:14px;padding:16px;}
-  .review-address h4{font-size:.875rem;color:var(--text-muted);margin-bottom:8px;font-weight:600;}
-  .review-address p{margin:4px 0;font-size:.92rem;}
-
-  @media (max-width:640px){
-    .co-stepper{padding:12px 10px;gap:4px;}
-    .co-step__label{display:none;}
-    .chk-nav-btns{flex-direction:column-reverse;}
+  /* Custom overrides for checkout flow to perfectly match design reference */
+  .ex-page { padding-bottom: 140px; }
+  .ex-step-line-active {
+    position: absolute;
+    top: 40px;
+    right: 10%;
+    height: 3px;
+    background: var(--ex-navy);
+    z-index: 0;
+    transition: width 0.4s ease;
+  }
+  @media (max-width: 992px) {
+    .ex-step-line-active { top: 40px; }
+  }
+  .addr-card__radio { position: absolute; top: 16px; left: 16px; width: 20px; height: 20px; accent-color: var(--ex-navy); cursor: pointer; }
+  .ex-pick.is-selected .addr-card__radio { border-color: var(--ex-navy); }
+  
+  /* Responsive Grids */
+  .ex-form-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 640px) {
+    .ex-form-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 
-<div class="section-sm">
-  <div class="container-md">
-    <div class="order-page-head">
-      <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="order-back"><i class="bi bi-arrow-right"></i> بازگشت به محصول</a>
-      <h1>خرید نقدی از فروشگاه</h1>
-      <p class="order-page-sub">مراحل خرید را به‌ترتیب تکمیل کنید و در پایان با خیال راحت پرداخت کنید.</p>
+<div class="ex-page">
+  <div class="ex-container">
+    <div class="ex-header">
+      <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="ex-header__back">
+        <i class="bi bi-arrow-right"></i> بازگشت به محصول
+      </a>
+      <div class="ex-header__row">
+        <div>
+          <h1 class="ex-header__title">خرید نقدی</h1>
+          <p class="ex-header__subtitle">مراحل خرید را تکمیل و سفارش خود را ثبت کنید.</p>
+        </div>
+      </div>
     </div>
 
     <!-- Stepper -->
-    <div class="co-stepper" aria-label="مراحل خرید">
+    <div class="ex-stepper" aria-label="مراحل خرید">
+      <div class="ex-stepper__progress" style="width: <?= (($step - 1) / ($maxStep - 1)) * 80 ?>%; right: 10%;"></div>
       <?php for ($i = 1; $i <= $maxStep; $i++): ?>
-        <div class="co-step <?= $i < $step ? 'is-done' : '' ?> <?= $i === $step ? 'is-active' : '' ?>">
-          <div class="co-step__dot"><?= $i < $step ? '<i class="bi bi-check-lg"></i>' : (persian_digits((string)$i)) ?></div>
-          <div class="co-step__label"><?= h($stepTitles[$i]) ?></div>
+        <div class="ex-step <?= $i < $step ? 'is-done' : '' ?> <?= $i === $step ? 'is-active' : '' ?>">
+          <div class="ex-step__circle">
+            <?php if ($i < $step): ?>
+              <i class="bi bi-check-lg"></i>
+            <?php else: ?>
+              <?= persian_digits((string)$i) ?>
+            <?php endif; ?>
+          </div>
+          <div class="ex-step__label"><?= h($stepTitles[$i]) ?></div>
         </div>
-        <?php if ($i < $maxStep): ?>
-          <div class="co-step__line <?= $i < $step ? 'is-done' : '' ?>"></div>
-        <?php endif; ?>
       <?php endfor; ?>
     </div>
 
     <?php if ($error): ?>
-    <div class="alert alert-danger mb-5"><i class="bi bi-exclamation-circle"></i> <?= h($error) ?></div>
-    <?php endif; ?>
-    <?php if ($info): ?>
-    <div class="alert alert-info mb-5"><i class="bi bi-info-circle"></i> <?= h($info) ?></div>
+      <div class="ex-alert ex-alert--danger">
+        <i class="bi bi-exclamation-circle ex-alert__icon"></i>
+        <div><?= h($error) ?></div>
+      </div>
     <?php endif; ?>
 
-    <form method="POST" class="order-checkout-grid">
+    <form method="POST" id="checkoutForm">
       <?= csrf_field() ?>
       <input type="hidden" name="listing_id" value="<?= $listingId ?>">
       <input type="hidden" name="step" value="<?= $step ?>">
       <input type="hidden" name="province" value="<?= h($form['province']) ?>" id="hiddenProvince">
       <input type="hidden" name="city" value="<?= h($form['city']) ?>" id="hiddenCity">
 
-      <!-- Left side: Summary card -->
-      <div class="card order-summary-card">
-        <div class="card-body">
-          <h2 class="order-card-title"><i class="bi bi-bag-check"></i> خلاصه سفارش</h2>
-          <div class="order-product">
-            <?php if (!empty($listing['thumb'])): ?>
-            <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="<?= h($listing['title']) ?>" class="order-product__thumb">
-            <?php endif; ?>
-            <div>
-              <div class="order-product__title"><?= h($listing['title']) ?></div>
+      <!-- Product Summary Card -->
+      <div class="ex-card">
+        <div class="ex-card__label"><i class="bi bi-bag-check"></i> خلاصه سفارش</div>
+        <div class="ex-product">
+          <?php if (!empty($listing['thumb'])): ?>
+            <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="<?= h($listing['title']) ?>" class="ex-product__thumb">
+          <?php else: ?>
+            <div class="ex-product__thumb ex-product__thumb--empty"><i class="bi bi-image"></i></div>
+          <?php endif; ?>
+          <div class="ex-product__info">
+            <h3 class="ex-product__title"><?= h($listing['title']) ?></h3>
+            <div class="ex-product__meta">
               <?php if (!empty($listing['store_name'])): ?>
-              <div class="order-product__store"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></div>
+                <span class="ex-product__chip"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></span>
               <?php endif; ?>
-              <div class="order-product__price"><?= fmt_credit((float)$productPrice) ?></div>
+            </div>
+            <div class="ex-product__price">
+              <span class="ex-product__price-label">قیمت واحد:</span>
+              <?= fmt_credit((float)$productPrice) ?>
             </div>
           </div>
+        </div>
 
-          <div class="chk-summary">
-            <div class="chk-summary__row muted">
-              <span>قیمت کالا</span>
-              <span><?= fmt_credit((float)$productPrice) ?></span>
-            </div>
-            <div class="chk-summary__row muted">
-              <span>هزینه ارسال<?= $step >= 2 && $form['shipping_method'] ? ' ('.h(shipping_label($form['shipping_method'])).')' : '' ?></span>
-              <span><?= $shippingCost === 0 ? '<span style="color:#10B981;font-weight:700">رایگان</span>' : fmt_credit((float)$shippingCost) ?></span>
-            </div>
-            <div class="chk-summary__row">
-              <span>مبلغ قابل پرداخت</span>
-              <span><?= fmt_credit((float)$totalAmount) ?></span>
-            </div>
+        <div class="ex-cash-box ex-mt-4">
+          <div class="ex-cash-row">
+            <span>قیمت کالا</span>
+            <strong><?= fmt_credit((float)$productPrice) ?></strong>
           </div>
-
-          <?php if ($step === 3): ?>
-          <div style="margin-top:18px;" class="review-address">
-            <h4><i class="bi bi-geo-alt"></i> آدرس ارسال</h4>
-            <p><strong><?= h($form['recipient_name']) ?></strong> — <span dir="ltr"><?= h($form['recipient_phone']) ?></span></p>
-            <p><?= h($form['province']) ?> — <?= h($form['city']) ?><?= $form['postal_code'] ? ' — کد پستی: <span dir="ltr">'.h($form['postal_code']).'</span>' : '' ?></p>
-            <p style="color:var(--text-muted);font-size:.875rem;"><?= nl2br(h($form['shipping_address'])) ?></p>
+          <div class="ex-cash-row">
+            <span>هزینه ارسال</span>
+            <?php if ($step >= 2 && $form['shipping_method']): ?>
+              <span class="ex-product__chip" style="margin-right: 8px;"><?= h(shipping_label($form['shipping_method'])) ?></span>
+            <?php endif; ?>
+            <strong><?= $shippingCost === 0 ? '<span class="ex-chip ex-chip--success">رایگان</span>' : fmt_credit((float)$shippingCost) ?></strong>
           </div>
-          <?php if ($form['shipping_method']): ?>
-          <div style="margin-top:14px;padding:12px 14px;border-radius:14px;background:#EFF6FF;border:1px solid #BFDBFE;">
-            <div style="font-size:.8125rem;color:#1E40AF;font-weight:700;margin-bottom:4px;"><i class="bi bi-truck"></i> روش ارسال انتخاب‌شده</div>
-            <div style="font-weight:800;"><?= h(shipping_label($form['shipping_method'])) ?></div>
+          <div class="ex-cash-total">
+            <span>مبلغ قابل پرداخت</span>
+            <strong><?= fmt_credit((float)$totalAmount) ?></strong>
           </div>
-          <?php endif; ?>
-          <?php endif; ?>
         </div>
       </div>
 
-      <!-- Right side: Step content -->
-      <div class="card order-shipping-card">
-        <div class="card-body">
+      <!-- Step Content -->
+      <div class="ex-card">
+        <!-- ================= STEP 1: Shipping Address ================= -->
+        <?php if ($step === 1): ?>
+          <h2 class="ex-card__title">اطلاعات ارسال</h2>
+          <p class="ex-card__subtitle">آدرس محل تحویل سفارش را انتخاب یا وارد کنید.</p>
 
-          <!-- ================= STEP 1: Shipping Address ================= -->
-          <?php if ($step === 1): ?>
-            <h2 class="order-card-title"><i class="bi bi-geo-alt"></i> اطلاعات ارسال</h2>
-
-            <?php if ($savedAddresses): ?>
-              <div style="margin-bottom:18px;">
-                <div style="font-size:.92rem;font-weight:700;margin-bottom:10px;">انتخاب از آدرس‌های ذخیره‌شده</div>
-                <div class="addr-list">
-                  <label class="addr-card <?= $form['address_id'] === 0 ? 'is-selected' : '' ?>">
-                    <input type="radio" name="address_id" value="0" class="addr-card__radio" <?= $form['address_id'] === 0 ? 'checked' : '' ?>>
-                    <div class="addr-card__title"><i class="bi bi-plus-circle" style="color:var(--primary)"></i> آدرس جدید</div>
-                    <div class="addr-card__meta" style="color:var(--primary);font-weight:600;">کلیک کنید و یک آدرس جدید وارد کنید</div>
-                  </label>
-                  <?php foreach ($savedAddresses as $a): ?>
-                    <label class="addr-card <?= $form['address_id'] === (int)$a['id'] ? 'is-selected' : '' ?>">
-                      <input type="radio" name="address_id" value="<?= (int)$a['id'] ?>" class="addr-card__radio" <?= $form['address_id'] === (int)$a['id'] ? 'checked' : '' ?>>
-                      <div class="addr-card__title">
+          <?php if ($savedAddresses): ?>
+            <div class="ex-form-group">
+              <label class="ex-form-label">آدرس‌های ذخیره‌شده</label>
+              <div class="ex-picklist">
+                <label class="ex-pick <?= $form['address_id'] === 0 ? 'is-selected' : '' ?>">
+                  <input type="radio" name="address_id" value="0" class="addr-card__radio" <?= $form['address_id'] === 0 ? 'checked' : '' ?>>
+                  <div class="ex-pick__check"></div>
+                  <div class="ex-pick__info">
+                    <div class="ex-pick__title"><i class="bi bi-plus-circle"></i> آدرس جدید</div>
+                    <div class="ex-pick__meta">وارد کردن اطلاعات گیرنده و آدرس جدید</div>
+                  </div>
+                </label>
+                <?php foreach ($savedAddresses as $a): ?>
+                  <label class="ex-pick <?= $form['address_id'] === (int)$a['id'] ? 'is-selected' : '' ?>">
+                    <input type="radio" name="address_id" value="<?= (int)$a['id'] ?>" class="addr-card__radio" <?= $form['address_id'] === (int)$a['id'] ? 'checked' : '' ?>>
+                    <div class="ex-pick__check"></div>
+                    <div class="ex-pick__info">
+                      <div class="ex-pick__title">
                         <?= h($a['title'] ?: 'آدرس من') ?>
-                        <?php if (!empty($a['is_default'])): ?><span class="addr-card__def">پیش‌فرض</span><?php endif; ?>
+                        <?php if (!empty($a['is_default'])): ?><span class="ex-chip ex-chip--success" style="margin-right: 8px; font-size: 0.65rem;">پیش‌فرض</span><?php endif; ?>
                       </div>
-                      <div class="addr-card__meta">
-                        <div><strong><?= h($a['recipient_name']) ?></strong></div>
-                        <div dir="ltr"><?= h($a['recipient_phone']) ?></div>
-                        <div><?= h($a['province'] ? $a['province'].' — ' : '') ?><?= h($a['city']) ?></div>
-                        <div style="font-size:.75rem;line-height:1.5;"><?= h(mb_substr($a['address'],0,70)) ?><?= mb_strlen($a['address'])>70 ? '…' : '' ?></div>
+                      <div class="ex-pick__meta">
+                        <span><i class="bi bi-person"></i> <?= h($a['recipient_name']) ?></span>
+                        <span><i class="bi bi-phone"></i> <?= h($a['recipient_phone']) ?></span>
                       </div>
-                    </label>
-                  <?php endforeach; ?>
-                </div>
+                      <div class="ex-pick__meta">
+                        <span><i class="bi bi-geo-alt"></i> <?= h($a['province'] ? $a['province'].'، ' : '') ?><?= h($a['city']) ?></span>
+                      </div>
+                      <div style="font-size: 0.8125rem; color: var(--ex-muted); margin-top: 4px;"><?= h($a['address']) ?></div>
+                    </div>
+                  </label>
+                <?php endforeach; ?>
               </div>
-            <?php endif; ?>
+            </div>
+          <?php endif; ?>
 
-            <div id="newAddressFields" style="<?= $form['address_id'] > 0 && $savedAddresses ? 'display:none;' : '' ?>">
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label">نام و نام خانوادگی گیرنده</label>
-                  <input type="text" name="recipient_name" class="form-control" required maxlength="120"
-                         value="<?= h($form['recipient_name']) ?>">
+          <div id="newAddressFields" style="<?= $form['address_id'] > 0 && $savedAddresses ? 'display:none;' : '' ?>">
+            <div class="ex-form-group">
+              <div class="ex-form-grid">
+                <div>
+                  <label class="ex-form-label">نام و نام خانوادگی گیرنده</label>
+                  <input type="text" name="recipient_name" class="form-control" maxlength="120" value="<?= h($form['recipient_name']) ?>">
                 </div>
-                <div class="form-group">
-                  <label class="form-label">شماره موبایل گیرنده</label>
-                  <input type="tel" name="recipient_phone" class="form-control" required dir="ltr"
-                         placeholder="09123456789" value="<?= h($form['recipient_phone']) ?>">
+                <div>
+                  <label class="ex-form-label">شماره موبایل گیرنده</label>
+                  <input type="tel" name="recipient_phone" class="form-control" dir="ltr" placeholder="09123456789" value="<?= h($form['recipient_phone']) ?>">
                 </div>
               </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label">استان</label>
-                  <select name="province_select" id="provinceSelect" class="form-control" required>
+            </div>
+
+            <div class="ex-form-group">
+              <div class="ex-form-grid">
+                <div>
+                  <label class="ex-form-label">استان</label>
+                  <select name="province_select" id="provinceSelect" class="form-control">
                     <option value="">انتخاب کنید...</option>
                     <?php foreach ($provinces as $p): ?>
                       <option value="<?= h($p) ?>" <?= $form['province'] === $p ? 'selected' : '' ?>><?= h($p) ?></option>
                     <?php endforeach; ?>
                   </select>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">شهر</label>
-                  <select name="city_select" id="citySelect" class="form-control" required>
+                <div>
+                  <label class="ex-form-label">شهر</label>
+                  <select name="city_select" id="citySelect" class="form-control">
                     <?php if ($form['province'] && ($cities = iran_cities_by_province($form['province']))): ?>
                       <option value="">انتخاب کنید...</option>
                       <?php foreach ($cities as $c): ?>
@@ -343,123 +328,173 @@ render_navbar($user);
                   </select>
                 </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">آدرس کامل</label>
-                <textarea name="shipping_address" class="form-control" rows="3" required placeholder="خیابان، کوچه، پلاک، واحد..."><?= h($form['shipping_address']) ?></textarea>
-              </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label">کد پستی (اختیاری)</label>
-                  <input type="text" name="postal_code" class="form-control" dir="ltr" placeholder="۱۰ رقمی"
-                         value="<?= h($form['postal_code']) ?>">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">عنوان آدرس (اختیاری)</label>
-                  <input type="text" name="address_title" class="form-control" placeholder="مثل: منزل یا سرکار"
-                         value="<?= h($form['address_title']) ?>">
-                </div>
-              </div>
-              <?php if ($form['address_id'] === 0 || !$savedAddresses): ?>
-              <div style="display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 8px;">
-                <label class="form-check-inline">
-                  <input type="checkbox" name="save_address" value="1" <?= $form['save_address'] ? 'checked' : '' ?>>
-                  ذخیره آدرس در حساب کاربری
-                </label>
-                <label class="form-check-inline">
-                  <input type="checkbox" name="set_default_address" value="1" <?= $form['set_default_address'] ? 'checked' : '' ?>>
-                  تنظیم به‌عنوان آدرس پیش‌فرض
-                </label>
-              </div>
-              <?php endif; ?>
-              <div class="form-group">
-                <label class="form-label">توضیحات برای فروشنده (اختیاری)</label>
-                <textarea name="buyer_note" class="form-control" rows="2" placeholder="مثل: زنگ بزنید قبل از آمدن"><?= h($form['buyer_note']) ?></textarea>
-              </div>
             </div>
 
-            <div class="chk-nav-btns">
-              <button type="submit" name="nav" value="next_step" class="btn btn-primary btn-lg">
-                ادامه: روش ارسال <i class="bi bi-arrow-left"></i>
-              </button>
+            <div class="ex-form-group">
+              <label class="ex-form-label">آدرس کامل پستی</label>
+              <textarea name="shipping_address" class="form-control" rows="3" placeholder="نام خیابان، کوچه، پلاک و واحد را وارد کنید"><?= h($form['shipping_address']) ?></textarea>
             </div>
 
-          <!-- ================= STEP 2: Shipping Method ================= -->
-          <?php elseif ($step === 2): ?>
-            <h2 class="order-card-title"><i class="bi bi-truck"></i> روش ارسال</h2>
-            <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:16px;">
-              ارسال رایگان برای خرید‌های بالای ۵ میلیون تومان (پست پیشتاز) و ۱۰ میلیون تومان (تیپاکس) اعمال می‌شود.
-            </p>
-            <div class="ship-methods">
-              <?php foreach ($shippingMethods as $i => $m):
-                $cost = calculate_shipping_cost($m['key'], (float)$productPrice, $listing['store_lat']??null, $listing['store_lng']??null, $form['province']?:null);
-                $isFree = $cost === 0;
-              ?>
-                <label class="ship-method <?= $form['shipping_method'] === $m['key'] ? 'is-selected' : '' ?>">
-                  <input type="radio" name="shipping_method" value="<?= h($m['key']) ?>" style="display:none;"
-                         <?= $form['shipping_method'] === $m['key'] ? 'checked' : '' ?>>
-                  <div class="ship-method__icon">
-                    <i class="bi bi-<?= $m['key']==='post'?'box-seam':($m['key']==='tipax'?'truck':($m['key']==='courier'?'bicycle':'person-check')) ?>"></i>
-                  </div>
-                  <div class="ship-method__body">
-                    <div class="ship-method__label"><?= h($m['label']) ?></div>
-                    <div class="ship-method__eta"><i class="bi bi-clock"></i> زمان تقریبی: <?= h($m['eta']) ?></div>
-                  </div>
-                  <div class="ship-method__price <?= $isFree ? 'is-free' : '' ?>">
-                    <?= $isFree ? '✓ رایگان' : fmt_credit((float)$cost) ?>
-                  </div>
-                </label>
-              <?php endforeach; ?>
-            </div>
-
-            <div class="chk-nav-btns">
-              <button type="submit" name="nav" value="prev_step" class="btn btn-outline btn-lg">
-                <i class="bi bi-arrow-right"></i> بازگشت
-              </button>
-              <button type="submit" name="nav" value="next_step" class="btn btn-primary btn-lg">
-                ادامه: بررسی و پرداخت <i class="bi bi-arrow-left"></i>
-              </button>
-            </div>
-
-          <!-- ================= STEP 3: Review & Pay ================= -->
-          <?php elseif ($step === 3): ?>
-            <h2 class="order-card-title"><i class="bi bi-credit-card-2-front"></i> بررسی نهایی و پرداخت</h2>
-            <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:20px;">
-              قبل از پرداخت، تمامی موارد بالا را بررسی کنید. پس از کلیک روی دکمه زیر به درگاه امن بانک سامان منتقل می‌شوید.
-            </p>
-
-            <div class="review-address" style="margin-bottom:16px;">
-              <h4><i class="bi bi-geo-alt"></i> آدرس ارسال</h4>
-              <p><strong><?= h($form['recipient_name']) ?></strong> — <span dir="ltr"><?= h($form['recipient_phone']) ?></span></p>
-              <p><?= h($form['province']) ?> — <?= h($form['city']) ?><?= $form['postal_code'] ? ' — کد پستی: <span dir="ltr">'.h($form['postal_code']).'</span>' : '' ?></p>
-              <p style="color:var(--text-muted);font-size:.875rem;"><?= nl2br(h($form['shipping_address'])) ?></p>
-              <?php if (!empty($form['buyer_note'])): ?>
-                <p style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);"><strong style="font-size:.875rem;">توضیح خریدار:</strong> <?= h($form['buyer_note']) ?></p>
-              <?php endif; ?>
-            </div>
-
-            <div style="padding:14px 16px;border-radius:14px;background:#ECFDF5;border:1px solid #A7F3D0;margin-bottom:20px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div class="ex-form-group">
+              <div class="ex-form-grid">
                 <div>
-                  <div style="font-size:.8125rem;color:#065F46;font-weight:700;"><i class="bi bi-shield-check"></i> پرداخت امن از طریق درگاه بانک سامان</div>
-                  <div style="font-weight:800;color:#064E3B;">مبلغ کل: <?= fmt_credit((float)$totalAmount) ?></div>
+                  <label class="ex-form-label">کد پستی (۱۰ رقمی)</label>
+                  <input type="text" name="postal_code" class="form-control" dir="ltr" value="<?= h($form['postal_code']) ?>">
+                </div>
+                <div>
+                  <label class="ex-form-label">عنوان آدرس</label>
+                  <input type="text" name="address_title" class="form-control" placeholder="مثلاً منزل یا محل کار" value="<?= h($form['address_title']) ?>">
                 </div>
               </div>
             </div>
 
-            <div class="chk-nav-btns">
-              <button type="submit" name="nav" value="prev_step" class="btn btn-outline btn-lg">
-                <i class="bi bi-arrow-right"></i> بازگشت
-              </button>
-              <button type="submit" name="nav" value="submit" class="btn btn-primary btn-lg">
-                <i class="bi bi-credit-card"></i> پرداخت و ثبت سفارش
-              </button>
-            </div>
-          <?php endif; ?>
+            <?php if ($form['address_id'] === 0 || !$savedAddresses): ?>
+              <div class="ex-form-group">
+                <label class="ex-pick" style="padding: 10px 14px; border-width: 1px;">
+                  <input type="checkbox" name="save_address" value="1" <?= $form['save_address'] ? 'checked' : '' ?> style="width: 18px; height: 18px; margin-left: 10px;">
+                  <span style="font-size: 0.875rem; font-weight: 600;">ذخیره این آدرس در لیست آدرس‌های من</span>
+                </label>
+              </div>
+            <?php endif; ?>
+          </div>
 
-        </div>
+          <div class="ex-form-group">
+            <label class="ex-form-label">توضیحات سفارش (اختیاری)</label>
+            <textarea name="buyer_note" class="form-control" rows="2" placeholder="اگر نکته خاصی برای ارسال وجود دارد اینجا بنویسید"><?= h($form['buyer_note']) ?></textarea>
+          </div>
+
+        <!-- ================= STEP 2: Shipping Method ================= -->
+        <?php elseif ($step === 2): ?>
+          <h2 class="ex-card__title">روش ارسال</h2>
+          <p class="ex-card__subtitle">مناسب‌ترین روش ارسال را با توجه به هزینه و زمان انتخاب کنید.</p>
+
+          <div class="ex-picklist">
+            <?php foreach ($shippingMethods as $m):
+              $cost = calculate_shipping_cost($m['key'], (float)$productPrice, $listing['store_lat']??null, $listing['store_lng']??null, $form['province']?:null);
+              $isFree = $cost === 0;
+            ?>
+              <label class="ex-pick <?= $form['shipping_method'] === $m['key'] ? 'is-selected' : '' ?>">
+                <input type="radio" name="shipping_method" value="<?= h($m['key']) ?>" class="addr-card__radio" <?= $form['shipping_method'] === $m['key'] ? 'checked' : '' ?>>
+                <div class="ex-pick__check"></div>
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-bg); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--ex-navy);">
+                  <i class="bi bi-<?= $m['key']==='post'?'box-seam':($m['key']==='tipax'?'truck':($m['key']==='courier'?'bicycle':'person-check')) ?>"></i>
+                </div>
+                <div class="ex-pick__info">
+                  <div class="ex-pick__title"><?= h($m['label']) ?></div>
+                  <div class="ex-pick__meta"><i class="bi bi-clock"></i> زمان تقریبی: <?= h($m['eta']) ?></div>
+                </div>
+                <div class="ex-pick__price">
+                  <?= $isFree ? '<span class="ex-chip ex-chip--success">رایگان</span>' : fmt_credit((float)$cost) ?>
+                </div>
+              </label>
+            <?php endforeach; ?>
+          </div>
+
+          <div class="ex-alert ex-alert--info ex-mt-4">
+            <i class="bi bi-info-circle ex-alert__icon"></i>
+            <div>ارسال رایگان برای خریدهای بالای مبالغ مشخص شده در قوانین سایت اعمال می‌شود.</div>
+          </div>
+
+        <!-- ================= STEP 3: Review & Pay ================= -->
+        <?php elseif ($step === 3): ?>
+          <h2 class="ex-card__title">بررسی نهایی</h2>
+          <p class="ex-card__subtitle">اطلاعات سفارش خود را بررسی کنید و برای پرداخت اقدام کنید.</p>
+
+          <div class="ex-cash-box ex-mt-4">
+            <div class="ex-card__label"><i class="bi bi-geo-alt"></i> آدرس و اطلاعات گیرنده</div>
+            <div style="padding: 10px 0;">
+              <div style="font-weight: 800; font-size: 1rem; margin-bottom: 4px;"><?= h($form['recipient_name']) ?></div>
+              <div style="color: var(--ex-muted); font-size: 0.875rem; margin-bottom: 8px;"><i class="bi bi-phone"></i> <?= h($form['recipient_phone']) ?></div>
+              <div style="line-height: 1.6; font-size: 0.9375rem;">
+                <?= h($form['province']) ?>، <?= h($form['city']) ?>، <?= h($form['shipping_address']) ?>
+                <?php if ($form['postal_code']): ?>
+                  <br><span style="color: var(--ex-muted);">کد پستی: <?= h($form['postal_code']) ?></span>
+                <?php endif; ?>
+              </div>
+              <?php if ($form['buyer_note']): ?>
+                <div style="margin-top: 12px; padding: 10px; background: #fff; border-radius: 8px; border: 1px dashed var(--ex-border);">
+                  <span style="font-size: 0.75rem; font-weight: 700; color: var(--ex-muted); display: block; margin-bottom: 4px;">توضیحات شما:</span>
+                  <div style="font-size: 0.875rem;"><?= nl2br(h($form['buyer_note'])) ?></div>
+                </div>
+              <?php endif; ?>
+            </div>
+
+            <div class="ex-card__divider"></div>
+
+            <div class="ex-card__label"><i class="bi bi-credit-card"></i> روش پرداخت</div>
+            <div class="ex-pick is-selected" style="margin-top: 8px;">
+              <div class="ex-pick__check"></div>
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: #1E40AF;">
+                <i class="bi bi-shield-check"></i>
+              </div>
+              <div class="ex-pick__info">
+                <div class="ex-pick__title">درگاه امن بانکی</div>
+                <div class="ex-pick__meta">پرداخت آنلاین با تمامی کارت‌های عضو شتاب</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ex-alert ex-alert--success ex-mt-4">
+            <i class="bi bi-shield-lock ex-alert__icon"></i>
+            <div>پرداخت شما در بستر امن بانکی انجام می‌شود و اطلاعات شما کاملاً محفوظ است.</div>
+          </div>
+        <?php endif; ?>
+      </div>
+
+      <!-- Navigation Buttons (Desktop) -->
+      <div class="ex-actions ex-actions--row ex-hidden-mobile">
+        <?php if ($step > 1): ?>
+          <button type="submit" name="nav" value="prev_step" class="ex-btn ex-btn--outline" style="flex: 0 0 160px;">
+            <i class="bi bi-arrow-right"></i> بازگشت
+          </button>
+        <?php endif; ?>
+
+        <?php if ($step < $maxStep): ?>
+          <button type="submit" name="nav" value="next_step" class="ex-btn ex-btn--primary">
+            ادامه فرایند خرید <i class="bi bi-arrow-left"></i>
+          </button>
+        <?php else: ?>
+          <button type="submit" name="nav" value="submit" class="ex-btn ex-btn--cta">
+            تأیید و پرداخت نهایی <i class="bi bi-credit-card"></i>
+          </button>
+        <?php endif; ?>
       </div>
     </form>
   </div>
+</div>
+
+<!-- Sticky Bottom Bar (Mobile) -->
+<div class="ex-sticky-bar ex-visible-mobile">
+  <div class="ex-sticky-bar__inner">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <span style="font-size: 0.8125rem; color: var(--ex-muted); font-weight: 600;">مبلغ نهایی:</span>
+      <span style="font-size: 1.125rem; font-weight: 900; color: var(--ex-navy);"><?= fmt_credit((float)$totalAmount) ?></span>
+    </div>
+    <div class="ex-sticky-bar__row">
+      <?php if ($step > 1): ?>
+        <button type="button" onclick="document.querySelector('button[value=prev_step]').click()" class="ex-btn ex-btn--outline" style="flex: 0 0 60px; padding: 0;">
+          <i class="bi bi-arrow-right" style="font-size: 1.25rem;"></i>
+        </button>
+      <?php endif; ?>
+
+      <?php if ($step < $maxStep): ?>
+        <button type="button" onclick="document.querySelector('button[value=next_step]').click()" class="ex-btn ex-btn--primary">
+          ادامه خرید <i class="bi bi-arrow-left"></i>
+        </button>
+      <?php else: ?>
+        <button type="button" onclick="document.querySelector('button[value=submit]').click()" class="ex-btn ex-btn--cta">
+          پرداخت نهایی <i class="bi bi-credit-card"></i>
+        </button>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+
+<!-- Invisible buttons for JS trigger -->
+<div style="display:none;">
+  <button type="submit" form="checkoutForm" name="nav" value="prev_step" id="btnPrev"></button>
+  <button type="submit" form="checkoutForm" name="nav" value="next_step" id="btnNext"></button>
+  <button type="submit" form="checkoutForm" name="nav" value="submit" id="btnSubmit"></button>
 </div>
 
 <script>

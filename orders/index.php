@@ -50,98 +50,96 @@ $tabs = [
 render_head('سفارش‌های من');
 render_navbar($user);
 ?>
-<link rel="stylesheet" href="<?= APP_URL ?>/src/css/orders.css?v=<?= @filemtime(__DIR__ . '/../src/css/orders.css') ?: time() ?>">
-<style>
-  .ord-tabs{display:flex;gap:8px;padding:8px;background:#F3F4F6;border-radius:16px;margin-bottom:24px;flex-wrap:wrap;}
-  .ord-tab{flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:12px;color:#6B7280;font-weight:700;font-size:.92rem;cursor:pointer;text-decoration:none;transition:all .15s ease;border:none;background:transparent;}
-  .ord-tab:hover{background:#fff;color:var(--dash-navy);}
-  .ord-tab.is-active{background:#fff;color:var(--primary,#2563eb);box-shadow:0 1px 2px rgba(16,24,40,.06);}
-  .ord-tab__count{font-size:.75rem;padding:2px 10px;border-radius:999px;background:#E5E7EB;color:#374151;font-weight:800;}
-  .ord-tab.is-active .ord-tab__count{background:rgba(37,99,235,.1);color:var(--primary,#2563eb);}
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/exchange-flow.css?v=<?= @filemtime(__DIR__ . '/../src/css/exchange-flow.css') ?: time() ?>">
 
-  .empty-state{padding:60px 20px;text-align:center;}
-  .empty-state i{font-size:56px;color:#D1D5DB;margin-bottom:16px;}
-  .empty-state h3{font-size:1.15rem;margin-bottom:8px;}
-  .empty-state p{color:var(--text-muted);margin-bottom:24px;}
-
-  @media(max-width:640px){
-    .ord-tab{padding:10px 12px;font-size:.85rem;min-width:0;}
-    .ord-tab__count{display:none;}
-  }
-</style>
-
-<div class="section-sm">
-  <div class="container-md">
-    <div class="order-page-head">
-      <a href="<?= APP_URL ?>/dashboard.php" class="order-back"><i class="bi bi-arrow-right"></i> بازگشت به داشبورد</a>
-      <h1>سفارش‌های خرید من</h1>
+<div class="ex-page">
+  <div class="ex-container">
+    <div class="ex-header">
+      <a href="<?= APP_URL ?>/dashboard.php" class="ex-header__back">
+        <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
+      </a>
+      <div class="ex-header__row">
+        <div>
+          <h1 class="ex-header__title">سفارش‌های خرید</h1>
+          <p class="ex-header__subtitle">تاریخچه و وضعیت سفارش‌های نقدی شما در سواپین.</p>
+        </div>
+      </div>
     </div>
 
-    <div class="ord-tabs" role="tablist" aria-label="فیلتر سفارش‌ها">
+    <div class="ex-tabs" role="tablist">
       <?php foreach ($tabs as $t): ?>
         <a href="?tab=<?= h($t['key']) ?>"
-           class="ord-tab <?= $tab === $t['key'] ? 'is-active' : '' ?>"
+           class="ex-tab <?= $tab === $t['key'] ? 'is-active' : '' ?>"
            role="tab" aria-selected="<?= $tab === $t['key'] ? 'true' : 'false' ?>">
-          <i class="bi <?= $t['icon'] ?>"></i>
+          <i class="bi <?= $t['icon'] ?>" style="margin-left: 6px;"></i>
           <span><?= h($t['label']) ?></span>
-          <span class="ord-tab__count"><?= persian_digits((string)($counts[$t['key']] ?? 0)) ?></span>
+          <span class="ex-chip <?= $tab === $t['key'] ? 'ex-chip--navy' : '' ?>" style="margin-right: 6px; padding: 2px 8px; font-size: 0.7rem;">
+            <?= persian_digits((string)($counts[$t['key']] ?? 0)) ?>
+          </span>
         </a>
       <?php endforeach; ?>
     </div>
 
     <?php if (empty($orders)): ?>
-    <div class="empty-state">
-      <i class="bi bi-bag"></i>
-      <h3>
-        <?php if ($tab === 'pending'): ?>
-          سفارش در حال انجامی ندارید
-        <?php elseif ($tab === 'done'): ?>
-          هنوز سفارش تکمیل‌شده‌ای ثبت نکرده‌اید
-        <?php else: ?>
-          هنوز سفارشی ندارید
-        <?php endif; ?>
-      </h3>
-      <p>از فروشگاه‌ها می‌توانید به‌صورت نقدی خرید کنید و وضعیت ارسال را اینجا پیگیری کنید.</p>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <a href="<?= APP_URL ?>/" class="btn btn-primary"><i class="bi bi-grid"></i> مرور فروشگاه‌ها</a>
-        <?php if ($tab !== 'all'): ?>
-          <a href="?tab=all" class="btn btn-outline"><i class="bi bi-list"></i> نمایش همه سفارش‌ها</a>
-        <?php endif; ?>
-      </div>
-    </div>
-    <?php else: ?>
-    <div class="order-list">
-      <?php foreach ($orders as $o): ?>
-      <a href="<?= APP_URL ?>/orders/view.php?id=<?= (int)$o['id'] ?>" class="card order-list-item">
-        <div class="card-body">
-          <div class="order-list-item__main">
-            <?php if (!empty($o['listing_thumb'])): ?>
-            <img src="<?= UPLOAD_URL . h($o['listing_thumb']) ?>" alt="" class="order-product__thumb">
-            <?php endif; ?>
-            <div>
-              <div class="order-product__title"><?= h($o['listing_title']) ?></div>
-              <div class="order-product__store"><?= h($o['store_name'] ?: $o['seller_name']) ?></div>
-              <div class="order-muted">کد: <?= h($o['order_code']) ?> — <?= timeago($o['created_at']) ?></div>
-              <?php if (!empty($o['shipping_cost']) && (float)$o['shipping_cost'] > 0): ?>
-                <div class="order-muted" style="margin-top:2px;">
-                  <i class="bi bi-truck"></i> ارسال: <?= fmt_credit((float)$o['shipping_cost']) ?>
-                </div>
-              <?php endif; ?>
-            </div>
-          </div>
-          <div class="order-list-item__side">
-            <span class="order-status-pill order-status-pill--<?= h($o['status']) ?>"><?= h(store_order_status_label($o['status'])) ?></span>
-            <strong>
-              <?php
-                $total = (float)$o['amount'] + (float)($o['shipping_cost'] ?? 0);
-                echo fmt_credit($total);
-              ?>
-            </strong>
-          </div>
+      <div class="ex-empty">
+        <div class="ex-empty__icon"><i class="bi bi-bag"></i></div>
+        <h3 class="ex-empty__title">
+          <?php if ($tab === 'pending'): ?>
+            سفارش در حال انجامی ندارید
+          <?php elseif ($tab === 'done'): ?>
+            هنوز سفارش تکمیل‌شده‌ای ثبت نکرده‌اید
+          <?php else: ?>
+            هنوز سفارشی ندارید
+          <?php endif; ?>
+        </h3>
+        <p class="ex-empty__desc">از فروشگاه‌ها می‌توانید به‌صورت نقدی خرید کنید و وضعیت ارسال را اینجا پیگیری کنید.</p>
+        <div class="ex-actions ex-actions--row" style="justify-content: center;">
+          <a href="<?= APP_URL ?>/" class="ex-btn ex-btn--primary" style="width: auto;"><i class="bi bi-grid"></i> مرور فروشگاه‌ها</a>
+          <?php if ($tab !== 'all'): ?>
+            <a href="?tab=all" class="ex-btn ex-btn--outline" style="width: auto;"><i class="bi bi-list"></i> نمایش همه</a>
+          <?php endif; ?>
         </div>
-      </a>
-      <?php endforeach; ?>
-    </div>
+      </div>
+    <?php else: ?>
+      <div class="ex-offer-list">
+        <?php foreach ($orders as $o):
+          $statusClass = 'ex-status--info';
+          if (in_array($o['status'], ['paid', 'preparing', 'shipped'])) $statusClass = 'ex-status--pending';
+          if (in_array($o['status'], ['delivered', 'completed'])) $statusClass = 'ex-status--success';
+          if ($o['status'] === 'canceled') $statusClass = 'ex-status--rejected';
+        ?>
+          <a href="<?= APP_URL ?>/orders/view.php?id=<?= (int)$o['id'] ?>" class="ex-offer-item">
+            <?php if (!empty($o['listing_thumb'])): ?>
+              <img src="<?= UPLOAD_URL . h($o['listing_thumb']) ?>" alt="" class="ex-offer-item__thumb">
+            <?php else: ?>
+              <div class="ex-offer-item__thumb ex-product__thumb--empty"><i class="bi bi-image"></i></div>
+            <?php endif; ?>
+            <div class="ex-offer-item__content">
+              <div class="ex-offer-item__title"><?= h($o['listing_title']) ?></div>
+              <div class="ex-offer-item__meta">
+                <span><i class="bi bi-shop"></i> <?= h($o['store_name'] ?: $o['seller_name']) ?></span>
+                <span><i class="bi bi-hash"></i> <?= h($o['order_code']) ?></span>
+              </div>
+              <div class="ex-offer-item__meta">
+                <span><i class="bi bi-calendar3"></i> <?= timeago($o['created_at']) ?></span>
+                <span class="ex-product__price" style="font-size: 0.875rem; margin-right: 8px;">
+                  <?php
+                    $total = (float)$o['amount'] + (float)($o['shipping_cost'] ?? 0);
+                    echo fmt_credit($total);
+                  ?>
+                </span>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+              <span class="ex-header__status <?= $statusClass ?>" style="padding: 4px 12px; font-size: 0.7rem;">
+                <span class="ex-status__dot"></span>
+                <?= h(store_order_status_label($o['status'])) ?>
+              </span>
+              <i class="bi bi-chevron-left ex-offer-item__arrow"></i>
+            </div>
+          </a>
+        <?php endforeach; ?>
+      </div>
     <?php endif; ?>
   </div>
 </div>
