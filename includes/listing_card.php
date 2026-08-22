@@ -166,31 +166,89 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
       <?php endif; ?>
     </div>
 
-    <div class="listing-card__cta<?= ($hasSellCta && $hasSwapCta) ? ' listing-card__cta--dual' : '' ?>">
-      <?php if ($hasSellCta):
-        $buyUrl = (!empty($currentUser['id']))
-          ? (APP_URL . '/orders/checkout.php?listing_id=' . $l['id'])
-          : (APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $l['id']));
-      ?>
-      <a href="<?= $buyUrl ?>"
-         class="listing-card__cta-btn listing-card__cta-btn--buy"
-         data-navigate="<?= $buyUrl ?>"
-         onclick="event.stopPropagation()"
-         style="text-decoration:none">
-        <i class="bi bi-cart-check"></i> خرید کالا
-      </a>
-      <?php endif; ?>
-      <?php if ($hasSwapCta):
-        $swapUrl = APP_URL . '/listings/view?id=' . $l['id'];
-      ?>
-      <a href="<?= $swapUrl ?>"
-         class="listing-card__cta-btn<?= $hasSellCta ? ' listing-card__cta-btn--swap' : '' ?>"
-         data-navigate="<?= $swapUrl ?>"
-         onclick="event.stopPropagation()"
-         style="text-decoration:none">
-        <i class="bi bi-arrow-left-right"></i> <?= $hasSellCta ? 'معاوضه' : 'پیشنهاد معاوضه' ?>
-      </a>
-      <?php endif; ?>
+    <div class="listing-card__cta-container">
+        <div class="listing-card__cta-flex">
+            <?php
+            $buyUrl = APP_URL . '/orders/checkout.php?listing_id=' . $l['id'];
+            $swapUrl = APP_URL . '/listings/view?id=' . $l['id'];
+
+            $buyBtnDisabled = !$hasSellCta;
+            $swapBtnDisabled = !$hasSwapCta;
+
+            $buyToast = $buyBtnDisabled ? 'امکان خرید نقدی برای این کالا وجود ندارد.' : '';
+            $swapToast = $swapBtnDisabled ? 'امکان معاوضه برای این کالا وجود ندارد.' : '';
+            ?>
+            <a href="<?= !$buyBtnDisabled ? $buyUrl : '#' ?>"
+               class="btn-new btn-new--buy <?= $buyBtnDisabled ? 'is-disabled' : '' ?>"
+               <?= $buyBtnDisabled ? 'data-toast="' . $buyToast . '"' : '' ?>
+               onclick="handleCardClick(event, this)">
+                <i class="bi bi-cart-check" style="color: #FBBF24;"></i>
+                <span>خرید کالا</span>
+            </a>
+            <a href="<?= !$swapBtnDisabled ? $swapUrl : '#' ?>"
+               class="btn-new btn-new--swap <?= $swapBtnDisabled ? 'is-disabled' : '' ?>"
+               <?= $swapBtnDisabled ? 'data-toast="' . $swapToast . '"' : '' ?>
+               onclick="handleCardClick(event, this)">
+                <i class="bi bi-arrow-left-right" style="color: #FBBF24;"></i>
+                <span>پیشنهاد معاوضه</span>
+            </a>
+        </div>
     </div>
   </div>
 </article>
+
+<style>
+.btn-new {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 1;
+    padding: 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.btn-new.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.btn-new--buy {
+    background-color: #1E3A8A; /* navy */
+    color: white;
+}
+.btn-new--buy:not(.is-disabled):hover {
+    background-color: #1c3478;
+}
+.btn-new--swap {
+    background-color: transparent;
+    border: 2px solid #FBBF24; /* yellow */
+    color: #1E3A8A; /* navy */
+}
+.btn-new--swap:not(.is-disabled):hover {
+    background-color: rgba(251, 191, 36, 0.1);
+}
+.listing-card__cta-container {
+    padding: 8px 16px 16px;
+}
+.listing-card__cta-flex {
+    display: flex;
+    gap: 8px;
+}
+</style>
+
+<script>
+function handleCardClick(event, element) {
+    event.stopPropagation();
+    if (element.classList.contains('is-disabled')) {
+        event.preventDefault();
+        const message = element.getAttribute('data-toast');
+        if (message && typeof showToast === 'function') {
+            showToast(message, 'info');
+        }
+    } else {
+        window.location.href = element.href;
+    }
+}
+</script>
