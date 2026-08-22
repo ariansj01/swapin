@@ -2237,19 +2237,37 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* ── 17. Dropdown ──────────────────────────────────────────────────────── */
 .dropdown { position: relative; }
 
+.navbar-nav > .dropdown {
+  padding-bottom: 10px;
+  margin-bottom: -10px;
+}
+
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   right: 0;
-  min-width: 200px;
+  min-width: 220px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 25px -5px rgba(10, 37, 64, 0.1), 0 8px 10px -6px rgba(10, 37, 64, 0.1);
   z-index: 300;
   display: none;
   overflow: hidden;
+  animation: dropdownFadeIn 0.18s ease-out;
 }
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .dropdown-menu.open { display: block; }
 
 .navbar-nav .dropdown:hover > .dropdown-menu { display: block; }
@@ -2257,16 +2275,33 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  font-size: .875rem;
+  gap: 12px;
+  padding: 12px 18px;
+  font-size: .9rem;
+  font-weight: 500;
   color: var(--text-secondary);
   text-decoration: none;
-  transition: background var(--duration);
+  transition: all 0.15s ease;
+  border-right: 3px solid transparent;
 }
-.dropdown-item:hover { background: var(--bg); color: var(--primary); }
+.dropdown-item i {
+  font-size: 1.05rem;
+  width: 20px;
+  text-align: center;
+  color: var(--primary);
+  opacity: 0.85;
+}
+.dropdown-item:hover {
+  background: linear-gradient(90deg, rgba(10,37,64,0.06) 0%, rgba(10,37,64,0.02) 100%);
+  color: var(--primary);
+  border-right-color: var(--primary);
+}
+.dropdown-item:hover i {
+  opacity: 1;
+  transform: translateX(-2px);
+}
 
-.dropdown-divider { border-top: 1px solid var(--border); margin: var(--sp-1) 0; }
+.dropdown-divider { border-top: 1px solid var(--border); margin: 4px 0; }
 
 /* ── 18. Tabs ──────────────────────────────────────────────────────────── */
 .tabs {

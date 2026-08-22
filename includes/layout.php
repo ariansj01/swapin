@@ -284,8 +284,8 @@ HTML;
         </button>
         <div class="dropdown-menu" id="shops-dropdown">
           <a href="{$url}/shops" class="dropdown-item"><i class="bi bi-grid-fill"></i> همه فروشگاه‌ها</a>
-          <a href="{$url}/shops?type=online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
           <a href="{$url}/shops?type=physical" class="dropdown-item"><i class="bi bi-building-check"></i> فروشگاه‌های حضوری</a>
+          <a href="{$url}/shops?type=online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
         </div>
       </div>
 HTML;
