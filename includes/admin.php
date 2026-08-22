@@ -118,11 +118,14 @@ function admin_reject_listing(int $listingId, string $note): void {
 }
 
 function admin_delete_listing(int $listingId): void {
-    DB::update('listings', [
+    $set = [
         'status'     => 'deleted',
-        'deleted_at' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s'),
-    ], 'id = ?', [$listingId]);
+    ];
+    if (db_has_column('listings', 'deleted_at')) {
+        $set['deleted_at'] = date('Y-m-d H:i:s');
+    }
+    DB::update('listings', $set, 'id = ?', [$listingId]);
 }
 
 function admin_resolve_inspection(int $requestId, string $result, string $report = ''): bool {

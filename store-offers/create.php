@@ -182,52 +182,71 @@ render_navbar($user);
 
       <?php if ($myListings): ?>
       <div class="ex-card">
-        <div class="ex-flex-between" style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="ex-card__label" style="margin-bottom:0"><i class="bi bi-box-seam"></i> کالای شما — انتخاب کنید</div>
-            <span class="ex-sort-hint" title="برای تغییر ترتیب، آیکون کشیدن را بکشید">
-              <i class="bi bi-grip-vertical"></i> قابل کشیدن
-            </span>
+        <div class="ex-dropdown" id="exPicklistDropdown">
+          <div class="ex-flex-between ex-dropdown__trigger" id="exPicklistTrigger" style="margin-bottom:0;cursor:pointer;padding:4px 0">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+              <div class="ex-card__label" style="margin-bottom:0"><i class="bi bi-box-seam"></i> کالای شما — انتخاب کنید</div>
+              <span class="ex-sort-hint" title="برای تغییر ترتیب، آیکون کشیدن را بکشید">
+                <i class="bi bi-grip-vertical"></i> قابل کشیدن
+              </span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <button type="button" class="ex-btn ex-btn--outline ex-btn--sm" id="so-open-quick-listing-2" style="width:auto;padding:6px 12px" onclick="event.stopPropagation()">
+                <i class="bi bi-plus-lg"></i>
+                کالای جدید
+              </button>
+              <span class="ex-dropdown__chev" id="exPicklistChev">
+                <i class="bi bi-chevron-down"></i>
+              </span>
+            </div>
           </div>
-          <button type="button" class="ex-btn ex-btn--outline ex-btn--sm" id="so-open-quick-listing" style="width:auto">
-            <i class="bi bi-plus-lg"></i>
-            کالای جدید
-          </button>
-        </div>
 
-        <div class="ex-picklist" id="exPicklist">
-          <?php foreach ($myListings as $mlIdx => $ml): ?>
-          <label class="ex-pick<?= (int) $ml['id'] === $pickedId ? ' is-selected' : '' ?><?= ($ml['review_status'] ?? '') === 'offer_only' ? ' is-offer-only' : '' ?>"
-                 data-id="<?= (int) $ml['id'] ?>" draggable="true" data-order="<?= $mlIdx ?>">
-            <div class="ex-pick__drag" draggable="false" title="کشیدن برای جابجایی">
-              <i class="bi bi-grip-vertical"></i>
+          <div class="ex-dropdown__selected-preview" id="exPicklistPreview" style="display:none;margin-top:10px">
+            <div class="ex-mini-pick" id="exMiniPick">
+              <!-- filled by JS -->
             </div>
-            <input type="radio" class="ex-pick__radio" name="offer_listing_radio" value="<?= (int) $ml['id'] ?>" <?= (int) $ml['id'] === $pickedId ? 'checked' : '' ?>>
-            <div class="ex-pick__check"></div>
-            <?php if ($ml['thumb']): ?>
-            <img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt="" class="ex-pick__thumb" draggable="false">
-            <?php else: ?>
-            <div class="ex-pick__thumb ex-pick__thumb--empty"><i class="bi bi-image"></i></div>
-            <?php endif; ?>
-            <div class="ex-pick__info">
-              <div class="ex-pick__title">
-                <?= h($ml['title']) ?>
-                <?php if (($ml['review_status'] ?? '') === 'offer_only'): ?>
-                <span class="ex-offer-badge">
-                  <i class="bi bi-lock-fill"></i> فقط برای این پیشنهاد
-                </span>
+          </div>
+
+          <div class="ex-dropdown__body" id="exPicklistBody" style="margin-top:12px">
+            <div class="ex-picklist" id="exPicklist">
+              <?php foreach ($myListings as $mlIdx => $ml): ?>
+              <label class="ex-pick<?= (int) $ml['id'] === $pickedId ? ' is-selected' : '' ?><?= ($ml['review_status'] ?? '') === 'offer_only' ? ' is-offer-only' : '' ?>"
+                     data-id="<?= (int) $ml['id'] ?>" draggable="true" data-order="<?= $mlIdx ?>"
+                     data-title="<?= h($ml['title']) ?>"
+                     data-price="<?= (float) $ml['estimated_value'] > 0 ? fmt_credit((float) $ml['estimated_value']) : '' ?>"
+                     data-thumb="<?= !empty($ml['thumb']) ? (UPLOAD_URL . h($ml['thumb'])) : '' ?>"
+                     data-offer-only="<?= ($ml['review_status'] ?? '') === 'offer_only' ? '1' : '0' ?>">
+                <div class="ex-pick__drag" draggable="false" title="کشیدن برای جابجایی">
+                  <i class="bi bi-grip-vertical"></i>
+                </div>
+                <input type="radio" class="ex-pick__radio" name="offer_listing_radio" value="<?= (int) $ml['id'] ?>" <?= (int) $ml['id'] === $pickedId ? 'checked' : '' ?>>
+                <div class="ex-pick__check"></div>
+                <?php if ($ml['thumb']): ?>
+                <img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt="" class="ex-pick__thumb" draggable="false">
+                <?php else: ?>
+                <div class="ex-pick__thumb ex-pick__thumb--empty"><i class="bi bi-image"></i></div>
                 <?php endif; ?>
-              </div>
-              <div class="ex-pick__meta">
-                <span><?= h($ml['cat_name']) ?></span>
-                <span><?= condition_label($ml['condition']) ?></span>
-              </div>
-              <?php if ((float) $ml['estimated_value'] > 0): ?>
-              <div class="ex-pick__price"><?= fmt_credit((float) $ml['estimated_value']) ?></div>
-              <?php endif; ?>
+                <div class="ex-pick__info">
+                  <div class="ex-pick__title">
+                    <?= h($ml['title']) ?>
+                    <?php if (($ml['review_status'] ?? '') === 'offer_only'): ?>
+                    <span class="ex-offer-badge">
+                      <i class="bi bi-lock-fill"></i> فقط برای این پیشنهاد
+                    </span>
+                    <?php endif; ?>
+                  </div>
+                  <div class="ex-pick__meta">
+                    <span><?= h($ml['cat_name']) ?></span>
+                    <span><?= condition_label($ml['condition']) ?></span>
+                  </div>
+                  <?php if ((float) $ml['estimated_value'] > 0): ?>
+                  <div class="ex-pick__price"><?= fmt_credit((float) $ml['estimated_value']) ?></div>
+                  <?php endif; ?>
+                </div>
+              </label>
+              <?php endforeach; ?>
             </div>
-          </label>
-          <?php endforeach; ?>
+          </div>
         </div>
       </div>
 
@@ -475,7 +494,7 @@ document.querySelectorAll('.ex-pick').forEach(function(el) {
 });
 
 var modal = document.getElementById('so-quick-modal');
-var openBtns = [document.getElementById('so-open-quick-listing'), document.getElementById('so-open-quick-listing-empty')];
+var openBtns = [document.getElementById('so-open-quick-listing'), document.getElementById('so-open-quick-listing-2'), document.getElementById('so-open-quick-listing-empty')];
 var closeBtns = [document.getElementById('so-close-quick-modal'), document.getElementById('so-close-quick-modal-2')];
 
 openBtns.forEach(function(btn) {
@@ -487,6 +506,79 @@ closeBtns.forEach(function(btn) {
 modal?.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('is-open'); });
 
 <?php if (!$myListings && !$error): ?>modal?.classList.add('is-open');<?php endif; ?>
+
+/* ── Picklist Dropdown Toggle + Mini Preview ──────────────────────── */
+(function() {
+  var dropdown = document.getElementById('exPicklistDropdown');
+  var trigger  = document.getElementById('exPicklistTrigger');
+  var previewWrap = document.getElementById('exPicklistPreview');
+  var mini = document.getElementById('exMiniPick');
+  if (!dropdown || !trigger) return;
+
+  function updateMiniPreview() {
+    if (!mini || !previewWrap) return;
+    var selected = document.querySelector('.ex-pick.is-selected');
+    if (!selected) { previewWrap.style.display = 'none'; return; }
+    var title = selected.getAttribute('data-title') || '';
+    var price = selected.getAttribute('data-price') || '';
+    var thumb = selected.getAttribute('data-thumb') || '';
+    var isPriv = selected.getAttribute('data-offer-only') === '1';
+
+    var thumbHtml = thumb
+      ? '<img src="' + thumb + '" alt="" class="ex-mini-pick__thumb" draggable="false">'
+      : '<div class="ex-mini-pick__thumb ex-mini-pick__thumb--empty"><i class="bi bi-image"></i></div>';
+
+    var badgeHtml = isPriv
+      ? '<span class="ex-mini-pick__badge"><i class="bi bi-lock-fill"></i> خصوصی</span>'
+      : '';
+
+    var priceHtml = price
+      ? '<span class="ex-mini-pick__price">' + price + '</span>'
+      : '';
+
+    mini.innerHTML =
+      thumbHtml +
+      '<div class="ex-mini-pick__info">' +
+        '<div class="ex-mini-pick__title">' + title + '</div>' +
+        '<div class="ex-mini-pick__meta">' + badgeHtml + priceHtml + '</div>' +
+      '</div>';
+    previewWrap.style.display = dropdown.classList.contains('is-open') ? 'none' : 'block';
+  }
+
+  function setOpen(open) {
+    if (open) {
+      dropdown.classList.add('is-open');
+      if (previewWrap) previewWrap.style.display = 'none';
+    } else {
+      dropdown.classList.remove('is-open');
+      updateMiniPreview();
+    }
+  }
+
+  // Start OPEN so users see options on page load
+  dropdown.classList.add('is-open');
+  if (previewWrap) previewWrap.style.display = 'none';
+  updateMiniPreview();
+
+  trigger.addEventListener('click', function(e) {
+    // Don't toggle if user clicked the "new item" button or the sort hint chip
+    if (e.target.closest('#so-open-quick-listing-2')) return;
+    if (e.target.closest('.ex-sort-hint')) return;
+    setOpen(!dropdown.classList.contains('is-open'));
+  });
+
+  // Close dropdown when user clicks a pick item (optional UX: keep open so they can change)
+  // For better UX, keep it open but refresh mini preview
+  document.querySelectorAll('.ex-pick').forEach(function(p) {
+    p.addEventListener('click', function() {
+      // Defer so "is-selected" class is applied first
+      setTimeout(updateMiniPreview, 20);
+    });
+  });
+
+  // Expose for later
+  window.__exRefreshMiniPreview = updateMiniPreview;
+})();
 
 var suggestedBtn = document.getElementById('suggestedCashBtn');
 var cashInput = document.getElementById('cash_difference');
