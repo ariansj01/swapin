@@ -1769,3 +1769,101 @@
   button.ex-hidden-mobile.ex-btn { display: inline-flex !important; }
   .ex-visible-mobile { display: none !important; }
 }
+
+/* ── Sort / Drag Hint ──────────────────────────────────────────────── */
+.ex-sort-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ex-navy);
+  background: rgba(8, 27, 69, 0.08);
+  border-radius: 999px;
+}
+.ex-sort-hint i { font-size: 0.85rem; }
+
+/* ── Drag Handle ───────────────────────────────────────────────────── */
+.ex-pick__drag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  min-width: 22px;
+  height: 48px;
+  color: var(--ex-muted);
+  cursor: grab;
+  border-radius: 6px;
+  transition: all 0.15s;
+  user-select: none;
+  flex-shrink: 0;
+}
+.ex-pick__drag:hover {
+  color: var(--ex-navy);
+  background: rgba(8, 27, 69, 0.08);
+}
+.ex-pick__drag:active,
+.ex-pick.dragging .ex-pick__drag {
+  cursor: grabbing;
+}
+
+/* ── Offer-only Badge (Private for this proposal) ──────────────────── */
+.ex-offer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin-right: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #92400E;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.ex-offer-badge i { font-size: 0.7rem; }
+
+/* ── Offer-only Item visual ────────────────────────────────────────── */
+.ex-pick.is-offer-only {
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.25) 0%, rgba(255, 255, 255, 1) 60%);
+  border-right: 3px solid #F59E0B;
+}
+.ex-pick.is-offer-only.is-selected {
+  border-right-color: var(--ex-navy);
+}
+
+/* ── Drag & Drop States ─────────────────────────────────────────────── */
+.ex-pick.dragging {
+  opacity: 0.45;
+  transform: scale(0.98) rotate(-0.5deg);
+  cursor: grabbing !important;
+  box-shadow: 0 10px 25px -5px rgba(8, 27, 69, 0.2);
+}
+.ex-pick.drag-over-before {
+  border-top: 3px solid var(--ex-navy) !important;
+  padding-top: 11px;
+}
+.ex-pick.drag-over-after {
+  border-bottom: 3px solid var(--ex-navy) !important;
+  padding-bottom: 11px;
+}
+.ex-picklist {
+  touch-action: pan-y;
+}
+@media (max-width: 767px) {
+  .ex-picklist { gap: 12px; }
+  .ex-pick {
+    width: 100%;
+    gap: 10px;
+    padding: 12px;
+  }
+  .ex-pick__drag {
+    height: 60px;
+    width: 20px;
+  }
+  .ex-pick__thumb {
+    width: 64px;
+    height: 64px;
+  }
+}

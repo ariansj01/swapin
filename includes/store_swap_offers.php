@@ -194,7 +194,7 @@ function store_swap_offer_create(int $userId, int $storeListingId, int $userList
     $userListing = DB::fetch(
         'SELECT l.*, c.name AS cat_name
          FROM listings l LEFT JOIN categories c ON c.id = l.category_id
-         WHERE l.id = ? AND l.user_id = ? AND l.status = "active" AND l.review_status = "approved"',
+         WHERE l.id = ? AND l.user_id = ? AND l.status = "active" AND l.review_status IN ("approved","offer_only")',
         [$userListingId, $userId]
     );
     if (!$userListing) {
@@ -298,7 +298,7 @@ function store_swap_quick_listing_create(int $userId, array $input, ?array $file
         'listing_mode'    => 'swap',
         'city'            => $user['city'] ?? null,
         'status'          => 'active',
-        'review_status'   => 'approved',
+        'review_status'   => 'offer_only',
     ]);
 
     if ($file && !empty($file['tmp_name']) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {

@@ -22,8 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             admin_reject_listing($listingId, $note);
             admin_set_flash('آگهی رد شد.');
         }
+    } elseif ($action === 'delete' && $listingId) {
+        admin_delete_listing($listingId);
+        admin_set_flash('آگهی حذف شد.');
     }
-    header('Location: ' . APP_URL . '/admin/listings.php' . ($listingId ? "?id=$listingId" : ''));
+    header('Location: ' . APP_URL . '/admin/listings.php' . ($listingId && $action !== 'delete' ? "?id=$listingId" : ''));
     exit;
 }
 
@@ -121,7 +124,7 @@ ob_start();
         </div>
         <button type="submit" class="btn btn-success w-100"><i class="bi bi-check-lg"></i> تأیید و انتشار</button>
       </form>
-      <form method="POST">
+      <form method="POST" class="mb-3">
         <?= csrf_field() ?>
         <input type="hidden" name="listing_id" value="<?= $id ?>">
         <input type="hidden" name="action" value="reject">
@@ -142,6 +145,14 @@ ob_start();
       </form>
       <?php endif; ?>
       <?php endif; ?>
+      <form method="POST" onsubmit="return confirm('آگهی به صورت دائمی حذف شود؟ این عملیات قابل بازگشت نیست.');">
+        <?= csrf_field() ?>
+        <input type="hidden" name="listing_id" value="<?= $id ?>">
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="btn btn-ghost w-100 mt-3" style="color:var(--danger);border:1px solid var(--danger)">
+          <i class="bi bi-trash-fill"></i> حذف دائمی آگهی
+        </button>
+      </form>
       <a href="<?= APP_URL ?>/listings/view?id=<?= $id ?>" class="btn btn-ghost w-100 mt-3" target="_blank">مشاهده در سایت</a>
     </div>
   </div>
@@ -172,7 +183,17 @@ ob_start();
         <td><?= h($l['seller_name']) ?></td>
         <td><span class="badge badge-<?= listing_review_badge($l['review_status']) ?>"><?= listing_review_label($l['review_status']) ?></span></td>
         <td class="fs-xs"><?= persian_date($l['created_at']) ?></td>
-        <td><a href="?id=<?= $l['id'] ?>" class="btn btn-sm btn-outline">بررسی</a></td>
+        <td style="display:flex;gap:6px;justify-content:flex-end">
+          <a href="?id=<?= $l['id'] ?>" class="btn btn-sm btn-outline">بررسی</a>
+          <form method="POST" onsubmit="return confirm('آگهی #<?= $l['id'] ?> حذف شود؟');" style="display:inline">
+            <?= csrf_field() ?>
+            <input type="hidden" name="listing_id" value="<?= (int) $l['id'] ?>">
+            <input type="hidden" name="action" value="delete">
+            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--danger);border:1px solid var(--danger);padding:4px 8px" title="حذف">
+              <i class="bi bi-trash-fill"></i>
+            </button>
+          </form>
+        </td>
       </tr>
       <?php endforeach; endif; ?>
     </tbody>

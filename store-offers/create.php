@@ -38,12 +38,12 @@ if (store_swap_offer_user_has_active($uid, $listingId)) {
 }
 
 $myListings = DB::fetchAll(
-    'SELECT l.id, l.title, l.description, l.estimated_value, l.condition, c.name AS cat_name,
+    'SELECT l.id, l.title, l.description, l.estimated_value, l.condition, l.review_status, c.name AS cat_name,
             (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
      FROM listings l
      JOIN categories c ON c.id = l.category_id
-     WHERE l.user_id = ? AND l.status = "active" AND l.review_status = "approved" AND l.id != ?
-     ORDER BY l.created_at DESC',
+     WHERE l.user_id = ? AND l.status = "active" AND l.review_status IN ("approved","offer_only") AND l.id != ?
+     ORDER BY (l.review_status = "offer_only") DESC, l.created_at DESC',
     [$uid, $listingId]
 );
 
@@ -183,25 +183,41 @@ render_navbar($user);
       <?php if ($myListings): ?>
       <div class="ex-card">
         <div class="ex-flex-between" style="margin-bottom:16px">
-          <div class="ex-card__label" style="margin-bottom:0"><i class="bi bi-box-seam"></i> کالای شما — انتخاب کنید</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="ex-card__label" style="margin-bottom:0"><i class="bi bi-box-seam"></i> کالای شما — انتخاب کنید</div>
+            <span class="ex-sort-hint" title="برای تغییر ترتیب، آیکون کشیدن را بکشید">
+              <i class="bi bi-grip-vertical"></i> قابل کشیدن
+            </span>
+          </div>
           <button type="button" class="ex-btn ex-btn--outline ex-btn--sm" id="so-open-quick-listing" style="width:auto">
             <i class="bi bi-plus-lg"></i>
             کالای جدید
           </button>
         </div>
 
-        <div class="ex-picklist">
-          <?php foreach ($myListings as $ml): ?>
-          <label class="ex-pick<?= (int) $ml['id'] === $pickedId ? ' is-selected' : '' ?>" data-id="<?= (int) $ml['id'] ?>">
+        <div class="ex-picklist" id="exPicklist">
+          <?php foreach ($myListings as $mlIdx => $ml): ?>
+          <label class="ex-pick<?= (int) $ml['id'] === $pickedId ? ' is-selected' : '' ?><?= ($ml['review_status'] ?? '') === 'offer_only' ? ' is-offer-only' : '' ?>"
+                 data-id="<?= (int) $ml['id'] ?>" draggable="true" data-order="<?= $mlIdx ?>">
+            <div class="ex-pick__drag" draggable="false" title="کشیدن برای جابجایی">
+              <i class="bi bi-grip-vertical"></i>
+            </div>
             <input type="radio" class="ex-pick__radio" name="offer_listing_radio" value="<?= (int) $ml['id'] ?>" <?= (int) $ml['id'] === $pickedId ? 'checked' : '' ?>>
             <div class="ex-pick__check"></div>
             <?php if ($ml['thumb']): ?>
-            <img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt="" class="ex-pick__thumb">
+            <img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt="" class="ex-pick__thumb" draggable="false">
             <?php else: ?>
             <div class="ex-pick__thumb ex-pick__thumb--empty"><i class="bi bi-image"></i></div>
             <?php endif; ?>
             <div class="ex-pick__info">
-              <div class="ex-pick__title"><?= h($ml['title']) ?></div>
+              <div class="ex-pick__title">
+                <?= h($ml['title']) ?>
+                <?php if (($ml['review_status'] ?? '') === 'offer_only'): ?>
+                <span class="ex-offer-badge">
+                  <i class="bi bi-lock-fill"></i> فقط برای این پیشنهاد
+                </span>
+                <?php endif; ?>
+              </div>
               <div class="ex-pick__meta">
                 <span><?= h($ml['cat_name']) ?></span>
                 <span><?= condition_label($ml['condition']) ?></span>
@@ -374,7 +390,7 @@ render_navbar($user);
 <div class="ex-modal-backdrop" id="so-quick-modal" role="dialog" aria-modal="true">
   <div class="ex-modal">
     <div class="ex-modal__header">
-      <h3 class="ex-modal__title"><i class="bi bi-plus-circle" style="color:var(--ex-gold-dark);margin-left:6px"></i> ثبت کالا برای پیشنهاد</h3>
+      <h3 class="ex-modal__title"><i class="bi bi-plus-circle" style="color:var(--ex-gold-dark);margin-left:6px"></i> افزودن کالا برای این پیشنهاد</h3>
       <button type="button" class="ex-modal__close" id="so-close-quick-modal" aria-label="بستن">
         <i class="bi bi-x-lg"></i>
       </button>
@@ -383,6 +399,11 @@ render_navbar($user);
       <?= csrf_field() ?>
       <input type="hidden" name="listing_id" value="<?= $listingId ?>">
       <input type="hidden" name="quick_listing" value="1">
+
+      <div class="ex-alert ex-alert--info" style="margin-bottom:20px;border-radius:var(--ex-radius-md);font-size:.82rem">
+        <i class="bi bi-info-circle-fill ex-alert__icon"></i>
+        این کالا <strong>فقط برای همین پیشنهاد</strong> ثبت می‌شود و به عنوان آگهی عمومی در سایت نمایش داده نمی‌شود.
+      </div>
 
       <div class="ex-form-group">
         <label class="ex-form-label">عنوان کالا</label>
@@ -422,7 +443,7 @@ render_navbar($user);
       <div class="ex-actions" style="margin-top:24px">
         <button type="submit" class="ex-btn ex-btn--primary">
           <i class="bi bi-check-lg"></i>
-          ثبت و انتخاب کالا
+          افزودن به لیست پیشنهاد
         </button>
         <button type="button" class="ex-btn ex-btn--outline" id="so-close-quick-modal-2">
           انصراف
@@ -483,6 +504,84 @@ cashInput?.addEventListener('input', function() {
   var val = this.value.replace(/[^\d]/g, '');
   cashDiffInput.value = val;
 });
+
+/* ── Drag & Drop Sorting for Pick List ─────────────────────────────── */
+(function() {
+  var list = document.getElementById('exPicklist');
+  if (!list) return;
+  var items = list.querySelectorAll('.ex-pick');
+  var dragSrcEl = null;
+
+  items.forEach(function(item) {
+    item.addEventListener('dragstart', handleDragStart);
+    item.addEventListener('dragend', handleDragEnd);
+    item.addEventListener('dragover', handleDragOver);
+    item.addEventListener('dragleave', handleDragLeave);
+    item.addEventListener('drop', handleDrop);
+  });
+
+  function handleDragStart(e) {
+    dragSrcEl = this;
+    this.classList.add('dragging');
+    try {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', this.getAttribute('data-id'));
+    } catch (_) {}
+  }
+
+  function handleDragEnd() {
+    this.classList.remove('dragging');
+    list.querySelectorAll('.ex-pick').forEach(function(el) {
+      el.classList.remove('drag-over-before', 'drag-over-after');
+    });
+    dragSrcEl = null;
+  }
+
+  function handleDragOver(e) {
+    if (e.preventDefault) e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (this === dragSrcEl) return false;
+
+    var rect = this.getBoundingClientRect();
+    var offset = e.clientY - rect.top;
+    var before = offset < (rect.height / 2);
+
+    list.querySelectorAll('.ex-pick').forEach(function(el) {
+      if (el !== this) {
+        el.classList.remove('drag-over-before', 'drag-over-after');
+      }
+    }.bind(this));
+
+    if (before) {
+      this.classList.add('drag-over-before');
+      this.classList.remove('drag-over-after');
+    } else {
+      this.classList.add('drag-over-after');
+      this.classList.remove('drag-over-before');
+    }
+    return false;
+  }
+
+  function handleDragLeave() {
+    this.classList.remove('drag-over-before', 'drag-over-after');
+  }
+
+  function handleDrop(e) {
+    if (e.preventDefault) e.preventDefault();
+    if (e.stopPropagation) e.stopPropagation();
+    if (dragSrcEl === this) return;
+
+    var before = this.classList.contains('drag-over-before');
+    this.classList.remove('drag-over-before', 'drag-over-after');
+
+    if (before) {
+      this.parentNode.insertBefore(dragSrcEl, this);
+    } else {
+      this.parentNode.insertBefore(dragSrcEl, this.nextSibling);
+    }
+    return false;
+  }
+})();
 </script>
 
 <?php render_footer(); ?>

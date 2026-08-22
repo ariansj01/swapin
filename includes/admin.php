@@ -117,6 +117,14 @@ function admin_reject_listing(int $listingId, string $note): void {
     ], 'id = ?', [$listingId]);
 }
 
+function admin_delete_listing(int $listingId): void {
+    DB::update('listings', [
+        'status'     => 'deleted',
+        'deleted_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s'),
+    ], 'id = ?', [$listingId]);
+}
+
 function admin_resolve_inspection(int $requestId, string $result, string $report = ''): bool {
     if (!in_array($result, ['passed', 'failed', 'conditional'], true)) return false;
 
