@@ -5,11 +5,13 @@ require_once __DIR__ . '/../includes/layout.php';
 $user = auth_user();
 $search = clean($_GET['q'] ?? '');
 $city   = clean($_GET['city'] ?? '');
+$type   = in_array($_GET['type'] ?? '', ['online', 'physical'], true) ? (string)$_GET['type'] : '';
 $page   = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 18;
 
 $hasSellerType = db_has_column('users', 'seller_type');
 $hasStoreCity  = db_has_column('users', 'store_city');
+$hasStoreType  = db_has_column('users', 'store_type');
 
 $whereParts = ['is_active = 1'];
 $params = [];
@@ -33,6 +35,11 @@ if ($city) {
     $params[] = "%{$city}%";
 }
 
+if ($hasStoreType && $type !== '') {
+    $whereParts[] = '(store_type = ? OR store_type = "both")';
+    $params[] = $type;
+}
+
 $whereParts[] = 'store_slug IS NOT NULL AND store_slug != ""';
 $where = 'WHERE ' . implode(' AND ', $whereParts);
 
@@ -41,6 +48,9 @@ $pag   = paginate($total, $perPage, $page);
 
 $selectCols = "id, name, store_name, store_slug, store_description, store_banner, avatar,
                store_address, store_phone, rating, created_at";
+if ($hasStoreType) {
+    $selectCols .= ", store_type";
+}
 if ($hasStoreCity) {
     $selectCols .= ", store_city, city";
 } else {
@@ -57,8 +67,20 @@ $stores = DB::fetchAll(
     [...$params, $perPage, $pag['offset']]
 );
 
-render_head('فهرست فروشگاه‌ها | ' . APP_NAME, 'فروشگاه‌های ثبت‌شده در سواَپین — خرید نقدی و معاوضه', [
-    'canonical' => APP_URL . '/shops',
+$typeLabels = [
+    'online'   => 'فروشگاه‌های آنلاین',
+    'physical' => 'فروشگاه‌های حضوری',
+];
+$pageTitle = $type !== '' ? ($typeLabels[$type] ?? 'فهرست فروشگاه‌ها') . ' | ' . APP_NAME : 'فهرست فروشگاه‌ها | ' . APP_NAME;
+$pageDesc  = $type !== '' ? ($typeLabels[$type] ?? 'فروشگاه‌های ثبت‌شده در سواَپین') . ' — خرید نقدی و معاوضه' : 'فروشگاه‌های ثبت‌شده در سواَپین — خرید نقدی و معاوضه';
+
+$canonical = APP_URL . '/shops';
+if ($type !== '') {
+    $canonical .= '?type=' . $type;
+}
+
+render_head($pageTitle, $pageDesc . ' — ' . fmt_num($total) . ' فروشگاه', [
+    'canonical' => $canonical,
     'og_type'   => 'website',
 ]);
 render_navbar($user);
@@ -70,7 +92,7 @@ render_navbar($user);
     <header class="shops-page-head">
       <div>
         <span class="shops-page-head__badge"><i class="bi bi-shop"></i> فروشگاه‌های سواَپین</span>
-        <h1>فهرست فروشگاه‌ها</h1>
+        <h1><?= h($type !== '' ? ($typeLabels[$type] ?? 'فهرست فروشگاه‌ها') : 'فهرست فروشگاه‌ها') ?></h1>
         <p>فروشگاه‌های معتبر با امکان خرید نقدی و معاوضه — <?= fmt_num($total) ?> فروشگاه</p>
       </div>
     </header>
@@ -86,6 +108,14 @@ render_navbar($user);
           <select id="shops-city" name="city" class="form-control">
             <option value="">همه شهرها</option>
             <?= render_city_options($city) ?>
+          </select>
+        </div>
+        <div class="shops-filter-field">
+          <label for="shops-type">نوع فروشگاه</label>
+          <select id="shops-type" name="type" class="form-control">
+            <option value="">همه انواع</option>
+            <option value="online"   <?= $type === 'online'   ? 'selected' : '' ?>>آنلاین</option>
+            <option value="physical" <?= $type === 'physical' ? 'selected' : '' ?>>حضوری</option>
           </select>
         </div>
         <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> جستجو</button>
@@ -109,6 +139,19 @@ render_navbar($user);
         $storeCity = $hasStoreCity ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
         $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
         $shopUrl = APP_URL . '/shop/' . h($slug);
+        $storeTypeValue = $hasStoreType ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
+        $storeTypeLabels = store_type_labels();
+        $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
+        $storeTypeBadgeClass = match($storeTypeValue) {
+            'online'   => 'badge badge-info',
+            'physical' => 'badge badge-warning',
+            default    => 'badge badge-secondary',
+        };
+        $storeTypeIcon = match($storeTypeValue) {
+            'online'   => 'bi-globe2',
+            'physical' => 'bi-building-check',
+            default    => 'bi-shop',
+        };
       ?>
       <article class="shop-card card">
         <a href="<?= $shopUrl ?>" class="shop-card__banner-wrap">
@@ -116,13 +159,17 @@ render_navbar($user);
         </a>
         <div class="shop-card__body">
           <div class="shop-card__profile">
-            <!-- <p class="shop-card__desc"><?= h(mb_strimwidth($store['store_description'], 0, 50, '…')) ?></p> -->
             <?= avatar_html($store['avatar'] ?? null, $name, 'md') ?>
             <div>
               <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
-              <?php if ($storeCity): ?>
-              <div class="shop-card__city"><i class="bi bi-geo-alt"></i> <?= h($storeCity) ?></div>
-              <?php endif; ?>
+              <div class="shop-card__tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                <?php if ($storeTypeLabel !== ''): ?>
+                <span class="<?= $storeTypeBadgeClass ?>"><i class="bi <?= $storeTypeIcon ?>"></i> <?= h($storeTypeLabel) ?></span>
+                <?php endif; ?>
+                <?php if ($storeCity): ?>
+                <span class="shop-card__city" style="display:inline-flex;align-items:center;gap:4px"><i class="bi bi-geo-alt"></i> <?= h($storeCity) ?></span>
+                <?php endif; ?>
+              </div>
             </div>
           </div>
           <?php if (!empty($store['store_description'])): ?>
@@ -146,6 +193,7 @@ render_navbar($user);
       $base = APP_URL . '/shops?' . http_build_query(array_filter([
           'q'    => $search ?: null,
           'city' => $city ?: null,
+          'type' => $type ?: null,
       ]));
       for ($i = 1; $i <= $pag['pages']; $i++):
         $active = $i === $pag['page'] ? 'is-active' : '';

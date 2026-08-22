@@ -19,6 +19,34 @@ function user_provider_type(array $user): string {
     return normalize_provider_type($user['provider_type'] ?? 'normal_store');
 }
 
+function store_type_labels(): array {
+    return [
+        'both'     => 'هر دو (آنلاین و حضوری)',
+        'online'   => 'آنلاین',
+        'physical' => 'حضوری',
+    ];
+}
+
+function normalize_store_type(?string $type): string {
+    $labels = store_type_labels();
+    return isset($labels[$type ?? '']) ? (string)$type : 'both';
+}
+
+function user_store_type(array $user): string {
+    return normalize_store_type($user['store_type'] ?? 'both');
+}
+
+function render_store_type_select(string $name, string $selected): string {
+    $labels = store_type_labels();
+    $out = '<select class="form-control" id="' . htmlspecialchars($name) . '" name="' . htmlspecialchars($name) . '">';
+    foreach ($labels as $value => $label) {
+        $sel = $value === $selected ? 'selected' : '';
+        $out .= '<option value="' . htmlspecialchars($value) . '" ' . $sel . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $out .= '</select>';
+    return $out;
+}
+
 /** @return array<string, array{id:string,icon:string,label:string,show:bool,badge?:int}> */
 function store_panel_tabs(string $providerType, int $requestBadge = 0, int $orderBadge = 0): array {
     $tabs = [
@@ -277,6 +305,7 @@ function store_fields_from_input(array $input): array {
     return [
         'store_name'          => trim((string)($input['store_name'] ?? '')),
         'provider_type'       => normalize_provider_type($input['provider_type'] ?? 'normal_store'),
+        'store_type'          => normalize_store_type($input['store_type'] ?? 'both'),
         'store_description'   => trim((string)($input['store_description'] ?? '')),
         'store_address'       => trim((string)($input['store_address'] ?? '')),
         'store_phone'         => trim((string)($input['store_phone'] ?? '')),
@@ -346,6 +375,9 @@ function save_store_profile(int $userId, array $fields, ?array $bannerFile = nul
     }
     if (db_has_column('users', 'provider_type')) {
         $updateData['provider_type'] = normalize_provider_type($fields['provider_type'] ?? 'normal_store');
+    }
+    if (db_has_column('users', 'store_type')) {
+        $updateData['store_type'] = normalize_store_type($fields['store_type'] ?? 'both');
     }
     if (db_has_column('users', 'store_name')) {
         $updateData['store_name'] = $cleanName;
@@ -461,6 +493,9 @@ function create_store_request(int $userId, array $input, ?array $bannerFile = nu
     if (db_has_column('store_requests', 'provider_type')) {
         $requestData['provider_type'] = $fields['provider_type'];
     }
+    if (db_has_column('store_requests', 'store_type')) {
+        $requestData['store_type'] = $fields['store_type'];
+    }
 
     $requestId = DB::insert('store_requests', $requestData);
 
@@ -487,6 +522,7 @@ function approve_store_request(int $requestId, int $adminId): array {
     $fields = [
         'store_name'          => $req['store_name'],
         'provider_type'       => $req['provider_type'] ?? 'normal_store',
+        'store_type'          => $req['store_type'] ?? 'both',
         'store_description'   => $req['store_description'] ?? '',
         'store_address'       => $req['store_address'] ?? '',
         'store_phone'         => $req['store_phone'] ?? '',

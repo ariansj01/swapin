@@ -230,7 +230,6 @@ function render_navbar(?array $user = null): void {
 
     $navItems = [
         ['/#home-steps', 'چگونه کار می‌کند؟', 'bi-lightbulb', ''],
-        ['/shops', 'فروشگاه‌ها', 'bi-shop', ''],
         ['/trades', 'اتاق امن', 'bi-shield-lock', ''],
         ['/about', 'درباره ما', 'bi-question-circle', ''],
         ['/contact', 'تماس با ما', 'bi-envelope', ''],
@@ -275,6 +274,18 @@ HTML;
           <a href="{$url}/search/ai" class="dropdown-item"><i class="bi bi-search-heart"></i> جستجوی هوشمند</a>
           <a href="{$url}/ai/chat" class="dropdown-item"><i class="bi bi-chat-dots-fill"></i> چت با دستیار</a>
           <a href="{$url}/ai-assistant" class="dropdown-item"><i class="bi bi-info-circle-fill"></i> دستیار هوشمند چیست؟</a>
+        </div>
+      </div>
+
+      <!-- Stores Dropdown -->
+      <div class="dropdown">
+        <button class="navbar-nav__link" id="shops-dropdown-btn" style="border:none;background:none;cursor:pointer">
+          <i class="bi bi-shop"></i> فروشگاه‌ها <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+        </button>
+        <div class="dropdown-menu" id="shops-dropdown">
+          <a href="{$url}/shops" class="dropdown-item"><i class="bi bi-grid-fill"></i> همه فروشگاه‌ها</a>
+          <a href="{$url}/shops?type=online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
+          <a href="{$url}/shops?type=physical" class="dropdown-item"><i class="bi bi-building-check"></i> فروشگاه‌های حضوری</a>
         </div>
       </div>
 HTML;
@@ -364,6 +375,10 @@ HTML;
 HTML;
     echo "<a href=\"{$url}/ai/chat\" class=\"mobile-drawer__link\"><i class=\"bi bi-chat-dots-fill\"></i> چت با دستیار AI</a>";
     echo "<a href=\"{$url}/ai-assistant\" class=\"mobile-drawer__link\"><i class=\"bi bi-info-circle-fill\"></i> دستیار هوشمند چیست؟</a>";
+    echo "<div class=\"mobile-drawer__divider\"></div>";
+    echo "<a href=\"{$url}/shops\" class=\"mobile-drawer__link\"><i class=\"bi bi-shop\"></i> فروشگاه‌ها</a>";
+    echo "<a href=\"{$url}/shops?type=online\" class=\"mobile-drawer__link\"><i class=\"bi bi-globe2\"></i> فروشگاه‌های آنلاین</a>";
+    echo "<a href=\"{$url}/shops?type=physical\" class=\"mobile-drawer__link\"><i class=\"bi bi-building-check\"></i> فروشگاه‌های حضوری</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     foreach ($navItems as [$href, $label, $icon, $extraClass]) {
         $fullHref = str_starts_with($href, '/#') ? $url . $href : $url . $href;
@@ -600,12 +615,12 @@ function render_footer(): void {
           <li><a href="{$url}/faq">سوالات متداول</a></li>
           <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
           <li><a href="{$url}/blog">بلاگ</a></li>
-          <li><a href="{$url}/shops">فروشگاه‌ها</a></li>
           <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
-          <li><a href="{$url}/store/request">ثبت درخواست فروشگاه</a></li>
-          <li><a href="{$url}/auth/store-login">ورود پنل فروشگاه</a></li>
           <li><a href="{$url}/terms">قوانین و مقررات</a></li>
           <li><a href="{$url}/privacy">حریم خصوصی</a></li>
+          <li><a href="{$url}/shops">فروشگاه‌ها</a></li>
+          <li><a href="{$url}/store/request">ثبت فروشگاه</a></li>
+          <li><a href="{$url}/auth/store-login">ورود پنل فروشگاه</a></li>
         </ul>
       </div>
 

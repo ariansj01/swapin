@@ -94,6 +94,12 @@ render_navbar($user);
         </div>
 
         <div class="form-group">
+          <label class="form-label">نوع فروشگاه <span style="color:var(--danger)">*</span></label>
+          <?= render_store_type_select('store_type', $fields['store_type'] ?? 'both') ?>
+          <small class="fs-sm text-muted">حضوری: فروشگاه فیزیکی دارد / آنلاین: فقط اینترنتی / هر دو: هر دو حالت فعال است</small>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">نام فروشگاه <span style="color:var(--danger)">*</span></label>
           <input type="text" class="form-control" name="store_name" required maxlength="120"
                  value="<?= h($fields['store_name']) ?>">

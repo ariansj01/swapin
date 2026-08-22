@@ -33,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $storeName = trim((string)($_POST['store_name'] ?? ''));
+    $storeType  = normalize_store_type($_POST['store_type'] ?? 'both');
     $storeDescription = trim((string)($_POST['store_description'] ?? ''));
     $storeAddress = trim((string)($_POST['store_address'] ?? ''));
     $storePhone = trim((string)($_POST['store_phone'] ?? ''));
@@ -68,6 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (db_has_column('users', 'provider_type')) {
             $updateData['provider_type'] = normalize_provider_type($_POST['provider_type'] ?? 'normal_store');
+        }
+        if (db_has_column('users', 'store_type')) {
+            $updateData['store_type'] = $storeType;
         }
         if (db_has_column('users', 'store_name')) {
             $updateData['store_name'] = clean($storeName);
@@ -222,6 +226,12 @@ $ownerExtraStr = $ownerExtra ? (' (' . implode(' - ', $ownerExtra) . ')') : '';
 <div class="form-group">
 <label>نوع کسب‌وکار <span style="color:red">*</span></label>
 <?= render_provider_type_select('provider_type', $_POST['provider_type'] ?? ($storeUser['provider_type'] ?? 'normal_store')) ?>
+</div>
+
+<div class="form-group">
+<label>نوع فروشگاه <span style="color:red">*</span></label>
+<?= render_store_type_select('store_type', $_POST['store_type'] ?? ($storeUser['store_type'] ?? 'both')) ?>
+<small style="color:#888">حضوری: فروشگاه فیزیکی / آنلاین: فقط اینترنتی / هر دو: هر دو حالت</small>
 </div>
 
 <div class="form-group">
