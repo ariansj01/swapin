@@ -152,7 +152,7 @@
 .ex-stepper::before {
   content: '';
   position: absolute;
-  top: 40px;
+  top: 50px;
   right: 10%;
   left: 10%;
   height: 3px;
@@ -233,7 +233,7 @@
 
 .ex-stepper__progress {
   position: absolute;
-  top: 40px;
+  top: 50px;
   right: 10%;
   height: 3px;
   background: var(--ex-navy);
@@ -560,11 +560,13 @@
    ============================================ */
 .ex-picklist {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .ex-pick {
+  width: 48%;
   display: flex;
   gap: 14px;
   align-items: center;
@@ -781,7 +783,7 @@
   font-size: 1.0625rem;
   min-height: 58px;
   border-radius: var(--ex-radius-lg);
-  width: 25px;
+  width: 20%;
 }
 
 /* ============================================

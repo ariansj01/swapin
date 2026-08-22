@@ -111,9 +111,9 @@ render_navbar($user);
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/exchange-flow.css?v=<?= @filemtime(__DIR__ . '/../src/css/exchange-flow.css') ?: time() ?>">
 
 <div class="ex-page">
-  <div class="ex-container">
+  <div class="ex-container" style="place-items:center; display:grid;">
 
-    <div class="ex-header">
+    <div class="ex-header" style="width: 60%;">
       <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="ex-header__back">
         <i class="bi bi-arrow-right"></i>
         بازگشت به محصول
@@ -122,7 +122,7 @@ render_navbar($user);
       <p class="ex-header__subtitle">کالای خود را انتخاب کرده و پیشنهاد خود را برای فروشگاه ارسال کنید.</p>
     </div>
 
-    <div class="ex-stepper">
+    <div class="ex-stepper" style="width: 75%;">
       <div class="ex-stepper__progress" style="width:<?= $step > 1 ? '100%' : '50%' ?>"></div>
       <div class="ex-step <?= $step >= 1 ? 'is-done' : '' ?> <?= $step === 1 ? 'is-active' : '' ?>">
         <div class="ex-step__circle">۱</div>
@@ -145,7 +145,7 @@ render_navbar($user);
     </div>
     <?php endif; ?>
 
-    <div class="ex-card">
+    <div class="ex-card" style="width: 40%;">
       <div class="ex-card__label"><i class="bi bi-shop-window"></i> محصول فروشگاه</div>
       <div class="ex-product">
         <?php if (!empty($listing['thumb'])): ?>
@@ -172,7 +172,7 @@ render_navbar($user);
     </div>
 
     <?php if ($step === 1): ?>
-    <form method="POST" id="step1Form">
+    <form method="POST" id="step1Form" style="width: 60%;">
       <?= csrf_field() ?>
       <input type="hidden" name="listing_id" value="<?= $listingId ?>">
       <input type="hidden" name="step" value="2">
