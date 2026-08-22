@@ -123,7 +123,7 @@ render_navbar($user);
     </div>
 
     <div class="ex-stepper" style="width: 75%;">
-      <div class="ex-stepper__progress" style="width:<?= $step > 1 ? '100%' : '50%' ?>"></div>
+      <div class="ex-stepper__progress" style="width:<?= $step > 1 ? '80%' : '50%' ?>"></div>
       <div class="ex-step <?= $step >= 1 ? 'is-done' : '' ?> <?= $step === 1 ? 'is-active' : '' ?>">
         <div class="ex-step__circle">۱</div>
         <div class="ex-step__label">انتخاب کالا</div>

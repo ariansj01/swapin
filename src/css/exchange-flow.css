@@ -545,13 +545,13 @@
 
 .ex-cash-total span:first-child {
   font-size: 0.9375rem;
-  color: var(--ex-text);
+  color: var(--ex-gold);
   font-weight: 700;
 }
 
 .ex-cash-total strong {
   font-size: 1.25rem;
-  color: var(--ex-navy);
+  color: var(--ex-gold);
   font-weight: 900;
 }
 
@@ -783,7 +783,7 @@
   font-size: 1.0625rem;
   min-height: 58px;
   border-radius: var(--ex-radius-lg);
-  width: 20%;
+  width: 35%;
 }
 
 /* ============================================

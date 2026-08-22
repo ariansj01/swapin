@@ -122,14 +122,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             DB::query('UPDATE otp_codes SET used = 1 WHERE id = ?', [$row['id']]);
             
-            $user = DB::fetch('SELECT id, name FROM users WHERE phone = ? AND is_active = 1', [$phoneIntl]);
+            $user = DB::fetch('SELECT id, name, phone_verified_at FROM users WHERE phone = ? AND is_active = 1', [$phoneIntl]);
             if ($user) {
+                if (empty($user['phone_verified_at'])) {
+                    DB::update('users', [
+                        'phone_verified_at' => date('Y-m-d H:i:s'),
+                    ], 'id = ?', [(int)$user['id']]);
+                }
+                $_SESSION['auth_via_phone_otp'] = true;
                 login_user($user['id']);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
                 $dest = $redir ? APP_URL . $redir : APP_URL . '/';
                 header('Location: ' . $dest); exit;
             } else {
                 $uid = register_phone_user($phoneIntl);
+                $_SESSION['auth_via_phone_otp'] = true;
                 login_user($uid);
                 notify_profile_completion($uid);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);

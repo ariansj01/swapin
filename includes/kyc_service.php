@@ -68,7 +68,9 @@ function kyc_resolve_status(array $user): string {
     if ($legacy === 'approved') {
         return ((int)($user['kyc_level'] ?? 0) >= 2) ? 'ADVANCED_VERIFIED' : 'IDENTITY_VERIFIED';
     }
-    if (!empty($user['phone_verified_at'])) {
+    $phoneVerified = !empty($user['phone_verified_at'])
+        || !empty($_SESSION['auth_via_phone_otp']);
+    if ($phoneVerified) {
         return 'PHONE_VERIFIED';
     }
 
@@ -83,12 +85,14 @@ function kyc_tier_status_label(string $status): string {
 function kyc_public_info(array $user): array {
     $status = kyc_resolve_status($user);
     $level  = kyc_user_level($user);
+    $phoneVerified = !empty($user['phone_verified_at'])
+        || !empty($_SESSION['auth_via_phone_otp']);
 
     return [
         'status'            => $status,
         'label'             => kyc_tier_status_label($status),
         'level'             => $level,
-        'phone_verified'    => !empty($user['phone_verified_at']),
+        'phone_verified'    => $phoneVerified,
         'identity_verified' => in_array($status, ['IDENTITY_VERIFIED', 'ADVANCED_VERIFIED'], true),
         'advanced_verified' => $status === 'ADVANCED_VERIFIED',
         'risk_level'        => strtoupper((string)($user['kyc_risk_level'] ?? 'low')),
@@ -122,7 +126,8 @@ function kyc_can_post_and_chat(array $user): bool {
     if (($user['role'] ?? 'user') === 'admin') {
         return true;
     }
-    return !empty($user['phone_verified_at']);
+    return !empty($user['phone_verified_at'])
+        || !empty($_SESSION['auth_via_phone_otp']);
 }
 
 function kyc_can_offer_and_trade(array $user): bool {
@@ -143,6 +148,9 @@ function kyc_check_trade(array $user, float $estimatedValue): ?string {
         return null;
     }
 
+    $phoneVerified = !empty($user['phone_verified_at'])
+        || !empty($_SESSION['auth_via_phone_otp']);
+
     $status = kyc_resolve_status($user);
     if ($status === 'MANUAL_REVIEW') {
         return 'حساب شما در حال بررسی دستی است. لطفاً منتظر تأیید تیم پشتیبانی باشید.';
@@ -153,7 +161,7 @@ function kyc_check_trade(array $user, float $estimatedValue): ?string {
     if ($status === 'IDENTITY_REJECTED') {
         return 'احراز هویت شما رد شده — لطفاً مدارک را دوباره ارسال کنید.';
     }
-    if (empty($user['phone_verified_at'])) {
+    if (!$phoneVerified) {
         return 'برای پیشنهاد و معامله، ابتدا شماره موبایل خود را تأیید کنید.';
     }
     if (!user_profile_is_complete($user)) {
@@ -178,7 +186,9 @@ function kyc_check_listing_action(array $user): ?string {
     if (($user['role'] ?? 'user') === 'admin') {
         return null;
     }
-    if (empty($user['phone_verified_at'])) {
+    $phoneVerified = !empty($user['phone_verified_at'])
+        || !empty($_SESSION['auth_via_phone_otp']);
+    if (!$phoneVerified) {
         return 'برای ثبت آگهی و چت، ابتدا شماره موبایل خود را تأیید کنید.';
     }
     if (!user_profile_is_complete($user)) {
