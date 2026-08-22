@@ -160,7 +160,7 @@ render_navbar($user);
 </style>
 
 <div class="ex-page">
-  <div class="ex-container">
+  <div class="ex-container" style="width: 70%;">
     <div class="ex-header">
       <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="ex-header__back">
         <i class="bi bi-arrow-right"></i> بازگشت به محصول
@@ -442,19 +442,19 @@ render_navbar($user);
       </div>
 
       <!-- Navigation Buttons (Desktop) -->
-      <div class="ex-actions ex-actions--row ex-hidden-mobile">
+      <div class="ex-actions ex-actions--row ex-hidden-mobile" style="text-align: center;">
         <?php if ($step > 1): ?>
-          <button type="submit" name="nav" value="prev_step" class="ex-btn ex-btn--outline" style="flex: 0 0 160px; width: 20%;">
+          <button type="submit" name="nav" value="prev_step" class="ex-btn ex-btn--outline" style="flex: 0 0 160px; width: 20%;margin: 20px 0;">
             <i class="bi bi-arrow-right"></i> بازگشت
           </button>
         <?php endif; ?>
 
         <?php if ($step < $maxStep): ?>
-          <button type="submit" name="nav" value="next_step" class="ex-btn ex-btn--primary">
+          <button type="submit" name="nav" value="next_step" style="width: 25%;" class="ex-btn ex-btn--primary">
             ادامه فرایند خرید <i class="bi bi-arrow-left"></i>
           </button>
         <?php else: ?>
-          <button type="submit" name="nav" value="submit" class="ex-btn ex-btn--cta">
+          <button type="submit" name="nav" value="submit" style="width: 25%;" class="ex-btn ex-btn--cta">
             تأیید و پرداخت نهایی <i class="bi bi-credit-card"></i>
           </button>
         <?php endif; ?>
