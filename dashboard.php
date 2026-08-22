@@ -110,7 +110,7 @@ if (!$dashboardNeedsMigration) {
         $swapMatches       = $aiMatchData['matches'];
         $aiMatchSource     = $aiMatchData['source'];
         $userListingsMatch = DB::fetchAll(
-            'SELECT id, title FROM listings WHERE user_id = ? AND status = "active" AND listing_mode IN ("swap","both") ORDER BY created_at DESC',
+            'SELECT id, title FROM listings WHERE user_id = ? AND status = "active" ORDER BY created_at DESC',
             [$uid]
         );
     } catch (Throwable $e) {

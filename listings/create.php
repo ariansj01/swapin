@@ -30,6 +30,7 @@ $vals = [
     'want_description' => '',
     'custom_value'    => 0,
     'estimated_value' => 0,
+    'sell_price'      => 0,
 ];
 
 $suggestedValue = (int)($_POST['suggested_value'] ?? rand(10000000, 50000000));
@@ -74,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'want_description' => clean($_POST['want_description'] ?? ''),
         'custom_value'    => (int)($_POST['custom_value']    ?? 0),
         'estimated_value' => 0,
+        'sell_price'      => max(0, min((float)($_POST['sell_price']    ?? 0), 99999999999999.00)),
     ];
     $suggestedValue = (int)($_POST['suggested_value'] ?? $suggestedValue);
     $vals['estimated_value'] = $vals['custom_value'] > 0 ? $vals['custom_value'] : $suggestedValue;
@@ -86,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$vals['category_id']) $errors['category_id'] = 'لطفا دسته‌بندی را انتخاب کنید';
     if ($vals['category_id'] && !wizard_validate_category_id($vals['category_id'])) $errors['category_id'] = 'دسته‌بندی انتخاب‌شده نامعتبر است';
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
+    if (is_store_seller($user) && $vals['sell_price'] <= 0)
+        $errors['sell_price'] = 'قیمت فروش برای فروشگاه‌ها الزامی است.';
 
     $location = listing_location_from_request($vals);
     foreach (validate_listing_location($location) as $field => $msg) {
@@ -120,8 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'estimated_value'  => $vals['estimated_value'] ?: 0,
             'want_in_return'   => $vals['want_description'] ?: '',
             'want_type'        => 'any',
-            'listing_mode'     => 'swap',
-            'sell_price'       => 0,
+            'listing_mode'     => 'both',
+            'sell_price'       => $vals['sell_price'],
             'needs_inspection' => 0,
             'city'             => $vals['city'] ?: null,
             'status'           => 'active',
@@ -353,6 +357,26 @@ render_navbar($user);
                    placeholder="اگر قیمت دیگری مدنظر دارید وارد کنید"
                    value="<?= $vals['custom_value'] > 0 ? h(number_format($vals['custom_value'])) : '' ?>">
             <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این بخش اختیاری است.</p>
+          </div>
+
+          <div class="wizard-form-group" style="margin-top: calc(var(--wizard-gap) * 2)">
+            <label class="wizard-form-label" for="step6-sell-price-input">
+              قیمت فروش (تومان)
+              <?php if (is_store_seller($user)): ?>
+              <span style="color:var(--danger)">*</span>
+              <?php endif; ?>
+            </label>
+            <input type="number" id="step6-sell-price-input" name="sell_price" class="wizard-form-input"
+                   placeholder="قیمت نقدی کالا را وارد کنید" min="0" step="1000"
+                   value="<?= h((string)$vals['sell_price']) ?>">
+            <?php if (is_store_seller($user)): ?>
+            <p class="price-estimate-note" style="margin-top: var(--wizard-gap);color:var(--accent)">فروشگاه‌ها باید قیمت فروش را مشخص کنند تا کاربران بتوانند نقدی خرید کنند.</p>
+            <?php else: ?>
+            <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">اختیاری — اگر می‌خواهید امکان خرید نقدی هم برای کاربران فعال باشد، قیمت را وارد کنید.</p>
+            <?php endif; ?>
+            <?php if (isset($errors['sell_price'])): ?>
+            <div class="invalid-feedback" style="display:block"><?= h($errors['sell_price']) ?></div>
+            <?php endif; ?>
           </div>
 
           <input type="hidden" id="step6-suggested-value" name="suggested_value" value="<?= h($suggestedValue) ?>">

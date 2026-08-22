@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ─── Active tab ───────────────────────────────────────────────────────────────
-$validTabs = ['active', 'traded', 'expired', 'deleted'];
+$validTabs = ['active', 'reserved', 'traded', 'expired', 'deleted'];
 $tab       = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'active';
 $page      = max(1, (int)($_GET['page'] ?? 1));
 
@@ -82,7 +82,7 @@ $perfListings = DB::fetchAll(
             (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = l.id)                     AS saved_count,
             (SELECT COUNT(*) FROM trade_offers o WHERE o.listing_id = l.id)                          AS offers_count
      FROM listings l
-     WHERE l.user_id = ? AND l.status IN ('active','traded','expired')
+     WHERE l.user_id = ? AND l.status IN ('active','reserved','traded','expired')
      ORDER BY l.updated_at DESC",
     [$uid]
 );
@@ -99,11 +99,12 @@ if ($perfListing) {
     $perfListing['link_url'] = APP_URL . '/listings/view?id=' . (int)$perfListing['id'];
 }
 
-$statusLabels = ['active' => 'فعال', 'traded' => 'معامله‌شده', 'expired' => 'منقضی', 'deleted' => 'حذف‌شده'];
+$statusLabels = ['active' => 'فعال', 'reserved' => 'رزرو شده', 'traded' => 'معامله‌شده', 'expired' => 'منقضی', 'deleted' => 'حذف‌شده'];
 $condColors = ['new' => 'success', 'like_new' => 'success', 'good' => 'info', 'fair' => 'warning', 'poor' => 'danger'];
 
 $tabMeta = [
     'active'  => ['icon' => 'bi-broadcast',    'color' => 'success', 'label' => 'فعال'],
+    'reserved'=> ['icon' => 'bi-lock-fill',    'color' => 'warning', 'label' => 'رزرو شده'],
     'traded'  => ['icon' => 'bi-check2-circle', 'color' => 'info',    'label' => 'معامله‌شده'],
     'expired' => ['icon' => 'bi-clock-history', 'color' => 'warning', 'label' => 'منقضی'],
     'deleted' => ['icon' => 'bi-trash3',        'color' => 'danger',  'label' => 'حذف‌شده'],
@@ -211,7 +212,7 @@ render_user_panel_open($user, 'my');
     <div class="my-listings-grid">
       <?php foreach ($listings as $l):
         $hasPending = $l['pending_offers'] > 0;
-        $sc = ['active'=>'success','traded'=>'info','expired'=>'warning','deleted'=>'danger'][$l['status']] ?? 'info';
+        $sc = ['active'=>'success','reserved'=>'warning','traded'=>'info','expired'=>'warning','deleted'=>'danger'][$l['status']] ?? 'info';
       ?>
       <article class="my-listing-card <?= $hasPending ? 'my-listing-card--pending' : '' ?>">
         <div class="my-listing-card__media">

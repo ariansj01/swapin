@@ -34,7 +34,7 @@ function listing_swap_offer_listing_swappable(?array $listing): bool {
         return false;
     }
 
-    return in_array($listing['listing_mode'] ?? 'swap', ['swap', 'both'], true);
+    return true;
 }
 
 /** @return array<string,mixed> */

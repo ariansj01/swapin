@@ -375,6 +375,10 @@ function accept_trade_offer(int $offerId, int $ownerId, string $message): array 
     $creditDiff = $valueA - ($valueB + (float)$offer['offer_credit']);
 
     DB::query('UPDATE trade_offers SET status = "accepted" WHERE id = ?', [$offerId]);
+    DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$offer['listing_id']]);
+    if (!empty($offer['offer_listing_id'])) {
+        DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$offer['offer_listing_id']]);
+    }
 
     $tradeId = DB::insert('trades', [
         'offer_id'     => $offerId,
@@ -1143,7 +1147,7 @@ function find_swap_matches(int $userId, int $limit = 6): array {
         'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug, c.parent_id AS cat_parent_id
          FROM listings l
          JOIN categories c ON c.id = l.category_id
-         WHERE l.user_id = ? AND l.status = "active" AND l.listing_mode IN ("swap","both")
+         WHERE l.user_id = ? AND l.status = "active"
            AND (l.review_status = "approved" OR l.review_status IS NULL)',
         [$userId]
     );
@@ -1160,7 +1164,7 @@ function find_swap_matches(int $userId, int $limit = 6): array {
          FROM listings l
          JOIN users u ON u.id = l.user_id
          JOIN categories c ON c.id = l.category_id
-         WHERE l.status = "active" AND l.review_status = "approved" AND l.user_id != ? AND l.listing_mode IN ("swap","both")
+         WHERE l.status = "active" AND l.review_status = "approved" AND l.user_id != ?
          ORDER BY l.created_at DESC LIMIT 150',
         [$userId]
     );
@@ -1239,7 +1243,7 @@ function find_triangular_swaps(int $userId, int $limit = 4): array {
         'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug, c.parent_id AS cat_parent_id
          FROM listings l
          JOIN categories c ON c.id = l.category_id
-         WHERE l.user_id = ? AND l.status = "active" AND l.listing_mode IN ("swap","both")
+         WHERE l.user_id = ? AND l.status = "active"
            AND (l.review_status = "approved" OR l.review_status IS NULL)',
         [$userId]
     );
@@ -1251,7 +1255,7 @@ function find_triangular_swaps(int $userId, int $limit = 4): array {
          FROM listings l
          JOIN users u ON u.id = l.user_id
          JOIN categories c ON c.id = l.category_id
-         WHERE l.status = "active" AND l.review_status = "approved" AND l.listing_mode IN ("swap","both")
+         WHERE l.status = "active" AND l.review_status = "approved"
          ORDER BY l.created_at DESC LIMIT 120'
     );
 

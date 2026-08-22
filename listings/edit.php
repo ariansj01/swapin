@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['estimated_value'] = max(0, min($vals['estimated_value'], 999999999999.99));
     $vals['want_in_return']  = clean($_POST['want_in_return']  ?? '');
     $vals['want_type']       = clean($_POST['want_type']       ?? 'any');
-    $vals['listing_mode']    = clean($_POST['listing_mode']    ?? 'swap');
+    $vals['listing_mode']    = 'both';
     $vals['sell_price']      = max(0, min((float)($_POST['sell_price']    ?? 0), 99999999999999.00));
     $vals['city']            = clean($_POST['city']            ?? '');
     $vals['latitude']        = clean($_POST['latitude']        ?? '');
@@ -83,10 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['want_in_return'] = 'لطفاً بنویسید چه چیزی می‌خواهید (حداقل ۱۰ کاراکتر).';
     if (!in_array($vals['want_type'], ['item','service','credit','any'], true))
         $errors['want_type'] = 'نوع معامله نامعتبر است.';
-    if (!in_array($vals['listing_mode'], ['swap','sell','both'], true))
-        $errors['listing_mode'] = 'حالت آگهی نامعتبر است.';
-    if (in_array($vals['listing_mode'], ['sell','both'], true) && $vals['sell_price'] <= 0)
-        $errors['sell_price'] = 'قیمت فروش الزامی است.';
+    if (is_store_seller($user) && $vals['sell_price'] <= 0)
+        $errors['sell_price'] = 'قیمت فروش برای فروشگاه‌ها الزامی است.';
 
     $location = listing_location_from_request($vals);
     foreach (validate_listing_location($location) as $field => $msg) {
@@ -372,19 +370,15 @@ render_navbar($user);
         </div>
         <div class="card-body">
 
-          <div class="form-group">
-            <label class="form-label">حالت آگهی</label>
-            <select name="listing_mode" class="form-control" id="listing_mode">
-              <?php foreach (['swap'=>'فقط تعویض','sell'=>'فقط فروش','both'=>'تعویض + فروش'] as $v=>$l): ?>
-              <option value="<?= $v ?>" <?= ($vals['listing_mode'] ?? 'swap') === $v ? 'selected' : '' ?>><?= $l ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
           <div class="form-group" id="edit-sell-price">
             <label class="form-label" for="sell_price">قیمت فروش (تومان)</label>
             <input type="number" name="sell_price" id="sell_price" class="form-control"
                    value="<?= h((string)$vals['sell_price']) ?>" min="0" step="1000">
+            <?php if (is_store_seller($user)): ?>
+            <div class="form-hint">فروشگاه‌ها باید قیمت فروش را مشخص کنند تا کاربران بتوانند نقدی خرید کنند.</div>
+            <?php else: ?>
+            <div class="form-hint">اختیاری — اگر می‌خواهید امکان خرید نقدی هم برای کاربران فعال باشد، قیمت را وارد کنید.</div>
+            <?php endif; ?>
           </div>
 
           <div class="form-group">
@@ -534,14 +528,6 @@ document.getElementById('edit-form').addEventListener('submit', function() {
   document.getElementById('btn-spinner').style.display = 'inline-block';
   document.getElementById('submit-btn').disabled = true;
 });
-
-function toggleSellPrice() {
-  const mode = document.getElementById('listing_mode')?.value || 'swap';
-  const grp  = document.getElementById('edit-sell-price');
-  if (grp) grp.style.display = (mode === 'sell' || mode === 'both') ? '' : 'none';
-}
-document.getElementById('listing_mode')?.addEventListener('change', toggleSellPrice);
-toggleSellPrice();
 </script>
 
 <?php render_footer(); ?>

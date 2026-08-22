@@ -125,14 +125,11 @@ function listing_can_cash_buy(array $listing, ?array $buyer = null): bool {
     if (!store_orders_enabled()) {
         return false;
     }
-    if (($listing['status'] ?? '') !== 'active') {
+    $status = (string)($listing['status'] ?? '');
+    if ($status !== 'active') {
         return false;
     }
     if (($listing['review_status'] ?? 'approved') !== 'approved') {
-        return false;
-    }
-    $mode = $listing['listing_mode'] ?? 'swap';
-    if ($mode === 'swap') {
         return false;
     }
     if ((float)($listing['sell_price'] ?? 0) <= 0) {
@@ -418,7 +415,7 @@ function finalize_store_order_payment(int $paymentId): void {
         'paid_at' => date('Y-m-d H:i:s'),
     ], 'id = ?', [$orderId]);
 
-    DB::update('listings', ['status' => 'traded'], 'id = ? AND status = "active"', [(int)$order['listing_id']]);
+    DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$order['listing_id']]);
 }
 
 function update_store_order_by_seller(int $orderId, int $sellerId, string $action, array $data = []): array {

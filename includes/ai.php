@@ -506,7 +506,7 @@ function ai_match_context(int $userId, ?int $listingId = null): ?array {
         'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug, c.parent_id AS cat_parent_id
          FROM listings l
          JOIN categories c ON c.id = l.category_id
-         WHERE l.user_id = ? AND l.status = "active" AND l.listing_mode IN ("swap","both")
+         WHERE l.user_id = ? AND l.status = "active"
            AND (l.review_status = "approved" OR l.review_status IS NULL)
          ORDER BY l.created_at DESC',
         [$userId]
@@ -904,7 +904,7 @@ function ai_parse_need_search(string $needText, ?string $city = null): array {
  */
 function ai_search_listings_by_need(string $needText, ?string $city = null, int $limit = 24): array {
     $filters = ai_parse_need_search($needText, $city);
-    $whereClauses = [listing_public_sql('l'), 'l.listing_mode != "sell"'];
+    $whereClauses = [listing_public_sql('l')];
     $params = [];
 
     if (!empty($filters['city'])) {

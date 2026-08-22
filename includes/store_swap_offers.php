@@ -42,7 +42,8 @@ function listing_is_store_swappable(array $listing): bool {
     if (!store_swap_flow_enabled()) {
         return false;
     }
-    if (($listing['status'] ?? '') !== 'active') {
+    $status = (string)($listing['status'] ?? '');
+    if ($status !== 'active') {
         return false;
     }
     if (($listing['review_status'] ?? 'approved') !== 'approved') {
@@ -51,9 +52,7 @@ function listing_is_store_swappable(array $listing): bool {
     if (!listing_is_store_listing($listing)) {
         return false;
     }
-    $mode = $listing['listing_mode'] ?? 'swap';
-
-    return in_array($mode, ['swap', 'both'], true);
+    return true;
 }
 
 function store_swap_validate_cash(float $cash, float $storeValue, float $userValue): ?string {
@@ -389,6 +388,7 @@ function store_swap_offer_accept_counter(int $offerId, array $user): array {
     }
 
     DB::query('UPDATE trade_offers SET status = "accepted", updated_at = NOW() WHERE id = ?', [$offerId]);
+    DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$offer['listing_id']]);
     store_swap_offer_add_message($offerId, (int) $user['id'], 'پیشنهاد فروشگاه را پذیرفتم.', 'system');
 
     return ['ok' => true];
@@ -405,6 +405,7 @@ function store_swap_offer_store_accept(int $offerId, array $storeUser, ?string $
     }
 
     DB::query('UPDATE trade_offers SET status = "accepted", updated_at = NOW() WHERE id = ?', [$offerId]);
+    DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$offer['listing_id']]);
     store_swap_offer_add_message(
         $offerId,
         (int) $storeUser['id'],

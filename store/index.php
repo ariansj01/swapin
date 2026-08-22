@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_listings'])) {
                 'estimated_value' => max(0, (float)$value),
                 'want_in_return'  => clean($want),
                 'want_type'       => 'item',
-                'listing_mode'    => 'swap',
+                'listing_mode'    => 'both',
                 'sell_price'      => 0,
                 'city'            => $user['city'] ?? null,
                 'status'          => 'active',
@@ -82,13 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_add_product']))
     $category_id     = (int)($_POST['category_id']     ?? 0);
     $want_category_id = (int)($_POST['want_category_id'] ?? 0);
     $want_description = clean($_POST['want_description'] ?? '');
-    $listing_mode    = clean($_POST['listing_mode']    ?? 'both');
+    $listing_mode    = 'both';
     $sell_price      = max(0, (float)($_POST['sell_price']      ?? 0));
     $estimated_value = max(0, (float)($_POST['estimated_value'] ?? 0));
-
-    if (!in_array($listing_mode, ['sell', 'swap', 'both'], true)) {
-        $listing_mode = 'both';
-    }
 
     $validationErrors = [];
     if (mb_strlen($title) < 5) $validationErrors[] = 'نام محصول باید حداقل ۵ کاراکتر باشد';
@@ -721,14 +717,7 @@ render_navbar($user);
                   <input type="text" class="store-form-input" name="sell_price" placeholder="۰" value="<?= h($_POST['sell_price'] ?? '') ?>">
                 </div>
               </div>
-              <div class="store-form-group">
-                <label class="store-form-label">نوع معامله</label>
-                <div class="store-radio-group">
-                  <label class="store-radio"><input type="radio" name="listing_mode" value="sell" <?= (($_POST['listing_mode'] ?? 'both') === 'sell') ? 'checked' : '' ?>> فقط فروش</label>
-                  <label class="store-radio"><input type="radio" name="listing_mode" value="swap" <?= (($_POST['listing_mode'] ?? 'both') === 'swap') ? 'checked' : '' ?>> فقط معاوضه</label>
-                  <label class="store-radio"><input type="radio" name="listing_mode" value="both" <?= (($_POST['listing_mode'] ?? 'both') === 'both') ? 'checked' : '' ?>> فروش و معاوضه</label>
-                </div>
-              </div>
+              <input type="hidden" name="listing_mode" value="both">
               <div class="store-form-grid-2">
                 <div class="store-form-group">
                   <label class="store-form-label">دسته‌بندی کالای موردنیاز برای معاوضه</label>

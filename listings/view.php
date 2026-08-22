@@ -269,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 $canBuy  = listing_can_cash_buy($listing, $user);
 $buyPrice = $canBuy ? (float)$listing['sell_price'] : 0;
 $isStoreSwappable = listing_is_store_swappable($listing);
-$hasBothBuySwap = $canBuy && ($listing['listing_mode'] ?? 'swap') !== 'sell';
+$hasBothBuySwap = $canBuy && $isStoreSwappable;
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
 $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
@@ -288,9 +288,10 @@ $storeSwapUrl = APP_URL . '/store-offers/create.php?listing_id=' . $id;
 $storeOfferViewUrl = $myStoreOffer ? APP_URL . '/store-offers/view.php?id=' . (int) $myStoreOffer['id'] : '';
 $loginRedirect = APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $id);
 $showNearbySection = listing_has_coordinates($listing);
-$showSwapSuggestions = $showNearbySection && ($listing['listing_mode'] ?? 'swap') !== 'sell';
+$showSwapSuggestions = $showNearbySection;
 $swapCanOffer = $isOwner && listing_swap_offer_listing_swappable($listing);
 $swapSourceTitle = (string) ($listing['title'] ?? '');
+$listingIsReserved = ($listing['status'] ?? '') === 'reserved';
 
 render_head($listing['title'], $metaDesc, [
     'canonical' => $listingUrl,
@@ -408,9 +409,11 @@ render_navbar($user);
         <span class="lv-price"><?= fmt_credit((float)$listing['estimated_value']) ?></span>
       </div>
       <?php endif; ?>
-      <?php if ($hasBothBuySwap): ?>
+      <?php if ($listingIsReserved): ?>
+      <span class="lv-badge-swap" style="background:rgba(234,179,8,.15);color:#ca8a04"><i class="bi bi-lock-fill"></i> رزرو شده</span>
+      <?php elseif ($hasBothBuySwap): ?>
       <span class="lv-badge-swap" style="background:rgba(37,99,235,.1);color:var(--accent,#2563eb)"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
-      <?php elseif (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
+      <?php elseif ($isStoreSwappable || ($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
       <span class="lv-badge-swap"><i class="bi bi-arrow-left-right"></i> امکان معاوضه</span>
       <?php endif; ?>
     </div>
@@ -452,9 +455,7 @@ render_navbar($user);
       <div class="lv-chips">
         <span class="lv-chip"><?= condition_label($listing['condition']) ?></span>
         <span class="lv-chip"><i class="bi bi-tag"></i> <?= h($listing['cat_name']) ?></span>
-        <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
         <span class="lv-chip lv-chip--gold"><i class="bi bi-arrow-left-right"></i> معاوضه</span>
-        <?php endif; ?>
         <?php if (!empty($listing['inspection_status']) && $listing['inspection_status'] !== 'none'): ?>
         <span class="lv-chip"><i class="bi bi-search"></i> <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?></span>
         <?php endif; ?>
@@ -465,7 +466,7 @@ render_navbar($user);
     </section>
 
     <!-- Wants -->
-    <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($listing['want_in_return'])): ?>
+    <?php if (!empty($listing['want_in_return'])): ?>
     <section class="lv-want-section">
       <h2 class="lv-section__title"><?= h($listing['seller_name']) ?> در ازای این کالا به دنبال چه چیزی هست؟</h2>
       <div class="lv-chips">
@@ -826,6 +827,11 @@ render_navbar($user);
           <h3 class="lv-offer-title"><i class="bi bi-hourglass-split"></i> وضعیت پیشنهاد</h3>
           <div class="alert alert-success" style="margin:0">پیشنهاد شما در انتظار پاسخ فروشنده است.</div>
         </section>
+        <?php elseif ($listingIsReserved): ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-lock-fill" style="color:#ca8a04"></i> این کالا رزرو شده است</h3>
+          <div class="alert alert-warning" style="margin:0">این کالا در حال حاضر برای یک معامله رزرو شده و تا پایان فرآیند معامله، در دسترس عموم قرار ندارد.</div>
+        </section>
         <?php elseif ($listing['status'] !== 'active'): ?>
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-exclamation-triangle"></i> وضعیت آگهی</h3>
@@ -845,7 +851,6 @@ render_navbar($user);
           <?php endif; ?>
         </section>
         <?php endif; ?>
-        <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
         <?php if ($isStoreSwappable): ?>
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-arrow-left-right" style="color:var(--lv-gold)"></i> پیشنهاد معاوضه با فروشگاه</h3>
@@ -922,7 +927,6 @@ render_navbar($user);
           </form>
           <?php endif; ?>
         </section>
-        <?php endif; ?>
         <?php endif; ?>
         <?php endif; ?>
 
