@@ -373,8 +373,8 @@ render_navbar($user);
     </div>
 
     <?php if ($canChat && !$isStore && ($offer['status'] ?? '') !== 'counter_offered'): ?>
-    <div style="margin-top:16px">
-      <button type="button" class="ex-btn ex-btn--outline" id="cancelOfferBtn" style="color:var(--ex-danger);border-color:#FECACA">
+    <div style="margin-top:16px;text-align: center;">
+      <button type="button" class="ex-btn ex-btn--outline" id="cancelOfferBtn" style="color:var(--ex-danger);border-color:#FECACA;width:40%;">
         <i class="bi bi-x-circle"></i>
         لغو / رد پیشنهاد
       </button>

@@ -215,7 +215,7 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
     cursor: not-allowed;
 }
 .btn-new--buy {
-    background-color: #1E3A8A; /* navy */
+    background-color: #071A33; /* navy */
     color: white;
 }
 .btn-new--buy:not(.is-disabled):hover {
@@ -224,7 +224,7 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
 .btn-new--swap {
     background-color: transparent;
     border: 2px solid #FBBF24; /* yellow */
-    color: #1E3A8A; /* navy */
+    color: #071A33; /* navy */
 }
 .btn-new--swap:not(.is-disabled):hover {
     background-color: rgba(251, 191, 36, 0.1);
@@ -234,6 +234,7 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
 }
 .listing-card__cta-flex {
     display: flex;
+    flex-direction: column;
     gap: 8px;
 }
 </style>

@@ -17,7 +17,7 @@ render_navbar($user);
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/exchange-flow.css?v=<?= @filemtime(__DIR__ . '/../src/css/exchange-flow.css') ?: time() ?>">
 
 <div class="ex-page">
-  <div class="ex-container">
+  <div class="ex-container" style="width: 65%;">
 
     <div class="ex-hero">
       <div class="ex-hero__icon ex-hero__icon--send">
@@ -55,11 +55,11 @@ render_navbar($user);
           <i class="bi bi-chat-dots-fill"></i>
           مشاهده و پیگیری پیشنهاد
         </a>
-        <a href="<?= APP_URL ?>/store-offers/" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/">
+        <a href="<?= APP_URL ?>/store-offers/" style="width: 50%;" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/">
           <i class="bi bi-list-ul"></i>
           مشاهده همه معاوضه‌های من
         </a>
-        <a href="<?= APP_URL ?>/shops" class="ex-btn ex-btn--swap" data-navigate="<?= APP_URL ?>/shops">
+        <a href="<?= APP_URL ?>/shops" style="width: 50%;" class="ex-btn ex-btn--swap" data-navigate="<?= APP_URL ?>/shops">
           <i class="bi bi-arrow-left-right"></i>
           مرور فروشگاه‌های دیگر
         </a>
