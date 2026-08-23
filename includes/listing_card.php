@@ -138,15 +138,16 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
       </div>
     </div>
 
-    
-    <?php if (!empty($l['want_in_return'])): ?>
-      <div class="listing-card__exchange">
+    <div class="listing-card__exchange">
       <div class="listing-card__exchange-heading">نیازمند:</div>
       <div class="listing-card__exchange-items">
-        <i class="bi bi-arrow-left-right"></i><?= h($l['want_in_return']) ?>
+        <?php if (!empty($l['want_in_return'])): ?>
+          <i class="bi bi-arrow-left-right"></i><?= h($l['want_in_return']) ?>
+        <?php else: ?>
+          ...
+        <?php endif; ?>
       </div>
     </div>
-    <?php endif; ?>
 
     <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
       <div class="listing-card__value" style="margin: 6px 16px;">
