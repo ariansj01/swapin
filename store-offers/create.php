@@ -555,9 +555,8 @@ modal?.addEventListener('click', function(e) { if (e.target === modal) modal.cla
     }
   }
 
-  // Start OPEN so users see options on page load
-  dropdown.classList.add('is-open');
-  if (previewWrap) previewWrap.style.display = 'none';
+  // Start CLOSED so it looks like a dropdown, with mini preview visible
+  dropdown.classList.remove('is-open');
   updateMiniPreview();
 
   trigger.addEventListener('click', function(e) {
@@ -567,12 +566,14 @@ modal?.addEventListener('click', function(e) { if (e.target === modal) modal.cla
     setOpen(!dropdown.classList.contains('is-open'));
   });
 
-  // Close dropdown when user clicks a pick item (optional UX: keep open so they can change)
-  // For better UX, keep it open but refresh mini preview
+  // Close dropdown when user clicks a pick item (standard dropdown behavior)
   document.querySelectorAll('.ex-pick').forEach(function(p) {
     p.addEventListener('click', function() {
       // Defer so "is-selected" class is applied first
-      setTimeout(updateMiniPreview, 20);
+      setTimeout(function() {
+        updateMiniPreview();
+        setOpen(false);
+      }, 20);
     });
   });
 

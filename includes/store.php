@@ -21,7 +21,7 @@ function user_provider_type(array $user): string {
 
 function store_type_labels(): array {
     return [
-        'both'     => 'هر دو (آنلاین و حضوری)',
+        'both'     => 'آنلاین و حضوری',
         'online'   => 'آنلاین',
         'physical' => 'حضوری',
     ];

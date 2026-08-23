@@ -55,7 +55,7 @@ $listingMode = trim((string)($l['listing_mode'] ?? ''));
 if ($listingMode === '') {
     $listingMode = 'swap';
 }
-$hasSellCta = in_array($listingMode, ['sell', 'both'], true);
+$hasSellCta = $hasStore && in_array($listingMode, ['sell', 'both'], true);
 $hasSwapCta = in_array($listingMode, ['swap', 'both'], true);
 $isSaved  = isset($l['id']) && in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
@@ -172,19 +172,18 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
             $buyUrl = APP_URL . '/orders/checkout.php?listing_id=' . $l['id'];
             $swapUrl = APP_URL . '/listings/view?id=' . $l['id'];
 
-            $buyBtnDisabled = !$hasSellCta;
             $swapBtnDisabled = !$hasSwapCta;
-
-            $buyToast = $buyBtnDisabled ? 'امکان خرید نقدی برای این کالا وجود ندارد.' : '';
             $swapToast = $swapBtnDisabled ? 'امکان معاوضه برای این کالا وجود ندارد.' : '';
+
+            if ($hasSellCta):
             ?>
-            <a href="<?= !$buyBtnDisabled ? $buyUrl : '#' ?>"
-               class="btn-new btn-new--buy <?= $buyBtnDisabled ? 'is-disabled' : '' ?>"
-               <?= $buyBtnDisabled ? 'data-toast="' . $buyToast . '"' : '' ?>
+            <a href="<?= $buyUrl ?>"
+               class="btn-new btn-new--buy"
                onclick="handleCardClick(event, this)">
                 <i class="bi bi-cart-check" style="color: #FBBF24;"></i>
                 <span>خرید کالا</span>
             </a>
+            <?php endif; ?>
             <a href="<?= !$swapBtnDisabled ? $swapUrl : '#' ?>"
                class="btn-new btn-new--swap <?= $swapBtnDisabled ? 'is-disabled' : '' ?>"
                <?= $swapBtnDisabled ? 'data-toast="' . $swapToast . '"' : '' ?>

@@ -118,7 +118,7 @@ render_navbar($user);
             <option value="physical" <?= $type === 'physical' ? 'selected' : '' ?>>حضوری</option>
           </select>
         </div>
-        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> جستجو</button>
+        <button type="submit" style="width: 25%;" class="btn btn-primary"><i class="bi bi-search"></i> جستجو</button>
       </div>
     </form>
 
@@ -172,9 +172,14 @@ render_navbar($user);
               </div>
             </div>
           </div>
-          <?php if (!empty($store['store_description'])): ?>
-          <p class="shop-card__desc"><?= h(mb_strimwidth($store['store_description'], 0, 100, '…')) ?></p>
-          <?php endif; ?>
+          <p class="shop-card__desc"><?php
+            $desc = trim((string)($store['store_description'] ?? ''));
+            if ($desc !== '') {
+                echo h(mb_strimwidth($desc, 0, 100, '…'));
+            } else {
+                echo '...';
+            }
+            ?></p>
           <div class="shop-card__meta">
             <span><i class="bi bi-box-seam"></i> <?= fmt_num((int)$store['listings_count']) ?> محصول</span>
             <?php if ((float)($store['rating'] ?? 0) > 0): ?>
