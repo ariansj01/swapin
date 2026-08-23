@@ -27,7 +27,11 @@ $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is
 $catId    = $category['id'] ?? null;
 
 // ─── Count ───────────────────────────────────────────────────────────────────
-$whereClauses = [listing_public_sql('l'), 'l.listing_mode != "sell"'];
+$homeExcludeStores = db_has_column('users', 'seller_type')
+    ? '(u.seller_type != "store" AND (u.store_name IS NULL OR u.store_name = ""))'
+    : '(u.store_name IS NULL OR u.store_name = "")';
+
+$whereClauses = [listing_public_sql('l'), 'l.listing_mode != "sell"', $homeExcludeStores];
 $params       = [];
 
 if ($search) {
@@ -71,7 +75,7 @@ if (function_exists('swapin_debug_log')) {
 // #endregion
 
 $totalRow = DB::fetch(
-    "SELECT COUNT(*) AS c FROM listings l JOIN categories c ON c.id = l.category_id $where",
+    "SELECT COUNT(*) AS c FROM listings l JOIN users u ON u.id = l.user_id JOIN categories c ON c.id = l.category_id $where",
     $params
 );
 $total = (int)($totalRow['c'] ?? 0);
@@ -97,6 +101,7 @@ if (!$search && !$catSlug && $page === 1) {
     $premiumWhere = [
         listing_public_sql('l'),
         'l.listing_mode != "sell"',
+        $homeExcludeStores,
         '(l.featured_until > NOW() OR l.bump_until > NOW() OR l.vip_until > NOW())',
     ];
     $premiumOrderBy = '(l.vip_until > NOW()) DESC, (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC, l.id DESC';
@@ -434,7 +439,7 @@ render_navbar($user);
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
         padding: 4px 8px 16px 8px;
-        scrollbar-width: thin;
+        scrollbar-width: none;
       }
       .home-stores-scroll::-webkit-scrollbar { height: 8px; }
       .home-stores-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -452,7 +457,7 @@ render_navbar($user);
       <div class="home-section-heading home-section-heading--large mb-5">
         <h2>فروشگاه‌ها</h2>
         <a href="<?= APP_URL ?>/shops" class="home-section-heading__link">
-          مشاهده همه
+          مشاهده همه فروشگاه ها
           <i class="bi bi-arrow-left" style="font-size:.85rem;margin-right:4px"></i>
         </a>
       </div>
