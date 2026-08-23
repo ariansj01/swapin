@@ -184,54 +184,120 @@ render_navbar($user);
       <div class="ex-card">
         <div class="ex-flex-between" style="align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap">
           <div class="ex-card__label" style="margin-bottom:0"><i class="bi bi-box-seam"></i> کالای شما — انتخاب کنید</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span class="ex-sort-hint" title="برای تغییر ترتیب، آیکون کشیدن را بکشید">
-              <i class="bi bi-grip-vertical"></i> قابل کشیدن
-            </span>
-            <button type="button" class="ex-btn ex-btn--outline ex-btn--sm" id="so-open-quick-listing-2" style="width:auto;padding:6px 12px" onclick="event.stopPropagation()">
-              <i class="bi bi-plus-lg"></i>
-              کالای جدید
-            </button>
-          </div>
+          <button type="button" class="ex-btn ex-btn--outline ex-btn--sm" id="so-open-quick-listing-2" style="width:auto;padding:6px 12px;flex-shrink:0">
+            <i class="bi bi-plus-lg"></i>
+            کالای جدید
+          </button>
         </div>
 
-        <div class="ex-picklist" id="exPicklist">
-          <?php foreach ($myListings as $mlIdx => $ml): ?>
-          <label class="ex-pick<?= (int) $ml['id'] === $pickedId ? ' is-selected' : '' ?><?= ($ml['review_status'] ?? '') === 'offer_only' ? ' is-offer-only' : '' ?>"
-                 data-id="<?= (int) $ml['id'] ?>" draggable="true" data-order="<?= $mlIdx ?>"
+        <style>
+          .so-simple-dd{position:relative;width:100%}
+          .so-simple-dd__trigger{
+            width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+            padding:14px 16px;border:2px solid var(--ex-border,#E5E7EB);
+            border-radius:var(--ex-radius-md,16px);background:#fff;cursor:pointer;
+            font-family:inherit;transition:.18s ease;
+          }
+          .so-simple-dd__trigger:hover{border-color:var(--ex-primary,#1E3A8A)}
+          .so-simple-dd.is-open .so-simple-dd__trigger{border-color:var(--ex-primary,#1E3A8A);border-bottom-right-radius:8px;border-bottom-left-radius:8px}
+          .so-simple-dd__left{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+          .so-simple-dd__thumb{width:36px;height:36px;border-radius:10px;object-fit:cover;background:#F3F4F6;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#9CA3AF;font-size:14px}
+          .so-simple-dd__thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+          .so-simple-dd__text{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;text-align:right}
+          .so-simple-dd__title{font-weight:700;font-size:.95rem;color:var(--ex-text,#111827);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+          .so-simple-dd__placeholder{color:#6B7280;font-weight:500;font-size:.9rem}
+          .so-simple-dd__meta{color:#6B7280;font-size:.75rem;display:flex;align-items:center;gap:8px}
+          .so-simple-dd__chev{color:#6B7280;transition:transform .2s ease;flex-shrink:0}
+          .so-simple-dd.is-open .so-simple-dd__chev{transform:rotate(180deg)}
+          .so-simple-dd__body{
+            position:absolute;top:calc(100% - 4px);right:0;left:0;z-index:50;
+            background:#fff;border:2px solid var(--ex-primary,#1E3A8A);
+            border-top:none;border-bottom-right-radius:var(--ex-radius-md,16px);
+            border-bottom-left-radius:var(--ex-radius-md,16px);
+            max-height:340px;overflow-y:auto;padding:8px;
+            display:none;box-shadow:0 12px 28px rgba(17,24,39,.12);
+          }
+          .so-simple-dd.is-open .so-simple-dd__body{display:block}
+          .so-simple-item{
+            display:flex;align-items:center;gap:12px;padding:10px 10px;
+            border-radius:12px;cursor:pointer;transition:background .15s ease;
+          }
+          .so-simple-item:hover{background:#F5F7FF}
+          .so-simple-item.is-selected{background:#EEF2FF;border:1px solid #C7D2FE}
+          .so-simple-item__thumb{width:48px;height:48px;border-radius:12px;object-fit:cover;background:#F3F4F6;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#9CA3AF;font-size:18px}
+          .so-simple-item__thumb img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+          .so-simple-item__info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;text-align:right}
+          .so-simple-item__title{font-weight:700;font-size:.9rem;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .so-simple-item__meta{display:flex;align-items:center;gap:10px;color:#6B7280;font-size:.78rem}
+          .so-simple-item__price{font-weight:800;color:#1E3A8A;font-size:.85rem}
+          .so-simple-item__check{width:22px;height:22px;border-radius:50%;border:2px solid #D1D5DB;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;color:transparent}
+          .so-simple-item.is-selected .so-simple-item__check{background:#1E3A8A;border-color:#1E3A8A;color:#fff}
+          .so-offer-badge{display:inline-flex;align-items:center;gap:4px;background:#FEF3C7;color:#92400E;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:999px}
+        </style>
+
+        <div class="so-simple-dd" id="soSimpleDd">
+          <button type="button" class="so-simple-dd__trigger" id="soDdTrigger">
+            <div class="so-simple-dd__left">
+              <?php
+                $defaultThumb = '';
+                $defaultTitle = 'کالای خود را از اینجا انتخاب کنید';
+                $defaultMeta = 'کلیک کنید تا لیست باز شود';
+                $foundSel = null;
+                foreach ($myListings as $ml) {
+                    if ((int)$ml['id'] === $pickedId) { $foundSel = $ml; break; }
+                }
+                if ($foundSel) {
+                    $defaultTitle = $foundSel['title'];
+                    $defaultMeta = h($foundSel['cat_name']) . ' • ' . ((float)$foundSel['estimated_value'] > 0 ? fmt_credit((float)$foundSel['estimated_value']) : '—');
+                    $defaultThumb = !empty($foundSel['thumb']) ? (UPLOAD_URL . h($foundSel['thumb'])) : '';
+                }
+              ?>
+              <div class="so-simple-dd__thumb" id="soDdThumb">
+                <?php if ($defaultThumb): ?><img src="<?= $defaultThumb ?>" alt=""><?php else: ?><i class="bi bi-image"></i><?php endif; ?>
+              </div>
+              <div class="so-simple-dd__text">
+                <div class="so-simple-dd__title" id="soDdTitle"><?= $foundSel ? h($defaultTitle) : $defaultTitle ?></div>
+                <div class="so-simple-dd__meta" id="soDdMeta"><?= $foundSel ? $defaultMeta : $defaultMeta ?></div>
+              </div>
+            </div>
+            <div class="so-simple-dd__chev">
+              <i class="bi bi-chevron-down" style="font-size:1.1rem"></i>
+            </div>
+          </button>
+
+          <div class="so-simple-dd__body" id="soDdBody">
+            <?php foreach ($myListings as $ml): ?>
+            <div class="so-simple-item<?= (int)$ml['id'] === $pickedId ? ' is-selected' : '' ?>"
+                 data-id="<?= (int)$ml['id'] ?>"
                  data-title="<?= h($ml['title']) ?>"
-                 data-price="<?= (float) $ml['estimated_value'] > 0 ? fmt_credit((float) $ml['estimated_value']) : '' ?>"
-                 data-thumb="<?= !empty($ml['thumb']) ? (UPLOAD_URL . h($ml['thumb'])) : '' ?>"
-                 data-offer-only="<?= ($ml['review_status'] ?? '') === 'offer_only' ? '1' : '0' ?>">
-            <div class="ex-pick__drag" draggable="false" title="کشیدن برای جابجایی">
-              <i class="bi bi-grip-vertical"></i>
-            </div>
-            <input type="radio" class="ex-pick__radio" name="offer_listing_radio" value="<?= (int) $ml['id'] ?>" <?= (int) $ml['id'] === $pickedId ? 'checked' : '' ?>>
-            <div class="ex-pick__check"></div>
-            <?php if ($ml['thumb']): ?>
-            <img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt="" class="ex-pick__thumb" draggable="false">
-            <?php else: ?>
-            <div class="ex-pick__thumb ex-pick__thumb--empty"><i class="bi bi-image"></i></div>
-            <?php endif; ?>
-            <div class="ex-pick__info">
-              <div class="ex-pick__title">
-                <?= h($ml['title']) ?>
-                <?php if (($ml['review_status'] ?? '') === 'offer_only'): ?>
-                <span class="ex-offer-badge">
-                  <i class="bi bi-lock-fill"></i> فقط برای این پیشنهاد
-                </span>
-                <?php endif; ?>
+                 data-cat="<?= h($ml['cat_name']) ?>"
+                 data-price="<?= (float)$ml['estimated_value'] > 0 ? fmt_credit((float)$ml['estimated_value']) : '' ?>"
+                 data-thumb="<?= !empty($ml['thumb']) ? (UPLOAD_URL . h($ml['thumb'])) : '' ?>">
+              <div class="so-simple-item__check">
+                <i class="bi bi-check-lg" style="font-size:14px;font-weight:900"></i>
               </div>
-              <div class="ex-pick__meta">
-                <span><?= h($ml['cat_name']) ?></span>
-                <span><?= condition_label($ml['condition']) ?></span>
+              <div class="so-simple-item__info">
+                <div class="so-simple-item__title">
+                  <?= h($ml['title']) ?>
+                  <?php if (($ml['review_status'] ?? '') === 'offer_only'): ?>
+                  <span class="so-offer-badge" style="margin-right:6px">
+                    <i class="bi bi-lock-fill"></i> فقط برای این پیشنهاد
+                  </span>
+                  <?php endif; ?>
+                </div>
+                <div class="so-simple-item__meta">
+                  <span><i class="bi bi-tag-fill" style="font-size:11px;margin-left:3px"></i><?= h($ml['cat_name']) ?></span>
+                  <?php if ((float)$ml['estimated_value'] > 0): ?>
+                  <span class="so-simple-item__price"><?= fmt_credit((float)$ml['estimated_value']) ?></span>
+                  <?php endif; ?>
+                </div>
               </div>
-              <?php if ((float) $ml['estimated_value'] > 0): ?>
-              <div class="ex-pick__price"><?= fmt_credit((float) $ml['estimated_value']) ?></div>
-              <?php endif; ?>
+              <div class="so-simple-item__thumb">
+                <?php if (!empty($ml['thumb'])): ?><img src="<?= UPLOAD_URL . h($ml['thumb']) ?>" alt=""><?php else: ?><i class="bi bi-image"></i><?php endif; ?>
+              </div>
             </div>
-          </label>
-          <?php endforeach; ?>
+            <?php endforeach; ?>
+          </div>
         </div>
       </div>
 
@@ -467,16 +533,56 @@ document.querySelectorAll('[data-navigate]').forEach(function (el) {
   });
 });
 
-document.querySelectorAll('.ex-pick').forEach(function(el) {
-  el.addEventListener('click', function() {
-    var id = el.getAttribute('data-id');
-    document.querySelectorAll('.ex-pick').forEach(function(x) { x.classList.remove('is-selected'); });
-    el.classList.add('is-selected');
-    document.getElementById('pickedListingId').value = id;
-    var radio = el.querySelector('input[type=radio]');
-    if (radio) radio.checked = true;
+(function() {
+  var dd = document.getElementById('soSimpleDd');
+  var trigger = document.getElementById('soDdTrigger');
+  var body = document.getElementById('soDdBody');
+  var ddTitle = document.getElementById('soDdTitle');
+  var ddMeta = document.getElementById('soDdMeta');
+  var ddThumb = document.getElementById('soDdThumb');
+  var pickedInput = document.getElementById('pickedListingId');
+  if (!dd || !trigger) return;
+
+  function setOpen(open) {
+    if (open) dd.classList.add('is-open');
+    else dd.classList.remove('is-open');
+  }
+
+  trigger.addEventListener('click', function(e) {
+    e.preventDefault();
+    setOpen(!dd.classList.contains('is-open'));
   });
-});
+
+  document.addEventListener('click', function(e) {
+    if (!dd.contains(e.target)) setOpen(false);
+  });
+
+  document.querySelectorAll('.so-simple-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      var id = item.getAttribute('data-id');
+      document.querySelectorAll('.so-simple-item').forEach(function(x) { x.classList.remove('is-selected'); });
+      item.classList.add('is-selected');
+      if (pickedInput) pickedInput.value = id;
+
+      var title = item.getAttribute('data-title') || '';
+      var cat = item.getAttribute('data-cat') || '';
+      var price = item.getAttribute('data-price') || '';
+      var thumb = item.getAttribute('data-thumb') || '';
+
+      if (ddTitle) ddTitle.textContent = title;
+      if (ddMeta) ddMeta.textContent = cat + (price ? ' • ' + price : '');
+      if (ddThumb) {
+        if (thumb) {
+          ddThumb.innerHTML = '<img src="' + thumb + '" alt="">';
+        } else {
+          ddThumb.innerHTML = '<i class="bi bi-image"></i>';
+        }
+      }
+
+      setTimeout(function() { setOpen(false); }, 120);
+    });
+  });
+})();
 
 var modal = document.getElementById('so-quick-modal');
 var openBtns = [document.getElementById('so-open-quick-listing'), document.getElementById('so-open-quick-listing-2'), document.getElementById('so-open-quick-listing-empty')];
@@ -508,84 +614,6 @@ cashInput?.addEventListener('input', function() {
   var val = this.value.replace(/[^\d]/g, '');
   cashDiffInput.value = val;
 });
-
-/* ── Drag & Drop Sorting for Pick List ─────────────────────────────── */
-(function() {
-  var list = document.getElementById('exPicklist');
-  if (!list) return;
-  var items = list.querySelectorAll('.ex-pick');
-  var dragSrcEl = null;
-
-  items.forEach(function(item) {
-    item.addEventListener('dragstart', handleDragStart);
-    item.addEventListener('dragend', handleDragEnd);
-    item.addEventListener('dragover', handleDragOver);
-    item.addEventListener('dragleave', handleDragLeave);
-    item.addEventListener('drop', handleDrop);
-  });
-
-  function handleDragStart(e) {
-    dragSrcEl = this;
-    this.classList.add('dragging');
-    try {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', this.getAttribute('data-id'));
-    } catch (_) {}
-  }
-
-  function handleDragEnd() {
-    this.classList.remove('dragging');
-    list.querySelectorAll('.ex-pick').forEach(function(el) {
-      el.classList.remove('drag-over-before', 'drag-over-after');
-    });
-    dragSrcEl = null;
-  }
-
-  function handleDragOver(e) {
-    if (e.preventDefault) e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (this === dragSrcEl) return false;
-
-    var rect = this.getBoundingClientRect();
-    var offset = e.clientY - rect.top;
-    var before = offset < (rect.height / 2);
-
-    list.querySelectorAll('.ex-pick').forEach(function(el) {
-      if (el !== this) {
-        el.classList.remove('drag-over-before', 'drag-over-after');
-      }
-    }.bind(this));
-
-    if (before) {
-      this.classList.add('drag-over-before');
-      this.classList.remove('drag-over-after');
-    } else {
-      this.classList.add('drag-over-after');
-      this.classList.remove('drag-over-before');
-    }
-    return false;
-  }
-
-  function handleDragLeave() {
-    this.classList.remove('drag-over-before', 'drag-over-after');
-  }
-
-  function handleDrop(e) {
-    if (e.preventDefault) e.preventDefault();
-    if (e.stopPropagation) e.stopPropagation();
-    if (dragSrcEl === this) return;
-
-    var before = this.classList.contains('drag-over-before');
-    this.classList.remove('drag-over-before', 'drag-over-after');
-
-    if (before) {
-      this.parentNode.insertBefore(dragSrcEl, this);
-    } else {
-      this.parentNode.insertBefore(dragSrcEl, this.nextSibling);
-    }
-    return false;
-  }
-})();
 </script>
 
 <?php render_footer(); ?>
