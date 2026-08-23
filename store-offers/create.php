@@ -181,7 +181,7 @@ render_navbar($user);
       <input type="hidden" name="cash_difference" id="cashDiffInput" value="<?= h((string) ($_POST['cash_difference'] ?? '')) ?>">
 
       <?php if ($myListings): ?>
-      <div class="ex-card">
+      <div class="ex-card" style="overflow: visible;">
         <div class="ex-flex-between" style="align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap">
           <div class="ex-card__label" style="margin-bottom:0"><i class="bi bi-box-seam"></i> کالای شما — انتخاب کنید</div>
           <button type="button" class="ex-btn ex-btn--outline ex-btn--sm" id="so-open-quick-listing-2" style="width:auto;padding:6px 12px;flex-shrink:0">

@@ -115,6 +115,39 @@ if (!$search && !$catSlug && $page === 1) {
 
 $cities = iran_cities();
 
+// ─── Featured Stores (homepage, page 1, no filters) ────────────────────────
+$featuredStores = [];
+if (!$search && !$catSlug && !$city && $page === 1) {
+    $hSellerType = db_has_column('users', 'seller_type');
+    $hStoreCity  = db_has_column('users', 'store_city');
+    $hStoreType  = db_has_column('users', 'store_type');
+
+    $hWhereParts = ['is_active = 1'];
+    if ($hSellerType) {
+        $hWhereParts[] = '(seller_type = "store" OR (store_name IS NOT NULL AND store_name != ""))';
+    } else {
+        $hWhereParts[] = '(store_name IS NOT NULL AND store_name != "")';
+    }
+    $hWhereParts[] = 'store_slug IS NOT NULL AND store_slug != ""';
+    $hWhere = 'WHERE ' . implode(' AND ', $hWhereParts);
+
+    $hCols = "id, name, store_name, store_slug, store_description, store_banner, avatar, rating, created_at";
+    if ($hStoreType) $hCols .= ", store_type";
+    if ($hStoreCity) $hCols .= ", store_city, city";
+    else $hCols .= ", city";
+
+    $featuredStores = DB::fetchAll(
+        "SELECT {$hCols},
+                (SELECT COUNT(*) FROM listings WHERE user_id = users.id AND status = 'active' AND review_status = 'approved') AS listings_count
+         FROM users
+         {$hWhere}
+         ORDER BY listings_count DESC, rating DESC, created_at DESC
+         LIMIT 8"
+    );
+    $hStoresTypeCol = $hStoreType;
+    $hStoresCityCol = $hStoreCity;
+}
+
 $homeMetaTitle = swapin_content_get('home_meta_title');
 $homeMetaDesc  = swapin_content_get('home_meta_desc');
 
@@ -388,6 +421,79 @@ render_navbar($user);
       </div>
       <?php endif; ?>
     </section>
+
+    <!-- Stores Section -->
+    <?php if (!empty($featuredStores)): ?>
+    <link rel="stylesheet" href="<?= APP_URL ?>/src/css/shops.css?v=<?= @filemtime(__DIR__ . '/src/css/shops.css') ?: time() ?>">
+    <section class="home-listings-section" aria-label="فروشگاه‌ها" style="margin-top:48px">
+      <div class="home-section-heading home-section-heading--large mb-5">
+        <h2>فروشگاه‌ها</h2>
+        <a href="<?= APP_URL ?>/shops" class="home-section-heading__link">
+          مشاهده همه
+          <i class="bi bi-arrow-left" style="font-size:.85rem;margin-right:4px"></i>
+        </a>
+      </div>
+      <div class="shops-grid">
+        <?php foreach ($featuredStores as $store):
+          $name = $store['store_name'] ?: $store['name'];
+          $slug = $store['store_slug'];
+          $storeCity = $hStoresCityCol ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
+          $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
+          $shopUrl = APP_URL . '/shop/' . h($slug);
+          $storeTypeValue = $hStoresTypeCol ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
+          $storeTypeLabels = store_type_labels();
+          $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
+          $storeTypeBadgeClass = match($storeTypeValue) {
+              'online'   => 'badge badge-info',
+              'physical' => 'badge badge-warning',
+              default    => 'badge badge-secondary',
+          };
+          $storeTypeIcon = match($storeTypeValue) {
+              'online'   => 'bi-globe2',
+              'physical' => 'bi-building-check',
+              default    => 'bi-shop',
+          };
+        ?>
+        <article class="shop-card card">
+          <a href="<?= $shopUrl ?>" class="shop-card__banner-wrap">
+            <img src="<?= h($bannerUrl) ?>" alt="<?= h($name) ?>" class="shop-card__banner" loading="lazy">
+          </a>
+          <div class="shop-card__body">
+            <div class="shop-card__profile">
+              <?= avatar_html($store['avatar'] ?? null, $name, 'md') ?>
+              <div>
+                <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
+                <div class="shop-card__tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                  <?php if ($storeTypeLabel !== ''): ?>
+                  <span class="<?= $storeTypeBadgeClass ?>"><i class="bi <?= $storeTypeIcon ?>"></i> <?= h($storeTypeLabel) ?></span>
+                  <?php endif; ?>
+                  <?php if ($storeCity): ?>
+                  <span class="shop-card__city" style="display:inline-flex;align-items:center;gap:4px"><i class="bi bi-geo-alt"></i> <?= h($storeCity) ?></span>
+                  <?php endif; ?>
+                </div>
+              </div>
+            </div>
+            <p class="shop-card__desc"><?php
+              $desc = trim((string)($store['store_description'] ?? ''));
+              if ($desc !== '') {
+                  echo h(mb_strimwidth($desc, 0, 100, '…'));
+              } else {
+                  echo '...';
+              }
+              ?></p>
+            <div class="shop-card__meta">
+              <span><i class="bi bi-box-seam"></i> <?= fmt_num((int)$store['listings_count']) ?> محصول</span>
+              <?php if ((float)($store['rating'] ?? 0) > 0): ?>
+              <span><i class="bi bi-star-fill"></i> <?= number_format((float)$store['rating'], 1) ?></span>
+              <?php endif; ?>
+            </div>
+            <a href="<?= $shopUrl ?>" class="btn btn-primary btn-sm w-100">مشاهده فروشگاه</a>
+          </div>
+        </article>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
 
   </div>
 </main>
