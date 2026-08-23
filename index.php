@@ -425,6 +425,29 @@ render_navbar($user);
     <!-- Stores Section -->
     <?php if (!empty($featuredStores)): ?>
     <link rel="stylesheet" href="<?= APP_URL ?>/src/css/shops.css?v=<?= @filemtime(__DIR__ . '/src/css/shops.css') ?: time() ?>">
+    <style>
+      .home-stores-scroll {
+        display: flex;
+        gap: 1.25rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px 8px 16px 8px;
+        scrollbar-width: thin;
+      }
+      .home-stores-scroll::-webkit-scrollbar { height: 8px; }
+      .home-stores-scroll::-webkit-scrollbar-track { background: transparent; }
+      .home-stores-scroll::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
+      .home-stores-scroll::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+      .home-stores-card {
+        flex: 0 0 auto;
+        width: 320px;
+      }
+      @media (max-width: 768px) {
+        .home-stores-card { width: calc(100% - 48px); }
+      }
+    </style>
     <section class="home-listings-section" aria-label="فروشگاه‌ها" style="margin-top:48px">
       <div class="home-section-heading home-section-heading--large mb-5">
         <h2>فروشگاه‌ها</h2>
@@ -433,64 +456,76 @@ render_navbar($user);
           <i class="bi bi-arrow-left" style="font-size:.85rem;margin-right:4px"></i>
         </a>
       </div>
-      <div class="shops-grid">
-        <?php foreach ($featuredStores as $store):
-          $name = $store['store_name'] ?: $store['name'];
-          $slug = $store['store_slug'];
-          $storeCity = $hStoresCityCol ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
-          $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
-          $shopUrl = APP_URL . '/shop/' . h($slug);
-          $storeTypeValue = $hStoresTypeCol ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
-          $storeTypeLabels = store_type_labels();
-          $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
-          $storeTypeBadgeClass = match($storeTypeValue) {
-              'online'   => 'badge badge-info',
-              'physical' => 'badge badge-warning',
-              default    => 'badge badge-secondary',
-          };
-          $storeTypeIcon = match($storeTypeValue) {
-              'online'   => 'bi-globe2',
-              'physical' => 'bi-building-check',
-              default    => 'bi-shop',
-          };
-        ?>
-        <article class="shop-card card">
-          <a href="<?= $shopUrl ?>" class="shop-card__banner-wrap">
-            <img src="<?= h($bannerUrl) ?>" alt="<?= h($name) ?>" class="shop-card__banner" loading="lazy">
-          </a>
-          <div class="shop-card__body">
-            <div class="shop-card__profile">
-              <?= avatar_html($store['avatar'] ?? null, $name, 'md') ?>
-              <div>
-                <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
-                <div class="shop-card__tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-                  <?php if ($storeTypeLabel !== ''): ?>
-                  <span class="<?= $storeTypeBadgeClass ?>"><i class="bi <?= $storeTypeIcon ?>"></i> <?= h($storeTypeLabel) ?></span>
-                  <?php endif; ?>
-                  <?php if ($storeCity): ?>
-                  <span class="shop-card__city" style="display:inline-flex;align-items:center;gap:4px"><i class="bi bi-geo-alt"></i> <?= h($storeCity) ?></span>
-                  <?php endif; ?>
+      <div class="listings-rows-container">
+        <div class="listings-row-wrapper">
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="home-stores-row" aria-label="فروشگاه بعدی">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <div class="home-stores-scroll" id="home-stores-row">
+            <?php foreach ($featuredStores as $store):
+              $name = $store['store_name'] ?: $store['name'];
+              $slug = $store['store_slug'];
+              $storeCity = $hStoresCityCol ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
+              $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
+              $shopUrl = APP_URL . '/shop/' . h($slug);
+              $storeTypeValue = $hStoresTypeCol ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
+              $storeTypeLabels = store_type_labels();
+              $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
+              $storeTypeBadgeClass = match($storeTypeValue) {
+                  'online'   => 'badge badge-info',
+                  'physical' => 'badge badge-warning',
+                  default    => 'badge badge-secondary',
+              };
+              $storeTypeIcon = match($storeTypeValue) {
+                  'online'   => 'bi-globe2',
+                  'physical' => 'bi-building-check',
+                  default    => 'bi-shop',
+              };
+            ?>
+            <div class="home-stores-card">
+              <article class="shop-card card">
+                <a href="<?= $shopUrl ?>" class="shop-card__banner-wrap">
+                  <img src="<?= h($bannerUrl) ?>" alt="<?= h($name) ?>" class="shop-card__banner" loading="lazy">
+                </a>
+                <div class="shop-card__body">
+                  <div class="shop-card__profile">
+                    <?= avatar_html($store['avatar'] ?? null, $name, 'md') ?>
+                    <div>
+                      <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
+                      <div class="shop-card__tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                        <?php if ($storeTypeLabel !== ''): ?>
+                        <span class="<?= $storeTypeBadgeClass ?>"><i class="bi <?= $storeTypeIcon ?>"></i> <?= h($storeTypeLabel) ?></span>
+                        <?php endif; ?>
+                        <?php if ($storeCity): ?>
+                        <span class="shop-card__city" style="display:inline-flex;align-items:center;gap:4px"><i class="bi bi-geo-alt"></i> <?= h($storeCity) ?></span>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="shop-card__desc"><?php
+                    $desc = trim((string)($store['store_description'] ?? ''));
+                    if ($desc !== '') {
+                        echo h(mb_strimwidth($desc, 0, 100, '…'));
+                    } else {
+                        echo '...';
+                    }
+                    ?></p>
+                  <div class="shop-card__meta">
+                    <span><i class="bi bi-box-seam"></i> <?= fmt_num((int)$store['listings_count']) ?> محصول</span>
+                    <?php if ((float)($store['rating'] ?? 0) > 0): ?>
+                    <span><i class="bi bi-star-fill"></i> <?= number_format((float)$store['rating'], 1) ?></span>
+                    <?php endif; ?>
+                  </div>
+                  <a href="<?= $shopUrl ?>" class="btn btn-primary btn-sm w-100">مشاهده فروشگاه</a>
                 </div>
-              </div>
+              </article>
             </div>
-            <p class="shop-card__desc"><?php
-              $desc = trim((string)($store['store_description'] ?? ''));
-              if ($desc !== '') {
-                  echo h(mb_strimwidth($desc, 0, 100, '…'));
-              } else {
-                  echo '...';
-              }
-              ?></p>
-            <div class="shop-card__meta">
-              <span><i class="bi bi-box-seam"></i> <?= fmt_num((int)$store['listings_count']) ?> محصول</span>
-              <?php if ((float)($store['rating'] ?? 0) > 0): ?>
-              <span><i class="bi bi-star-fill"></i> <?= number_format((float)$store['rating'], 1) ?></span>
-              <?php endif; ?>
-            </div>
-            <a href="<?= $shopUrl ?>" class="btn btn-primary btn-sm w-100">مشاهده فروشگاه</a>
+            <?php endforeach; ?>
           </div>
-        </article>
-        <?php endforeach; ?>
+          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="home-stores-row" aria-label="فروشگاه قبلی">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+        </div>
       </div>
     </section>
     <?php endif; ?>

@@ -1047,9 +1047,9 @@ function initListingsSliderArrows() {
       const row = targetId ? document.getElementById(targetId) : null;
       if (!row) return;
 
-      const firstCard = row.querySelector('.listings-scroll-card');
+      const firstCard = row.querySelector('.listings-scroll-card') || row.querySelector('.home-stores-card');
       const scrollStep = firstCard
-        ? firstCard.getBoundingClientRect().width + 16
+        ? firstCard.getBoundingClientRect().width + 20
         : Math.max(row.clientWidth * 0.75, 280);
       const direction = arrow.classList.contains('listings-slider-arrow--prev') ? -1 : 1;
 
