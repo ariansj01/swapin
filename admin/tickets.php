@@ -56,12 +56,13 @@ $errorDetail  = null;
 
 if ($tab === 'tickets' && $id) {
     $ticketDetail = DB::fetch(
-        'SELECT t.*, u.name AS user_name, u.email AS user_email FROM support_tickets t JOIN users u ON u.id = t.user_id WHERE t.id = ?',
+        'SELECT t.*, COALESCE(u.name, "") AS user_name, COALESCE(u.email, "") AS user_email
+         FROM support_tickets t LEFT JOIN users u ON u.id = t.user_id WHERE t.id = ?',
         [$id]
     );
     if ($ticketDetail) {
         $ticketMsgs = DB::fetchAll(
-            'SELECT m.*, u.name AS sender_name FROM support_messages m LEFT JOIN users u ON u.id = m.sender_id WHERE m.ticket_id = ? ORDER BY m.created_at ASC',
+            'SELECT m.*, COALESCE(u.name, "") AS sender_name FROM support_messages m LEFT JOIN users u ON u.id = m.sender_id WHERE m.ticket_id = ? ORDER BY m.created_at ASC',
             [$id]
         );
     }
@@ -75,12 +76,12 @@ if ($tab === 'errors' && $id) {
 }
 
 $tickets = DB::fetchAll(
-    'SELECT t.*, u.name AS user_name FROM support_tickets t JOIN users u ON u.id = t.user_id
+    'SELECT t.*, COALESCE(u.name, "") AS user_name FROM support_tickets t LEFT JOIN users u ON u.id = t.user_id
      ORDER BY FIELD(t.status,"open","answered","closed"), t.updated_at DESC LIMIT 100'
 );
 
 $errors = DB::fetchAll(
-    'SELECT e.*, u.name AS user_name FROM error_reports e LEFT JOIN users u ON u.id = e.user_id
+    'SELECT e.*, COALESCE(u.name, "") AS user_name FROM error_reports e LEFT JOIN users u ON u.id = e.user_id
      ORDER BY FIELD(e.status,"new","reviewing","resolved","dismissed"), e.created_at DESC LIMIT 100'
 );
 
@@ -104,21 +105,21 @@ ob_start();
 <?php if ($ticketDetail): ?>
 <div class="admin-detail-grid mb-6">
   <div class="card">
-    <div class="card-header"><h3 style="margin:0">تیکت #<?= $ticketDetail['id'] ?> — <?= h($ticketDetail['subject']) ?></h3></div>
+    <div class="card-header"><h3 style="margin:0">تیکت #<?= $ticketDetail['id'] ?> — <?= h($ticketDetail['subject'] ?? '') ?></h3></div>
     <div class="card-body fs-sm" style="display:grid;gap:var(--sp-2)">
-      <div><strong>کاربر:</strong> <?= h($ticketDetail['user_name']) ?> (<?= h($ticketDetail['user_email']) ?>)</div>
-      <div><strong>دسته:</strong> <?= h($catLabels[$ticketDetail['category']] ?? $ticketDetail['category']) ?></div>
-      <div><strong>وضعیت:</strong> <?= h($statusLabels[$ticketDetail['status']] ?? $ticketDetail['status']) ?></div>
-      <div><strong>ثبت:</strong> <?= timeago($ticketDetail['created_at']) ?></div>
+      <div><strong>کاربر:</strong> <?= h($ticketDetail['user_name'] ?? '') ?> (<?= h($ticketDetail['user_email'] ?? '') ?>)</div>
+      <div><strong>دسته:</strong> <?= h($catLabels[$ticketDetail['category'] ?? ''] ?? $ticketDetail['category'] ?? '') ?></div>
+      <div><strong>وضعیت:</strong> <?= h($statusLabels[$ticketDetail['status'] ?? ''] ?? $ticketDetail['status'] ?? '') ?></div>
+      <div><strong>ثبت:</strong> <?= timeago($ticketDetail['created_at'] ?? '') ?></div>
     </div>
     <div class="card-body support-thread" style="border-top:1px solid var(--border)">
       <?php foreach ($ticketMsgs as $m): ?>
       <div class="support-msg support-msg--<?= $m['sender_type'] ?>">
         <div class="support-msg__head">
-          <strong><?= $m['sender_type'] === 'admin' ? 'پشتیبانی' : h($m['sender_name']) ?></strong>
-          <span class="fs-xs"><?= timeago($m['created_at']) ?></span>
+          <strong><?= $m['sender_type'] === 'admin' ? 'پشتیبانی' : h($m['sender_name'] ?? '') ?></strong>
+          <span class="fs-xs"><?= timeago($m['created_at'] ?? '') ?></span>
         </div>
-        <div class="support-msg__body"><?= nl2br(h($m['body'])) ?></div>
+        <div class="support-msg__body"><?= nl2br(h($m['body'] ?? '')) ?></div>
       </div>
       <?php endforeach; ?>
     </div>

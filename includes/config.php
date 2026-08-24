@@ -1582,8 +1582,8 @@ function normalize_digits(string $val): string {
     ]);
 }
 
-function h(string $val): string {
-    return htmlspecialchars($val, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+function h(?string $val): string {
+    return htmlspecialchars((string)$val ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 function paginate(int $total, int $perPage, int $page): array {
