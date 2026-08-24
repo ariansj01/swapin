@@ -575,11 +575,7 @@ function render_footer(): void {
     </dl>
 
     <div class="site-footer__main">
-      <div class="site-footer__col site-footer__col--brand">
-        <a href="{$url}/" class="site-footer__brand">
-          <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
-        </a>
-        <p class="site-footer__tagline">{$tagline}</p>
+      <div class="site-footer__col">
         <h3 class="site-footer__heading">راه های ارتباطی</h3>
         <ul class="site-footer__contact-list">
           <li>
@@ -601,36 +597,47 @@ function render_footer(): void {
           <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
           <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
         </div>
-        <div class="site-footer__trust" style="margin-top:1.5rem">
+      </div>
+
+      <div class="site-footer__col">
+        <h3 class="site-footer__heading">نمادهای اعتماد</h3>
+        <div class="site-footer__trust">
           <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
         </div>
       </div>
 
-      <div class="site-footer__col">
-        <h3 class="site-footer__heading">فروشگاه</h3>
-        <ul class="site-footer__links">
-          <li><a href="{$url}/store/request">ثبت فروشگاه</a></li>
-          <li><a href="{$url}/auth/store-login">پنل فروشگاه</a></li>
-          <li><a href="{$url}/shops">لیست فروشگاه‌ها</a></li>
-        </ul>
+      <div class="site-footer__col site-footer__col--links-grid">
+        <div class="footer-links-group">
+          <h3 class="site-footer__heading">فروشگاه</h3>
+          <ul class="site-footer__links">
+            <li><a href="{$url}/store/request">ثبت فروشگاه</a></li>
+            <li><a href="{$url}/auth/store-login">پنل فروشگاه</a></li>
+            <li><a href="{$url}/shops">لیست فروشگاه‌ها</a></li>
+          </ul>
+        </div>
+        <div class="footer-links-group">
+          <h3 class="site-footer__heading">راهنما و قوانین</h3>
+          <ul class="site-footer__links">
+            <li><a href="{$url}/faq">سوالات</a></li>
+            <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
+            <li><a href="{$url}/privacy">حریم خصوصی</a></li>
+            <li><a href="{$url}/terms">قوانین و مقررات</a></li>
+          </ul>
+        </div>
+        <div class="footer-links-group">
+          <h3 class="site-footer__heading">سواپین</h3>
+          <ul class="site-footer__links">
+            <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
+            <li><a href="{$url}/blog">بلاگ سواپین</a></li>
+          </ul>
+        </div>
       </div>
 
-      <div class="site-footer__col">
-        <h3 class="site-footer__heading">راهنما و قوانین</h3>
-        <ul class="site-footer__links">
-          <li><a href="{$url}/faq">سوالات</a></li>
-          <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
-          <li><a href="{$url}/privacy">حریم خصوصی</a></li>
-          <li><a href="{$url}/terms">قوانین و مقررات</a></li>
-        </ul>
-      </div>
-
-      <div class="site-footer__col">
-        <h3 class="site-footer__heading">سواپین</h3>
-        <ul class="site-footer__links">
-          <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
-          <li><a href="{$url}/blog">بلاگ سواپین</a></li>
-        </ul>
+      <div class="site-footer__col site-footer__col--brand">
+        <a href="{$url}/" class="site-footer__brand">
+          <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
+        </a>
+        <p class="site-footer__tagline">{$tagline}</p>
       </div>
     </div>
 
