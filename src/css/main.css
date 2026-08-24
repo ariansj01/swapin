@@ -4030,7 +4030,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .site-footer__main {
   display: grid;
-  grid-template-columns: 1.1fr 1fr 1fr 1.35fr;
+  grid-template-columns: 1.1fr 1fr 1.5fr 1fr;
   gap: 0;
   padding: 15px var(--sp-6);
   direction: ltr;
