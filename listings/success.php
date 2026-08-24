@@ -15,9 +15,9 @@ render_navbar($user);
       <div class="success-icon">
         <i class="bi bi-check-lg"></i>
       </div>
-      <h1 class="success-title">آگهی شما با موفقیت منتشر شد 🎉</h1>
+      <h1 class="success-title">آگهی شما با موفقیت ثبت شد 🎉</h1>
       <p class="success-text">
-        آگهی شما اکنون در سواَپین منتشر شده است و سایر کاربران می‌توانند آن را مشاهده و برای معاوضه پیشنهاد ارسال کنند.
+        آگهی شما در صف بررسی قرار گرفت. پس از تأیید تیم پشتیبانی سواپین، در سایت منتشر شده و کاربران می‌توانند آن را مشاهده و برای معاوضه پیشنهاد ارسال کنند.
       </p>
       <div class="success-buttons">
         <?php if ($listingId): ?>
