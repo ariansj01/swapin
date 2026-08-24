@@ -1393,6 +1393,13 @@ function require_auth(): array {
     return $user;
 }
 
+function require_complete_profile(array $user, ?string $redirectBack = null): void {
+    if (user_profile_is_complete($user)) return;
+    $redirect = $redirectBack ?? urlencode($_SERVER['REQUEST_URI'] ?? '');
+    header('Location: ' . APP_URL . '/profile/edit?redirect=' . $redirect);
+    exit;
+}
+
 function login_user(int $uid): void {
     session_regenerate_id(true);
     $_SESSION['user_id'] = $uid;

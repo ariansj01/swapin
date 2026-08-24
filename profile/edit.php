@@ -7,6 +7,15 @@ $user   = require_auth();
 $errors = [];
 $success = '';
 $showOtpForm = false;
+$redirectTo = clean($_GET['redirect'] ?? $_POST['redirect'] ?? '');
+$safeRedirectUrl = '';
+if ($redirectTo !== '' && filter_var($redirectTo, FILTER_VALIDATE_URL) === false) {
+    $candidate = APP_URL . '/' . ltrim($redirectTo, '/');
+    if (str_starts_with($candidate, APP_URL)) $safeRedirectUrl = $candidate;
+}
+if (!$safeRedirectUrl && $redirectTo !== '' && filter_var($redirectTo, FILTER_VALIDATE_URL)) {
+    if (str_starts_with($redirectTo, APP_URL)) $safeRedirectUrl = $redirectTo;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
@@ -71,11 +80,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'city' => $city ?: null,
                 'bio'  => $bio ?: null,
             ], 'id = ?', [$user['id']]);
-            $success = 'پروفایل به‌روزرسانی شد.';
             $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$user['id']]);
             if (user_profile_is_complete($user)) {
                 dismiss_profile_completion_notifications((int) $user['id']);
             }
+            if ($safeRedirectUrl !== '' && user_profile_is_complete($user)) {
+                header('Location: ' . $safeRedirectUrl);
+                exit;
+            }
+            $success = 'پروفایل به‌روزرسانی شد.';
         }
     }
 
@@ -227,6 +240,7 @@ render_user_panel_open($user, 'settings');
           <form method="POST">
           <?= csrf_field() ?>
             <input type="hidden" name="action" value="profile">
+            <?php if ($safeRedirectUrl !== ''): ?><input type="hidden" name="redirect" value="<?= h($redirectTo) ?>"><?php endif; ?>
             <div class="form-group">
               <label class="form-label">نام کامل</label>
               <input type="text" name="name" class="form-control <?= isset($errors['name']) ? 'is-invalid' : '' ?>"

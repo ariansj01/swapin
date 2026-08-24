@@ -359,25 +359,20 @@ render_navbar($user);
             <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این بخش اختیاری است.</p>
           </div>
 
+          <?php if (is_store_seller($user)): ?>
           <div class="wizard-form-group" style="margin-top: calc(var(--wizard-gap) * 2)">
             <label class="wizard-form-label" for="step6-sell-price-input">
-              قیمت فروش (تومان)
-              <?php if (is_store_seller($user)): ?>
-              <span style="color:var(--danger)">*</span>
-              <?php endif; ?>
+              قیمت فروش (تومان) <span style="color:var(--danger)">*</span>
             </label>
             <input type="number" id="step6-sell-price-input" name="sell_price" class="wizard-form-input"
                    placeholder="قیمت نقدی کالا را وارد کنید" min="0" step="1000"
                    value="<?= h((string)$vals['sell_price']) ?>">
-            <?php if (is_store_seller($user)): ?>
             <p class="price-estimate-note" style="margin-top: var(--wizard-gap);color:var(--accent)">فروشگاه‌ها باید قیمت فروش را مشخص کنند تا کاربران بتوانند نقدی خرید کنند.</p>
-            <?php else: ?>
-            <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">اختیاری — اگر می‌خواهید امکان خرید نقدی هم برای کاربران فعال باشد، قیمت را وارد کنید.</p>
-            <?php endif; ?>
             <?php if (isset($errors['sell_price'])): ?>
             <div class="invalid-feedback" style="display:block"><?= h($errors['sell_price']) ?></div>
             <?php endif; ?>
           </div>
+          <?php endif; ?>
 
           <input type="hidden" id="step6-suggested-value" name="suggested_value" value="<?= h($suggestedValue) ?>">
           <input type="hidden" id="step6-custom-value" name="custom_value" value="<?= h($vals['custom_value']) ?>">

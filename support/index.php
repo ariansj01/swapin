@@ -4,6 +4,7 @@ require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/dashboard_layout.php';
 
 $user   = require_auth();
+require_complete_profile($user);
 $errors = [];
 $success = false;
 

@@ -6,6 +6,7 @@ require_once __DIR__ . '/../includes/sep_payment.php';
 require_once __DIR__ . '/../includes/promotion_service.php';
 
 $user = require_auth();
+require_complete_profile($user);
 $uid  = (int)$user['id'];
 
 $listingId = (int)($_GET['id'] ?? 0);

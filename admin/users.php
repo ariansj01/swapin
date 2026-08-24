@@ -17,6 +17,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             admin_set_flash($target['is_active'] ? 'کاربر غیرفعال شد.' : 'کاربر فعال شد.');
         }
     }
+
+    if ($userId && $action === 'delete_user') {
+        $target = DB::fetch('SELECT id, is_active, role, name FROM users WHERE id = ?', [$userId]);
+        if ($target && $target['role'] !== 'admin') {
+            $hasDeletedAt = db_has_column('listings', 'deleted_at');
+            $pdo = DB::pdo();
+            try {
+                $pdo->beginTransaction();
+                if ($hasDeletedAt) {
+                    DB::query(
+                        'UPDATE listings SET status = "deleted", deleted_at = NOW(), updated_at = NOW() WHERE user_id = ? AND status != "deleted"',
+                        [$userId]
+                    );
+                } else {
+                    DB::query(
+                        'UPDATE listings SET status = "deleted", updated_at = NOW() WHERE user_id = ? AND status != "deleted"',
+                        [$userId]
+                    );
+                }
+                DB::query(
+                    'UPDATE users SET is_active = 0, name = "", store_name = NULL, store_slug = NULL, updated_at = NOW() WHERE id = ? AND role != "admin"',
+                    [$userId]
+                );
+                $pdo->commit();
+                admin_set_flash('کاربر #' . $userId . ' و تمام آگهی‌هایش (به‌صورت نرم) حذف شد.');
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                admin_set_flash('خطا در حذف کاربر: ' . $e->getMessage(), 'danger');
+            }
+        }
+    }
+
     header('Location: ' . APP_URL . '/admin/users.php?q=' . urlencode($search));
     exit;
 }
@@ -87,6 +119,12 @@ ob_start();
           <?php if ($u['kyc_status'] === 'pending'): ?>
           <a href="<?= APP_URL ?>/admin/kyc.php?id=<?= $u['id'] ?>" class="btn btn-sm btn-accent">KYC</a>
           <?php endif; ?>
+          <form method="POST" style="display:inline" onsubmit="return confirm('آیا از حذف کاربر #<?= $u['id'] ?> و تمام آگهی‌هایش (به‌صورت نرم) مطمئن هستید؟');">
+            <?= csrf_field() ?>
+            <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+            <input type="hidden" name="action" value="delete_user">
+            <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> حذف</button>
+          </form>
           <?php else: ?>—<?php endif; ?>
         </td>
       </tr>

@@ -392,7 +392,7 @@ render_navbar($user);
       <div class="home-section-heading home-section-heading--large mb-5">
         <h2>جدیدترین آگهی‌ها</h2>
         <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
-          مشاهده همه آگهی‌ها
+          مشاهده همه
         </a>
       </div>
       <?php if (empty($listings)): ?>
@@ -457,8 +457,7 @@ render_navbar($user);
       <div class="home-section-heading home-section-heading--large mb-5">
         <h2>فروشگاه‌ها</h2>
         <a href="<?= APP_URL ?>/shops" class="home-section-heading__link">
-          مشاهده همه فروشگاه ها
-          <i class="bi bi-arrow-left" style="font-size:.85rem;margin-right:4px"></i>
+          مشاهده همه
         </a>
       </div>
       <div class="listings-rows-container">

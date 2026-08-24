@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/dashboard_layout.php';
 require_once __DIR__ . '/includes/sep_payment.php';
 
 $user    = require_auth();
+require_complete_profile($user);
 $success = '';
 $error   = '';
 
