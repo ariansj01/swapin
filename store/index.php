@@ -625,7 +625,7 @@ render_navbar($user);
               <div class="store-feature-card">
                 <div class="store-feature-card__icon"><i class="bi bi-trophy"></i></div>
                 <div class="store-feature-card__title">محصولات ویژه</div>
-                <div class="store-feature-card__desc">تبلیغ داخل سواپین</div>
+                <div class="store-feature-card__desc">تبلیغ داخل سواَپین</div>
               </div>
             </div>
           </div>
@@ -1488,7 +1488,7 @@ render_navbar($user);
             <div class="store-notif-setting">
               <div>
                 <div class="store-notif-setting__title">اخبار و پیشنهادات ویژه</div>
-                <div class="store-notif-setting__desc">دریافت اخبار سواپین و پیشنهادات تبلیغاتی</div>
+                <div class="store-notif-setting__desc">دریافت اخبار سواَپین و پیشنهادات تبلیغاتی</div>
               </div>
               <label class="store-switch"><input type="checkbox"><span></span></label>
             </div>

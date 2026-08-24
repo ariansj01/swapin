@@ -61,7 +61,7 @@ render_navbar($user);
       <div class="ex-header__row">
         <div>
           <h1 class="ex-header__title">سفارش‌های خرید</h1>
-          <p class="ex-header__subtitle">تاریخچه و وضعیت سفارش‌های نقدی شما در سواپین.</p>
+          <p class="ex-header__subtitle">تاریخچه و وضعیت سفارش‌های نقدی شما در سواَپین.</p>
         </div>
       </div>
     </div>

@@ -218,7 +218,7 @@ header('Content-Type: text/html; charset=utf-8');
     <div class="card">
         <div class="card-head">
             <h1><i class="bi bi-database-gear"></i> <?= h($pageTitle) ?></h1>
-            <p>بررسی و ایجاد جداول و ستون‌های مورد نیاز سیستم سواپین</p>
+            <p>بررسی و ایجاد جداول و ستون‌های مورد نیاز سیستم سواَپین</p>
         </div>
         <div class="card-body">
 

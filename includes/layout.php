@@ -625,10 +625,10 @@ function render_footer(): void {
           </ul>
         </div>
         <div class="footer-links-group">
-          <h3 class="site-footer__heading">سواپین</h3>
+          <h3 class="site-footer__heading">سواَپین</h3>
           <ul class="site-footer__links">
             <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
-            <li><a href="{$url}/blog">بلاگ سواپین</a></li>
+            <li><a href="{$url}/blog">بلاگ سواَپین</a></li>
           </ul>
         </div>
       </div>

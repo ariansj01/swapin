@@ -50,7 +50,7 @@ render_navbar($user);
           <i class="bi bi-inbox"></i>
         </div>
         <h3 class="ex-empty__title">هنوز پیشنهاد معاوضه‌ای ثبت نکرده‌اید</h3>
-        <p class="ex-empty__desc">می‌توانید از میان فروشگاه‌های معتبر سواپین، کالای مورد نظر را پیدا کرده و پیشنهاد معاوضه ارسال کنید.</p>
+        <p class="ex-empty__desc">می‌توانید از میان فروشگاه‌های معتبر سواَپین، کالای مورد نظر را پیدا کرده و پیشنهاد معاوضه ارسال کنید.</p>
         <a href="<?= APP_URL ?>/shops" class="ex-btn ex-btn--primary" style="max-width:320px;margin:0 auto" data-navigate="<?= APP_URL ?>/shops">
           <i class="bi bi-shop-window"></i>
           مرور فروشگاه‌ها
