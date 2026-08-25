@@ -4468,15 +4468,28 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     gap: var(--sp-3);
   }
 
-  .site-footer__links {
+  .site-footer__links,
+  .site-footer__contact-list,
+  .site-footer__social {
     display: none;
-    grid-template-columns: 1fr;
+  }
+
+  .footer-accordion.is-open .site-footer__links,
+  .footer-accordion.is-open .site-footer__contact-list,
+  .footer-accordion.is-open .site-footer__social {
+    display: grid;
+  }
+
+  .footer-accordion.is-open .site-footer__contact-list {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
     margin-top: 8px;
   }
 
-  .footer-accordion.is-open .site-footer__links {
-    display: grid;
+  .footer-accordion.is-open .site-footer__social {
+    display: flex;
+    margin-top: 10px;
   }
 
   .site-footer__heading {
