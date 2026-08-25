@@ -1147,7 +1147,9 @@ set_exception_handler(function (Throwable $e): void {
         'uri' => $_SERVER['REQUEST_URI'] ?? '',
         'method' => $_SERVER['REQUEST_METHOD'] ?? '',
     ]);
-    http_response_code(500);
+    if (!headers_sent()) {
+        http_response_code(500);
+    }
 });
 
 register_shutdown_function(function (): void {
