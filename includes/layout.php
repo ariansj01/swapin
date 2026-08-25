@@ -575,7 +575,7 @@ function render_footer(): void {
     </dl>
 
     <div class="site-footer__main">
-      <div class="site-footer__col">
+      <div class="site-footer__col site-footer__col--contact">
         <h3 class="site-footer__heading">راه های ارتباطی</h3>
         <ul class="site-footer__contact-list">
           <li>
@@ -599,7 +599,7 @@ function render_footer(): void {
         </div>
       </div>
 
-      <div class="site-footer__col">
+      <div class="site-footer__col site-footer__col--trust">
         <h3 class="site-footer__heading">نمادهای اعتماد</h3>
         <div class="site-footer__trust">
           <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
@@ -607,16 +607,16 @@ function render_footer(): void {
       </div>
 
       <div class="site-footer__col site-footer__col--links-grid">
-        <div class="footer-links-group">
-          <h3 class="site-footer__heading">فروشگاه</h3>
+        <div class="footer-links-group footer-accordion">
+          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="true">فروشگاه</button>
           <ul class="site-footer__links">
             <li><a href="{$url}/store/request">ثبت فروشگاه</a></li>
             <li><a href="{$url}/auth/store-login">پنل فروشگاه</a></li>
             <li><a href="{$url}/shops">لیست فروشگاه‌ها</a></li>
           </ul>
         </div>
-        <div class="footer-links-group">
-          <h3 class="site-footer__heading">راهنما و قوانین</h3>
+        <div class="footer-links-group footer-accordion">
+          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="true">راهنما و قوانین</button>
           <ul class="site-footer__links">
             <li><a href="{$url}/faq">سوالات</a></li>
             <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
@@ -624,8 +624,8 @@ function render_footer(): void {
             <li><a href="{$url}/terms">قوانین و مقررات</a></li>
           </ul>
         </div>
-        <div class="footer-links-group">
-          <h3 class="site-footer__heading">سواَپین</h3>
+        <div class="footer-links-group footer-accordion">
+          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="true">سواَپین</button>
           <ul class="site-footer__links">
             <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
             <li><a href="{$url}/blog">بلاگ سواَپین</a></li>
@@ -654,6 +654,26 @@ HTML;
     }
     echo <<<HTML
 <script src="{$url}/src/js/app.js?v=<?= filemtime(__DIR__ . '/../src/js/app.js') ?>"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.site-footer__toggle').forEach(function (button) {
+      const group = button.closest('.footer-accordion');
+      if (!group) return;
+
+      const setState = function (expanded) {
+        group.classList.toggle('is-open', expanded);
+        button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      };
+
+      setState(button.getAttribute('aria-expanded') === 'true');
+
+      button.addEventListener('click', function () {
+        const nextState = !group.classList.contains('is-open');
+        setState(nextState);
+      });
+    });
+  });
+</script>
 </body>
 </html>
 HTML;

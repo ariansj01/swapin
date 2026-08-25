@@ -4221,6 +4221,30 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   margin-bottom: var(--sp-5);
 }
 
+.site-footer__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: right;
+  font: inherit;
+  cursor: pointer;
+}
+
+.site-footer__toggle::after {
+  content: "+";
+  font-size: 1.05rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.footer-accordion.is-open .site-footer__toggle::after {
+  content: "−";
+}
+
 .site-footer__contact-list {
   display: flex;
   flex-direction: column;
@@ -4401,8 +4425,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .site-footer__main {
-    grid-template-columns: 1fr;
-    gap: var(--sp-6);
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+    padding: var(--sp-4);
   }
 
   .site-footer__col--brand {
@@ -4411,18 +4436,67 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .site-footer__col + .site-footer__col {
-    padding-top: var(--sp-5);
+    padding-top: var(--sp-4);
     border-top: 1px solid rgba(255, 255, 255, .12);
+  }
+
+  .site-footer__col--contact,
+  .site-footer__col--trust {
+    border-top: none;
+    padding-top: 0;
   }
 
   .site-footer__col--links-grid {
+    grid-column: 1 / -1;
     grid-template-columns: 1fr;
     border-top: 1px solid rgba(255, 255, 255, .12);
     padding-top: var(--sp-5);
+    gap: var(--sp-3);
   }
 
-  .site-footer__links{
-    grid-template-columns: repeat(2, 1fr);
+  .site-footer__links {
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .footer-accordion.is-open .site-footer__links {
+    display: grid;
+  }
+
+  .site-footer__heading {
+    font-size: .8rem;
+    margin-bottom: 0;
+  }
+
+  .site-footer__toggle {
+    padding-block: 6px;
+    color: #fff;
+  }
+
+  .site-footer__contact-list li,
+  .site-footer__links a,
+  .site-footer__tagline,
+  .site-footer__stat-label,
+  .site-footer__stat-value {
+    font-size: .72rem;
+  }
+
+  .site-footer__social-link {
+    width: 30px;
+    height: 30px;
+    font-size: .85rem;
+  }
+
+  .site-footer__trust img {
+    width: 90px;
+    max-width: 100%;
+  }
+
+  .site-footer__copy {
+    font-size: .7rem;
+    line-height: 1.8;
   }
 }
 
