@@ -217,7 +217,7 @@ function listing_location_from_request(array $input): array {
     ];
 }
 
-function validate_listing_location(array $location): array {
+function validate_listing_location(array $location): array { 
     $errors = [];
     $city = $location['city'] ?? '';
     $neighborhood = $location['neighborhood'] ?? '';
