@@ -75,6 +75,25 @@ render_panel_styles();
 render_navbar($user);
 listing_location_enqueue_assets();
 ?>
+<script>
+// Ensure global handlers exist early to prevent inline handler ReferenceError
+window.wizardSelectRadio = window.wizardSelectRadio || function (el) {
+  try {
+    document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('is-checked'));
+    const card = el && el.closest ? el.closest('.radio-card') : null;
+    if (card) card.classList.add('is-checked');
+  } catch (e) { /* noop */ }
+};
+window.wizardGoTo = window.wizardGoTo || function (n) {
+  try {
+    document.querySelectorAll('.wizard-step').forEach(s => s.hidden = true);
+    const target = document.querySelector('.wizard-step[data-step="' + n + '"]');
+    if (target) { target.hidden = false; target.scrollIntoView({behavior:'smooth',block:'start'}); }
+  } catch (e) { /* noop */ }
+};
+</script>
+<?php
+?>
 
 <?php render_user_panel_open($user, 'iso'); ?>
 <div class="dash-panel">
