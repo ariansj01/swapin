@@ -9,12 +9,6 @@ $id   = (int)($_GET['id'] ?? 0);
 
 $isoReverseMatches = [];
 $myIsoForListing = [];
-if (db_has_table('iso_requests') && $listing['status'] === 'active') {
-    $isoReverseMatches = iso_find_reverse_matches_for_listing($id, 8);
-    if ($isOwner) {
-        $myIsoForListing = iso_listing_has_active_requests($id, (int)$user['id']);
-    }
-}
 
 $usersCols = db_table_columns('users');
 $selectStoreCols = '';
@@ -35,6 +29,16 @@ $listing = DB::fetch(
     [$id]
 );
 
+$isOwner = $user && $listing && (int)$user['id'] === (int)$listing['user_id'];
+$isAdmin = $user && is_admin_user($user);
+
+if ($listing && db_has_table('iso_requests') && ($listing['status'] ?? '') === 'active') {
+    $isoReverseMatches = iso_find_reverse_matches_for_listing($id, 8);
+    if ($isOwner) {
+        $myIsoForListing = iso_listing_has_active_requests($id, (int)$user['id']);
+    }
+}
+
 if (!$listing) {
     http_response_code(404);
     render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
@@ -44,8 +48,6 @@ if (!$listing) {
     exit;
 }
 
-$isOwner = $user && (int)$user['id'] === (int)$listing['user_id'];
-$isAdmin = $user && is_admin_user($user);
 $reviewStatus = $listing['review_status'] ?? 'approved';
 
 if ($listing['status'] !== 'active' && !$isOwner && !$isAdmin) {

@@ -229,15 +229,15 @@ render_navbar($user);
           <div class="wizard-form-group">
             <label class="wizard-form-label">عنوان آگهی *</label>
             <input type="text" name="title" id="step1-title" class="wizard-form-input" 
-                   placeholder="مثلا آیفون ۱۳ پرو مکس ۲۵۶ گیگ" maxlength="200">
-            <div class="char-count"><span id="step1-title-count">0</span>/200 کاراکتر</div>
+                   placeholder="مثلا آیفون ۱۳ پرو مکس ۲۵۶ گیگ" maxlength="200" value="<?= h($vals['title']) ?>">
+            <div class="char-count"><span id="step1-title-count"><?= mb_strlen((string)$vals['title']) ?></span>/200 کاراکتر</div>
           </div>
 
           <div class="wizard-form-group">
             <label class="wizard-form-label">توضیحات *</label>
             <textarea name="description" id="step1-description" class="wizard-form-textarea" rows="6"
-                      placeholder="کالا را با جزئیات توضیح دهید — سن، برند، مشخصات، ایرادات…"></textarea>
-            <div class="char-count"><span id="step1-desc-count">0</span> کاراکتر</div>
+                      placeholder="کالا را با جزئیات توضیح دهید — سن، برند، مشخصات، ایرادات…"><?= h($vals['description']) ?></textarea>
+            <div class="char-count"><span id="step1-desc-count"><?= mb_strlen((string)$vals['description']) ?></span> کاراکتر</div>
           </div>
         </div>
 
@@ -620,6 +620,25 @@ function showWizardError(msg) {
   alert(msg);
 }
 
+function validateCurrentStepWithMessage() {
+  const stepMessages = {
+    1: 'عنوان و توضیحات باید حداقل ۵ و ۲۰ کاراکتر داشته باشند.',
+    2: 'حداقل یک تصویر برای آگهی باید انتخاب شود.',
+    3: 'دسته‌بندی، شهر و موقعیت جغرافیایی را کامل کنید.',
+    4: 'حداقل یکی از دسته‌بندی‌های مورد علاقه را انتخاب کنید.',
+    5: 'توضیح دقیق‌تر را وارد کنید.',
+    6: 'در این مرحله اطلاعات قیمت را تکمیل کنید.',
+    7: 'قبل از انتشار آگهی، اطلاعات را بررسی کنید.'
+  };
+
+  if (!validateCurrentStep()) {
+    showWizardError(stepMessages[currentStep] || 'لطفاً اطلاعات را کامل کنید.');
+    return false;
+  }
+
+  return true;
+}
+
 window.toggleExchangeCategory = function(el, cat) {
   if (exchangeCategories.has(cat)) {
     exchangeCategories.delete(cat);
@@ -798,7 +817,11 @@ document.getElementById('wizard-back-btn').addEventListener('click', () => {
 });
 
 document.getElementById('wizard-next-btn').addEventListener('click', () => {
-  if (validateCurrentStep() && currentStep < totalSteps) {
+  if (!validateCurrentStepWithMessage()) {
+    return;
+  }
+
+  if (currentStep < totalSteps) {
     goToStep(currentStep + 1);
   }
 });
