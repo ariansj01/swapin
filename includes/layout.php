@@ -637,7 +637,7 @@ function render_footer(): void {
           <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
         </a>
         <p class="site-footer__tagline">{$tagline}</p>
-      </div>
+      </div>  
     </div>
 
     <p class="site-footer__copy" style="display: flex;justify-content: space-around;">
