@@ -261,6 +261,19 @@ function listing_location_db_payload(array $location): array {
     ];
 }
 
+function listing_location_enqueue_assets(): void {
+    $cssPath = __DIR__ . '/../src/css/listing-location.css';
+    $jsPath = __DIR__ . '/../src/js/listing-location.js';
+    $cssVer = is_readable($cssPath) ? filemtime($cssPath) : time();
+    $jsVer  = is_readable($jsPath)  ? filemtime($jsPath)  : time();
+
+    echo '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">\n';
+    echo '<link rel="stylesheet" href="' . APP_URL . '/src/css/listing-wizard.css">\n';
+    echo '<link rel="stylesheet" href="' . APP_URL . '/src/css/listing-location.css?v=' . $cssVer . '">\n';
+    echo '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>\n';
+    echo '<script src="' . APP_URL . '/src/js/listing-location.js?v=' . $jsVer . '"></script>\n';
+}
+
 function find_nearby_listings(float $lat, float $lng, float $radiusKm = 10.0, int $limit = 24, ?int $excludeId = null): array {
     if (!listing_has_geo_columns()) {
         return [];
