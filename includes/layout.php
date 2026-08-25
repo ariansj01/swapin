@@ -575,30 +575,6 @@ function render_footer(): void {
     </dl>
 
     <div class="site-footer__main">
-      <div class="site-footer__col site-footer__col--contact">
-        <h3 class="site-footer__heading">راه های ارتباطی</h3>
-        <ul class="site-footer__contact-list">
-          <li>
-            <i class="bi bi-telephone" aria-hidden="true"></i>
-            <span dir="ltr">+98 998 153 4269</span>
-          </li>
-          <li>
-            <i class="bi bi-envelope" aria-hidden="true"></i>
-            <a href="mailto:info@swaapin.ir">info@swaapin.ir</a>
-          </li>
-          <li>
-            <i class="bi bi-geo-alt" aria-hidden="true"></i>
-            <span>مرکز نواوری اکباتان</span>
-          </li>
-        </ul>
-        <div class="site-footer__social">
-          <a href="https://www.instagram.com/swaapin_official" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
-          <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
-          <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
-          <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
-        </div>
-      </div>
-
       <div class="site-footer__col site-footer__col--trust">
         <h3 class="site-footer__heading">نمادهای اعتماد</h3>
         <div class="site-footer__trust">
@@ -630,6 +606,29 @@ function render_footer(): void {
             <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
             <li><a href="{$url}/blog">بلاگ سواَپین</a></li>
           </ul>
+        </div>
+        <div class="footer-links-group footer-accordion">
+          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">راه های ارتباطی</button>
+          <ul class="site-footer__contact-list">
+            <li>
+              <i class="bi bi-telephone" aria-hidden="true"></i>
+              <span dir="ltr">+98 998 153 4269</span>
+            </li>
+            <li>
+              <i class="bi bi-envelope" aria-hidden="true"></i>
+              <a href="mailto:info@swaapin.ir">info@swaapin.ir</a>
+            </li>
+            <li>
+              <i class="bi bi-geo-alt" aria-hidden="true"></i>
+              <span>مرکز نواوری اکباتان</span>
+            </li>
+          </ul>
+          <div class="site-footer__social">
+            <a href="https://www.instagram.com/swaapin_official" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
+            <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
+            <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
+          </div>
         </div>
       </div>
 
