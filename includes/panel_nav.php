@@ -30,9 +30,19 @@ function panel_nav_items(array $user): array {
     $counts  = panel_nav_counts($uid);
     $promote = panel_nav_promote_href($uid);
 
+    $isoCount = 0;
+    if (db_has_table('iso_requests')) {
+        $isoRow = DB::fetch(
+            'SELECT COUNT(*) AS c FROM iso_requests WHERE user_id = ? AND status = "active"',
+            [$uid]
+        );
+        $isoCount = (int)($isoRow['c'] ?? 0);
+    }
+
     $items = [
         'dashboard'    => [$url . '/dashboard',           'داشبورد',       'bi-speedometer2',    0],
         'my'           => [$url . '/listings/my',          'آگهی‌های من',   'bi-grid',            0],
+        'iso'          => [$url . '/iso',                  'چیزهایی که دنبالش هستم', 'bi-search-heart', $isoCount],
         'promote'      => [$promote,                       'ارتقای آگهی',   'bi-rocket-takeoff',  0],
         'saved'        => [$url . '/listings/saved',        'علاقه‌مندی‌ها', 'bi-heart',           0],
         'store_offers' => [$url . '/store-offers',         'معاوضه با فروشگاه', 'bi-shop',       0],

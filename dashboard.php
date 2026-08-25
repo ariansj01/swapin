@@ -10,6 +10,7 @@ error_log('[swapin-dashboard] config.php loaded successfully');
 
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/dashboard_layout.php';
+require_once __DIR__ . '/includes/iso.php';
 error_log('[swapin-dashboard] layout.php loaded successfully');
 
 swapin_debug_log('dashboard-started', ['step' => 'init', 'uri' => $_SERVER['REQUEST_URI'] ?? '']);
@@ -119,6 +120,16 @@ if (!$dashboardNeedsMigration) {
             'user_id' => $uid,
             'message' => $e->getMessage(),
         ]);
+    }
+}
+
+// ISO reverse matches — users looking for items I own
+$isoReverseMatchesDashboard = [];
+if (!$dashboardNeedsMigration && db_has_table('iso_requests')) {
+    try {
+        $isoReverseMatchesDashboard = iso_get_matches_for_user_listings($uid, 6);
+    } catch (Throwable $e) {
+        swapin_debug_log('dashboard-iso-reverse-failed', ['user_id' => $uid, 'msg' => $e->getMessage()]);
     }
 }
 
@@ -398,6 +409,59 @@ render_navbar($user);
         </div>
       </div>
     </div>
+
+    <!-- ISO Reverse Match Hub — users looking for items I own -->
+    <?php if (!empty($isoReverseMatchesDashboard)): ?>
+    <div id="iso-reverse-hub" class="match-hub mb-8">
+      <div class="match-hub__title" style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap">
+        <div>
+          <h2 style="margin:0;font-size:1.25rem">
+            <i class="bi bi-search-heart" style="color:var(--accent-dark)"></i>
+            کاربرانی که دنبال کالای شما هستند
+            <span class="badge badge-accent fs-xs"><?= fmt_num(count($isoReverseMatchesDashboard)) ?> تطابق</span>
+          </h2>
+          <p class="fs-sm" style="color:var(--text-muted);margin:var(--sp-2) 0 0">
+            این کاربران در لیست نیاز ISOشان کالایی مشابه با آگهی‌های شما ثبت کرده‌اند — می‌توانید پیشنهاد معاوضه بدهید
+          </p>
+        </div>
+        <a href="<?= APP_URL ?>/iso" class="btn btn-outline btn-sm">
+          <i class="bi bi-list-ul"></i> مدیریت ISOهای من
+        </a>
+      </div>
+
+      <div class="card mt-5">
+        <div class="card-body" style="padding:var(--sp-3)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">
+          <?php foreach ($isoReverseMatchesDashboard as $irm):
+            $irmScore = (int)($irm['match_score'] ?? 0);
+          ?>
+            <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$irm['listing_id'] ?>" class="match-row" data-listing-id="<?= (int)$irm['listing_id'] ?>" style="text-decoration:none;color:inherit">
+              <div class="match-row__score" style="background:<?= $irmScore >= 80 ? 'linear-gradient(135deg,#22c55e,#16a34a);color:#fff' : ($irmScore >= 60 ? 'linear-gradient(135deg,#3b82f6,#6366f1);color:#fff' : 'linear-gradient(135deg,#f59e0b,#d97706);color:#fff') ?>">
+                <?= $irmScore ?>٪
+              </div>
+              <div class="match-row__body">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                  <span style="font-weight:700"><?= h(mb_strimwidth($irm['title'], 0, 40, '…')) ?></span>
+                  <span class="badge fs-xs">آگهی <?= h($irm['iso_user_name']) ?></span>
+                </div>
+                <div class="fs-xs" style="color:var(--text-muted)">
+                  <i class="bi bi-arrow-left-right"></i>
+                  او دارد: <strong><?= h(mb_strimwidth($irm['source_listing_title'] ?? '', 0, 30, '…')) ?></strong>
+                  <span class="mx-2">·</span>
+                  دنبالش می‌گردد: <strong><?= h(mb_strimwidth($irm['matched_from_listing_title'] ?? '', 0, 30, '…')) ?></strong>
+                </div>
+                <?php if (!empty($irm['match_reason'])): ?>
+                <p class="match-row__reason fs-xs"><?= h($irm['match_reason']) ?></p>
+                <?php endif; ?>
+              </div>
+              <i class="bi bi-chevron-left" style="color:var(--text-muted)"></i>
+            </a>
+          <?php endforeach; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <div style="display:grid;grid-template-columns:1fr 380px;gap:var(--sp-6);align-items:start">
 

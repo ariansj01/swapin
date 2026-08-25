@@ -2,9 +2,19 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/geo.php';
+require_once __DIR__ . '/../includes/iso.php';
 
 $user = auth_user();
 $id   = (int)($_GET['id'] ?? 0);
+
+$isoReverseMatches = [];
+$myIsoForListing = [];
+if (db_has_table('iso_requests') && $listing['status'] === 'active') {
+    $isoReverseMatches = iso_find_reverse_matches_for_listing($id, 8);
+    if ($isOwner) {
+        $myIsoForListing = iso_listing_has_active_requests($id, (int)$user['id']);
+    }
+}
 
 $usersCols = db_table_columns('users');
 $selectStoreCols = '';
@@ -777,6 +787,71 @@ render_navbar($user);
         <?php $nearbyListingId = $id; include __DIR__ . '/../includes/listing_nearby_section.php'; ?>
         <?php endif; ?>
 
+        <?php if (!empty($isoReverseMatches)): ?>
+        <section id="iso-reverse-matches" class="lv-related-section" aria-label="کاربرانی که دنبال این کالا هستند">
+          <h3 class="lv-related-title">
+            <i class="bi bi-search-heart" style="color:var(--accent)"></i>
+            کاربرانی که دنبال کالای شبیه این هستند
+            <span class="badge badge-accent" style="margin-inline-start:8px;font-size:.7rem"><?= fmt_num(count($isoReverseMatches)) ?> مورد</span>
+          </h3>
+          <div style="color:var(--text-muted);font-size:.85rem;margin:8px 0 16px;padding-inline:4px">
+            این کاربران کالایی مشابه با این آگهی را در لیست نیازهایشان (ISO) ثبت کرده‌اند. می‌توانید با مراجعه به آگهی آن‌ها، پیشنهاد معاوضه بدهید.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--sp-4)">
+          <?php foreach ($isoReverseMatches as $rm):
+            $rScore = (int)($rm['match_score'] ?? 0);
+          ?>
+            <div class="card" style="margin:0;overflow:hidden;display:flex;flex-direction:column">
+              <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$rm['listing_id'] ?>" style="display:block">
+                <div style="position:relative;aspect-ratio:16/9;background:var(--border);overflow:hidden">
+                  <?php
+                    $rmThumb = DB::fetch('SELECT filename FROM listing_images WHERE listing_id = ? AND is_primary = 1 LIMIT 1', [(int)$rm['listing_id']]);
+                  ?>
+                  <?php if (!empty($rmThumb['filename'])): ?>
+                    <img src="<?= UPLOAD_URL . h($rmThumb['filename']) ?>" alt="<?= h($rm['source_listing_title'] ?? $rm['title']) ?>" style="width:100%;height:100%;object-fit:cover">
+                  <?php else: ?>
+                    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted)"><i class="bi bi-image" style="font-size:2.5rem"></i></div>
+                  <?php endif; ?>
+                  <div style="position:absolute;top:10px;inset-inline-end:10px">
+                    <span class="match-score-pill match-score-pill--<?= $rScore >= 80 ? 'excellent' : ($rScore >= 60 ? 'good' : 'possible') ?>">
+                      <?= $rScore ?>٪
+                    </span>
+                  </div>
+                </div>
+              </a>
+              <div style="padding:var(--sp-4);display:flex;flex-direction:column;gap:6px;flex:1">
+                <div class="fs-xs" style="color:var(--text-muted);display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+                  <i class="bi bi-person"></i> <?= h($rm['iso_user_name'] ?? 'کاربر') ?>
+                  <?php if (!empty($rm['city'])): ?> · <i class="bi bi-geo-alt"></i> <?= h($rm['city']) ?><?php endif; ?>
+                  <?php if (!empty($rm['distance_km'])): ?> · <?= fmt_num($rm['distance_km']) ?>km<?php endif; ?>
+                </div>
+                <div style="font-size:.85rem;color:var(--text-secondary);display:flex;gap:4px;align-items:flex-start">
+                  <i class="bi bi-arrow-left-right" style="color:var(--accent);flex-shrink:0;margin-top:2px"></i>
+                  <span>
+                    من <strong style="color:var(--primary)"><?= h(mb_strimwidth($rm['source_listing_title'] ?? '', 0, 50, '…')) ?></strong> رو دارم
+                  </span>
+                </div>
+                <div style="font-size:.85rem;display:flex;gap:4px;align-items:flex-start">
+                  <i class="bi bi-search-heart" style="color:var(--accent-dark);flex-shrink:0;margin-top:2px"></i>
+                  <span>
+                    دنبال <strong><?= h(mb_strimwidth($rm['title'], 0, 50, '…')) ?></strong> می‌گردم
+                  </span>
+                </div>
+                <?php if (!empty($rm['match_reason'])): ?>
+                <div class="match-reason-box" style="margin-top:auto;font-size:.75rem"><?= h($rm['match_reason']) ?></div>
+                <?php endif; ?>
+                <div style="margin-top:8px">
+                  <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$rm['listing_id'] ?>" class="btn btn-sm" style="width:100%;background:var(--accent);color:#fff;border:1px solid var(--accent)">
+                    <i class="bi bi-eye"></i> مشاهده آگهی <?= h($rm['iso_user_name'] ?? 'او') ?>
+                  </a>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+          </div>
+        </section>
+        <?php endif; ?>
+
         <?php if ($related): ?>
         <section class="lv-related-section" aria-label="آگهی‌های مشابه">
           <h3 class="lv-related-title">آگهی‌های مشابه</h3>
@@ -804,6 +879,20 @@ render_navbar($user);
             </form>
             <?php endif; ?>
             <a href="<?= APP_URL ?>/listings/offers?id=<?= $id ?>" class="lv-btn lv-btn--primary"><i class="bi bi-inbox"></i> مشاهده پیشنهادها</a>
+            <a href="<?= APP_URL ?>/iso/create?listing_id=<?= $id ?>" class="lv-btn lv-btn--outline"><i class="bi bi-search-heart"></i> تعریف نیاز (ISO) برای این آگهی</a>
+            <?php if (!empty($myIsoForListing)): ?>
+            <a href="<?= APP_URL ?>/iso/view?id=<?= (int)$myIsoForListing[0]['id'] ?>" class="lv-btn lv-btn--outline" style="border-color:var(--accent);color:var(--accent)">
+              <i class="bi bi-stars"></i> مشاهده تطابق ISOها
+              <span class="badge badge-accent" style="margin-inline-start:6px"><?= fmt_num(count($myIsoForListing)) ?></span>
+            </a>
+            <?php endif; ?>
+            <?php if (!empty($isoReverseMatches)): ?>
+            <div class="alert alert-info" style="margin:12px 0 0;padding:10px 14px">
+              <i class="bi bi-search-heart"></i>
+              <strong><?= fmt_num(count($isoReverseMatches)) ?> کاربر</strong> دنبال کالای شبیه این هستند!
+              <a href="#iso-reverse-matches" style="color:inherit;font-weight:700;text-decoration:underline;display:inline-block;margin-inline-start:6px">مشاهده</a>
+            </div>
+            <?php endif; ?>
           </div>
         </section>
         <?php elseif ($tradeAccepted): ?>
@@ -864,8 +953,28 @@ render_navbar($user);
           <?php endif; ?>
         </section>
         <?php else: ?>
-        <section class="lv-offer-card">
+        <?php
+          $isoFromListingId = (int)($_GET['iso_from'] ?? 0);
+          $isoBannerShown = false;
+        ?>
+        <section class="lv-offer-card" id="iso-offer-start">
           <h3 class="lv-offer-title"><i class="bi bi-send" style="color:var(--lv-gold)"></i> ارسال پیشنهاد</h3>
+
+          <?php if ($user && $isoFromListingId > 0): ?>
+            <?php
+              $isoBannerShown = true;
+              $isoFromOwned = false;
+              foreach ($myListings as $mlCheck) {
+                  if ((int)$mlCheck['id'] === $isoFromListingId) { $isoFromOwned = true; break; }
+              }
+            ?>
+            <?php if ($isoFromOwned): ?>
+            <div class="alert alert-success mb-4" style="margin-top:0">
+              <i class="bi bi-search-heart"></i>
+              شما از طریق تطابق ISO به این صفحه آمده‌اید. کالای مبدا شما به‌صورت خودکار در فرم پیشنهاد انتخاب شده است.
+            </div>
+            <?php endif; ?>
+          <?php endif; ?>
 
           <?php if (!$user): ?>
           <p class="fs-sm mb-4" style="color:var(--text-muted)">برای ارسال پیشنهاد وارد شوید.</p>
@@ -905,7 +1014,7 @@ render_navbar($user);
               <select class="form-control lv-offer-select" name="offer_listing_id" id="offer-listing">
                 <option value="">یکی از کالاهای خود را انتخاب کنید</option>
                 <?php foreach ($myListings as $ml): ?>
-                <option value="<?= $ml['id'] ?>"><?= h(mb_strimwidth($ml['title'], 0, 50, '…')) ?></option>
+                <option value="<?= $ml['id'] ?>"<?= $isoFromListingId === (int)$ml['id'] ? ' selected' : '' ?>><?= h(mb_strimwidth($ml['title'], 0, 50, '…')) ?></option>
                 <?php endforeach; ?>
               </select>
               <?php else: ?>
