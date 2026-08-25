@@ -178,16 +178,17 @@ listing_location_enqueue_assets();
 </div>
 
 <script>
-function wizardSelectRadio(el) {
+// Expose as properties on window to ensure inline handlers can call them
+window.wizardSelectRadio = function (el) {
   document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('is-checked'));
-  const card = el.closest('.radio-card');
+  const card = el && el.closest ? el.closest('.radio-card') : null;
   if (card) card.classList.add('is-checked');
-}
-function wizardGoTo(n) {
+};
+window.wizardGoTo = function (n) {
   document.querySelectorAll('.wizard-step').forEach(s => s.hidden = true);
   const target = document.querySelector('.wizard-step[data-step="' + n + '"]');
   if (target) { target.hidden = false; target.scrollIntoView({behavior:'smooth',block:'start'}); }
-}
+};
 </script>
 
 <script>
