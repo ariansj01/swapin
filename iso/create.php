@@ -190,6 +190,25 @@ function wizardGoTo(n) {
 }
 </script>
 
+<script>
+// Make radio-card clickable as a fallback when inputs don't receive pointer events
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.radio-card').forEach(card => {
+    card.addEventListener('click', (ev) => {
+      // avoid reacting when clicking controls inside card (buttons/links)
+      const tag = (ev.target && ev.target.tagName) ? ev.target.tagName.toLowerCase() : '';
+      if (['a','button','input','label'].includes(tag)) return;
+      const input = card.querySelector('input[type="radio"][name="listing_id"]');
+      if (!input || input.disabled) return;
+      input.checked = true;
+      if (typeof wizardSelectRadio === 'function') {
+        try { wizardSelectRadio(input); } catch (e) { /* ignore */ }
+      }
+    });
+  });
+});
+</script>
+
 <?php render_user_panel_close(); ?>
 <?php render_panel_scripts(); ?>
 <?php listing_location_render_picker_inline_js(); ?>
