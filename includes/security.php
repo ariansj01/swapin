@@ -55,6 +55,13 @@ function csrf_field(): string {
     return '<input type="hidden" name="_csrf" value="' . h(csrf_token()) . '">';
 }
 
+if (!function_exists('csrf_input')) {
+    /** Backwards-compatible alias used in templates */
+    function csrf_input(): string {
+        return csrf_field();
+    }
+}
+
 function csrf_meta_tag(): string {
     return '<meta name="csrf-token" content="' . h(csrf_token()) . '">';
 }
