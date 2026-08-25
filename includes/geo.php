@@ -274,6 +274,50 @@ function listing_location_enqueue_assets(): void {
     echo '<script src="' . APP_URL . '/src/js/listing-location.js?v=' . $jsVer . '"></script>\n';
 }
 
+/**
+ * Render city select and include the picker fragment for forms that use the listing-location UI.
+ * Expects $vals array with keys: city, latitude, longitude, neighborhood and $errors array.
+ */
+function listing_location_render_picker(array $vals, array $errors = []): void {
+    $city = $vals['city'] ?? '';
+    $prefix = 'iso';
+
+    // City select
+    echo '<div class="form-group">';
+    echo '<label class="form-label" for="' . h($prefix) . '-city">شهر *</label>';
+    echo '<select name="city" id="' . h($prefix) . '-city" class="form-control">';
+    echo '<option value="">انتخاب شهر</option>' . render_city_options($city);
+    echo '</select>';
+    if (!empty($errors['city'])) {
+        echo '<div class="invalid-feedback d-block">' . h($errors['city']) . '</div>';
+    }
+    echo '</div>';
+
+    // Picker include (will render hidden inputs, map container and neighborhood controls)
+    $picker = [
+        'prefix' => $prefix,
+        'city' => $city,
+        'latitude' => $vals['latitude'] ?? '',
+        'longitude' => $vals['longitude'] ?? '',
+        'neighborhood' => $vals['neighborhood'] ?? '',
+        'errors' => $errors,
+        'city_select_id' => $prefix . '-city',
+        'control_class' => 'form-control',
+        'label_class' => 'form-label',
+        'input_class' => 'form-control',
+    ];
+    include __DIR__ . '/listing_location_picker.php';
+}
+
+/**
+ * Output inline JS to ensure pickers are initialized and hook a simple validation handler.
+ */
+function listing_location_render_picker_inline_js(): void {
+    echo "<script>\n";
+    echo "(function(){ try { if (typeof initAllListingLocationPickers === 'function') initAllListingLocationPickers(); } catch(e){} })();\n";
+    echo "</script>\n";
+}
+
 function find_nearby_listings(float $lat, float $lng, float $radiusKm = 10.0, int $limit = 24, ?int $excludeId = null): array {
     if (!listing_has_geo_columns()) {
         return [];
