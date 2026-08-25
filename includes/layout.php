@@ -608,7 +608,7 @@ function render_footer(): void {
 
       <div class="site-footer__col site-footer__col--links-grid">
         <div class="footer-links-group footer-accordion">
-          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="true">فروشگاه</button>
+          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">فروشگاه</button>
           <ul class="site-footer__links">
             <li><a href="{$url}/store/request">ثبت فروشگاه</a></li>
             <li><a href="{$url}/auth/store-login">پنل فروشگاه</a></li>
@@ -616,7 +616,7 @@ function render_footer(): void {
           </ul>
         </div>
         <div class="footer-links-group footer-accordion">
-          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="true">راهنما و قوانین</button>
+          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">راهنما و قوانین</button>
           <ul class="site-footer__links">
             <li><a href="{$url}/faq">سوالات</a></li>
             <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
@@ -625,7 +625,7 @@ function render_footer(): void {
           </ul>
         </div>
         <div class="footer-links-group footer-accordion">
-          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="true">سواَپین</button>
+          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">سواَپین</button>
           <ul class="site-footer__links">
             <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
             <li><a href="{$url}/blog">بلاگ سواَپین</a></li>
