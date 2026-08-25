@@ -56,7 +56,7 @@ function csrf_field(): string {
 }
 
 if (!function_exists('csrf_input')) {
-    /** Backwards-compatible alias used in templates */   
+    /** Backwards-compatible alias used in templates */
     function csrf_input(): string {
         return csrf_field();
     }
