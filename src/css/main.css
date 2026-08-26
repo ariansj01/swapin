@@ -4434,6 +4434,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     border-top: none;
     padding-top: 0;
     padding: 0 !important;
+    grid-row: 1;
+    grid-column: 1;
   }
 
   .site-footer__col--trust {
@@ -4444,6 +4446,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     border-top: none;
     padding-top: 0;
     padding: 0 !important;
+    grid-row: 1;
+    grid-column: 2;
   }
 
   .site-footer__col--trust .site-footer__heading {
