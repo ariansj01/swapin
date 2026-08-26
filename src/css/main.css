@@ -583,7 +583,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
   .hero__actions{
     justify-content: center;
   }
-
+  
   .navbar-actions .btn.hide-desktop { display: none !important; }
 
   .mobile-nav-overlay { display: block; }
