@@ -4222,27 +4222,21 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .site-footer__toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   width: 100%;
   border: 0;
   background: transparent;
   padding: 0;
   text-align: right;
   font: inherit;
-  cursor: pointer;
+  cursor: default;
 }
 
 .site-footer__toggle::after {
-  content: "+";
-  font-size: 1.05rem;
-  color: var(--accent);
-  line-height: 1;
+  content: none;
 }
 
 .footer-accordion.is-open .site-footer__toggle::after {
-  content: "−";
+  content: none;
 }
 
 .site-footer__contact-list {
@@ -4425,12 +4419,23 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .site-footer__main {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-4);
+    grid-template-columns: auto auto;
+    gap: var(--sp-4) 16px;
     padding: var(--sp-4);
+    justify-content: center;
   }
 
-  .site-footer__col--brand,
+  .site-footer__col--brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-top: none;
+    padding-top: 0;
+    padding: 0 !important;
+  }
+
   .site-footer__col--trust {
     display: flex;
     align-items: center;
@@ -4438,6 +4443,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     gap: 10px;
     border-top: none;
     padding-top: 0;
+    padding: 0 !important;
   }
 
   .site-footer__col--trust .site-footer__heading {
@@ -4445,8 +4451,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .site-footer__col + .site-footer__col {
-    padding-top: var(--sp-4);
-    border-top: 1px solid rgba(255, 255, 255, .12);
+    padding-top: 0;
+    border-top: none;
   }
 
   .site-footer__col--contact {
@@ -4464,11 +4470,30 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     max-width: 100%;
   }
 
+  .site-footer__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .site-footer__toggle::after {
+    content: "+";
+    font-size: 1.05rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .footer-accordion.is-open .site-footer__toggle::after {
+    content: "−";
+  }
+
   .site-footer__col--links-grid {
     grid-column: 1 / -1;
     grid-template-columns: 1fr;
     border-top: 1px solid rgba(255, 255, 255, .12);
     padding-top: var(--sp-5);
+    margin-top: var(--sp-3);
     gap: var(--sp-3);
   }
 
