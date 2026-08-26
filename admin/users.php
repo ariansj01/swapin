@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             admin_set_flash($target['is_active'] ? 'کاربر غیرفعال شد.' : 'کاربر فعال شد.');
         }
     }
-
+  
     if ($userId && $action === 'delete_user') {
         $target = DB::fetch('SELECT id, is_active, role, name FROM users WHERE id = ?', [$userId]);
         if ($target && $target['role'] !== 'admin') {
