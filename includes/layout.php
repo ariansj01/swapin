@@ -575,11 +575,11 @@ function render_footer(): void {
     </dl>
 
     <div class="site-footer__main">
-      <div class="site-footer__col site-footer__col--trust">
-        <h3 class="site-footer__heading">نمادهای اعتماد</h3>
-        <div class="site-footer__trust">
-          <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
-        </div>
+      <div class="site-footer__col site-footer__col--brand">
+        <a href="{$url}/" class="site-footer__brand">
+          <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
+        </a>
+        <p class="site-footer__tagline">{$tagline}</p>
       </div>
 
       <div class="site-footer__col site-footer__col--links-grid">
@@ -607,37 +607,38 @@ function render_footer(): void {
             <li><a href="{$url}/blog">بلاگ سواَپین</a></li>
           </ul>
         </div>
-        <div class="footer-links-group footer-accordion">
-          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">راه های ارتباطی</button>
-          <ul class="site-footer__contact-list">
-            <li>
-              <i class="bi bi-telephone" aria-hidden="true"></i>
-              <span dir="ltr">+98 998 153 4269</span>
-            </li>
-            <li>
-              <i class="bi bi-envelope" aria-hidden="true"></i>
-              <a href="mailto:info@swaapin.ir">info@swaapin.ir</a>
-            </li>
-            <li>
-              <i class="bi bi-geo-alt" aria-hidden="true"></i>
-              <span>مرکز نواوری اکباتان</span>
-            </li>
-          </ul>
-          <div class="site-footer__social">
-            <a href="https://www.instagram.com/swaapin_official" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
-            <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
-            <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
-            <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
-          </div>
+      </div>
+
+      <div class="site-footer__col site-footer__col--trust">
+        <h3 class="site-footer__heading">نمادهای اعتماد</h3>
+        <div class="site-footer__trust">
+          <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
         </div>
       </div>
 
-      <div class="site-footer__col site-footer__col--brand">
-        <a href="{$url}/" class="site-footer__brand">
-          <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
-        </a>
-        <p class="site-footer__tagline">{$tagline}</p>
-      </div>  
+      <div class="site-footer__col site-footer__col--contact footer-accordion">
+        <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">راه های ارتباطی</button>
+        <ul class="site-footer__contact-list">
+          <li>
+            <i class="bi bi-telephone" aria-hidden="true"></i>
+            <span dir="ltr">+98 998 153 4269</span>
+          </li>
+          <li>
+            <i class="bi bi-envelope" aria-hidden="true"></i>
+            <a href="mailto:info@swaapin.ir">info@swaapin.ir</a>
+          </li>
+          <li>
+            <i class="bi bi-geo-alt" aria-hidden="true"></i>
+            <span>مرکز نواوری اکباتان</span>
+          </li>
+        </ul>
+        <div class="site-footer__social">
+          <a href="https://www.instagram.com/swaapin_official" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
+          <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
+          <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
+          <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
+        </div>
+      </div>
     </div>
 
     <p class="site-footer__copy" style="display: flex;justify-content: space-around;">
