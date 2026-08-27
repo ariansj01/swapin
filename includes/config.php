@@ -11,7 +11,7 @@ define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE', 'IRT');
 define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
 define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
-define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'https://swaapin.ir'); // http://localhost/swaapin - https://swaapin.ir
+define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'http://localhost/swaapin'); // http://localhost/swaapin - https://swaapin.ir
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads');
@@ -29,9 +29,9 @@ define('WALLET_TOPUP_URL', APP_URL . '/wallet?action=topup'); // آدرس صفح
 
 // ─── Database ──────────────────────────────────────────────────────────────
 define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'swapin'); // kala_b_kala
-define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'ltze_swapin_kP%user'); // ltze_swapin_kP%user
-define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : 'kP%B!-)+*75p'); // kP%B!-)+*75p
+define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'kala_b_kala'); // kala_b_kala
+define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'root'); // ltze_swapin_kP%user
+define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : ''); // kP%B!-)+*75p
 define('DB_CHAR', 'utf8mb4');
 
 require_once __DIR__ . '/security.php';
@@ -64,7 +64,7 @@ if (!defined('SKIP_SESSION') && session_status() === PHP_SESSION_NONE) {
 // ─── Error handling ────────────────────────────────────────────────────────
 error_reporting(E_ALL);
 ini_set('log_errors', '1');
-ini_set('error_log', STORAGE_DIR . 'logs/error.log');
+ini_set('error_log', STORAGE_DIR . '/logs/error.log');
 
 // #region debug-point homepage-500-bootstrap
 if (!defined('SWAPIN_REQUEST_ID')) {
@@ -72,7 +72,10 @@ if (!defined('SWAPIN_REQUEST_ID')) {
 }
 
 // ─── Auto-run migrations ───────────────────────────────────────────────────
-try {
+// Run only in CLI, or when explicitly requested, or occasionally in dev
+$shouldMigrate = defined('STDIN') || (isset($_GET['migrate']) && $_GET['migrate'] === '1') || (!app_is_production() && mt_rand(1, 20) === 1);
+if ($shouldMigrate) {
+    try {
     // Add trade_rating column to reviews table if it doesn't exist
     $reviewColumns = db_table_columns('reviews');
     if (!in_array('trade_rating', $reviewColumns)) {
@@ -409,7 +412,7 @@ try {
                 `user_id` INT UNSIGNED NOT NULL,
                 `plan` ENUM("boost","featured","vip","targeted","ai","gold") COLLATE utf8mb4_unicode_ci NOT NULL,
                 `starts_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                `ends_at` TIMESTAMP NOT NULL,
+                `ends_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 `amount_paid` DECIMAL(12,0) NOT NULL,
                 `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (`id`),
@@ -1121,11 +1124,15 @@ try {
     // the wizard dropdown never shows stale DB state.
 
 } catch (Throwable $e) {
-    // Ignore migration errors, just log them
-    swapin_debug_log('migration_error', ['message' => $e->getMessage()]);
+        // Ignore migration errors, just log them
+        swapin_debug_log('migration_error', ['message' => $e->getMessage()]);
+    }
 }
 
-auto_expire_listings();
+// Run auto-expire only occasionally (e.g., 1% of requests or via CLI)
+if (defined('STDIN') || mt_rand(1, 100) === 1) {
+    auto_expire_listings();
+}
 
 function swapin_debug_log(string $message, array $context = []): void {
     $parts = ['[swapin-debug]', '[req:' . SWAPIN_REQUEST_ID . ']', $message];

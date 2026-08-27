@@ -143,7 +143,7 @@ render_navbar($user);
       <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--info),#4f86f7);margin-bottom:var(--sp-5)">
         <i class="bi bi-question-octagon" style="font-size:2rem;color:#fff"></i>
       </div>
-      <h1 style="font-size:2.25rem;margin:0 0 var(--sp-3)">سوالات متداول سواَپین</h1>
+      <h1 style="font-size:2.25rem;margin:0 0 var(--sp-3)">سوالات متداول (FAQ)</h1>
       <p style="font-size:1.125rem;color:var(--text-secondary);max-width:640px;margin:0 auto;line-height:1.8">
         پاسخ تمام پرسش‌های رایج شما درباره معاوضه کالا در سواَپین را در این صفحه پیدا کنید.
       </p>

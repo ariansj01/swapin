@@ -18,7 +18,7 @@ unset($_SESSION['auth_error']);
 // Rate limits: 3 requests then 10min ban (600s), and 90s cooldown between requests
 define('MAX_OTP_REQUESTS', 3);
 define('OTP_BAN_SECONDS', 600);
-define('OTP_COOLDOWN_SECONDS', 90);
+define('OTP_COOLDOWN_SECONDS', app_is_production() ? 90 : 2);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();

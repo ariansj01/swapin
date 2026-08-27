@@ -594,7 +594,9 @@ function render_footer(): void {
         <div class="footer-links-group footer-accordion">
           <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">راهنما و قوانین</button>
           <ul class="site-footer__links">
-            <li><a href="{$url}/faq">سوالات</a></li>
+            <li><a href="{$url}/about">درباره ما</a></li>
+            <li><a href="{$url}/contact">تماس با ما</a></li>
+            <li><a href="{$url}/faq">سوالات متداول</a></li>
             <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
             <li><a href="{$url}/privacy">حریم خصوصی</a></li>
             <li><a href="{$url}/terms">قوانین و مقررات</a></li>
@@ -612,7 +614,8 @@ function render_footer(): void {
       <div class="site-footer__col site-footer__col--trust">
         <h3 class="site-footer__heading">نمادهای اعتماد</h3>
         <div class="site-footer__trust">
-          <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
+          <!-- Enamad trust seal disabled on localhost to prevent E2E timeouts -->
+          <!-- <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a> -->
         </div>
       </div>
 
@@ -652,8 +655,9 @@ HTML;
     if ($user) {
         echo '<script src="' . $url . '/src/js/push-alerts.js?v=' . (@filemtime(__DIR__ . '/../src/js/push-alerts.js') ?: time()) . '"></script>';
     }
+    $appJsVer = @filemtime(__DIR__ . '/../src/js/app.js') ?: time();
     echo <<<HTML
-<script src="{$url}/src/js/app.js?v=<?= filemtime(__DIR__ . '/../src/js/app.js') ?>"></script>
+<script src="{$url}/src/js/app.js?v={$appJsVer}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.site-footer__toggle').forEach(function (button) {

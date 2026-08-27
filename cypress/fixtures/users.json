@@ -1,0 +1,11 @@
+{
+  "phone": "09999999999",
+  "invalidPhone": "0900",
+  "wrongPhone": "09111111111",
+  "otpCode": "123456",
+  "wrongOtpCode": "000000",
+  "name": "کاربر تست",
+  "city": "تهران",
+  "email": "test@swaapin.ir",
+  "bio": "این پروفایل برای تست E2E است."
+}

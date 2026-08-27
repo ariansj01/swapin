@@ -4537,15 +4537,15 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     direction: rtl;
   }
 
-  .site-footer__links,
-  .site-footer__contact-list,
-  .site-footer__social {
-    display: none;
+  .footer-accordion:not(.is-open) > .site-footer__links,
+  .footer-accordion:not(.is-open) > .site-footer__contact-list,
+  .footer-accordion:not(.is-open) > .site-footer__social,
+  .site-footer__col--contact.footer-accordion:not(.is-open) .site-footer__contact-list,
+  .site-footer__col--contact.footer-accordion:not(.is-open) .site-footer__social {
+    display: none !important;
   }
 
-  .footer-accordion.is-open .site-footer__links,
-  .footer-accordion.is-open .site-footer__contact-list,
-  .footer-accordion.is-open .site-footer__social {
+  .footer-accordion.is-open .site-footer__links {
     display: grid;
   }
 

@@ -1,0 +1,7 @@
+{
+  "email": "admin@swaapin.ir",
+  "password": "Admin@123456",
+  "wrongEmail": "wrong@example.com",
+  "wrongPassword": "wrongpass",
+  "name": "مدیر سیستمی"
+}

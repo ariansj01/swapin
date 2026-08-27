@@ -37,3 +37,18 @@ includes/layout.php.*
 
 # Production audit exports
 docs/audit/*.tmp
+
+# --- Cypress E2E Test Artifacts ---
+node_modules/
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+
+# Cypress local environment overrides
+cypress.env.json
+
+# npm / yarn lock overrides
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
