@@ -614,8 +614,13 @@ function render_footer(): void {
       <div class="site-footer__col site-footer__col--trust">
         <h3 class="site-footer__heading">نمادهای اعتماد</h3>
         <div class="site-footer__trust">
-          <!-- Enamad trust seal disabled on localhost to prevent E2E timeouts -->
-          <!-- <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a> -->
+          <?php if (app_is_production()): ?>
+          <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
+          <?php else: ?>
+          <div class="site-footer__trust-placeholder" style="opacity:.5;font-size:.85rem;padding:.75rem;border:1px dashed var(--border);border-radius:12px;text-align:center;">
+            نماد اعتماد — فقط در Production فعال است
+          </div>
+          <?php endif; ?>
         </div>
       </div>
 

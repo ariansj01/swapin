@@ -56,7 +56,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Composer dependencies
@@ -75,7 +75,7 @@ jobs:
           SWAPIN_DB_HOST=127.0.0.1
           SWAPIN_DB_NAME=swapin_test
           SWAPIN_DB_USER=swapin_test
-          SWAPIN_DB_PASSWORD=swapin_test
+          SWAPIN_DB_PASS=swapin_test
           SWAPIN_ADMIN_EMAIL=admin@swaapin.ir
           SWAPIN_ENV=testing
           EOF
@@ -159,7 +159,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
       - name: Install
         run: npm ci || npm install

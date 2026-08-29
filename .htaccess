@@ -14,21 +14,27 @@ Options +MultiViews -Indexes
 # Block direct web access to sensitive directories
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  # For production server (root domain) — UNCOMMENT ON PRODUCTION:
+  # For production server (root domain) — adjust RewriteBase if deployed at domain root:
   # RewriteBase /
   # For local development (XAMPP in /swaapin subdir):
   RewriteBase /swaapin/
 
-  # Force HTTPS (exclude localhost)
-  # RewriteCond %{HTTPS} off
-  # RewriteCond %{HTTP:X-Forwarded-Proto} !https
-  # RewriteCond %{HTTP_HOST} !^localhost$ [NC]
-  # RewriteCond %{HTTP_HOST} !^127\.0\.0\.1$
-  # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  # Force HTTPS (exclude localhost & 127.0.0.1 for local dev)
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteCond %{HTTP_HOST} !^localhost$ [NC]
+  RewriteCond %{HTTP_HOST} !^127\.0\.0\.1$
+  RewriteCond %{HTTP_HOST} !^localhost(:[0-9]+)?$ [NC]
+  RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:[0-9]+)?$
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-  # Remove www (optional)
-  # RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-  # RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+  # Remove www → non-www (skip localhost/IPs; keep HTTPS on redirect)
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteCond %1 !^localhost$ [NC]
+  RewriteCond %1 !^127\.0\.0\.1$
+  RewriteCond %1 !^localhost(:[0-9]+)?$ [NC]
+  RewriteCond %1 !^127\.0\.0\.1(:[0-9]+)?$
+  RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
   # Explicitly handle /profile/ to avoid directory listing
   RewriteRule ^profile/?$ profile.php [L,NC,QSA]

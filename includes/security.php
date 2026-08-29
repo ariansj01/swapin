@@ -9,11 +9,15 @@ function app_is_production(): bool {
         return $cached;
     }
 
+    // Environment contract (explicit SWAPIN_ENV):
+    //   production  → production (strict)
+    //   testing     → NOT production (CI uses testing)
+    //   development → NOT production (local work)
     $env = defined('APP_ENV') ? APP_ENV : 'auto';
     if ($env === 'production') {
         return $cached = true;
     }
-    if ($env === 'development') {
+    if ($env === 'development' || $env === 'testing') {
         return $cached = false;
     }
 

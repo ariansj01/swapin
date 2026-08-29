@@ -11,28 +11,86 @@ define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE', 'IRT');
 define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
 define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
-define('APP_URL',           getenv('SWAPIN_APP_URL') ?: 'https://swaapin.ir'); // http://localhost/swaapin - https://swaapin.ir
+// ─── Environment Resolution (SWAPIN_ENV contract) ──────────────────────────
+// Valid values (via SWAPIN_ENV env var): development | testing | production
+// Default: development (safe for local work; production will fail-fast on missing env)
+$_swapinRawEnv = getenv('SWAPIN_ENV');
+$_swapinEnv = is_string($_swapinRawEnv) ? strtolower(trim($_swapinRawEnv)) : '';
+if (!in_array($_swapinEnv, ['development', 'testing', 'production'], true)) {
+    $_swapinEnv = 'development';
+}
+define('APP_ENV', $_swapinEnv);
+unset($_swapinRawEnv, $_swapinEnv);
+
+function app_require_env_var(string $name): string {
+    $val = getenv($name);
+    if ($val === false || $val === '') {
+        if (APP_ENV === 'production') {
+            http_response_code(500);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "Configuration Error: Required environment variable {$name} is missing.\n";
+            exit(1);
+        }
+        return '';
+    }
+    return (string)$val;
+}
+
+define('OTP_EXPIRE',        120);
+define('LISTINGS_PER_PAGE', 12);
+define('WELCOME_BONUS',     10000000);
+define('PLATFORM_FEE_RATE', 0.01); // ۱٪ کارمزد روی معاملات موفق
+define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه‌ها
+
+// ─── APP_URL (Production: fail-fast on missing) ────────────────────────────
+$_swapinAppUrl = getenv('SWAPIN_APP_URL');
+if ($_swapinAppUrl === false || $_swapinAppUrl === '') {
+    if (APP_ENV === 'production') {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "Configuration Error: SWAPIN_APP_URL is required in production.\n";
+        exit(1);
+    }
+    $_swapinAppUrl = 'http://localhost/swaapin';
+}
+define('APP_URL', rtrim((string)$_swapinAppUrl, '/'));
+unset($_swapinAppUrl);
+
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads');
 define('STORAGE_DIR',       __DIR__ . '/../storage');
 define('PRIVATE_UPLOAD_DIR', STORAGE_DIR . '/private');
 define('MAX_IMAGES',        8);
-// Environment: 'auto' | 'development' | 'production' (or SWAPIN_ENV env var)
-define('APP_ENV',           'development'); // موقتاً برای دیباگ
-define('OTP_EXPIRE',        120);
-define('LISTINGS_PER_PAGE', 12);
-define('WELCOME_BONUS',     10000000);
-define('PLATFORM_FEE_RATE', 0.01); // ۱٪ کارمزد روی معاملات موفق
-define('STORE_LISTING_BONUS', 50);  // سقف اضافه برای فروشگاه‌ها
 define('WALLET_TOPUP_URL', APP_URL . '/wallet?action=topup'); // آدرس صفحه شارژ کیف پول
 
-// ─── Database ──────────────────────────────────────────────────────────────
-define('DB_HOST', getenv('SWAPIN_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('SWAPIN_DB_NAME') ?: 'swapin'); // kala_b_kala
-define('DB_USER', getenv('SWAPIN_DB_USER') ?: 'ltze_swapin_kP%user'); // ltze_swapin_kP%user
-define('DB_PASS', getenv('SWAPIN_DB_PASS') !== false ? (string)getenv('SWAPIN_DB_PASS') : 'kP%B!-)+*75p'); // kP%B!-)+*75p
+// ─── Database (Production: fail-fast on missing credentials) ───────────────
+$_swapinDbHost = getenv('SWAPIN_DB_HOST');
+$_swapinDbName = getenv('SWAPIN_DB_NAME');
+$_swapinDbUser = getenv('SWAPIN_DB_USER');
+$_swapinDbPass = getenv('SWAPIN_DB_PASS');
+
+if (APP_ENV === 'production') {
+    foreach ([
+        'SWAPIN_DB_HOST' => $_swapinDbHost,
+        'SWAPIN_DB_NAME' => $_swapinDbName,
+        'SWAPIN_DB_USER' => $_swapinDbUser,
+    ] as $_k => $_v) {
+        if ($_v === false || $_v === '') {
+            http_response_code(500);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "Configuration Error: Required database environment variable {$_k} is missing.\n";
+            exit(1);
+        }
+    }
+}
+
+define('DB_HOST', ($_swapinDbHost !== false && $_swapinDbHost !== '') ? (string)$_swapinDbHost : 'localhost');
+define('DB_NAME', ($_swapinDbName !== false && $_swapinDbName !== '') ? (string)$_swapinDbName : 'kala_b_kala');
+define('DB_USER', ($_swapinDbUser !== false && $_swapinDbUser !== '') ? (string)$_swapinDbUser : 'root');
+define('DB_PASS', ($_swapinDbPass !== false && $_swapinDbPass !== '') ? (string)$_swapinDbPass : '');
 define('DB_CHAR', 'utf8mb4');
+unset($_swapinDbHost, $_swapinDbName, $_swapinDbUser, $_swapinDbPass);
 
 require_once __DIR__ . '/security.php';
 send_security_headers();
@@ -72,8 +130,13 @@ if (!defined('SWAPIN_REQUEST_ID')) {
 }
 
 // ─── Auto-run migrations ───────────────────────────────────────────────────
-// Run only in CLI, or when explicitly requested, or occasionally in dev
-$shouldMigrate = defined('STDIN') || (isset($_GET['migrate']) && $_GET['migrate'] === '1') || (!app_is_production() && mt_rand(1, 20) === 1);
+// Run only in CLI, or when explicitly requested (?migrate=1), or occasionally ONLY in development
+// NEVER auto-run migrations in testing or production environments
+$_isDevEnv = (APP_ENV === 'development');
+$shouldMigrate = defined('STDIN')
+    || (isset($_GET['migrate']) && $_GET['migrate'] === '1')
+    || ($_isDevEnv && mt_rand(1, 20) === 1);
+unset($_isDevEnv);
 if ($shouldMigrate) {
     try {
     // Add trade_rating column to reviews table if it doesn't exist
