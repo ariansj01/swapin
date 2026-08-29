@@ -18,7 +18,7 @@ $_swapinRawEnv = getenv('SWAPIN_ENV');
 $_swapinEnv = is_string($_swapinRawEnv) ? strtolower(trim($_swapinRawEnv)) : '';
 if (!in_array($_swapinEnv, ['development', 'testing', 'production'], true)) {
     $_swapinEnv = 'development';
-}  
+}
 define('APP_ENV', $_swapinEnv);
 unset($_swapinRawEnv, $_swapinEnv);
 
