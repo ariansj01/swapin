@@ -6,7 +6,7 @@
 
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/admin_layout.php';
-
+ 
 $admin = require_admin();
 
 $isEdit = isset($_GET['id']);
