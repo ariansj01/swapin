@@ -105,7 +105,11 @@ if (!empty($storeUser['store_banner'])) {
         <div class="container">
             <div class="store-profile-header">
                 <div class="store-profile-header__avatar">
-                    <?= avatar_html($storeUser['avatar'] ?? null, $storeUser['store_name'] ?? $storeUser['name'], 'lg') ?>
+                    <?php if (!empty($storeUser['store_banner'])): ?>
+                      <img src="<?= h(UPLOAD_URL . $storeUser['store_banner']) ?>" alt="<?= h($storeUser['store_name'] ?? $storeUser['name']) ?>" class="avatar avatar--lg" style="object-fit:cover;border:3px solid var(--surface, #fff)">
+                    <?php else: ?>
+                      <?= avatar_html($storeUser['avatar'] ?? null, $storeUser['store_name'] ?? $storeUser['name'], 'lg') ?>
+                    <?php endif; ?>
                 </div>
                 <div class="store-profile-header__info">
                     <div class="d-flex align-center gap-2 flex-wrap mb-2">

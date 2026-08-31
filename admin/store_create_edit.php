@@ -130,10 +130,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (isset($_FILES['store_banner']) && db_has_column('users', 'store_banner')) {
             $bannerFile = $_FILES['store_banner'];
-            if (is_array($bannerFile) && ($bannerFile['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
-                $uploaded = upload_image($bannerFile, 'store');
-                if ($uploaded !== null) {
-                    $updateData['store_banner'] = $uploaded;
+            if (is_array($bannerFile)) {
+                $err = (int)($bannerFile['error'] ?? UPLOAD_ERR_NO_FILE);
+                if ($err === UPLOAD_ERR_OK) {
+                    $uploaded = upload_image($bannerFile, 'store');
+                    if ($uploaded !== null) {
+                        $updateData['store_banner'] = $uploaded;
+                    } else {
+                        $error = 'آپلود بنر ناموفق بود. فرمت (JPG/PNG/WebP/GIF) یا حجم فایل (حداکثر ۵ مگابایت) را بررسی کنید.';
+                    }
+                } elseif ($err !== UPLOAD_ERR_NO_FILE) {
+                    $phpErrMap = [
+                        UPLOAD_ERR_INI_SIZE   => 'حجم بنر از حد مجاز PHP بیشتر است.',
+                        UPLOAD_ERR_FORM_SIZE  => 'حجم بنر از حد مجاز فرم بیشتر است.',
+                        UPLOAD_ERR_PARTIAL    => 'آپلود بنر ناقص انجام شد.',
+                        UPLOAD_ERR_NO_TMP_DIR => 'پوشه موقت آپلود در سرور یافت نشد.',
+                        UPLOAD_ERR_CANT_WRITE => 'سرور نمی‌تواند فایل بنر را روی دیسک بنویسد.',
+                        UPLOAD_ERR_EXTENSION  => 'آپلود بنر توسط یک اکستنشن PHP متوقف شد.',
+                    ];
+                    $error = $phpErrMap[$err] ?? 'خطایی هنگام آپلود بنر رخ داد (کد: ' . $err . ')';
                 }
             }
         }

@@ -159,7 +159,11 @@ render_navbar($user);
         </a>
         <div class="shop-card__body">
           <div class="shop-card__profile">
-            <?= avatar_html($store['avatar'] ?? null, $name, 'md') ?>
+            <?php if (!empty($store['store_banner'])): ?>
+              <img src="<?= h(UPLOAD_URL . $store['store_banner']) ?>" alt="<?= h($name) ?>" class="avatar avatar--md" style="object-fit:cover;border:2px solid var(--surface, #fff)">
+            <?php else: ?>
+              <?= avatar_html($store['avatar'] ?? null, $name, 'md') ?>
+            <?php endif; ?>
             <div>
               <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
               <div class="shop-card__tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
