@@ -1694,6 +1694,9 @@ function validate_uploaded_image(array $file): ?array {
         'image/png'  => 'png',
         'image/webp' => 'webp',
         'image/gif'  => 'gif',
+        'image/x-png'=> 'png',
+        'image/x-jpeg'=> 'jpg',
+        'image/pjpeg'=> 'jpg',
     ];
     $extMap = [
         'jpg'  => 'jpg',
@@ -1703,22 +1706,41 @@ function validate_uploaded_image(array $file): ?array {
         'gif'  => 'gif',
     ];
 
-    $mime = null;
+    $magicBytesMime = null;
+    $magicHandle = @fopen($file['tmp_name'], 'rb');
+    if ($magicHandle) {
+        $magicBytes = @fread($magicHandle, 16);
+        @fclose($magicHandle);
+        if ($magicBytes !== false && strlen($magicBytes) >= 4) {
+            if (substr($magicBytes, 0, 3) === "\xFF\xD8\xFF") {
+                $magicBytesMime = 'image/jpeg';
+            } elseif (substr($magicBytes, 0, 8) === "\x89PNG\r\n\x1a\n") {
+                $magicBytesMime = 'image/png';
+            } elseif (substr($magicBytes, 0, 4) === 'RIFF' && strlen($magicBytes) >= 12 && substr($magicBytes, 8, 4) === 'WEBP') {
+                $magicBytesMime = 'image/webp';
+            } elseif (substr($magicBytes, 0, 6) === 'GIF87a' || substr($magicBytes, 0, 6) === 'GIF89a') {
+                $magicBytesMime = 'image/gif';
+            }
+        }
+    }
+
+    $finfoMime = null;
     if (function_exists('finfo_open')) {
         $finfo = @finfo_open(FILEINFO_MIME_TYPE);
         if ($finfo) {
             $detected = @finfo_file($finfo, $file['tmp_name']);
             if (is_string($detected) && $detected !== '') {
-                $mime = strtolower(trim($detected));
+                $finfoMime = strtolower(trim($detected));
             }
             @finfo_close($finfo);
         }
     }
 
-    if (!$mime && function_exists('mime_content_type')) {
+    $mimeContentMime = null;
+    if (function_exists('mime_content_type')) {
         $detected = @mime_content_type($file['tmp_name']);
         if (is_string($detected) && $detected !== '') {
-            $mime = strtolower(trim($detected));
+            $mimeContentMime = strtolower(trim($detected));
         }
     }
 
@@ -1726,30 +1748,35 @@ function validate_uploaded_image(array $file): ?array {
     $imageMime = is_array($info) && !empty($info['mime'])
         ? strtolower((string)$info['mime'])
         : null;
-    if (!$mime && $imageMime) {
-        $mime = $imageMime;
-    }
 
     $originalExt = strtolower((string)pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION));
     $normalizedExt = $extMap[$originalExt] ?? null;
-    $normalizedMime = $mime && isset($allowed[$mime]) ? $mime : null;
-    if (!$normalizedMime && $imageMime && isset($allowed[$imageMime])) {
-        $normalizedMime = $imageMime;
+
+    $normalizedMime = null;
+    $candidates = array_values(array_filter([$finfoMime, $mimeContentMime, $imageMime, $magicBytesMime]));
+    foreach ($candidates as $c) {
+        if (isset($allowed[$c])) { $normalizedMime = $c; break; }
+    }
+
+    if ($normalizedMime === null && $info !== false && $normalizedExt !== null) {
+        foreach (['image/' . $normalizedExt, 'image/x-' . $normalizedExt] as $probe) {
+            if (isset($allowed[$probe])) { $normalizedMime = $probe; break; }
+        }
     }
 
     if ($normalizedMime) {
         $ext = $allowed[$normalizedMime];
-    } elseif ($normalizedExt && $imageMime) {
+    } elseif ($normalizedExt && ($imageMime !== null || $magicBytesMime !== null || $info !== false)) {
         $ext = $normalizedExt;
     } else {
         return null;
     }
 
-    if ($info === false) {
+    if ($info === false && $magicBytesMime === null) {
         return null;
     }
 
-    return ['ext' => $ext, 'mime' => $normalizedMime ?: ($imageMime ?: 'image/' . $ext)];
+    return ['ext' => $ext, 'mime' => $normalizedMime ?: ($imageMime ?: ($magicBytesMime ?: ('image/' . $ext)))];
 }
 
 function store_uploaded_image(array $file, string $prefix, string $destDir): ?string {
@@ -1764,13 +1791,12 @@ function store_uploaded_image(array $file, string $prefix, string $destDir): ?st
     if (!is_dir($destDir)) {
         if (!@mkdir($destDir, 0775, true) && !is_dir($destDir)) {
             if (function_exists('swapin_debug_log')) {
-                swapin_debug_log('upload-mkdir-failed', ['dir' => $destDir]);
+                swapin_debug_log('upload-mkdir-failed', ['dir' => $destDir, 'error' => error_get_last()]);
             }
             return null;
         }
     }
 
-    // Ensure web server can write (fixes Permission denied on Linux hosts)
     if (!is_writable($destDir)) {
         @chmod($destDir, 0775);
     }
@@ -1778,19 +1804,44 @@ function store_uploaded_image(array $file, string $prefix, string $destDir): ?st
         @chmod($destDir, 0777);
     }
     if (!is_writable($destDir)) {
-        if (function_exists('swapin_debug_log')) {
-            swapin_debug_log('upload-dir-not-writable', ['dir' => $destDir]);
+        $probeFile = $destDir . 'write_probe_' . uniqid() . '.tmp';
+        $probeWrite = @file_put_contents($probeFile, 'probe');
+        if ($probeWrite === false) {
+            if (function_exists('swapin_debug_log')) {
+                swapin_debug_log('upload-dir-not-writable', ['dir' => $destDir, 'probe_error' => error_get_last(), 'disk_free' => @disk_free_space($destDir)]);
+            }
+            return null;
         }
-        return null;
+        @unlink($probeFile);
     }
 
     $dest = $destDir . $filename;
-    if (!@move_uploaded_file($file['tmp_name'], $dest)) {
+    $tmpName = $file['tmp_name'] ?? '';
+    $moved = false;
+
+    if ($tmpName !== '' && is_uploaded_file($tmpName)) {
+        $moved = @move_uploaded_file($tmpName, $dest);
+    }
+
+    if (!$moved && $tmpName !== '' && is_file($tmpName)) {
+        if (@copy($tmpName, $dest)) {
+            $moved = true;
+            if (function_exists('swapin_debug_log')) {
+                swapin_debug_log('upload-used-copy-fallback', ['tmp' => $tmpName, 'dest' => $dest]);
+            }
+        }
+    }
+
+    if (!$moved) {
         if (function_exists('swapin_debug_log')) {
             swapin_debug_log('upload-move-failed', [
-                'tmp'  => $file['tmp_name'] ?? '',
-                'dest' => $dest,
-                'writable' => is_writable($destDir),
+                'tmp'           => $tmpName,
+                'dest'          => $dest,
+                'writable'      => is_writable($destDir),
+                'is_uploaded'   => $tmpName !== '' ? is_uploaded_file($tmpName) : false,
+                'tmp_is_file'   => $tmpName !== '' ? is_file($tmpName) : false,
+                'disk_free'     => @disk_free_space($destDir),
+                'php_error'     => error_get_last(),
             ]);
         }
         return null;

@@ -1,4 +1,9 @@
 <?php
+@ini_set('upload_max_filesize', '128M');
+@ini_set('post_max_size', '128M');
+@ini_set('memory_limit', '256M');
+@ini_set('max_execution_time', '300');
+
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/admin_layout.php';
 
@@ -142,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
             'key_exists'      => isset($_FILES['store_banner']),
             'php_upload_max'  => ini_get('upload_max_filesize'),
             'php_post_max'    => ini_get('post_max_size'),
+            'upload_dir'      => defined('UPLOAD_DIR') ? UPLOAD_DIR : '(not defined)',
         ];
         if (isset($_FILES['store_banner']) && db_has_column('users', 'store_banner')) {
             $bannerFile = $_FILES['store_banner'];
@@ -150,17 +156,204 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
                 $bannerDebug['error_code'] = $err;
                 $bannerDebug['size_bytes'] = (int)($bannerFile['size'] ?? 0);
                 $bannerDebug['name']       = (string)($bannerFile['name'] ?? '');
+                $bannerDebug['tmp_name']   = (string)($bannerFile['tmp_name'] ?? '');
+                if ($bannerDebug['tmp_name'] !== '') {
+                    $bannerDebug['tmp_is_file'] = is_file($bannerDebug['tmp_name']);
+                    $bannerDebug['tmp_size']    = $bannerDebug['tmp_is_file'] ? @filesize($bannerDebug['tmp_name']) : false;
+                }
+
                 if ($err === UPLOAD_ERR_OK) {
-                    $uploaded = upload_image($bannerFile, 'store');
-                    $bannerDebug['upload_result'] = $uploaded;
-                    if ($uploaded !== null) {
-                        $updateData['store_banner'] = $uploaded;
+                    $allowedMimes = [
+                        'image/jpeg' => 'jpg',
+                        'image/jpg'  => 'jpg',
+                        'image/png'  => 'png',
+                        'image/webp' => 'webp',
+                        'image/gif'  => 'gif',
+                        'image/x-png'=> 'png',
+                        'image/x-jpeg'=> 'jpg',
+                        'image/pjpeg'=> 'jpg',
+                    ];
+                    $verboseReason = null;
+
+                    $maxSize = 5 * 1024 * 1024;
+                    if ($bannerDebug['size_bytes'] > $maxSize) {
+                        $verboseReason = 'حجم فایل (' . $bannerDebug['size_bytes'] . ' بایت) از محدودیت ۵ مگابایت بیشتر است.';
+                    } elseif (empty($bannerDebug['tmp_name']) || !$bannerDebug['tmp_is_file']) {
+                        $verboseReason = 'فایل موقت آپلود یافت نشد (tmp_name خالی یا وجود ندارد). ممکن است upload_tmp_dir در php.ini درست تنظیم نشده باشد.';
                     } else {
-                        $error = 'آپلود بنر ناموفق بود. فرمت (JPG/PNG/WebP/GIF) یا حجم فایل (حداکثر ' . $bannerDebug['php_upload_max'] . '، و حداکثر POST ' . $bannerDebug['php_post_max'] . ') را بررسی کنید.'
-                               . ' (کد=UPLOAD_ERR_OK اما validate_uploaded_image یا move_uploaded_file ناموفق بود.'
-                               . ' نام فایل: ' . ($bannerDebug['name'] ?: '—')
-                               . '، حجم بایت: ' . ($bannerDebug['size_bytes'] ?: '0') . ')'
-                               ;
+                        $infoSize = @getimagesize($bannerDebug['tmp_name']);
+                        $bannerDebug['getimagesize'] = $infoSize ?: ['_failed' => true, 'error' => error_get_last()];
+
+                        $magicBytesMime = null;
+                        $magicHandle = @fopen($bannerDebug['tmp_name'], 'rb');
+                        if ($magicHandle) {
+                            $magicBytes = @fread($magicHandle, 16);
+                            @fclose($magicHandle);
+                            if ($magicBytes !== false && strlen($magicBytes) >= 4) {
+                                if (substr($magicBytes, 0, 3) === "\xFF\xD8\xFF") {
+                                    $magicBytesMime = 'image/jpeg';
+                                } elseif (substr($magicBytes, 0, 8) === "\x89PNG\r\n\x1a\n") {
+                                    $magicBytesMime = 'image/png';
+                                } elseif (substr($magicBytes, 0, 4) === 'RIFF' && strlen($magicBytes) >= 12 && substr($magicBytes, 8, 4) === 'WEBP') {
+                                    $magicBytesMime = 'image/webp';
+                                } elseif (substr($magicBytes, 0, 6) === 'GIF87a' || substr($magicBytes, 0, 6) === 'GIF89a') {
+                                    $magicBytesMime = 'image/gif';
+                                } elseif (substr($magicBytes, 0, 2) === 'BM') {
+                                    $magicBytesMime = 'image/bmp';
+                                }
+                            }
+                        }
+                        $bannerDebug['magic_bytes_mime'] = $magicBytesMime;
+
+                        if ($infoSize === false && $magicBytesMime === null) {
+                            $verboseReason = 'getimagesize() نتوانست فایل را به‌عنوان عکس تشخیص دهد و magic bytes هم معتبر نبود — احتمالاً فایل خراب یا فرمت واقعی‌اش عکس نیست (حتی اگر پسوند png/jpg داشته باشد).';
+                        } else {
+                            $imageMime = $infoSize !== false && !empty($infoSize['mime']) ? strtolower((string)$infoSize['mime']) : null;
+                            $bannerDebug['image_mime'] = $imageMime;
+
+                            $finfoMime = null;
+                            if (function_exists('finfo_open')) {
+                                $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+                                if ($finfo) {
+                                    $detected = @finfo_file($finfo, $bannerDebug['tmp_name']);
+                                    if (is_string($detected) && $detected !== '') {
+                                        $finfoMime = strtolower(trim($detected));
+                                    }
+                                    @finfo_close($finfo);
+                                }
+                            }
+                            $bannerDebug['finfo_mime'] = $finfoMime;
+
+                            $mimeContentMime = null;
+                            if (function_exists('mime_content_type')) {
+                                $detected = @mime_content_type($bannerDebug['tmp_name']);
+                                if (is_string($detected) && $detected !== '') {
+                                    $mimeContentMime = strtolower(trim($detected));
+                                }
+                            }
+                            $bannerDebug['mime_content_type'] = $mimeContentMime;
+
+                            $originalExt = strtolower((string)pathinfo($bannerDebug['name'], PATHINFO_EXTENSION));
+                            $extMap = ['jpg'=>'jpg','jpeg'=>'jpg','png'=>'png','webp'=>'webp','gif'=>'gif'];
+                            $extFromName = $extMap[$originalExt] ?? null;
+
+                            $normalizedMime = null;
+                            $candidates = array_values(array_filter([$finfoMime, $mimeContentMime, $imageMime, $magicBytesMime]));
+                            foreach ($candidates as $c) {
+                                if (isset($allowedMimes[$c])) { $normalizedMime = $c; break; }
+                            }
+
+                            if ($normalizedMime === null && $infoSize !== false && $extFromName !== null) {
+                                foreach (['image/' . $extFromName, 'image/x-' . $extFromName] as $probe) {
+                                    if (isset($allowedMimes[$probe])) { $normalizedMime = $probe; break; }
+                                }
+                                if ($normalizedMime !== null) {
+                                    $bannerDebug['mime_fallback'] = 'used_extension_because_getimagesize_ok';
+                                }
+                            }
+                            if ($normalizedMime === null && $magicBytesMime !== null && $extFromName !== null) {
+                                $bannerDebug['mime_fallback'] = 'magic_bytes_matched_but_not_in_allowed_list';
+                            }
+
+                            $bannerDebug['normalized_mime'] = $normalizedMime;
+                            $bannerDebug['mime_candidates'] = $candidates;
+                            $bannerDebug['original_ext'] = $originalExt;
+                            $bannerDebug['ext_from_name'] = $extFromName;
+
+                            if ($normalizedMime === null) {
+                                $verboseReason = 'هیچ‌کدام از متدهای تشخیص MIME تایپ مجاز را برنگرداندند (حتی با magic bytes و fallback پسوند).'
+                                               . ' finfo=' . ($finfoMime ?? 'NULL')
+                                               . ' | mime_content_type=' . ($mimeContentMime ?? 'NULL')
+                                               . ' | getimagesize[mime]=' . ($imageMime ?? 'NULL')
+                                               . ' | magic_bytes=' . ($magicBytesMime ?? 'NULL')
+                                               . ' | ext_from_name=' . ($extFromName ?? 'NULL')
+                                               . ' — اگر مطمئنید فایل تصویر معتبر است، لطفاً با نرم‌افزار مبدل عکس (مثل Paint یا GIMP) دوباره با فرمت JPG یا PNG ذخیره کنید و آپلود کنید.';
+                            }
+                        }
+                    }
+
+                    if ($verboseReason === null && defined('UPLOAD_DIR')) {
+                        $uploadDir = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR;
+                        $bannerDebug['upload_dir_exists']   = is_dir($uploadDir);
+                        $bannerDebug['upload_dir_writable'] = is_writable($uploadDir);
+                        $bannerDebug['upload_dir_realpath'] = @realpath($uploadDir);
+                        $bannerDebug['upload_dir_perms']    = $bannerDebug['upload_dir_exists'] ? @decoct(@fileperms($uploadDir) & 0777) : null;
+                        if (!$bannerDebug['upload_dir_exists']) {
+                            if (!@mkdir($uploadDir, 0775, true)) {
+                                $lastErr = error_get_last();
+                                $verboseReason = 'پوشه مقصد uploads در مسیر ' . htmlspecialchars($uploadDir) . ' وجود ندارد و تلاش برای ساخت آن هم ناموفق بود (' . ($lastErr['message'] ?? 'نامشخص') . ').';
+                            } else {
+                                $bannerDebug['upload_dir_created_now'] = true;
+                                $bannerDebug['upload_dir_writable'] = is_writable($uploadDir);
+                            }
+                        }
+                        if ($verboseReason === null && !$bannerDebug['upload_dir_writable']) {
+                            $probeFile = $uploadDir . 'write_test_' . uniqid() . '.tmp';
+                            $probeWrite = @file_put_contents($probeFile, 'test');
+                            if ($probeWrite !== false) {
+                                @unlink($probeFile);
+                                $bannerDebug['upload_dir_writable'] = true;
+                                $bannerDebug['write_probe'] = 'passed (is_writable was lying but actual write worked)';
+                            } else {
+                                $lastErr = error_get_last();
+                                $bannerDebug['write_probe_error'] = $lastErr;
+                                $verboseReason = 'پوشه ' . htmlspecialchars($uploadDir) . ' قابل نوشتن نیست — تلاش برای نوشتن فایل تست ناموفق بود (' . ($lastErr['message'] ?? 'نامشخص') . '). دسترسی chmod/chown را بررسی کنید (معمولاً باید مالک www-data و دسترسی ۰۷۷۵ باشد).';
+                            }
+                        }
+                    }
+
+                    if ($verboseReason === null && defined('UPLOAD_DIR')) {
+                        $uploadDir = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR;
+                        $prefix = 'store';
+                        $extMap = ['jpg'=>'jpg','jpeg'=>'jpg','png'=>'png','webp'=>'webp','gif'=>'gif'];
+                        $originalExt = strtolower((string)pathinfo($bannerDebug['name'], PATHINFO_EXTENSION));
+                        $ext = $allowedMimes[$normalizedMime] ?? ($extMap[$originalExt] ?? 'png');
+                        $testFileName = $prefix . '_diag_' . uniqid('', true) . '_' . time() . '.' . $ext;
+                        $testDest = $uploadDir . $testFileName;
+                        $bannerDebug['move_dest'] = $testDest;
+                        $bannerDebug['tmp_uploaded_is_uploaded_file'] = is_uploaded_file($bannerDebug['tmp_name']);
+                        $clearLast = error_get_last();
+                        $moved = false;
+                        if ($bannerDebug['tmp_uploaded_is_uploaded_file']) {
+                            $moved = @move_uploaded_file($bannerDebug['tmp_name'], $testDest);
+                        }
+                        if (!$moved && $bannerDebug['tmp_is_file']) {
+                            $copyResult = @copy($bannerDebug['tmp_name'], $testDest);
+                            if ($copyResult) {
+                                @chmod($testDest, 0644);
+                                $bannerDebug['move_fallback'] = 'copy_because_move_uploaded_failed';
+                                $moved = true;
+                            } else {
+                                $bannerDebug['copy_fallback_error'] = error_get_last();
+                            }
+                        }
+                        $bannerDebug['move_uploaded_file'] = $moved;
+                        if (!$moved) {
+                            $lastErr = error_get_last();
+                            $bannerDebug['move_error'] = $lastErr;
+                            $freeDisk = @disk_free_space($uploadDir);
+                            $bannerDebug['disk_free_bytes'] = $freeDisk;
+                            $verboseReason = 'move_uploaded_file() و هم copy() نتوانستند فایل را به مقصد منتقل کنند.'
+                                           . ' (مسیر مقصد: ' . htmlspecialchars($testDest) . ')'
+                                           . ' | is_uploaded_file=' . ($bannerDebug['tmp_uploaded_is_uploaded_file'] ? 'true' : 'false')
+                                           . ' | فضای خالی دیسک: ' . ($freeDisk !== false ? number_format($freeDisk / 1048576, 1) . ' مگابایت' : 'نامشخص')
+                                           . ' — جزئیات خطا آخر: ' . ($lastErr['message'] ?? '(نامشخص)');
+                        } else {
+                            @chmod($testDest, 0644);
+                            $bannerDebug['move_saved_as'] = $testFileName;
+                        }
+                    }
+
+                    if ($verboseReason === null && isset($testFileName)) {
+                        $bannerDebug['upload_result'] = $testFileName;
+                        $updateData['store_banner'] = $testFileName;
+                    } else {
+                        $uploaded = null;
+                        $bannerDebug['upload_result'] = null;
+                        $bannerDebug['verbose_reason'] = $verboseReason;
+                        $error = 'آپلود بنر ناموفق بود. جزئیات دیاگ: ' . $verboseReason
+                               . ' — نام فایل: ' . ($bannerDebug['name'] ?: '—')
+                               . '، حجم بایت: ' . ($bannerDebug['size_bytes'] ?: '0');
                     }
                 } elseif ($err !== UPLOAD_ERR_NO_FILE) {
                     $phpErrMap = [
@@ -251,7 +444,7 @@ if ($flashMsg !== '') {
 
 <form method="POST" class="card" style="padding:30px" enctype="multipart/form-data">
 <?= csrf_field() ?>
-<input type="hidden" name="MAX_FILE_SIZE" value="5242880">
+<input type="hidden" name="MAX_FILE_SIZE" value="134217728">
 
 <?php if (!$isEdit): ?>
 <div class="form-group">
@@ -320,7 +513,7 @@ $ownerExtraStr = $ownerExtra ? (' (' . implode(' - ', $ownerExtra) . ')') : '';
 </div>
 <?php endif; ?>
 <input type="file" name="store_banner" accept="image/*" class="form-control">
-<small style="color:#888">فرمت‌های مجاز: JPG, PNG, WebP, GIF — حداکثر ۵ مگابایت</small>
+<small style="color:#888">فرمت‌های مجاز: JPG, PNG, WebP, GIF — حداکثر ۱۲۸ مگابایت (ترجیحاً زیر ۵ مگابایت)</small>
 </div>
 
 <div class="form-group">
