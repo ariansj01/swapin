@@ -156,7 +156,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
                     if ($uploaded !== null) {
                         $updateData['store_banner'] = $uploaded;
                     } else {
-                        $error = 'آپلود بنر ناموفق بود. فرمت (JPG/PNG/WebP/GIF) یا حجم فایل (حداکثر ' . $bannerDebug['php_upload_max'] . '، و حداکثر POST ' . $bannerDebug['php_post_max'] . ') را بررسی کنید.';
+                        $error = 'آپلود بنر ناموفق بود. فرمت (JPG/PNG/WebP/GIF) یا حجم فایل (حداکثر ' . $bannerDebug['php_upload_max'] . '، و حداکثر POST ' . $bannerDebug['php_post_max'] . ') را بررسی کنید.'
+                               . ' (کد=UPLOAD_ERR_OK اما validate_uploaded_image یا move_uploaded_file ناموفق بود.'
+                               . ' نام فایل: ' . ($bannerDebug['name'] ?: '—')
+                               . '، حجم بایت: ' . ($bannerDebug['size_bytes'] ?: '0') . ')'
+                               ;
                     }
                 } elseif ($err !== UPLOAD_ERR_NO_FILE) {
                     $phpErrMap = [
@@ -164,25 +168,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
                         UPLOAD_ERR_FORM_SIZE  => 'حجم بنر از حد مجاز فرم بیشتر است.',
                         UPLOAD_ERR_PARTIAL    => 'آپلود بنر ناقص انجام شد.',
                         UPLOAD_ERR_NO_TMP_DIR => 'پوشه موقت آپلود در سرور یافت نشد.',
-                        UPLOAD_ERR_CANT_WRITE => 'سرور نمی‌تواند فایل بنر را روی دیسک بنویسد.',
+                        UPLOAD_ERR_CANT_WRITE => 'سرور نمی‌تواند فایل بنر را روی دیسک بنویسد (دسترسی پوشه uploads/ را بررسی کنید).',
                         UPLOAD_ERR_EXTENSION  => 'آپلود بنر توسط یک اکستنشن PHP متوقف شد.',
                     ];
-                    $error = $phpErrMap[$err] ?? 'خطایی هنگام آپلود بنر رخ داد (کد: ' . $err . ')';
+                    $error = ($phpErrMap[$err] ?? 'خطایی هنگام آپلود بنر رخ داد (کد PHP: ' . $err . ')')
+                           . ' — نام فایل: ' . ($bannerDebug['name'] ?: '—')
+                           . '، حجم بایت: ' . ($bannerDebug['size_bytes'] ?: '0');
                 }
             }
+        } elseif (isset($_FILES['store_banner']) && !db_has_column('users', 'store_banner')) {
+            $error = 'ستون store_banner در جدول users وجود ندارد. ابتدا migration را اجرا کنید.';
+        } else {
+            $bannerDebug['skip_reason'] = 'file_upload_empty_or_column_missing';
         }
         if (function_exists('swapin_debug_log')) {
             swapin_debug_log('admin-store-banner-save', $bannerDebug);
         }
 
-        if (!empty($updateData)) {
-            $rowsAffected = DB::update('users', $updateData, 'id = ?', [$userId]);
-            if (function_exists('swapin_debug_log')) {
-                swapin_debug_log('admin-store-update', [
-                    'user_id'        => $userId,
-                    'update_keys'    => array_keys($updateData),
-                    'rows_affected'  => $rowsAffected,
-                ]);
+        if ($error === '') {
+            if (!empty($updateData)) {
+                $rowsAffected = DB::update('users', $updateData, 'id = ?', [$userId]);
+                if (function_exists('swapin_debug_log')) {
+                    swapin_debug_log('admin-store-update', [
+                        'user_id'        => $userId,
+                        'update_keys'    => array_keys($updateData),
+                        'rows_affected'  => $rowsAffected,
+                    ]);
+                }
             }
             $bannerAfter = DB::fetch('SELECT store_banner FROM users WHERE id = ?', [$userId]);
             if (function_exists('swapin_debug_log')) {
@@ -191,33 +203,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
                     'store_banner_db' => $bannerAfter['store_banner'] ?? null,
                 ]);
             }
-        }
 
-        $shouldIssuePassword = !$isEdit || !empty($_POST['reset_store_password']);
-        $afterSave = DB::fetch('SELECT store_slug, store_name, store_login FROM users WHERE id = ?', [$userId]);
-        if ($shouldIssuePassword) {
-            $issued = issue_store_panel_password($userId, $afterSave['store_slug'] ?? null);
-            if ($issued) {
-                admin_set_store_credentials_once(
-                    $userId,
-                    $issued['login'],
-                    $issued['password'],
-                    (string)($afterSave['store_name'] ?? $storeName)
-                );
+            $shouldIssuePassword = !$isEdit || !empty($_POST['reset_store_password']);
+            $afterSave = DB::fetch('SELECT store_slug, store_name, store_login FROM users WHERE id = ?', [$userId]);
+            if ($shouldIssuePassword) {
+                $issued = issue_store_panel_password($userId, $afterSave['store_slug'] ?? null);
+                if ($issued) {
+                    admin_set_store_credentials_once(
+                        $userId,
+                        $issued['login'],
+                        $issued['password'],
+                        (string)($afterSave['store_name'] ?? $storeName)
+                    );
+                }
+            } elseif ($afterSave) {
+                ensure_user_store_login($userId, $afterSave['store_slug'] ?? null);
             }
-        } elseif ($afterSave) {
-            ensure_user_store_login($userId, $afterSave['store_slug'] ?? null);
-        }
 
-        $successMsg = 'فروشگاه با موفقیت ذخیره شد.';
-        if (isset($bannerAfter['store_banner']) && $bannerAfter['store_banner'] !== null && $bannerAfter['store_banner'] !== '') {
-            $successMsg .= ' (بنر ذخیره شد: ' . $bannerAfter['store_banner'] . ')';
-        } elseif (isset($bannerDebug['key_exists']) && $bannerDebug['key_exists'] && ($bannerDebug['error_code'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-            $successMsg .= ' (هشدار: فایل بنر ارسال شد ولی ذخیره نشد — مجدداً تلاش کنید یا پیام خطای بالا را بخوانید.)';
+            $successMsg = 'فروشگاه با موفقیت ذخیره شد.';
+            if (!empty($bannerAfter['store_banner'])) {
+                $successMsg .= ' (بنر ذخیره شد: ' . $bannerAfter['store_banner'] . ')';
+            }
+            admin_set_flash($successMsg);
+            header('Location: ' . APP_URL . '/admin/stores.php');
+            exit;
         }
-        admin_set_flash($successMsg);
-        header('Location: ' . APP_URL . '/admin/stores.php');
-        exit;
     }
 }
 
