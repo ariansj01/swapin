@@ -23,7 +23,16 @@ if ($isEdit) {
 
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES)) {
+    $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+    if ($contentLength > 0) {
+        $postMax = ini_get('post_max_size');
+        $uploadMax = ini_get('upload_max_filesize');
+        $error = 'حجم داده‌های ارسالی از محدودیت سرور بیشتر است. post_max_size=' . $postMax . ' ، upload_max_filesize=' . $uploadMax . ' — لطفاً عکس با حجم کمتر آپلود کنید.';
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
     csrf_verify_or_fail();
 
     if ($isEdit) {
@@ -128,20 +137,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        $bannerDebug = [
+            'has_column'      => db_has_column('users', 'store_banner'),
+            'key_exists'      => isset($_FILES['store_banner']),
+            'php_upload_max'  => ini_get('upload_max_filesize'),
+            'php_post_max'    => ini_get('post_max_size'),
+        ];
         if (isset($_FILES['store_banner']) && db_has_column('users', 'store_banner')) {
             $bannerFile = $_FILES['store_banner'];
             if (is_array($bannerFile)) {
                 $err = (int)($bannerFile['error'] ?? UPLOAD_ERR_NO_FILE);
+                $bannerDebug['error_code'] = $err;
+                $bannerDebug['size_bytes'] = (int)($bannerFile['size'] ?? 0);
+                $bannerDebug['name']       = (string)($bannerFile['name'] ?? '');
                 if ($err === UPLOAD_ERR_OK) {
                     $uploaded = upload_image($bannerFile, 'store');
+                    $bannerDebug['upload_result'] = $uploaded;
                     if ($uploaded !== null) {
                         $updateData['store_banner'] = $uploaded;
                     } else {
-                        $error = 'آپلود بنر ناموفق بود. فرمت (JPG/PNG/WebP/GIF) یا حجم فایل (حداکثر ۵ مگابایت) را بررسی کنید.';
+                        $error = 'آپلود بنر ناموفق بود. فرمت (JPG/PNG/WebP/GIF) یا حجم فایل (حداکثر ' . $bannerDebug['php_upload_max'] . '، و حداکثر POST ' . $bannerDebug['php_post_max'] . ') را بررسی کنید.';
                     }
                 } elseif ($err !== UPLOAD_ERR_NO_FILE) {
                     $phpErrMap = [
-                        UPLOAD_ERR_INI_SIZE   => 'حجم بنر از حد مجاز PHP بیشتر است.',
+                        UPLOAD_ERR_INI_SIZE   => 'حجم بنر از حد مجاز PHP (' . $bannerDebug['php_upload_max'] . ') بیشتر است.',
                         UPLOAD_ERR_FORM_SIZE  => 'حجم بنر از حد مجاز فرم بیشتر است.',
                         UPLOAD_ERR_PARTIAL    => 'آپلود بنر ناقص انجام شد.',
                         UPLOAD_ERR_NO_TMP_DIR => 'پوشه موقت آپلود در سرور یافت نشد.',
@@ -152,9 +171,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('admin-store-banner-save', $bannerDebug);
+        }
 
         if (!empty($updateData)) {
-            DB::update('users', $updateData, 'id = ?', [$userId]);
+            $rowsAffected = DB::update('users', $updateData, 'id = ?', [$userId]);
+            if (function_exists('swapin_debug_log')) {
+                swapin_debug_log('admin-store-update', [
+                    'user_id'        => $userId,
+                    'update_keys'    => array_keys($updateData),
+                    'rows_affected'  => $rowsAffected,
+                ]);
+            }
+            $bannerAfter = DB::fetch('SELECT store_banner FROM users WHERE id = ?', [$userId]);
+            if (function_exists('swapin_debug_log')) {
+                swapin_debug_log('admin-store-banner-after-save', [
+                    'user_id'         => $userId,
+                    'store_banner_db' => $bannerAfter['store_banner'] ?? null,
+                ]);
+            }
         }
 
         $shouldIssuePassword = !$isEdit || !empty($_POST['reset_store_password']);
@@ -173,7 +209,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ensure_user_store_login($userId, $afterSave['store_slug'] ?? null);
         }
 
-        admin_set_flash('فروشگاه با موفقیت ذخیره شد.');
+        $successMsg = 'فروشگاه با موفقیت ذخیره شد.';
+        if (isset($bannerAfter['store_banner']) && $bannerAfter['store_banner'] !== null && $bannerAfter['store_banner'] !== '') {
+            $successMsg .= ' (بنر ذخیره شد: ' . $bannerAfter['store_banner'] . ')';
+        } elseif (isset($bannerDebug['key_exists']) && $bannerDebug['key_exists'] && ($bannerDebug['error_code'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $successMsg .= ' (هشدار: فایل بنر ارسال شد ولی ذخیره نشد — مجدداً تلاش کنید یا پیام خطای بالا را بخوانید.)';
+        }
+        admin_set_flash($successMsg);
         header('Location: ' . APP_URL . '/admin/stores.php');
         exit;
     }
@@ -199,6 +241,7 @@ if ($flashMsg !== '') {
 
 <form method="POST" class="card" style="padding:30px" enctype="multipart/form-data">
 <?= csrf_field() ?>
+<input type="hidden" name="MAX_FILE_SIZE" value="5242880">
 
 <?php if (!$isEdit): ?>
 <div class="form-group">
