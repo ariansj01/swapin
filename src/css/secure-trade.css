@@ -1910,3 +1910,249 @@
     flex-basis: min(260px, calc(100% - 20px));
   }
 }
+
+/* ============================================================
+   Compact / Minimal Cards Overlay (Secure Trade Room + Offers)
+   ============================================================ */
+:root {
+  --tr-min-radius: 14px;
+  --tr-min-pad-y: 12px;
+  --tr-min-pad-x: 14px;
+  --tr-min-gap: 10px;
+  --tr-min-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.trade-room__card {
+  border-radius: var(--tr-min-radius) !important;
+  padding: var(--tr-min-pad-y) var(--tr-min-pad-x) !important;
+  box-shadow: var(--tr-min-shadow) !important;
+}
+.trade-room__timeline-card,
+.trade-room__summary-card,
+.trade-room__support {
+  padding: var(--tr-min-pad-y) var(--tr-min-pad-x) !important;
+}
+.trade-room__summary-card--wide,
+.trade-room__card--compact {
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+}
+
+.trade-room__offer-card {
+  padding: 12px !important;
+  border-radius: 14px !important;
+  box-shadow: var(--tr-min-shadow) !important;
+  gap: var(--tr-min-gap) !important;
+}
+.trade-room__offer-card .trade-room__offer-actions .form-control {
+  padding: 8px 10px !important;
+  font-size: .875rem !important;
+  border-radius: 10px !important;
+}
+.trade-room__offer-card .trade-room__offer-actions .btn {
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+  font-size: .875rem !important;
+  border-radius: 10px !important;
+}
+
+.trade-room__product-card {
+  padding: 10px !important;
+  border-radius: 12px !important;
+  background: #fafbfd !important;
+  gap: 8px !important;
+}
+.trade-room__product-thumb {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 10px !important;
+}
+.trade-room__product-title { font-size: .875rem !important; line-height: 1.45 !important; }
+.trade-room__product-meta  { font-size: .75rem !important; margin-top: 2px !important; }
+
+.trade-room__parties { gap: 12px !important; }
+.trade-room__avatar {
+  width: 40px !important;
+  height: 40px !important;
+  font-size: 1rem !important;
+}
+.trade-room__party-name { font-size: .9375rem !important; }
+.trade-room__party-meta { font-size: .75rem !important; }
+.trade-room__status-banner {
+  padding: 8px 10px !important;
+  border-radius: 12px !important;
+}
+.trade-room__status-banner i     { font-size: 26px !important; }
+.trade-room__status-banner span  { font-size: .75rem !important; }
+
+.trade-room__tabs {
+  gap: 6px !important;
+  padding: 4px !important;
+  border-radius: 10px !important;
+}
+.trade-room__tab {
+  padding: 8px 10px !important;
+  font-size: .8125rem !important;
+  border-radius: 8px !important;
+  gap: 6px !important;
+}
+.trade-room__tab-icon { font-size: .9375rem !important; }
+
+.trade-room__panel {
+  padding: 12px 14px !important;
+  border-radius: 14px !important;
+}
+.trade-room__card-title {
+  font-size: 1rem !important;
+  margin-bottom: 10px !important;
+}
+.trade-room__action {
+  padding: 10px !important;
+  border-radius: 12px !important;
+}
+.trade-room__action h4  { font-size: .9375rem !important; }
+.trade-room__meta-line {
+  padding: 6px 0 !important;
+  font-size: .875rem !important;
+}
+.trade-room__meta-line--compact { padding: 4px 0 !important; }
+
+.box-trade-room__cards { gap: 10px !important; }
+.box-trade-room__card {
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  gap: 8px !important;
+}
+.box-trade-room__card-icon {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+  font-size: 1rem !important;
+}
+.box-trade-room__card-content h4 { font-size: .875rem !important; }
+.box-trade-room__card-content p  { font-size: .75rem !important; }
+.box-trade-room__title {
+  font-size: 1rem !important;
+  margin-bottom: 8px !important;
+}
+
+.trade-room__summary-head {
+  font-size: .9375rem !important;
+  margin-bottom: 8px !important;
+}
+.trade-room__summary-line  { padding: 4px 0 !important; }
+.trade-room__summary-value { font-size: .9375rem !important; }
+.trade-room__summary-note  { font-size: .8125rem !important; }
+
+.trade-room__timeline { gap: 4px !important; }
+.trade-room__timeline-item {
+  padding: 8px 10px !important;
+  border-radius: 10px !important;
+  gap: 10px !important;
+}
+.trade-room__timeline-dot   { width: 12px !important; height: 12px !important; }
+.trade-room__timeline-title { font-size: .875rem !important; }
+.trade-room__timeline-note  { font-size: .7rem !important; }
+
+.trade-room__chat-item { gap: 8px !important; }
+.trade-room__chat-avatar {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: .8125rem !important;
+}
+.trade-room__chat-bubble {
+  padding: 8px 12px !important;
+  font-size: .875rem !important;
+  border-radius: 14px !important;
+}
+.trade-room__chat-meta { font-size: .6875rem !important; }
+.trade-room__composer {
+  padding: 10px !important;
+  gap: 8px !important;
+}
+
+.trade-room__pill {
+  padding: 3px 10px !important;
+  font-size: .75rem !important;
+  border-radius: 999px !important;
+}
+
+.trade-room__modal {
+  border-radius: 16px !important;
+  max-height: 90vh !important;
+}
+.trade-room__modal-header { padding: 12px 16px !important; }
+.trade-room__modal-title  { font-size: 1.0625rem !important; }
+.trade-room__modal-body   { padding: 12px 16px !important; }
+
+.trade-room__hero-btn {
+  padding: 8px 14px !important;
+  font-size: .8125rem !important;
+  border-radius: 10px !important;
+  gap: 6px !important;
+}
+
+.alert {
+  padding: 8px 12px !important;
+  font-size: .875rem !important;
+  border-radius: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+.trade-room .btn {
+  --btn-py: 9px;
+  --btn-px: 12px;
+  font-size: .875rem !important;
+  border-radius: 10px !important;
+}
+.trade-room .btn.btn-sm {
+  --btn-py: 7px;
+  --btn-px: 10px;
+  font-size: .8125rem !important;
+}
+
+.trade-room__negotiator { margin-bottom: 8px !important; }
+.trade-room__negotiator .negotiator-card__run {
+  padding: 7px 10px !important;
+  font-size: .8125rem !important;
+  border-radius: 10px !important;
+}
+
+.trade-room__layout           { gap: 14px !important; }
+.trade-room__timeline-column  {
+  gap: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.trade-room__details-column   { gap: 12px !important; }
+.trade-room__stack > * + *    { margin-top: 10px !important; }
+.trade-room__grid             { gap: 10px !important; }
+.trade-room__content {
+  gap: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.box-trade-room__layout {
+  gap: 12px !important;
+  padding: 14px 0 0 !important;
+}
+.box-trade-room__layout .pay-metod,
+.box-trade-room__layout .send-metod {
+  padding: 10px 12px !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: var(--tr-min-shadow) !important;
+}
+
+.form-control {
+  border-radius: 10px !important;
+  padding: 8px 11px !important;
+  font-size: .9375rem !important;
+}
+.form-label {
+  font-size: .8125rem !important;
+  margin-bottom: 5px !important;
+}
+.form-group { margin-bottom: 10px !important; }
+.form-group:last-child { margin-bottom: 0 !important; }

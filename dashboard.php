@@ -267,10 +267,10 @@ render_navbar($user);
               <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-sm">ثبت آگهی جدید</a>
             </div>
           <?php else: ?>
-            <div style="padding:var(--sp-4);background:linear-gradient(135deg,var(--primary-light),var(--accent-light));border-radius:16px;margin-bottom:var(--sp-4)">
-              <div class="fs-xs" style="color:var(--text-muted)">مجموع ارزش تقریبی بازار</div>
+            <div style="padding:var(--sp-4);background-color: #081B45;border-radius:16px;margin-bottom:var(--sp-4);color: #FFC107;">
+              <div class="fs-xs" style="color: #fff;">مجموع ارزش تقریبی بازار</div>
               <div style="font-size:1.625rem;font-weight:800;margin-top:var(--sp-1);color:var(--text)">
-                <?= fmt_num($assetValueData['total_value']) ?> <span class="fs-sm" style="color:var(--text-muted)"><?= CREDIT_UNIT ?></span>
+                <?= fmt_num($assetValueData['total_value']) ?> <span class="fs-sm" style="color: #fff;"><?= CREDIT_UNIT ?></span>
               </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:var(--sp-3);max-height:260px;overflow:auto;padding-inline-end:4px">

@@ -345,12 +345,18 @@ render_navbar($user);
           </div>
         </div>
 
-        <!-- Step 6: Estimated Price -->
+        <!-- Step 6: Pricing -->
         <div class="wizard-step" data-step="6" id="step-6" style="display:none">
-          <h2 class="wizard-step-title">قیمت تخمینی</h2>
-          <p class="wizard-step-subtitle">سیستم یک مبلغ پیشنهادی می‌دهد؛ اگر نخواستید، پایین‌تر قیمت دلخواه خودتان را وارد کنید.</p>
+          <h2 class="wizard-step-title">تعریف قیمت‌ها</h2>
+          <p class="wizard-step-subtitle">یک قیمت برای معاوضه تعیین کنید؛ اگر فروشگاه هستید، قیمت خرید نقدی را هم وارد کنید.</p>
 
+          <!-- ۱. قیمت تخمینی برای معاوضه (همه کاربران) -->
           <div class="price-estimate-card">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--wizard-gap)">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:rgba(8,27,69,.08);color:var(--primary);font-weight:800;font-size:.8125rem">۱</span>
+              <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">قیمت معاوضه (تخمین ارزش کالا)</h3>
+            </div>
+            <p class="price-estimate-note" style="margin:0 0 var(--wizard-gap) 0">این قیمت برای پیشنهاد معاوضه، محاسبه «اختلاف قیمت» و امتیازدهی هوشمند استفاده می‌شود.</p>
             <p class="price-estimate-label">قیمت پیشنهادی سیستم</p>
             <div class="wizard-form-group" style="margin-top: var(--wizard-gap)">
               <input type="text" id="step6-suggested-price-input" class="wizard-form-input"
@@ -361,24 +367,41 @@ render_navbar($user);
           </div>
 
           <div class="wizard-form-group" style="margin-top: var(--wizard-gap)">
-            <label class="wizard-form-label" for="step6-custom-price-input">قیمت دلخواه شما</label>
+            <label class="wizard-form-label" for="step6-custom-price-input">
+              قیمت دلخواه شما برای معاوضه (اختیاری)
+            </label>
             <input type="text" id="step6-custom-price-input" class="wizard-form-input"
-                   placeholder="اگر قیمت دیگری مدنظر دارید وارد کنید"
+                   placeholder="مثلاً ۲۵٬۰۰۰٬۰۰۰ تومان — اگر خالی بگذارید قیمت پیشنهادی سیستم ثبت می‌شود"
                    value="<?= $vals['custom_value'] > 0 ? h(number_format($vals['custom_value'])) : '' ?>">
-            <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این بخش اختیاری است.</p>
+            <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">
+              <i class="bi bi-info-circle" style="color:var(--primary)"></i>
+              این قیمت صرفاً برای محاسبه ارزش معاوضه و اختلاف قیمت شما با طرف مقابل است؛ «قیمت خرید نقدی» نیست.
+            </p>
           </div>
 
           <?php if (is_store_seller($user)): ?>
-          <div class="wizard-form-group" style="margin-top: calc(var(--wizard-gap) * 2)">
+          <!-- ۲. قیمت فروش نقدی (فقط فروشگاه‌ها) -->
+          <div class="wizard-form-group" style="margin-top: calc(var(--wizard-gap) * 2);padding:var(--wizard-gap);border:1.5px dashed var(--accent);border-radius:var(--wizard-radius);background:var(--st-accent-light,#FFF8E1)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--wizard-gap)">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--accent);color:var(--primary);font-weight:800;font-size:.8125rem">۲</span>
+              <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">قیمت فروش نقدی (فقط برای فروشگاه)</h3>
+            </div>
+            <p class="price-estimate-note" style="margin:0 0 var(--wizard-gap) 0;color:#856404">
+              <i class="bi bi-shop"></i>
+              این مبلغ، <strong>قیمت خرید نقدی</strong> کالاست تا کاربران عادی بتوانند آن را مستقیماً (بدون معاوضه) از فروشگاه شما خریداری کنند.
+            </p>
             <label class="wizard-form-label" for="step6-sell-price-input">
-              قیمت فروش (تومان) <span style="color:var(--danger)">*</span>
+              قیمت نقدی کالا (تومان) <span style="color:var(--danger)">*</span>
             </label>
             <input type="number" id="step6-sell-price-input" name="sell_price" class="wizard-form-input"
-                   placeholder="قیمت نقدی کالا را وارد کنید" min="0" step="1000"
+                   placeholder="مثلاً ۳۲٬۰۰۰٬۰۰۰ — این مبلغ به‌صورت نقدی قابل خرید خواهد بود" min="0" step="1000"
                    value="<?= h((string)$vals['sell_price']) ?>">
-            <p class="price-estimate-note" style="margin-top: var(--wizard-gap);color:var(--accent)">فروشگاه‌ها باید قیمت فروش را مشخص کنند تا کاربران بتوانند نقدی خرید کنند.</p>
+            <p class="price-estimate-note" style="margin-top: var(--wizard-gap);color:var(--accent-dark,#856404)">
+              <i class="bi bi-bag-check"></i>
+              کاربران در صفحه فروشگاه شما «افزودن به سبد خرید» می‌بینند و با این مبلغ نقدی خرید می‌کنند.
+            </p>
             <?php if (isset($errors['sell_price'])): ?>
-            <div class="invalid-feedback" style="display:block"><?= h($errors['sell_price']) ?></div>
+            <div class="invalid-feedback" style="display:block;margin-top:var(--wizard-gap)"><?= h($errors['sell_price']) ?></div>
             <?php endif; ?>
           </div>
           <?php endif; ?>

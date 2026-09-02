@@ -1338,6 +1338,23 @@ render_user_panel_open($user, 'trades');
               </div>
 
               <?php if ($offer['status'] === 'pending'): ?>
+                <!-- AI Negotiator (Secure Room Modal - Minimal) -->
+                <div class="negotiator-card trade-room__negotiator" data-offer-id="<?= (int)$offer['id'] ?>" style="width:100%;margin-bottom:var(--sp-4);">
+                  <button type="button" class="negotiator-card__run btn btn-outline w-100"
+                          style="--btn-gap:8px;--btn-py:10px;font-size:.85rem;">
+                    <i class="bi bi-robot" style="color:var(--primary)"></i>
+                    <span class="negotiator-card__run-label">🤖 تحلیل هوشمند پیشنهاد</span>
+                  </button>
+                  <div class="negotiator-card__body" style="display:none;margin-top:var(--sp-3);">
+                    <div class="negotiator-card__loader" style="display:none;">
+                      <div class="spinner spinner--sm spinner--primary"></div>
+                      <span>در حال تحلیل پیشنهاد…</span>
+                    </div>
+                    <div class="negotiator-card__error" style="display:none;color:var(--danger);font-size:.875rem;padding:8px 10px;background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.12);border-radius:8px;"></div>
+                    <div class="negotiator-card__result" style="display:none;"></div>
+                  </div>
+                </div>
+
                 <div class="trade-room__offer-actions">
                   <form method="POST" class="mb-3" action="<?= APP_URL ?>/trades">
                     <?= csrf_field() ?>
@@ -1345,7 +1362,7 @@ render_user_panel_open($user, 'trades');
                     <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
                     <div class="form-group">
                       <label class="form-label">پیام پذیرش:</label>
-                      <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم."></textarea>
+                      <textarea name="message" class="form-control negotiator-target-textarea" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم."></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                       <i class="bi bi-check-lg"></i> پذیرش
@@ -1357,7 +1374,7 @@ render_user_panel_open($user, 'trades');
                     <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
                     <div class="form-group">
                       <label class="form-label">پیام رد:</label>
-                      <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: متشکرم، اما این بار نمی‌تونم."></textarea>
+                      <textarea name="message" class="form-control negotiator-target-textarea" rows="2" required placeholder="مثلاً: متشکرم، اما این بار نمی‌تونم."></textarea>
                     </div>
                     <button type="submit" class="btn btn-ghost w-100" style="color:var(--danger)">
                       <i class="bi bi-x-lg"></i> رد
@@ -1519,6 +1536,173 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+
+  /* ==========================================================
+     AI Negotiator (Offers Modal in Secure Trade Room)
+     ========================================================== */
+  var csrf  = '<?= json_encode(csrf_token()) ?>';
+  var apiBase = '<?= APP_URL ?>/api';
+
+  function negoFmt(n) {
+    if (!n && n !== 0) return '۰';
+    n = Number(n) || 0;
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  function negoEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+  function negoAssessCls(a) {
+    if (a === 'favorable') return 'success';
+    if (a === 'unfavorable') return 'danger';
+    return 'warning';
+  }
+  function negoAssessLbl(a) {
+    if (a === 'favorable') return 'به نفع شما';
+    if (a === 'unfavorable') return 'نامناسب';
+    return 'متعادل';
+  }
+
+  function negoResultHtml(offerId, result, fromRule, aiErr, rateLimited) {
+    if (!result) return '';
+    var r = result;
+    var html = '';
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+    html += '<span class="badge badge-' + negoAssessCls(r.assessment) + '" style="font-size:.75rem">' + negoAssessLbl(r.assessment) + '</span>';
+    if (fromRule)
+      html += '<span class="badge badge-info fs-xs"><i class="bi bi-cpu"></i> قاعده‌محور</span>';
+    else
+      html += '<span class="badge badge-success fs-xs"><i class="bi bi-stars"></i> AI</span>';
+    if (rateLimited)
+      html += '<span class="badge badge-warning fs-xs"><i class="bi bi-exclamation-triangle"></i> محدودیت</span>';
+    html += '</div>';
+
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
+    html += '<div style="background:rgba(0,174,239,.05);border:1px solid rgba(0,174,239,.15);border-radius:10px;padding:8px 10px">';
+    html += '<div class="fs-xs" style="color:var(--text-muted)">کالای شما</div>';
+    html += '<div style="font-weight:700;font-size:.9375rem">' + negoFmt(r.your_value) + ' <span class="fs-xs" style="color:var(--text-muted);font-weight:500">تومان</span></div>';
+    html += '</div>';
+    html += '<div style="background:rgba(126,87,194,.06);border:1px solid rgba(126,87,194,.15);border-radius:10px;padding:8px 10px">';
+    html += '<div class="fs-xs" style="color:var(--text-muted)">کالای طرف</div>';
+    html += '<div style="font-weight:700;font-size:.9375rem">' + negoFmt(r.their_value) + ' <span class="fs-xs" style="color:var(--text-muted);font-weight:500">تومان</span></div>';
+    html += '</div>';
+    html += '</div>';
+
+    if (r.difference) {
+      html += '<div style="background:rgba(126,87,194,.06);border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:.875rem">';
+      html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-secondary)">تفاوت:</span><strong>' + (r.difference > 0 ? '−' : '+') + ' ' + negoFmt(Math.abs(r.difference)) + ' تومان</strong></div>';
+      if (r.suggested_cash_difference > 0)
+        html += '<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="color:var(--text-secondary)">پیشنهاد مابه‌التفاوت:</span><strong style="color:var(--primary)">' + negoFmt(r.suggested_cash_difference) + ' تومان</strong></div>';
+      html += '</div>';
+    }
+    if (r.reason)
+      html += '<div style="background:var(--bg);border-radius:10px;padding:8px 10px;font-size:.8125rem;color:var(--text-secondary);line-height:1.9;margin-bottom:10px">' + negoEsc(r.reason) + '</div>';
+    if (aiErr && !fromRule)
+      html += '<div class="alert alert-warning fs-xs mb-2" style="padding:6px 10px"><i class="bi bi-exclamation-triangle"></i> AI نامعتبر بود؛ از قاعده‌محور استفاده شد.</div>';
+
+    if (r.suggested_replies && r.suggested_replies.length) {
+      html += '<div class="fs-xs" style="font-weight:700;margin-bottom:6px">پاسخ‌های پیشنهادی (کلیک → داخل کادر پیام):</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:6px">';
+      var tones = [{label:'دوستانه', icon:'bi-heart', cls:'success'},
+                   {label:'مذاکره‌گرا', icon:'bi-chat-dots', cls:'primary'},
+                   {label:'قطعی', icon:'bi-shield-check', cls:'danger'}];
+      r.suggested_replies.forEach(function(txt, i) {
+        var tone = tones[i] || tones[0];
+        html += '<button type="button" class="btn btn-sm offer-negotiator-reply-btn" ' +
+          'data-offer-id="' + offerId + '" ' +
+          'data-reply="' + negoEsc(txt).replace(/"/g,'&quot;') + '" ' +
+          'style="border:1px dashed var(--border);background:#fff;justify-content:space-between;text-align:right;padding:8px 10px;gap:6px;border-radius:10px;font-size:.8125rem;color:var(--text);line-height:1.7">';
+        html += '<span style="display:flex;align-items:center;gap:6px"><i class="bi ' + tone.icon + '" style="color:var(--' + tone.cls + ')"></i> <strong style="color:var(--' + tone.cls + ');font-size:.75rem">' + tone.label + '</strong></span>';
+        html += '<span style="flex:1;text-align:right;color:var(--text-secondary);max-width:75%;overflow-wrap:anywhere">' + negoEsc(txt) + '</span>';
+        html += '<i class="bi bi-clipboard" style="color:var(--text-muted)"></i>';
+        html += '</button>';
+      });
+      html += '</div>';
+      html += '<div class="fs-xs mt-2" style="color:var(--text-muted)"><i class="bi bi-info-circle"></i> پیام را هنوز ارسال نکرده‌اید؛ در انتها حتماً «پذیرش» یا «رد» را بزنید.</div>';
+    }
+    return html;
+  }
+
+  function negoRun(btn, offerId) {
+    var card = btn.closest('.negotiator-card');
+    if (!card) return;
+    var body   = card.querySelector('.negotiator-card__body');
+    var loader = card.querySelector('.negotiator-card__loader');
+    var errEl  = card.querySelector('.negotiator-card__error');
+    var resEl  = card.querySelector('.negotiator-card__result');
+    var lbl    = btn.querySelector('.negotiator-card__run-label');
+
+    btn.disabled = true;
+    if (body)   body.style.display = '';
+    if (resEl) { resEl.style.display = 'none'; resEl.innerHTML = ''; }
+    if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+    if (loader) loader.style.display = '';
+    if (lbl) lbl.textContent = 'در حال تحلیل…';
+
+    var url = apiBase + '/negotiator_analyze.php?offer_id=' + encodeURIComponent(offerId) + '&_=' + Date.now();
+    fetch(url, { method:'GET', headers:{ 'X-CSRF-Token': csrf, 'Accept':'application/json' }, credentials:'same-origin' })
+      .then(function(res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+      .then(function(data) {
+        btn.disabled = false;
+        if (loader) loader.style.display = 'none';
+        if (!data || !data.ok) {
+          if (errEl) { errEl.textContent = 'تحلیل هوشمند در دسترس نیست. دکمه‌های پذیرش/رد همچنان فعال هستند.'; errEl.style.display = ''; }
+          if (lbl) lbl.textContent = '🔄 تلاش مجدد';
+          return;
+        }
+        if (lbl) lbl.textContent = '🔄 تحلیل مجدد';
+        if (resEl) { resEl.innerHTML = negoResultHtml(offerId, data.result || null, !!data.from_rule_based, data.ai_error || null, !!data.rate_limited); resEl.style.display = ''; }
+        wireOfferReplyBtns();
+      })
+      .catch(function() {
+        btn.disabled = false;
+        if (loader) loader.style.display = 'none';
+        if (errEl) { errEl.textContent = 'تحلیل هوشمند در دسترس نیست. دکمه‌های پذیرش/رد همچنان فعال هستند.'; errEl.style.display = ''; }
+        if (lbl) lbl.textContent = '🔄 تلاش مجدد';
+      });
+  }
+
+  function negoFindTextarea(card, preferAccept) {
+    var container = card.parentElement;
+    var selector = preferAccept ? 'textarea[name="message"]:first-of-type' : 'textarea[name="message"]:last-of-type';
+    var first = container.querySelector('textarea.negotiator-target-textarea');
+    return first || container.querySelector(selector);
+  }
+
+  function wireOfferNegotiator() {
+    document.querySelectorAll('.trade-room__negotiator .negotiator-card__run').forEach(function(btn) {
+      if (btn.dataset.wired) return;
+      btn.dataset.wired = '1';
+      btn.addEventListener('click', function() {
+        var card = btn.closest('.negotiator-card');
+        var offerId = card ? card.dataset.offerId : null;
+        if (!offerId) return;
+        negoRun(btn, offerId);
+      });
+    });
+  }
+  function wireOfferReplyBtns() {
+    document.querySelectorAll('.offer-negotiator-reply-btn').forEach(function(btn) {
+      if (btn.dataset.wired) return;
+      btn.dataset.wired = '1';
+      btn.addEventListener('click', function() {
+        var reply = btn.dataset.reply || '';
+        var prefAccept = (reply.indexOf('پذیر') !== -1 || reply.indexOf('مناسبه') !== -1 || reply.indexOf('ادامه') !== -1 || reply.indexOf('توافق') !== -1);
+        var offerId = btn.dataset.offerId;
+        var card = offerId ? document.querySelector('.trade-room__negotiator[data-offer-id="' + offerId + '"]') : btn.closest('.negotiator-card');
+        var ta = card ? negoFindTextarea(card, prefAccept) : null;
+        if (ta) {
+          ta.value = reply;
+          ta.focus();
+          ta.style.boxShadow = '0 0 0 3px rgba(8,27,69,.1)';
+          setTimeout(function() { ta.style.boxShadow = ''; }, 900);
+        }
+      });
+    });
+  }
+  wireOfferNegotiator();
+  wireOfferReplyBtns();
 });
 </script>
 
