@@ -133,6 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 login_user($user['id']);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
                 $dest = $redir ? APP_URL . $redir : APP_URL . '/';
+                if (trim((string)($user['name'] ?? '')) === '') {
+                    $dest = APP_URL . '/auth/complete-name.php' . ($redir ? '?redirect=' . urlencode($redir) : '');
+                }
                 header('Location: ' . $dest); exit;
             } else {
                 $uid = register_phone_user($phoneIntl);
@@ -140,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 login_user($uid);
                 notify_profile_completion($uid);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
-                $dest = $redir ? APP_URL . $redir : APP_URL . '/?welcome=1';
+                $dest = APP_URL . '/auth/complete-name.php' . ($redir ? '?redirect=' . urlencode($redir) : '');
                 header('Location: ' . $dest); exit;
             }
         } else {

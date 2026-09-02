@@ -43,19 +43,27 @@ try {
     }
 
     $result = google_find_or_create_user($claims);
-    login_user((int) $result['user_id']);
+    $userId = (int) $result['user_id'];
+    login_user($userId);
+
+    $currentUser = DB::fetch('SELECT name FROM users WHERE id = ? LIMIT 1', [$userId]);
+    $nameEmpty = $currentUser ? trim((string)($currentUser['name'] ?? '')) === '' : true;
 
     unset($_SESSION['auth_error'], $_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
 
     if ((bool) ($result['is_new'] ?? false)) {
-        notify_profile_completion((int) $result['user_id']);
+        notify_profile_completion($userId);
     }
 
-    $dest = APP_URL . '/';
-    if ($redir) {
-        $dest = APP_URL . $redir;
-    } elseif ((bool) ($result['is_new'] ?? false)) {
-        $dest = APP_URL . '/?welcome=1';
+    if ($nameEmpty) {
+        $dest = APP_URL . '/auth/complete-name.php' . ($redir ? '?redirect=' . urlencode($redir) : '');
+    } else {
+        $dest = APP_URL . '/';
+        if ($redir) {
+            $dest = APP_URL . $redir;
+        } elseif ((bool) ($result['is_new'] ?? false)) {
+            $dest = APP_URL . '/?welcome=1';
+        }
     }
     header('Location: ' . $dest);
     exit;

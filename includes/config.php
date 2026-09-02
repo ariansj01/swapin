@@ -1462,6 +1462,13 @@ function require_auth(): array {
         header('Location: ' . APP_URL . '/auth/login?redirect=' . $redirect);
         exit;
     }
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+    $isCompleteNamePage = (strpos($requestUri, '/auth/complete-name.php') !== false);
+    if (!$isCompleteNamePage && trim((string)($user['name'] ?? '')) === '') {
+        $redirect = urlencode($_SERVER['REQUEST_URI']);
+        header('Location: ' . APP_URL . '/auth/complete-name.php?redirect=' . $redirect);
+        exit;
+    }
     return $user;
 }
 
