@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/asset_valuation.php';
+require_once __DIR__ . '/../includes/negotiator_service.php';
 
 $user = require_auth();
 $uid  = $user['id'];
@@ -199,6 +201,33 @@ render_navbar($user);
             <!-- Actions -->
             <?php if ($offer['status'] === 'pending'): ?>
             <div style="width:100%;min-width:280px;max-width:420px">
+
+              <!-- AI Negotiator Card -->
+              <div class="card mb-4" style="border:1px solid var(--border);background:#fafcff">
+                <div class="card-header" style="border-bottom:1px solid var(--border)">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2);flex-wrap:wrap">
+                    <div style="display:flex;align-items:center;gap:var(--sp-2)">
+                      <span style="font-size:1.125rem">🤖</span>
+                      <strong>تحلیل هوشمند پیشنهاد</strong>
+                    </div>
+                    <button type="button"
+                            class="btn btn-outline btn-sm ai-negotiator-btn"
+                            data-offer-id="<?= (int)$offer['id'] ?>"
+                            data-state="idle"
+                            style="font-size:.8125rem;padding:6px 12px">
+                      <span class="ai-negotiator-btn__label"><i class="bi bi-magic"></i> اجرای تحلیل</span>
+                      <span class="ai-negotiator-btn__loading" style="display:none"><i class="bi bi-arrow-clockwise spin"></i> در حال تحلیل...</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="card-body ai-negotiator-body" id="ai-nego-body-<?= (int)$offer['id'] ?>">
+                  <div class="fs-sm" style="color:var(--text-muted);line-height:1.7">
+                    با استفاده از ارزش تخمینی دو کالا و وضعیت پیشنهاد، یک تحلیل یک‌طرفه به نفع شما ارائه می‌دهد تا
+                    به بهترین تصمیم دست یابید. مبلغ‌ها تخمینی هستند.
+                  </div>
+                </div>
+              </div>
+
               <form method="POST" class="mb-3">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="accept">
@@ -208,7 +237,7 @@ render_navbar($user);
                 <?php endif; ?>
                 <div class="form-group">
                   <label class="form-label">پیام پذیرش:</label>
-                  <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم. برای هماهنگی بیشتر پیام بده."></textarea>
+                  <textarea name="message" class="form-control negotiator-msg-accept" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم. برای هماهنگی بیشتر پیام بده."></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
                   <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
@@ -220,7 +249,7 @@ render_navbar($user);
                 <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
                 <div class="form-group">
                   <label class="form-label">پیام رد:</label>
-                  <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: متشکرم، اما این بار نمی‌تونم."></textarea>
+                  <textarea name="message" class="form-control negotiator-msg-reject" rows="2" required placeholder="مثلاً: متشکرم، اما این بار نمی‌تونم."></textarea>
                 </div>
                 <button type="submit" class="btn btn-ghost w-100" style="color:var(--danger)">
                   <i class="bi bi-x-lg"></i> رد پیشنهاد
@@ -245,5 +274,223 @@ render_navbar($user);
 
   </div>
 </div>
+
+<script>
+(function(){
+  'use strict';
+  var csrf  = '<?= json_encode(csrf_token()) ?>';
+  var apiBase = '<?= APP_URL ?>/api';
+
+  function fmt(n) {
+    if (!n && n !== 0) return '۰';
+    n = Number(n) || 0;
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  function assessmentClass(a) {
+    if (a === 'favorable') return 'success';
+    if (a === 'unfavorable') return 'danger';
+    return 'warning';
+  }
+
+  function assessmentLabel(a) {
+    if (a === 'favorable') return 'به نفع شما';
+    if (a === 'unfavorable') return 'نامناسب';
+    return 'متعادل';
+  }
+
+  function confidenceBadge(c) {
+    c = Number(c) || 0;
+    var pct = Math.round(c * 100);
+    var cls = 'warning';
+    if (pct >= 75) cls = 'success';
+    else if (pct < 40) cls = 'danger';
+    return '<span class="badge badge-' + cls + ' fs-xs">اطمینان ' + pct + '%</span>';
+  }
+
+  function buildBodyHtml(offerId, result, fromRule, aiErr, rateLimited) {
+    if (!result) return '';
+    var r = result;
+    var html = '';
+
+    html += '<div style="display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-3)">';
+    html += '<span class="badge badge-' + assessmentClass(r.assessment) + '" style="font-size:.8125rem">' + assessmentLabel(r.assessment) + '</span>';
+    html += confidenceBadge(r.confidence);
+    if (fromRule) {
+      html += '<span class="badge badge-info fs-xs" title="تحلیل مبتنی بر قوانین بدون اتصال AI"><i class="bi bi-cpu"></i> تحلیل قاعده‌محور</span>';
+    } else {
+      html += '<span class="badge badge-success fs-xs" title="تحلیل مبتنی بر هوش مصنوعی"><i class="bi bi-stars"></i> AI Analyzed</span>';
+    }
+    if (rateLimited) {
+      html += '<span class="badge badge-warning fs-xs"><i class="bi bi-exclamation-triangle"></i> محدودیت سرعت</span>';
+    }
+    html += '</div>';
+
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">';
+    html += '<div style="background:rgba(0,174,239,.05);border:1px solid rgba(0,174,239,.15);border-radius:var(--radius-md);padding:var(--sp-3)">';
+    html += '<div class="fs-xs" style="color:var(--text-muted)">کالای شما (تخمینی)</div>';
+    html += '<div style="font-weight:700;font-size:1rem;margin-top:4px">' + fmt(r.your_value) + ' <span class="fs-xs" style="color:var(--text-muted);font-weight:500">تومان</span></div>';
+    html += '</div>';
+    html += '<div style="background:rgba(126,87,194,.06);border:1px solid rgba(126,87,194,.15);border-radius:var(--radius-md);padding:var(--sp-3)">';
+    html += '<div class="fs-xs" style="color:var(--text-muted)">کالای طرف مقابل (تخمینی)</div>';
+    html += '<div style="font-weight:700;font-size:1rem;margin-top:4px">' + fmt(r.their_value) + ' <span class="fs-xs" style="color:var(--text-muted);font-weight:500">تومان</span></div>';
+    html += '</div>';
+    html += '</div>';
+
+    if (r.difference) {
+      html += '<div style="background:rgba(126,87,194,.06);border-radius:var(--radius-md);padding:var(--sp-3);margin-bottom:var(--sp-3)">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-2)">';
+      html += '<div class="fs-sm" style="color:var(--text-secondary)">تفاوت ارزش تخمینی:</div>';
+      html += '<div style="font-weight:700;color:var(--accent-dark)">' + (r.difference > 0 ? '−' : '+') + ' ' + fmt(Math.abs(r.difference)) + ' تومان</div>';
+      html += '</div>';
+      if (r.suggested_cash_difference > 0) {
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-2)">';
+        html += '<div class="fs-sm" style="color:var(--text-secondary)">مبلغ پیشنهادی مابه‌التفاوت از طرف مقابل:</div>';
+        html += '<div style="font-weight:800;color:var(--primary)">' + fmt(r.suggested_cash_difference) + ' تومان</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    if (r.reason) {
+      html += '<div style="background:var(--bg);border-radius:var(--radius-md);padding:var(--sp-3);font-size:.9375rem;color:var(--text-secondary);line-height:1.8;margin-bottom:var(--sp-3)">';
+      html += '<div class="fs-xs mb-1" style="color:var(--text-muted)">تحلیل:</div>';
+      html += escHtml(r.reason);
+      html += '</div>';
+    }
+
+    if (aiErr && !fromRule) {
+      html += '<div class="alert alert-warning fs-xs mb-3" style="padding:8px 12px"><i class="bi bi-exclamation-triangle"></i> پاسخ AI نامعتبر بود؛ از تحلیل قاعده‌محور استفاده شد.</div>';
+    }
+
+    if (r.suggested_replies && r.suggested_replies.length) {
+      html += '<div class="fs-sm" style="font-weight:700;margin-bottom:var(--sp-2)">پاسخ‌های پیشنهادی:</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:var(--sp-2)">';
+      var tones = [{label:'دوستانه', icon:'bi-heart', cls:'success'},
+                   {label:'مذاکره‌گرا', icon:'bi-chat-dots', cls:'primary'},
+                   {label:'قطعی و منطقی', icon:'bi-shield-check', cls:'danger'}];
+      r.suggested_replies.forEach(function(txt, i){
+        var tone = tones[i] || tones[0];
+        html += '<button type="button" ' +
+          'class="btn btn-sm ai-nego-reply-btn" ' +
+          'data-offer-id="' + offerId + '" ' +
+          'data-reply="' + escHtml(txt).replace(/"/g,'&quot;') + '" ' +
+          'style="border:1px dashed var(--border);background:#fff;justify-content:space-between;text-align:right;padding:10px 12px;gap:var(--sp-2);border-radius:var(--radius-md);font-size:.875rem;color:var(--text);line-height:1.7">';
+        html += '<span style="display:flex;align-items:center;gap:8px"><i class="bi ' + tone.icon + '" style="color:var(--' + tone.cls + ')"></i> <strong style="color:var(--' + tone.cls + ')">' + tone.label + '</strong></span>';
+        html += '<span style="flex:1;text-align:right;color:var(--text-secondary);max-width:80%;overflow-wrap:anywhere">' + escHtml(txt) + '</span>';
+        html += '<i class="bi bi-clipboard" style="color:var(--text-muted)"></i>';
+        html += '</button>';
+      });
+      html += '</div>';
+      html += '<div class="fs-xs" style="color:var(--text-muted);margin-top:8px"><i class="bi bi-info-circle"></i> روی هر مورد کلیک کنید تا متن داخل کادر پیام پذیرش/رد قرار بگیرد. برای ارسال پیام همچنان باید دکمه پذیرش یا رد را کلیک کنید.</div>';
+    }
+    return html;
+  }
+
+  function setBtnLoading(btn, loading) {
+    var label  = btn.querySelector('.ai-negotiator-btn__label');
+    var load   = btn.querySelector('.ai-negotiator-btn__loading');
+    btn.disabled = !!loading;
+    btn.setAttribute('data-state', loading ? 'loading' : (btn.getAttribute('data-state') || 'idle'));
+    if (label) label.style.display = loading ? 'none' : '';
+    if (load)  load.style.display  = loading ? ''     : 'none';
+  }
+
+  function findMsgTextarea(offerId, preferAccept) {
+    var card = document.getElementById('ai-nego-body-' + offerId);
+    if (!card) return null;
+    var container = card.closest('.card');
+    if (!container) return null;
+    var parent = container.parentElement;
+    var selector = preferAccept ? '.negotiator-msg-accept' : '.negotiator-msg-reject';
+    return parent.querySelector(selector) || parent.querySelector('.negotiator-msg-accept');
+  }
+
+  function runAnalyze(btn, offerId) {
+    var bodyId = 'ai-nego-body-' + offerId;
+    var body = document.getElementById(bodyId);
+    if (!body) return;
+    setBtnLoading(btn, true);
+    body.innerHTML = '<div style="padding:var(--sp-2) 0"><div style="height:14px;background:var(--bg);border-radius:4px;animation:pulse 1.6s infinite;margin-bottom:10px"></div>' +
+      '<div style="height:14px;width:75%;background:var(--bg);border-radius:4px;animation:pulse 1.6s infinite;margin-bottom:10px"></div>' +
+      '<div style="height:14px;width:55%;background:var(--bg);border-radius:4px;animation:pulse 1.6s infinite"></div>' +
+      '<div class="fs-xs mt-3" style="color:var(--text-muted)"><i class="bi bi-magic"></i> در حال ارسال درخواست به هوش مصنوعی... معمولاً کمتر از ۱۰ ثانیه طول می‌کشد.</div></div>';
+
+    var url = apiBase + '/negotiator_analyze.php?offer_id=' + encodeURIComponent(offerId) + '&_=' + Date.now();
+    fetch(url, { method:'GET', headers:{ 'X-CSRF-Token': csrf, 'Accept':'application/json' }, credentials:'same-origin' })
+      .then(function(res){
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        setBtnLoading(btn, false);
+        if (!data || !data.ok) {
+          btn.setAttribute('data-state', 'error');
+          btn.querySelector('.ai-negotiator-btn__label').innerHTML = '<i class="bi bi-arrow-clockwise"></i> تلاش مجدد';
+          body.innerHTML = '<div class="alert alert-warning fs-sm" style="padding:10px 12px;margin:0">' +
+            '<i class="bi bi-exclamation-triangle"></i> تحلیل هوشمند در دسترس نیست.<br>' +
+            '<span class="fs-xs" style="color:var(--text-muted);margin-top:6px;display:block">دکمه پذیرش و رد همچنان فعال هستند؛ می‌توانید بدون AI تصمیم بگیرید.</span>' +
+            '</div>';
+          return;
+        }
+        btn.setAttribute('data-state', 'success');
+        btn.querySelector('.ai-negotiator-btn__label').innerHTML = '<i class="bi bi-arrow-repeat"></i> تحلیل مجدد';
+        body.innerHTML = buildBodyHtml(offerId, data.result || null, !!data.from_rule_based, data.ai_error || null, !!data.rate_limited);
+        wireReplyButtons();
+      })
+      .catch(function(err){
+        setBtnLoading(btn, false);
+        btn.setAttribute('data-state', 'error');
+        btn.querySelector('.ai-negotiator-btn__label').innerHTML = '<i class="bi bi-arrow-clockwise"></i> تلاش مجدد';
+        body.innerHTML = '<div class="alert alert-warning fs-sm" style="padding:10px 12px;margin:0">' +
+          '<i class="bi bi-exclamation-triangle"></i> تحلیل هوشمند در دسترس نیست.<br>' +
+          '<span class="fs-xs" style="color:var(--text-muted);margin-top:6px;display:block">دکمه پذیرش و رد همچنان فعال هستند؛ می‌توانید بدون AI تصمیم بگیرید.</span>' +
+          '</div>';
+      });
+  }
+
+  function wireButtons() {
+    document.querySelectorAll('.ai-negotiator-btn').forEach(function(btn){
+      if (btn.dataset.wired) return;
+      btn.dataset.wired = '1';
+      btn.addEventListener('click', function(){
+        var offerId = btn.dataset.offerId;
+        runAnalyze(btn, offerId);
+      });
+    });
+  }
+
+  function wireReplyButtons() {
+    document.querySelectorAll('.ai-nego-reply-btn').forEach(function(btn){
+      if (btn.dataset.wired) return;
+      btn.dataset.wired = '1';
+      btn.addEventListener('click', function(){
+        var offerId = btn.dataset.offerId;
+        var reply   = btn.dataset.reply || '';
+        var prefAccept = (reply.indexOf('پذیر') !== -1 || reply.indexOf('مناسبه') !== -1 || reply.indexOf('ادامه') !== -1 || reply.indexOf('توافق') !== -1);
+        var ta = findMsgTextarea(offerId, prefAccept);
+        if (!ta) return;
+        ta.value = reply;
+        ta.focus();
+        ta.scrollIntoView({behavior:'smooth', block:'center'});
+        try { ta.dispatchEvent(new Event('input', {bubbles:true})); } catch(e){}
+        btn.classList.add('is-inserted');
+        setTimeout(function(){ btn.classList.remove('is-inserted'); }, 900);
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    wireButtons();
+    wireReplyButtons();
+  });
+})();
+</script>
 
 <?php render_footer(); ?>

@@ -49,10 +49,12 @@ if (db_has_table('notifications')) {
         $icon = match ($n['type'] ?? '') {
             'saved_search' => 'bi-bell-fill',
             'support'      => 'bi-headset',
+            'iso_match'    => 'bi-magic',
+            'profile'      => 'bi-person-fill',
             default        => 'bi-info-circle',
         };
         $items[] = [
-            'type'     => $n['type'] === 'saved_search' ? 'saved_search' : 'notification',
+            'type'     => in_array(($n['type'] ?? ''), ['saved_search','iso_match','profile','support'], true) ? $n['type'] : 'notification',
             'id'       => (int)$n['id'],
             'title'    => $n['title'],
             'body'     => $n['body'] ?? '',

@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/geo.php';
+require_once __DIR__ . '/../includes/iso.php';
 
 $user = require_auth();
 $listingProviderType = is_store_seller($user) ? user_provider_type($user) : 'normal_store';
@@ -165,6 +166,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Clear cache
             ai_match_clear_cache((int)$user['id']);
+
+            // Process ISO reverse matches + SMS notifications (best-effort, never block flow)
+            try {
+                if (function_exists('iso_process_new_listing_matches')) {
+                    iso_process_new_listing_matches((int)$listingId);
+                }
+            } catch (Throwable) {
+            }
 
             // Redirect to success page
             header('Location: ' . APP_URL . '/listings/success?id=' . $listingId);

@@ -132,6 +132,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             process_saved_search_alerts_for_listing((int)$listingId);
         }
 
+        if (function_exists('iso_process_new_listing_matches')) {
+            try {
+                iso_process_new_listing_matches((int)$listingId);
+            } catch (Throwable $e) {
+                if (function_exists('swapin_debug_log')) {
+                    swapin_debug_log('iso-match-on-admin-create-failed', ['listing_id' => $listingId, 'msg' => $e->getMessage()]);
+                }
+            }
+        }
+
         ai_match_clear_cache((int) $admin['id']);
         admin_set_flash('آگهی ادمین با موفقیت ثبت و مستقیم منتشر شد.');
         header('Location: ' . APP_URL . '/admin/create_listing.php');

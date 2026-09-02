@@ -69,17 +69,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = clean($_POST['name'] ?? '');
         $city = clean($_POST['city'] ?? '');
         $bio  = clean($_POST['bio'] ?? '');
+        $smsIsoAlerts = isset($_POST['sms_iso_alerts']) ? 1 : 0;
 
         if (mb_strlen($name) < 2) $errors['name'] = 'نام باید حداقل ۲ کاراکتر باشد';
         if (!$city || !in_array($city, iran_cities(), true)) {
             $errors['city'] = 'لطفاً شهر را از فهرست انتخاب کنید';
         }
         if (empty($errors)) {
-            DB::update('users', [
+            $updateData = [
                 'name' => $name,
                 'city' => $city ?: null,
                 'bio'  => $bio ?: null,
-            ], 'id = ?', [$user['id']]);
+            ];
+            if (db_has_column('users', 'sms_iso_alerts')) {
+                $updateData['sms_iso_alerts'] = $smsIsoAlerts;
+            }
+            DB::update('users', $updateData, 'id = ?', [$user['id']]);
             $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$user['id']]);
             if (user_profile_is_complete($user)) {
                 dismiss_profile_completion_notifications((int) $user['id']);
@@ -258,6 +263,18 @@ render_user_panel_open($user, 'settings');
               <label class="form-label">بیو</label>
               <textarea name="bio" class="form-control" rows="3"><?= h($user['bio'] ?? '') ?></textarea>
             </div>
+            <?php if (db_has_column('users', 'sms_iso_alerts')): ?>
+            <div class="form-check form-switch mb-3" style="padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md)">
+              <input type="checkbox" id="sms_iso_alerts" name="sms_iso_alerts" class="form-check-input"
+                     style="width:38px;height:22px;margin-inline-end:12px"
+                     <?= !empty($user['sms_iso_alerts']) ? 'checked' : '' ?>>
+              <label class="form-check-label fw-600" for="sms_iso_alerts">ارسال SMS برای تطبیق‌های هوشمند ISO</label>
+              <p class="fs-xs mt-2 mb-0" style="color:var(--text-muted)">
+                <i class="bi bi-info-circle"></i>
+                در صورت فعال بودن، با هر تطبیق جدید کالاهای شما با درخواست‌های معاوضه (ISO)، به صورت پترن به شماره موبایل شما SMS اطلاع‌رسانی می‌شود.
+              </p>
+            </div>
+            <?php endif; ?>
             <button type="submit" class="btn btn-primary">ذخیره پروفایل</button>
           </form>
         </div>

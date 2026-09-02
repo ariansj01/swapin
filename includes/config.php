@@ -1160,6 +1160,47 @@ if ($shouldMigrate) {
         }
     }
 
+    // ─── sms_iso_alerts column on users ──────────────────────────────────
+    if (db_has_table('users')) {
+        $uCols = db_table_columns('users');
+        if (!in_array('sms_iso_alerts', $uCols)) {
+            try {
+                DB::query("ALTER TABLE `users` ADD COLUMN `sms_iso_alerts` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'User SMS preference for ISO match alerts' AFTER `verification_level`");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-users-sms-iso-alerts', ['msg' => $e->getMessage()]);
+            }
+        }
+    }
+
+    // ─── iso_sms_logs table for ISO SMS dedup + audit log ────────────────
+    if (!db_has_table('iso_sms_logs')) {
+        try {
+            DB::query("
+                CREATE TABLE `iso_sms_logs` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `iso_id` INT UNSIGNED NOT NULL,
+                    `listing_id` INT UNSIGNED NOT NULL,
+                    `phone` VARCHAR(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `message` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `status` ENUM('pending','sent','failed','skipped') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+                    `provider` VARCHAR(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `provider_message_id` VARCHAR(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `error` VARCHAR(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_iso_sms_match` (`user_id`,`iso_id`,`listing_id`),
+                    KEY `idx_iso_sms_user` (`user_id`),
+                    KEY `idx_iso_sms_listing` (`listing_id`),
+                    KEY `idx_iso_sms_status` (`status`,`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-iso-sms-logs-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
     // ─── Add shipping_province & shipping_cost to store_orders ───────────
     if (db_has_table('store_orders')) {
         $soCols = db_table_columns('store_orders');

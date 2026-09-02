@@ -510,3 +510,185 @@ function iso_validate_request(array $data, bool $isUpdate = false): array {
         $errors['category_id'] = 'لطفاً دسته‌بندی را انتخاب کنید.';
     return $errors;
 }
+
+function iso_user_wants_sms(int $userId): bool {
+    if (!db_has_table('users') || !db_has_column('users', 'sms_iso_alerts')) {
+        return true;
+    }
+    $row = DB::fetch('SELECT sms_iso_alerts FROM users WHERE id = ? LIMIT 1', [$userId]);
+    if (!$row) return true;
+    return (int)($row['sms_iso_alerts'] ?? 1) === 1;
+}
+
+function iso_sms_already_sent(int $userId, int $isoId, int $listingId): bool {
+    if (!db_has_table('iso_sms_logs')) return false;
+    $row = DB::fetch(
+        'SELECT id FROM iso_sms_logs WHERE user_id = ? AND iso_id = ? AND listing_id = ? LIMIT 1',
+        [$userId, $isoId, $listingId]
+    );
+    return (bool)$row;
+}
+
+function iso_rate_limit_sms_user(int $userId, int $maxPerHour = 10): bool {
+    if (!db_has_table('iso_sms_logs')) return true;
+    $row = DB::fetch(
+        'SELECT COUNT(*) AS c FROM iso_sms_logs WHERE user_id = ? AND status = "sent" AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)',
+        [$userId]
+    );
+    return (int)($row['c'] ?? 0) < $maxPerHour;
+}
+
+function iso_sms_attributes(array $payload): array {
+    $titleShort = mb_strimwidth((string)($payload['listing_title'] ?? ''), 0, 24, '…');
+    $cityShort = trim((string)($payload['city'] ?? '')) ?: '—';
+    $map = (defined('SMS_ISO_MATCH_ATTRIBUTE_MAP') && is_array(SMS_ISO_MATCH_ATTRIBUTE_MAP))
+        ? SMS_ISO_MATCH_ATTRIBUTE_MAP
+        : ['var1' => '{title}', 'var2' => '{city}'];
+    $attributes = [];
+    foreach ($map as $key => $template) {
+        $attributes[(string)$key] = strtr((string)$template, [
+            '{title}' => $titleShort,
+            '{city}'  => $cityShort,
+            '{app_name}' => defined('APP_NAME') ? APP_NAME : 'Swapin',
+        ]);
+    }
+    return $attributes;
+}
+
+function iso_notification_for_match(int $userId, int $isoId, int $listingId, array $listing, int $score): void {
+    if (!db_has_table('notifications')) {
+        return;
+    }
+    $titleShort = mb_strimwidth((string)($listing['title'] ?? ''), 0, 36, '…');
+    $body = sprintf(
+        'یک آگهی جدید با امتیاز %d٪ برای درخواست معاوضه شما پیدا شد: «%s»',
+        min(100, $score),
+        $titleShort
+    );
+    $link = APP_URL . '/listings/view.php?id=' . (int)$listingId;
+    $existing = DB::fetch(
+        'SELECT id FROM notifications WHERE user_id = ? AND type = ? AND link = ? AND is_read = 0 LIMIT 1',
+        [$userId, 'iso_match', $link]
+    );
+    if ($existing) return;
+    try {
+        DB::insert('notifications', [
+            'user_id'  => $userId,
+            'type'     => 'iso_match',
+            'title'    => 'مطابقت جدید ISO',
+            'body'     => $body,
+            'link'     => $link,
+            'meta_json' => json_encode([
+                'iso_id'     => $isoId,
+                'listing_id' => $listingId,
+                'score'      => $score,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'is_read'  => 0,
+        ]);
+    } catch (Throwable) {
+    }
+}
+
+function iso_process_new_listing_matches(int $listingId, int $minScore = 45): int {
+    $listing = DB::fetch(
+        'SELECT l.*, u.phone, u.id AS owner_id FROM listings l JOIN users u ON u.id = l.user_id WHERE l.id = ? LIMIT 1',
+        [$listingId]
+    );
+    if (!$listing) return 0;
+    if (($listing['status'] ?? '') !== 'active') return 0;
+    if (($listing['review_status'] ?? '') !== 'approved') return 0;
+
+    $matches = iso_find_reverse_matches_for_listing($listingId, 30);
+    if (empty($matches)) return 0;
+
+    $processed = 0;
+    $smsSentThisRun = 0;
+    $smsMaxPerListing = 3;
+
+    foreach ($matches as $m) {
+        $score = (int)($m['match_score'] ?? 0);
+        if ($score < $minScore) continue;
+
+        $isoId = (int)($m['id'] ?? 0);
+        $isoUserId = (int)($m['user_id'] ?? 0);
+        if ($isoUserId <= 0 || $isoId <= 0) continue;
+        if ((int)$listing['owner_id'] === $isoUserId) continue;
+
+        $scoreData = [
+            'total'       => $score,
+            'distance_km' => $m['distance_km'] ?? null,
+            'reason'      => (string)($m['match_reason'] ?? 'پتانسیل معاوضه'),
+        ];
+        try {
+            iso_save_match($isoId, $listingId, $scoreData);
+        } catch (Throwable) {
+        }
+
+        try {
+            iso_notification_for_match($isoUserId, $isoId, $listingId, $listing, $score);
+        } catch (Throwable) {
+        }
+
+        if ($smsSentThisRun < $smsMaxPerListing && db_has_table('iso_sms_logs')) {
+            if (!iso_sms_already_sent($isoUserId, $isoId, $listingId)
+                && iso_user_wants_sms($isoUserId)
+                && iso_rate_limit_sms_user($isoUserId)) {
+                $isoUser = DB::fetch(
+                    'SELECT phone FROM users WHERE id = ? LIMIT 1',
+                    [$isoUserId]
+                );
+                $phone = trim((string)($isoUser['phone'] ?? ''));
+                if ($phone !== '') {
+                    $inserted = false;
+                    try {
+                        DB::insert('iso_sms_logs', [
+                            'user_id'    => $isoUserId,
+                            'iso_id'     => $isoId,
+                            'listing_id' => $listingId,
+                            'phone'      => $phone,
+                            'status'     => 'pending',
+                            'provider'   => defined('SMS_IRANPAYAMAK_LINE_NUMBER') ? 'iranpayamak' : null,
+                        ]);
+                        $inserted = true;
+                    } catch (Throwable) {
+                        $inserted = false;
+                    }
+                    if ($inserted) {
+                        $attributes = iso_sms_attributes([
+                            'listing_title' => (string)($listing['title'] ?? ''),
+                            'city'          => (string)($listing['city'] ?? ''),
+                        ]);
+                        $patternCode = defined('SMS_ISO_MATCH_PATTERN_CODE') ? SMS_ISO_MATCH_PATTERN_CODE : null;
+                        $ok = false;
+                        $err = '';
+                        try {
+                            $ok = send_pattern_sms($phone, $attributes, $patternCode);
+                        } catch (Throwable $e) {
+                            $ok = false;
+                            $err = $e->getMessage();
+                        }
+                        $status = $ok ? 'sent' : 'failed';
+                        $errMsg = $ok ? null : ($err !== '' ? $err : last_sms_error());
+                        try {
+                            DB::query(
+                                'UPDATE iso_sms_logs SET status = ?, message = ?, error = ?, provider_message_id = NULL WHERE user_id = ? AND iso_id = ? AND listing_id = ?',
+                                [
+                                    $status,
+                                    json_encode($attributes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                                    $errMsg,
+                                    $isoUserId, $isoId, $listingId,
+                                ]
+                            );
+                        } catch (Throwable) {
+                        }
+                        if ($ok) {
+                            $smsSentThisRun++;
+                        }
+                    }
+                }
+            }
+        }
+        $processed++;
+    }
+    return $processed;
+}

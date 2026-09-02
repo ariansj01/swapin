@@ -107,6 +107,16 @@ function admin_approve_listing(int $listingId, string $note = ''): void {
     if (function_exists('process_saved_search_alerts_for_listing')) {
         process_saved_search_alerts_for_listing($listingId);
     }
+
+    if (function_exists('iso_process_new_listing_matches')) {
+        try {
+            iso_process_new_listing_matches($listingId);
+        } catch (Throwable $e) {
+            if (function_exists('swapin_debug_log')) {
+                swapin_debug_log('iso-match-on-approve-failed', ['listing_id' => $listingId, 'msg' => $e->getMessage()]);
+            }
+        }
+    }
 }
 
 function admin_reject_listing(int $listingId, string $note): void {

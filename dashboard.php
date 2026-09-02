@@ -11,6 +11,7 @@ error_log('[swapin-dashboard] config.php loaded successfully');
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/dashboard_layout.php';
 require_once __DIR__ . '/includes/iso.php';
+require_once __DIR__ . '/includes/asset_valuation.php';
 error_log('[swapin-dashboard] layout.php loaded successfully');
 
 swapin_debug_log('dashboard-started', ['step' => 'init', 'uri' => $_SERVER['REQUEST_URI'] ?? '']);
@@ -133,6 +134,15 @@ if (!$dashboardNeedsMigration && db_has_table('iso_requests')) {
     }
 }
 
+// Asset Value Dashboard data
+$assetValueData = null;
+try {
+    $assetValueData = av_get_user_assets($uid);
+} catch (Throwable $e) {
+    swapin_debug_log('dashboard-asset-value-failed', ['user_id' => $uid, 'msg' => $e->getMessage()]);
+    $assetValueData = null;
+}
+
 swapin_debug_log('dashboard-before-render', ['step' => 'before-render', 'my_listings_count' => $myListingsCount ?? 0]);
 
 render_head('داشبورد', 'خلاصه حساب، آگهی‌ها و پیشنهادهای معاوضه در ' . APP_NAME, [
@@ -228,6 +238,125 @@ render_navbar($user);
         </span>
       </a>
       <?php endforeach; ?>
+    </div>
+
+    <!-- ── Asset Value Dashboard + Swap Opportunities ─────────────────── -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--sp-5);margin:var(--sp-7) 0;">
+      <div class="card">
+        <div class="card-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3)">
+          <div>
+            <h3 style="margin:0;font-size:1rem">
+              <i class="bi bi-piggy-bank" style="color:var(--primary)"></i>
+              ارزش تقریبی دارایی‌های شما
+            </h3>
+            <p class="fs-xs" style="color:var(--text-muted);margin:var(--sp-1) 0 0">
+              این اعداد تخمینی هستند و به عنوان قیمت قطعی در نظر گرفته نشوند.
+            </p>
+          </div>
+          <?php if ($assetValueData && $assetValueData['total_value'] > 0): ?>
+          <span class="badge badge-<?= $assetValueData['confidence'] === 'high' ? 'success' : ($assetValueData['confidence'] === 'medium' ? 'warning' : 'info') ?> fs-xs">
+            اطمینان: <?= av_confidence_label($assetValueData['confidence']) ?>
+          </span>
+          <?php endif; ?>
+        </div>
+        <div class="card-body">
+          <?php if (!$assetValueData || empty($assetValueData['assets'])): ?>
+            <div class="empty-state" style="padding:var(--sp-5) 0">
+              <i class="bi bi-tag"></i>
+              <p class="fs-sm" style="color:var(--text-muted)">هنوز آگهی فعال برای محاسبه ارزش ثبت نکرده‌اید.</p>
+              <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-sm">ثبت آگهی جدید</a>
+            </div>
+          <?php else: ?>
+            <div style="padding:var(--sp-4);background:linear-gradient(135deg,var(--primary-light),var(--accent-light));border-radius:16px;margin-bottom:var(--sp-4)">
+              <div class="fs-xs" style="color:var(--text-muted)">مجموع ارزش تقریبی بازار</div>
+              <div style="font-size:1.625rem;font-weight:800;margin-top:var(--sp-1);color:var(--text)">
+                <?= fmt_num($assetValueData['total_value']) ?> <span class="fs-sm" style="color:var(--text-muted)"><?= CREDIT_UNIT ?></span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:var(--sp-3);max-height:260px;overflow:auto;padding-inline-end:4px">
+              <?php foreach (array_slice($assetValueData['assets'], 0, 6) as $a): ?>
+              <a href="<?= h($a['view_url']) ?>" class="d-flex align-items-center gap-3" style="text-decoration:none;padding:var(--sp-2);border-radius:12px;transition:background .15s" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">
+                <div style="width:48px;height:48px;border-radius:12px;background:var(--surface);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden">
+                  <?php if (!empty($a['thumb'])): ?>
+                    <img src="<?= h($a['thumb']) ?>" alt="" style="width:100%;height:100%;object-fit:cover">
+                  <?php else: ?>
+                    <i class="bi bi-image" style="color:var(--text-muted)"></i>
+                  <?php endif; ?>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div class="fw-700" style="font-size:.9375rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= h($a['title']) ?></div>
+                  <div class="fs-xs" style="color:var(--text-muted)">
+                    ارزش تخمینی: <strong style="color:var(--primary)"><?= fmt_num($a['estimated_value']) ?></strong>
+                    <span class="fs-xs" style="color:var(--text-muted);margin-inline:6px">·</span>
+                    اطمینان: <?= av_confidence_label($a['confidence']) ?>
+                  </div>
+                </div>
+                <i class="bi bi-chevron-left" style="color:var(--text-muted)"></i>
+              </a>
+              <?php endforeach; ?>
+            </div>
+            <?php if (count($assetValueData['assets']) > 6): ?>
+            <a href="<?= APP_URL ?>/listings/my" class="btn btn-outline btn-sm w-100 mt-3">
+              مشاهده همه <?= fmt_num(count($assetValueData['assets'])) ?> آگهی
+            </a>
+            <?php endif; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3)">
+          <div>
+            <h3 style="margin:0;font-size:1rem">
+              <i class="bi bi-lightbulb" style="color:var(--warning)"></i>
+              فرصت‌های معاوضه
+            </h3>
+            <p class="fs-xs" style="color:var(--text-muted);margin:var(--sp-1) 0 0">
+              کاربرانی که در جستجوی کالاهای شما هستند یا کالای مناسب برای شما دارند.
+            </p>
+          </div>
+        </div>
+        <div class="card-body">
+          <?php $soppCount = $assetValueData ? (int)$assetValueData['swap_opportunities'] : count($isoReverseMatchesDashboard); ?>
+          <div style="padding:var(--sp-4);background:linear-gradient(135deg,#fff8e6,#ffe8cc);border-radius:16px;margin-bottom:var(--sp-4)">
+            <div class="fs-xs" style="color:var(--text-muted)">تعداد آگهی‌های مناسب برای معاوضه</div>
+            <div style="font-size:1.625rem;font-weight:800;margin-top:var(--sp-1);color:var(--text)">
+              💡 <?= fmt_num($soppCount) ?> <span class="fs-sm" style="color:var(--text-muted)">پیشنهاد</span>
+            </div>
+          </div>
+          <?php if (empty($isoReverseMatchesDashboard)): ?>
+            <div class="empty-state" style="padding:var(--sp-5) 0">
+              <i class="bi bi-search"></i>
+              <p class="fs-sm" style="color:var(--text-muted)">هنوز کاربری در جستجوی کالاهای شما نبوده یا تطابقی پیدا نشده است.</p>
+              <a href="<?= APP_URL ?>/iso/create" class="btn btn-accent btn-sm">ساخت درخواست ISO</a>
+            </div>
+          <?php else: ?>
+            <div style="display:flex;flex-direction:column;gap:var(--sp-3);max-height:260px;overflow:auto;padding-inline-end:4px">
+              <?php foreach (array_slice($isoReverseMatchesDashboard, 0, 6) as $m):
+                  $matchTitle = (string)($m['source_listing_title'] ?? $m['title'] ?? '');
+                  $matchedFrom = (string)($m['matched_from_listing_title'] ?? '');
+              ?>
+              <a href="<?= APP_URL ?>/iso/view.php?id=<?= (int)$m['id'] ?>" class="d-flex align-items-center gap-3" style="text-decoration:none;padding:var(--sp-2);border-radius:12px" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">
+                <div style="width:48px;height:48px;border-radius:12px;background:var(--surface);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                  <span class="badge badge-<?= ($m['match_score'] ?? 0) >= 70 ? 'success' : (($m['match_score'] ?? 0) >= 50 ? 'warning' : 'info') ?>" style="font-weight:800">
+                    <?= fmt_num((int)($m['match_score'] ?? 0)) ?>٪
+                  </span>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div class="fw-700" style="font-size:.9375rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= h($matchTitle) ?></div>
+                  <div class="fs-xs" style="color:var(--text-muted)">
+                    درخواست شده برای: <strong style="color:var(--primary)"><?= h(mb_strimwidth($matchedFrom, 0, 26, '…')) ?></strong>
+                    <span class="fs-xs" style="color:var(--text-muted);margin-inline:6px">·</span>
+                    توسط: <?= h((string)($m['iso_user_name'] ?? '')) ?>
+                  </div>
+                </div>
+                <i class="bi bi-chevron-left" style="color:var(--text-muted)"></i>
+              </a>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
     </div>
 
     <!-- ── Match Hub (AI Matching Engine) ─────────────────────────────── -->
