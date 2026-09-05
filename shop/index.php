@@ -334,7 +334,7 @@ if (!empty($storeUser['store_banner'])) {
         grid-template-columns: 1fr;
     }
     .store-banner-img {
-        height: 180px;
+        height: 260px;
     }
     .store-profile-header__avatar .avatar {
         width: 90px;

@@ -664,6 +664,13 @@ HTML;
     echo <<<HTML
 <script src="{$url}/src/js/app.js?v={$appJsVer}"></script>
 <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('{$url}/sw.js').catch(function () {});
+    });
+  }
+</script>
+<script>
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.site-footer__toggle').forEach(function (button) {
       const group = button.closest('.footer-accordion');

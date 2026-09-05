@@ -1,21 +1,67 @@
 {
-  "name": "سواَپین",
+  "name": "سواَپین — بازار تعویض هوشمند",
   "short_name": "سواَپین",
+  "description": "بازار تعویض کالا و سوآپ هوشمند خرید، فروش و معاوضه",
+  "lang": "fa",
+  "dir": "rtl",
+  "scope": "/",
+  "start_url": "/?utm_source=pwa&utm_medium=app",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0a2540",
+  "categories": ["shopping", "lifestyle", "business"],
   "icons": [
     {
       "src": "web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
-  "theme_color": "#0a2540",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "screenshots": [
+    {
+      "src": "web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "صفحه اصلی سواَپین"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "ثبت آگهی جدید",
+      "short_name": "+ آگهی",
+      "description": "سریع به صفحه ثبت آگهی برو",
+      "url": "/listings/create?utm_source=pwa&utm_medium=shortcut",
+      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "داشبورد من",
+      "short_name": "داشبورد",
+      "description": "داشبورد کاربری خود را ببین",
+      "url": "/dashboard?utm_source=pwa&utm_medium=shortcut",
+      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "آگهی‌های من",
+      "short_name": "آگهی‌ها",
+      "description": "مدیریت آگهی‌های ثبت‌شده",
+      "url": "/listings/my?utm_source=pwa&utm_medium=shortcut",
+      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "پیام‌ها",
+      "short_name": "چت",
+      "description": "مشاهده پیام‌ها و چت‌ها",
+      "url": "/messages?utm_source=pwa&utm_medium=shortcut",
+      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+    }
+  ]
 }
