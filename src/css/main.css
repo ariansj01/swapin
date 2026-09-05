@@ -2917,6 +2917,84 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     width: 100%;
   }
   .container, .container-md, .container-sm { padding: 0 var(--sp-4); }
+  .home-assurance{
+    margin-top: 15px;
+  }
+  .home-assurance .home-assurance__stats {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    background: var(--primary);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, .06);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-bottom: var(--sp-4);
+  }
+  .home-assurance .home-assurance__stats::-webkit-scrollbar {
+    display: none;
+  }
+  .home-assurance .site-footer__stat {
+    flex: 0 0 88%;
+    min-width: 0;
+    scroll-snap-align: start;
+    border-inline-start: none !important;
+    border-top: none !important;
+    padding: var(--sp-4) var(--sp-4);
+    background: rgba(255, 255, 255, .04);
+    border-radius: var(--radius-md);
+  }
+  .home-assurance .site-footer__stat:nth-child(-n+2),
+  .home-assurance .site-footer__stat:first-child {
+    border-top: none !important;
+  }
+  .home-filter-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+  .home-filter-bar .home-filter-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .home-filter-bar .home-filter-control {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    height: 44px;
+    font-size: .8125rem;
+  }
+  .home-ai__actions {
+    flex-wrap: nowrap;
+  }
+  .home-ai__actions .btn {
+    flex: 1;
+    justify-content: center;
+    font-size: .875rem;
+    padding-inline: var(--sp-3);
+  }
+  .trust-grid {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--sp-3);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .trust-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .trust-card {
+    flex: 0 0 88%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
   .card-body { padding: var(--sp-4); }
   .section-sm { padding: var(--sp-6) 0 var(--sp-10); }
   h1 { font-size: 1.5rem; }
@@ -4440,12 +4518,90 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     grid-template-columns: 1fr;
   }
 
+  .home-assurance .home-assurance__stats {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    background: var(--primary);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, .06);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-bottom: var(--sp-4);
+  }
+
+  .home-assurance .home-assurance__stats::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-assurance .site-footer__stat {
+    flex: 0 0 85%;
+    min-width: 0;
+    scroll-snap-align: start;
+    border-inline-start: none !important;
+    border-top: none !important;
+    padding: var(--sp-4) var(--sp-4);
+    background: rgba(255, 255, 255, .04);
+    border-radius: var(--radius-md);
+  }
+
   .site-footer__stat:nth-child(-n+2) {
     border-top: 1px solid rgba(255, 255, 255, .12);
   }
 
   .site-footer__stat:first-child {
     border-top: none;
+  }
+
+  .home-assurance .site-footer__stat:nth-child(-n+2),
+  .home-assurance .site-footer__stat:first-child {
+    border-top: none !important;
+  }
+
+  .home-filter-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+  .home-filter-bar .home-filter-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .home-filter-bar .home-filter-control {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    height: 46px;
+    font-size: .8125rem;
+  }
+  .home-ai__actions {
+    flex-wrap: nowrap;
+  }
+  .home-ai__actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .trust-grid {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--sp-3);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .trust-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .trust-card {
+    flex: 0 0 85%;
+    min-width: 0;
+    scroll-snap-align: start;
   }
 
   .site-footer__main {
