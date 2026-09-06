@@ -3,7 +3,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
 $user = auth_user();
- 
+
 render_head(
     'نصب اپلیکیشن سواَپین',
     'نصب اپلیکیشن سواَپین',
