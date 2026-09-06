@@ -538,31 +538,33 @@ render_navbar($user);
 </main>
 
 <?php if ($page === 1): ?>
-<section class="home-section home-ai">
+<section class="home-section home-ai" aria-label="ارزش‌گذاری و مشاوره معاوضه با AI">
   <div class="container">
     <div class="home-ai__inner">
-      <div class="home-ai__content">
-        <span class="home-ai__badge"><i class="bi bi-stars"></i><?= h(swapin_content_get('home_ai_badge')) ?></span>
-        <h2><?= h(swapin_content_get('home_ai_title')) ?></h2>
-        <p><?= h(swapin_content_get('home_ai_desc')) ?></p>
-        <div class="home-ai__actions">
-          <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-lg">
-            <i class="bi bi-stars"></i> <?= h(swapin_content_get('home_ai_primary_cta')) ?>
-          </a>
-          <a href="<?= APP_URL ?>/ai/chat" class="btn btn-hero-outline btn-lg">
-            <i class="bi bi-robot"></i> <?= h(swapin_content_get('home_ai_secondary_cta')) ?>
-          </a>
+      <div class="home-ai__visual" aria-hidden="false">
+        <div class="home-ai__phone-wrap">
+          <div class="home-ai__phone-blob" aria-hidden="true"></div>
+          <!-- <img src="<?= APP_URL ?>/src/img/583fde7d-1ca3-4763-9c00-8ec1b68bfaf3.png" alt="نمایش ارزش‌گذاری هوشمند سواَپین در موبایل" class="home-ai__phone" loading="lazy"> -->
+          <img src="<?= APP_URL ?>/src/img/ChatGPT%20Image%20Sep%206%2C%202026%2C%2012_38_51%20PM.png" alt="نمایش ارزش‌گذاری هوشمند سواَپین در موبایل" class="home-ai__phone" loading="lazy">
         </div>
       </div>
-      <div class="home-ai__visual">
-        <div class="home-ai__card">
-          <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> تحلیل وضعیت و دسته‌بندی</div>
-          <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> مقایسه با بازار معاوضه</div>
-          <div class="home-ai__card-row"><i class="bi bi-check2-circle"></i> پیشنهاد ارزش <?= CREDIT_UNIT ?></div>
-          <div class="home-ai__card-value">~ ۱۲,۵۰۰,۰۰۰ <?= CREDIT_UNIT ?></div>
+      <div class="home-ai__content">
+        <span class="home-ai__badge">
+          <i class="bi bi-stars"></i> هوش مصنوعی
+        </span>
+        <h2 class="home-ai__title">ارزش‌گذاری و مشاوره معاوضه با <span class="home-ai__title-accent">AI</span></h2>
+        <p class="home-ai__desc">سواَپین AI کالا، شرایط فیزیکی و بازار معاوضه را تحلیل می‌کند، تخمین قیمت دقیق می‌دهد و بهترین پیشنهادهای معاوضه را متناسب با بودجه و سلایق شما پیدا می‌کند.</p>
+        <div class="home-ai__actions">
+          <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-lg">
+            <i class="bi bi-plus-circle"></i> ثبت کالا + دریافت قیمت AI
+          </a>
+          <a href="<?= APP_URL ?>/ai/chat" class="btn btn-hero-outline btn-lg">
+            <i class="bi bi-robot"></i> دستیار AI
+          </a>
         </div>
       </div>
     </div>
+
   </div>
 </section>
 
