@@ -545,7 +545,7 @@ render_navbar($user);
         <div class="home-ai__phone-wrap">
           <div class="home-ai__phone-blob" aria-hidden="true"></div>
           <!-- <img src="<?= APP_URL ?>/src/img/583fde7d-1ca3-4763-9c00-8ec1b68bfaf3.png" alt="نمایش ارزش‌گذاری هوشمند سواَپین در موبایل" class="home-ai__phone" loading="lazy"> -->
-          <img src="<?= APP_URL ?>/src/img/ChatGPT%20Image%20Sep%206%2C%202026%2C%2012_38_51%20PM.png" alt="نمایش ارزش‌گذاری هوشمند سواَپین در موبایل" class="home-ai__phone" loading="lazy">
+          <img src="<?= APP_URL ?>/src/img/171277459.png" alt="نمایش ارزش‌گذاری هوشمند سواَپین در موبایل" class="home-ai__phone" loading="lazy">
         </div>
       </div>
       <div class="home-ai__content">
