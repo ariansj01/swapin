@@ -92,6 +92,9 @@ Options +MultiViews -Indexes
   RewriteCond %{REQUEST_FILENAME}.php -f
   RewriteRule ^([^/]+)/?$ $1.php [L,QSA]
   
+  # PWA install landing page
+  RewriteRule ^pwa/?$ pwa.php [L,NC,QSA]
+
   # Handle /sep/callback route for backward compatibility
   RewriteRule ^sep/callback/?$ payment_callback.php [L,NC,QSA]
 

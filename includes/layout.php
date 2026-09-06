@@ -605,6 +605,7 @@ function render_footer(): void {
         <div class="footer-links-group footer-accordion">
           <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">سواَپین</button>
           <ul class="site-footer__links">
+            <li><a href="{$url}/pwa"><i class="bi bi-download"></i> نصب اپلیکیشن</a></li>
             <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
             <li><a href="{$url}/blog">بلاگ سواَپین</a></li>
           </ul>
