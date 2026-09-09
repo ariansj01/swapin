@@ -770,11 +770,30 @@ function render_categories_strip(?int $active = null): void {
     $cats = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order');
     echo '<div class="category-strip">';
     $cls  = $active === null ? ' active' : '';
+    $categoryImages = [
+        'electronics' => APP_URL . '/src/img/category/electronic-devices.png',
+        'clothing' => APP_URL . '/src/img/category/personal.png',
+        'home-garden' => APP_URL . '/src/img/category/home-kitchen.png',
+        'books-media' => APP_URL . '/src/img/category/leisure-hobbies.png',
+        'sports' => APP_URL . '/src/img/category/leisure-hobbies.png',
+        'toys-games' => APP_URL . '/src/img/category/leisure-hobbies.png',
+        'vehicles' => APP_URL . '/src/img/category/vehicles.png',
+        'services' => APP_URL . '/src/img/category/services.png',
+        'food-drink' => APP_URL . '/src/img/category/home-kitchen.png',
+        'other' => APP_URL . '/src/img/category/community.png',
+    ];
+
     echo "<a href='" . APP_URL . "/listings/all.php' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
     foreach ($cats as $c) {
         $cls = $active == $c['id'] ? ' active' : '';
         $catUrl = category_url($c['slug']);
-        echo "<a href='{$catUrl}' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='{$c['icon']}'></i></div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
+        $imageHtml = '';
+        if (isset($categoryImages[$c['slug']])) {
+            $imageHtml = "<img src='{$categoryImages[$c['slug']]}' alt='" . h($c['name']) . "' />";
+        } else {
+            $imageHtml = "<i class='{$c['icon']}'></i>";
+        }
+        echo "<a href='{$catUrl}' class='cat-pill{$cls}'><div class='cat-pill__icon'>{$imageHtml}</div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
+    }
     }
     echo '</div>';
-}

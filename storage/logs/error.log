@@ -78,3 +78,23 @@
 [09-Sep-2026 20:25:49 Europe/Berlin] [swapin-debug] [req:599c5e67ba62] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
 [09-Sep-2026 20:27:40 Europe/Berlin] [swapin-debug] [req:f5e0ba744519] index-start {"uri":"/swaapin/","query":[]}
 [09-Sep-2026 20:27:40 Europe/Berlin] [swapin-debug] [req:f5e0ba744519] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[09-Sep-2026 22:19:40 Europe/Berlin] [swapin-debug] [req:9605267c157e] index-start {"uri":"/swaapin/","query":[]}
+[09-Sep-2026 22:19:40 Europe/Berlin] [swapin-debug] [req:9605267c157e] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[09-Sep-2026 22:19:40 Europe/Berlin] [swapin-debug] [req:9605267c157e] uncaught-exception {"type":"PDOException","message":"SQLSTATE[42S22]: Column not found: 1054 Unknown column 'image_url' in 'field list'","file":"C:\\xampp\\htdocs\\swaapin\\includes\\config.php","line":1321,"uri":"/swaapin/","method":"GET"}
+[09-Sep-2026 22:21:01 Europe/Berlin] [swapin-debug] [req:77e6ce31f792] index-start {"uri":"/swaapin/","query":[]}
+[09-Sep-2026 22:21:01 Europe/Berlin] [swapin-debug] [req:77e6ce31f792] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[09-Sep-2026 23:44:32 Europe/Berlin] [swapin-debug] [req:f03605f907b4] uncaught-exception {"type":"ParseError","message":"Unmatched '}'","file":"C:\\xampp\\htdocs\\swaapin\\includes\\layout.php","line":801,"uri":"/swaapin/","method":"GET"}
+[09-Sep-2026 23:45:43 Europe/Berlin] [swapin-debug] [req:5371624914b6] index-start {"uri":"/swaapin/","query":[]}
+[09-Sep-2026 23:45:43 Europe/Berlin] [swapin-debug] [req:5371624914b6] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[09-Sep-2026 23:59:39 Europe/Berlin] [swapin-debug] [req:e4f93e871ebf] index-start {"uri":"/swaapin/","query":[]}
+[09-Sep-2026 23:59:39 Europe/Berlin] [swapin-debug] [req:e4f93e871ebf] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Sep-2026 00:02:29 Europe/Berlin] [swapin-debug] [req:cb3ade7dc291] index-start {"uri":"/swaapin/","query":[]}
+[10-Sep-2026 00:02:29 Europe/Berlin] [swapin-debug] [req:cb3ade7dc291] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Sep-2026 00:04:14 Europe/Berlin] [swapin-debug] [req:e21fb5442a48] index-start {"uri":"/swaapin/","query":[]}
+[10-Sep-2026 00:04:14 Europe/Berlin] [swapin-debug] [req:e21fb5442a48] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Sep-2026 00:05:52 Europe/Berlin] [swapin-debug] [req:c2761ef3c50b] index-start {"uri":"/swaapin/","query":[]}
+[10-Sep-2026 00:05:52 Europe/Berlin] [swapin-debug] [req:c2761ef3c50b] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Sep-2026 00:07:43 Europe/Berlin] [swapin-debug] [req:51125fad8701] index-start {"uri":"/swaapin/","query":[]}
+[10-Sep-2026 00:07:43 Europe/Berlin] [swapin-debug] [req:51125fad8701] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
+[10-Sep-2026 00:09:00 Europe/Berlin] [swapin-debug] [req:52b20616840a] index-start {"uri":"/swaapin/","query":[]}
+[10-Sep-2026 00:09:00 Europe/Berlin] [swapin-debug] [req:52b20616840a] index-before-queries {"search":"","cat":"","city":"","want":"","sort":"new","page":1}
