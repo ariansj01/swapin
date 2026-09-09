@@ -323,37 +323,34 @@ render_navbar($user);
           <h2>چطور در سواَپین معامله کنیم؟</h2>
           <p>فقط در چهار مرحله ساده کالای خود را با دیگران معامله کنید.</p>
         </div>
-        <div class="steps-grid" aria-label="مراحل معامله در سواَپین">
-          <?php
-          $steps = [
-              ['۱', 'ثبت آگهی', 'از کالای خود عکس بگیرید، توضیحات بنویسید و آگهی را ثبت کنید.', 'bi-phone', 'bi-plus-lg', 'آگهی شما در چند دقیقه آماده نمایش است.'],
-              ['۲', 'دریافت پیشنهاد', 'کاربران دیگر برای کالای شما پیشنهادهای معاوضه ارسال می‌کنند.', 'bi-chat-dots', 'bi-send', 'همه پیشنهادها یک‌جا و شفاف نمایش داده می‌شوند.'],
-              ['۳', 'توافق با طرف مقابل', 'از طریق گفتگو درباره شرایط معامله به توافق برسید.', 'bi-people', 'bi-check2-circle', 'جزئیات معامله را قبل از نهایی‌سازی هماهنگ کنید.'],
-              ['۴', 'انجام معامله', 'در مکان امن ملاقات کرده و کالای خود را با طرف مقابل معاوضه کنید.', 'bi-box-seam', 'bi-gift', 'تجربه‌ای سریع، مطمئن و حرفه‌ای تا پایان معامله.'],
-          ];
-          foreach ($steps as $index => [$stepNo, $title, $desc, $icon, $iconBadge, $caption]):
-          ?>
-          <article class="step-card" style="--step-delay: <?= $index ?>;">
-            <div class="step-card__top">
-              <span class="step-card__number"><?= $stepNo ?></span>
-              <div class="step-card__icon-wrap">
-                <div class="step-card__icon">
-                  <i class="bi <?= $icon ?>"></i>
-                </div>
-                <?php if ($iconBadge): ?>
-                <span class="step-card__icon-badge" style="display: none;" aria-hidden="true"><i class="bi <?= $iconBadge ?>"></i></span>
-                <?php endif; ?>
+        <div class="listings-rows-container">
+          <div class="steps-grid" aria-label="مراحل معامله در سواَپین">
+            <?php
+            $steps = [
+                ['۱', 'ثبت آگهی', 'عکس بگیرید، توضیح بنویسید و ثبت کنید.', 'bi-camera', 'آگهی شما در چند دقیقه آماده نمایش است.'],
+                ['۲', 'دریافت پیشنهاد', 'کاربران پیشنهادهای معاوضه ارسال می‌کنند.', 'bi-send', 'همه پیشنهادها شفاف نمایش داده می‌شوند.'],
+                ['۳', 'توافق با طرف مقابل', 'در گفتگو درباره شرایط معامله به توافق برسید.', 'bi-heart', 'جزئیات را قبل از نهایی‌سازی هماهنگ کنید.'],
+                ['۴', 'انجام معامله', 'در مکان امن ملاقات کرده و معاوضه کنید.', 'bi-shield-check', 'تجربه‌ای سریع، مطمئن و حرفه‌ای.'],
+            ];
+            foreach ($steps as $index => [$stepNo, $title, $desc, $icon, $caption]):
+              $finalClass = $index === 3 ? ' step-card--final' : '';
+            ?>
+            <article class="step-card<?= $finalClass ?>" style="--step-delay: <?= $index ?>;">
+              <div class="step-card__top">
+                <span class="step-card__number"><?= $stepNo ?></span>
               </div>
-              <!-- <i class="bi bi-arrow-right step-arrow" aria-hidden="true"></i> -->
-            </div>
-            <div class="step-card__body">
-              <span class="step-card__label">مرحله <?= $stepNo ?></span>
-              <h3><?= $title ?></h3>
-              <p><?= $desc ?></p>
-            </div>
-            <div class="step-card__footer"><?= $caption ?></div>
-          </article>
-          <?php endforeach; ?>
+              <div class="step-card__body">
+                <span class="step-card__label">مرحله <?= $stepNo ?></span>
+                <h3>
+                  <i class="bi <?= $icon ?> step-card__title-icon"></i>
+                  <?= $title ?>
+                </h3>
+                <p><?= $desc ?></p>
+              </div>
+              <div class="step-card__footer"><?= $caption ?></div>
+            </article>
+            <?php endforeach; ?>
+          </div>
         </div>
       </div>
     </section>

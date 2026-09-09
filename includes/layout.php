@@ -239,9 +239,9 @@ function render_navbar(?array $user = null): void {
 <header class="site-header" role="banner">
 <nav class="navbar" aria-label="ناوبری اصلی">
   <div class="navbar-inner">
-    <!-- <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
+    <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
       <i class="bi bi-list"></i>
-    </button> -->
+    </button>
 
     <a href="{$url}/" class="navbar-brand">
       <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">
@@ -540,9 +540,32 @@ function render_footer(): void {
     $user     = $GLOBALS['_nav_user'] ?? null;
     render_mobile_bottom_nav($user);
     $contentPageFooterLinks = content_page_footer_links_html();
-    echo <<<HTML
-<footer class="site-footer">
-  <div class="container">
+
+    $isHomePage = false;
+    if (isset($_SERVER['REQUEST_URI'])) {
+        $uriPath    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $scriptName = basename($_SERVER['SCRIPT_NAME']     ?? '');
+        $redirectUrl= $_SERVER['REDIRECT_URL'] ?? '';
+        $basePath   = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/');
+        if ($basePath === '\\' || $basePath === '.') $basePath = '';
+
+        $candidates   = [$uriPath, $redirectUrl];
+        $allowedRoots = [$basePath . '/', $basePath . '', $basePath . '/index.php', '/', '/index.php', '', 'swaapin/', 'swaapin/index.php'];
+
+        foreach ($candidates as $c) {
+            if ($c !== null && in_array($c, $allowedRoots, true)) {
+                $isHomePage = true;
+                break;
+            }
+        }
+        if (!$isHomePage && ($scriptName === 'index.php')) {
+            $isHomePage = true;
+        }
+    }
+
+    $statsHtml = '';
+    if ($isHomePage) {
+        $statsHtml = <<<HTMLSTATS
     <dl class="site-footer__stats">
       <div class="site-footer__stat">
         <i class="bi bi-emoji-smile site-footer__stat-icon" aria-hidden="true"></i>
@@ -573,7 +596,13 @@ function render_footer(): void {
         </div>
       </div>
     </dl>
+HTMLSTATS;
+    }
 
+    echo <<<HTML
+<footer class="site-footer">
+  <div class="container">
+    {$statsHtml}
     <div class="site-footer__main">
       <div class="site-footer__col site-footer__col--brand">
         <a href="{$url}/" class="site-footer__brand">
