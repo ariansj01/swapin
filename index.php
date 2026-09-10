@@ -258,21 +258,29 @@ render_navbar($user);
 <?php endif; ?>
 
 <main id="main-content" class="section-sm">
+
+  <!-- Category Section: Dark Navy Background -->
+   <div class="container">
+     <header class="home-section-heading home-categories-heading mb-4" style="color:#071A33 " aria-label="سرفصل دسته‌بندی‌ها">
+       <h2>دسته‌بندی‌های محبوب</h2>
+       <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link" style="color:#071A33 ">
+         مشاهده همه
+       </a>
+     </header>
+   </div>
+  <section class="home-categories-section" aria-label="دسته‌بندی‌ها">
+    <div class="container">
+      <!-- Category strip -->
+      <nav aria-label="دسته‌بندی‌ها">
+        <?php render_categories_strip($catId); ?>
+      </nav>
+    </div>
+  </section>
+
   <div class="container">
 
-    <!-- Category strip -->
-    <header class="home-section-heading mb-3" aria-label="سرفصل دسته‌بندی‌ها">
-      <h2>دسته‌بندی‌های محبوب</h2>
-      <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
-        مشاهده همه
-      </a>
-    </header>
-    <nav class="mb-5" aria-label="دسته‌بندی‌ها">
-      <?php render_categories_strip($catId); ?>
-    </nav>
-
     <!-- Filter bar -->
-    <form class="filter-bar home-filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false">
+    <form class="filter-bar home-filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false" style="margin-top: 25px;">
       <div class="home-filter-search">
         <label for="search-input" class="visually-hidden">جستجوی آگهی‌ها</label>
         <i class="bi bi-search home-filter-search__icon" aria-hidden="true"></i>
@@ -327,27 +335,26 @@ render_navbar($user);
           <div class="steps-grid" aria-label="مراحل معامله در سواَپین">
             <?php
             $steps = [
-                ['۱', 'ثبت آگهی', 'عکس بگیرید، توضیح بنویسید و ثبت کنید.', 'bi-camera', 'آگهی شما در چند دقیقه آماده نمایش است.'],
-                ['۲', 'دریافت پیشنهاد', 'کاربران پیشنهادهای معاوضه ارسال می‌کنند.', 'bi-send', 'همه پیشنهادها شفاف نمایش داده می‌شوند.'],
-                ['۳', 'توافق با طرف مقابل', 'در گفتگو درباره شرایط معامله به توافق برسید.', 'bi-heart', 'جزئیات را قبل از نهایی‌سازی هماهنگ کنید.'],
-                ['۴', 'انجام معامله', 'در مکان امن ملاقات کرده و معاوضه کنید.', 'bi-shield-check', 'تجربه‌ای سریع، مطمئن و حرفه‌ای.'],
+              ['۱', 'ثبت آگهی', 'عکس بگیرید و ثبت کنید.', 'bi-camera'],
+              ['۲', 'دریافت پیشنهاد', 'پیشنهادهای معامله بگیرید.', 'bi-send'],
+              ['۳', 'توافق با طرف مقابل', 'درباره شرایط توافق کنید.', 'bi-heart'],
+              ['۴', 'انجام معامله', 'در مکان امن معامله کنید.', 'bi-shield-check'],
             ];
-            foreach ($steps as $index => [$stepNo, $title, $desc, $icon, $caption]):
-              $finalClass = $index === 3 ? ' step-card--final' : '';
+            foreach ($steps as $index => [$stepNo, $title, $desc, $icon]):
             ?>
-            <article class="step-card<?= $finalClass ?>" style="--step-delay: <?= $index ?>;">
-              <div class="step-card__top">
-                <span class="step-card__number"><?= $stepNo ?></span>
+            <article class="step-card" style="--step-delay: <?= $index ?>;">
+              <span class="step-card__number"><?= $stepNo ?></span>
+              <div class="step-card__content">
+                <div class="step-card__icon-wrap">
+                  <div class="step-card__icon">
+                    <i class="bi <?= $icon ?>"></i>
+                  </div>
+                </div>
+                <div class="step-card__text">
+                  <h3><?= $title ?></h3>
+                  <p><?= $desc ?></p>
+                </div>
               </div>
-              <div class="step-card__body">
-                <span class="step-card__label">مرحله <?= $stepNo ?></span>
-                <h3>
-                  <i class="bi <?= $icon ?> step-card__title-icon"></i>
-                  <?= $title ?>
-                </h3>
-                <p><?= $desc ?></p>
-              </div>
-              <div class="step-card__footer"><?= $caption ?></div>
             </article>
             <?php endforeach; ?>
           </div>
