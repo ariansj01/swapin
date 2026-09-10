@@ -278,7 +278,7 @@ render_navbar($user);
   </section>
 
   <div class="container">
-
+ 
     <!-- Filter bar -->
     <form class="filter-bar home-filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false" style="margin-top: 25px;">
       <div class="home-filter-search">
