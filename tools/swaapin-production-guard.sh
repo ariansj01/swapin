@@ -46,7 +46,11 @@ echo "=============================="
 echo ""
 echo "[1] NGINX"
 
-nginx -t
+if command -v nginx &> /dev/null; then
+    nginx -t
+else
+    echo "nginx: command not found — skipping nginx syntax check (optional)"
+fi
 
 
 echo ""
