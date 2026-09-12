@@ -647,9 +647,9 @@ HTMLSTATS;
           <?php if (app_is_production()): ?>
           <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
           <?php else: ?>
-          <div class="site-footer__trust-placeholder" style="opacity:.5;font-size:.85rem;padding:.75rem;border:1px dashed var(--border);border-radius:12px;text-align:center;">
+          <!-- <div class="site-footer__trust-placeholder" style="opacity:.5;font-size:.85rem;padding:.75rem;border:1px dashed var(--border);border-radius:12px;text-align:center;">
             نماد اعتماد — فقط در Production فعال است
-          </div>
+          </div> -->
           <?php endif; ?>
         </div>
       </div>

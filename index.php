@@ -324,7 +324,7 @@ render_navbar($user);
     <?php endif; ?>
 
     <!-- New Listings Section -->
-    <section class="home-section home-steps" id="home-steps">
+    <section class="home-steps" id="home-steps" style="padding: 10px 0;">
       <div class="container">
         <div class="home-section__header home-steps__header">
           <span class="home-steps__eyebrow">مسیر ساده معامله</span>
