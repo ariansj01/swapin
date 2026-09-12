@@ -5975,3 +5975,242 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   line-height: 1.7;
 }
 .fraud-steps li { font-size: .9375rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PWA Install Banners (Android + iOS)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.pwa-install-banner {
+  position: fixed;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 950;
+  padding: 12px var(--sp-4) calc(12px + env(safe-area-inset-bottom, 0px));
+  background: #fff;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 24px rgba(7,26,51,.08);
+  animation: pwaBannerUp .3s ease;
+}
+
+@keyframes pwaBannerUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (min-width: 769px) {
+  .pwa-install-banner {
+    right: var(--sp-6);
+    left: auto;
+    bottom: var(--sp-6);
+    width: min(420px, 94vw);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    padding: var(--sp-4);
+  }
+}
+
+.pwa-install-banner__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.pwa-install-banner__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(7,26,51,.12);
+}
+
+.pwa-install-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-install-banner__title {
+  display: block;
+  font-size: .9375rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.pwa-install-banner__text {
+  margin: 0;
+  font-size: .78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.pwa-install-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── iOS Add to Home Sheet ─────────────────────────────────────────── */
+
+.pwa-ios-a2hs {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s ease;
+}
+
+.pwa-ios-a2hs.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pwa-ios-a2hs__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 26, 51, .58);
+  backdrop-filter: blur(2px);
+}
+
+.pwa-ios-a2hs__sheet {
+  position: absolute;
+  right: 50%;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 100%);
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  padding: var(--sp-6) var(--sp-5) calc(var(--sp-6) + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 40px rgba(0,0,0,.25);
+  transition: transform .32s cubic-bezier(.22,1,.36,1);
+}
+
+.pwa-ios-a2hs.is-open .pwa-ios-a2hs__sheet {
+  transform: translate(-50%, 0);
+}
+
+@media (min-width: 577px) {
+  .pwa-ios-a2hs__sheet {
+    bottom: 50%;
+    right: 50%;
+    left: auto;
+    transform: translate(50%, 100%);
+    border-radius: 24px;
+  }
+  .pwa-ios-a2hs.is-open .pwa-ios-a2hs__sheet {
+    transform: translate(50%, 50%);
+  }
+}
+
+.pwa-ios-a2hs__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.pwa-ios-a2hs__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(7,26,51,.15);
+}
+
+.pwa-ios-a2hs__title {
+  font-size: 1.125rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.pwa-ios-a2hs__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.pwa-ios-a2hs__steps li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pwa-ios-a2hs__steps i {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent), #eab308);
+  color: var(--primary);
+  font-size: 1rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(255,201,40,.25);
+}
+
+.pwa-ios-a2hs__dismiss {
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+/* ── iOS-specific layout helpers ───────────────────────────────────── */
+
+html.swaapin-ios--standalone body {
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+html.swaapin-ios .mobile-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+body.swaapin-ios--overscroll {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.swaapin-ios--kb-open {
+  position: fixed;
+  width: 100%;
+}
+
+body.is-offline {
+  --theme-color-fallback: #8a94a6;
+}
+
+body.is-offline::after {
+  content: "آفلاین — محتوا از کش نمایش داده می‌شود";
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1200;
+  background: var(--primary);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  animation: offlineBar .3s ease;
+}
+
+@keyframes offlineBar {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}

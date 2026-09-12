@@ -1,0 +1,63 @@
+{
+  "name": "سواَپین — بازار تعویض هوشمند",
+  "short_name": "سواَپین",
+  "description": "بازار تعویض کالا و سوآپ هوشمند خرید، فروش و معاوضه",
+  "lang": "fa",
+  "dir": "rtl",
+  "scope": "/",
+  "start_url": "/?utm_source=pwa&utm_medium=ios",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0a2540",
+  "categories": ["shopping", "lifestyle", "business"],
+  "icons": [
+    {
+      "src": "web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "platform": "ios",
+      "label": "صفحه اصلی سواَپین"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "ثبت آگهی جدید",
+      "short_name": "+ آگهی",
+      "url": "/listings/create?utm_source=pwa&utm_medium=ios_shortcut",
+      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "داشبورد من",
+      "short_name": "داشبورد",
+      "url": "/dashboard?utm_source=pwa&utm_medium=ios_shortcut",
+      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "پیام‌ها",
+      "short_name": "چت",
+      "url": "/messages?utm_source=pwa&utm_medium=ios_shortcut",
+      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -194,7 +194,27 @@ GA;
 
 {$gtm}
 {$analytics}
-<link rel="manifest" href="{$url}/src/img/fav_icon/site.webmanifest">
+<script>
+(function () {
+  function detectPlatform() {
+    var ua = (navigator.userAgent || '').toLowerCase();
+    if (/iphone|ipad|ipod/.test(ua)) return 'ios';
+    if (/mac/.test((navigator.platform || '').toLowerCase()) && 'ontouchend' in document) return 'ios';
+    if (/ipad.*mac os x/.test(ua)) return 'ios';
+    if (/android/.test(ua)) return 'android';
+    return 'other';
+  }
+  var p = detectPlatform();
+  var m = document.createElement('link');
+  m.rel = 'manifest';
+  m.crossOrigin = 'use-credentials';
+  if (p === 'ios') m.href = '{$url}/src/img/fav_icon/site-ios.webmanifest';
+  else if (p === 'android') m.href = '{$url}/src/img/fav_icon/site-android.webmanifest';
+  else m.href = '{$url}/src/img/fav_icon/site.webmanifest';
+  document.write(m.outerHTML);
+  document.documentElement.setAttribute('data-swaapin-platform', p);
+})();
+</script>
 </head>
 <body>
 {$gtm_noscript}
@@ -691,14 +711,31 @@ HTML;
         echo '<script src="' . $url . '/src/js/push-alerts.js?v=' . (@filemtime(__DIR__ . '/../src/js/push-alerts.js') ?: time()) . '"></script>';
     }
     $appJsVer = @filemtime(__DIR__ . '/../src/js/app.js') ?: time();
+    $pwaDetVer = @filemtime(__DIR__ . '/../src/js/pwa/platform-detector.js') ?: time();
+    $pwaCoreVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-core.js') ?: time();
+    $pwaAndroidVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-android.js') ?: time();
+    $pwaIosVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-ios.js') ?: time();
     echo <<<HTML
 <script src="{$url}/src/js/app.js?v={$appJsVer}"></script>
+<script src="{$url}/src/js/pwa/platform-detector.js?v={$pwaDetVer}"></script>
+<script src="{$url}/src/js/pwa/pwa-core.js?v={$pwaCoreVer}"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('{$url}/sw.js').catch(function () {});
-    });
+(function () {
+  if (!window.SwaapinPWA || !window.SwaapinPlatform) return;
+  var platform = window.SwaapinPlatform.getPlatform();
+  window.SwaapinPWA.init();
+  if (platform === 'android') {
+    var s = document.createElement('script');
+    s.src = '{$url}/src/js/pwa/pwa-android.js?v={$pwaAndroidVer}';
+    s.onload = function () { if (window.SwaapinPWAAndroid) window.SwaapinPWAAndroid.init(); };
+    document.head.appendChild(s);
+  } else if (platform === 'ios') {
+    var s2 = document.createElement('script');
+    s2.src = '{$url}/src/js/pwa/pwa-ios.js?v={$pwaIosVer}';
+    s2.onload = function () { if (window.SwaapinPWAIos) window.SwaapinPWAIos.init(); };
+    document.head.appendChild(s2);
   }
+})();
 </script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
