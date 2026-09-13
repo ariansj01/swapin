@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/geo.php';
 require_once __DIR__ . '/../includes/iso.php';
+require_once __DIR__ . '/../includes/ai_moderation.php';
 
 $user = require_auth();
 $listingProviderType = is_store_seller($user) ? user_provider_type($user) : 'normal_store';
@@ -173,6 +174,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     iso_process_new_listing_matches((int)$listingId);
                 }
             } catch (Throwable) {
+            }
+
+            // AI Moderation (always best-effort — never block user flow)
+            try {
+                if (function_exists('ai_mod_review_listing')) {
+                    ai_mod_review_listing((int)$listingId);
+                }
+            } catch (Throwable $e) {
+                swapin_debug_log('ai-moderation-create-failed', [
+                    'listing_id' => $listingId,
+                    'err'        => $e->getMessage(),
+                ]);
             }
 
             // Redirect to success page

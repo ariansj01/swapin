@@ -1201,6 +1201,107 @@ if ($shouldMigrate) {
         }
     }
 
+    // ─── AI Moderation: listing_ai_reviews audit table ───────────────────
+    if (!db_has_table('listing_ai_reviews')) {
+        try {
+            DB::query("
+                CREATE TABLE `listing_ai_reviews` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `listing_id` INT UNSIGNED NOT NULL,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `review_mode` ENUM('shadow','auto') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'shadow',
+                    `ai_decision` ENUM('approve','reject','escalate') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'escalate',
+                    `ai_confidence` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0-100 percent',
+                    `ai_provider` VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'groq/openrouter/rules',
+                    `rule_signals` JSON DEFAULT NULL COMMENT 'Rule-based signals that fired',
+                    `unsafe_flags` JSON DEFAULT NULL COMMENT 'Detected unsafe categories',
+                    `reason_codes` JSON DEFAULT NULL COMMENT 'Machine-readable reason codes',
+                    `human_readable_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Persian explanation shown to admin/user',
+                    `admin_decision` ENUM('approved','rejected') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Actual admin action later',
+                    `admin_id` INT UNSIGNED DEFAULT NULL,
+                    `admin_note` VARCHAR(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                    `matched_threshold` VARCHAR(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'e.g. auto_approve_safe',
+                    `latency_ms` INT UNSIGNED DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_ai_listing` (`listing_id`),
+                    KEY `idx_ai_decision` (`ai_decision`,`created_at`),
+                    KEY `idx_ai_user` (`user_id`),
+                    KEY `idx_admin_vs_ai` (`ai_decision`,`admin_decision`),
+                    CONSTRAINT `fk_air_listing` FOREIGN KEY (`listing_id`) REFERENCES `listings` (`id`) ON DELETE CASCADE,
+                    CONSTRAINT `fk_air_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-ai-reviews', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // ─── AI Moderation columns on listings (fast-path denormalized) ─────
+    $listingCols = db_table_columns('listings');
+    if (!in_array('ai_reviewed', $listingCols)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `ai_reviewed` TINYINT(1) NOT NULL DEFAULT 0 AFTER `review_note`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-ai-reviewed', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('ai_suggestion', $listingCols)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `ai_suggestion` ENUM('approve','reject','escalate') COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `ai_reviewed`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-ai-suggestion', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('ai_confidence', $listingCols)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `ai_confidence` TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER `ai_suggestion`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-ai-confidence', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('ai_note', $listingCols)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `ai_note` VARCHAR(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `ai_confidence`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-ai-note', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // ─── AI Moderation settings table (toggle + thresholds) ──────────────
+    if (!db_has_table('ai_moderation_settings')) {
+        try {
+            DB::query("
+                CREATE TABLE `ai_moderation_settings` (
+                    `id` TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+                    `shadow_mode` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'If 1, AI only logs; never auto action',
+                    `auto_approve_threshold` TINYINT UNSIGNED NOT NULL DEFAULT 93 COMMENT 'Confidence % required for auto approve',
+                    `auto_reject_threshold` TINYINT UNSIGNED NOT NULL DEFAULT 96 COMMENT 'Confidence % required for auto reject',
+                    `safe_category_slugs` JSON DEFAULT NULL COMMENT 'Category slugs allowed to auto-approve',
+                    `never_approve_slugs` JSON DEFAULT NULL COMMENT 'Category slugs that ALWAYS escalate',
+                    `updated_by` INT UNSIGNED DEFAULT NULL,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            $safeJson = json_encode([
+                'book','game-console','toy','household-small','kitchenware',
+                'mobile-accessory','laptop-accessory','audio','clothing','watch'
+            ], JSON_UNESCAPED_UNICODE);
+            $neverJson = json_encode([
+                'real-estate','car','motorcycle','service','job','heavy-equipment'
+            ], JSON_UNESCAPED_UNICODE);
+            DB::query(
+                "INSERT INTO `ai_moderation_settings` (`id`,`safe_category_slugs`,`never_approve_slugs`) VALUES (1,?,?)",
+                [$safeJson, $neverJson]
+            );
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-ai-moderation-settings', ['msg' => $e->getMessage()]);
+        }
+    }
+
     // ─── Add shipping_province & shipping_cost to store_orders ───────────
     if (db_has_table('store_orders')) {
         $soCols = db_table_columns('store_orders');
