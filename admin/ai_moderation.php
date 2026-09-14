@@ -313,16 +313,27 @@ ob_start();
         </button>
       </div>
       <div class="modal-body">
-        <p><strong>تصمیم AI:</strong> <span id="modalAiDecision"></span> (<span id="modalAiConfidence"></span>٪)</p>
-        <p><strong>ارائه‌دهنده AI:</strong> <span id="modalAiProvider"></span></p>
-        <p><strong>یادداشت قابل فهم انسانی:</strong> <span id="modalHumanReadableNote"></span></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-4)">
+          <div>
+            <div class="fs-xs" style="color:var(--text-muted)">تصمیم AI</div>
+            <div style="font-size:1.2rem;font-weight:700"><span id="modalAiDecisionLabel"></span> (<span id="modalAiConfidence"></span>٪)</div>
+          </div>
+          <div>
+            <div class="fs-xs" style="color:var(--text-muted)">ارائه‌دهنده</div>
+            <div style="font-weight:600"><span id="modalAiProvider"></span></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:var(--sp-4)">
+          <div class="card-header" style="padding:var(--sp-2) var(--sp-3)"><strong>یادداشت تحلیل</strong></div>
+          <div class="card-body" style="padding:var(--sp-3)" id="modalHumanReadableNote"></div>
+        </div>
         <hr>
-        <h6>سیگنال‌های قوانین:</h6>
-        <pre id="modalRuleSignals" style="white-space: pre-wrap;"></pre>
-        <h6>پرچم‌های ناامن:</h6>
-        <pre id="modalUnsafeFlags" style="white-space: pre-wrap;"></pre>
-        <h6>کدهای دلیل:</h6>
-        <pre id="modalReasonCodes" style="white-space: pre-wrap;"></pre>
+        <h6 style="margin-bottom:var(--sp-2)"><i class="bi bi-diagram-3"></i> سیگنال‌های قوانین (Rule Signals)</h6>
+        <div id="modalRuleSignals" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-1) var(--sp-3);margin-bottom:var(--sp-4)"></div>
+        <h6 style="margin-bottom:var(--sp-2)"><i class="bi bi-flag-fill"></i> پرچم‌های ناامن (Unsafe Flags)</h6>
+        <div id="modalUnsafeFlags" style="margin-bottom:var(--sp-4)"></div>
+        <h6 style="margin-bottom:var(--sp-2)"><i class="bi bi-list-check"></i> کدهای دلیل (Reason Codes)</h6>
+        <div id="modalReasonCodes"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
@@ -335,46 +346,156 @@ ob_start();
 document.addEventListener('DOMContentLoaded', function() {
     var aiDetailsModal = document.getElementById('aiDetailsModal');
 
-    // Function to open the modal
+    var SIGNAL_LABELS = {
+        bad_words_detected:    { label: 'کلمات نامناسب',            type: 'bool',   help: 'وجود کلمه توهین‌آمیز یا ممنوع' },
+        links_count:           { label: 'تعداد لینک/تماس',          type: 'number', help: 'لینک خارجی، تلگرام، شماره تماس' },
+        has_contact_info:      { label: 'اطلاعات تماس مستقیم',       type: 'bool',   help: 'شماره موبایل، تلگرام، واتساپ' },
+        title_desc_match_pct:  { label: 'میزان تطابق عنوان/توضیحات', type: 'percent',help: '٪ تطابق معنایی عنوان و بدنه' },
+        user_approved_count:   { label: 'آگهی‌های تأییدشده کاربر',   type: 'number', help: 'تعداد آگهی قبلی تأییدشده' },
+        duplicate_similarity_pct: { label: '٪ شباهت به آگهی تکراری', type: 'percent', help: 'میزان مشابهت با آگهی‌های دیگر' },
+        is_new_user:           { label: 'کاربر جدید',                type: 'bool',   help: 'کمتر از ۲ آگهی تأییدشده دارد' },
+        high_value_new_user:   { label: 'کاربر جدید + آگهی پرارزش', type: 'bool',   help: 'کاربر جدید با کالای بالای ۵۰ میلیون' },
+        price_anomaly:         { label: 'قیمت غیرمعمول',             type: 'bool',   help: 'بسیار بالاتر یا پایین‌تر از مبلغ عادی دسته' },
+        short_description:     { label: 'توضیحات کوتاه/کم‌ارزش',    type: 'bool',   help: 'زیر ۳۰ کاراکتر — کم‌تلاش' },
+        nonsense_pattern:      { label: 'متن بی‌معنی/تستی',         type: 'bool',   help: 'Lorem ipsum، asdfgh، تست تست…' }
+    };
+
+    var FLAG_LABELS = {
+        explicit:             { label: 'محتوای مستهجن',             color: 'danger' },
+        illegal:              { label: 'تراکنش غیرقانونی',           color: 'danger' },
+        scam:                 { label: 'الگوی کلاهبرداری',           color: 'danger' },
+        guaranteed_profit:    { label: 'سود/درآمد تضمینی',           color: 'warning' },
+        contact_info:         { label: 'اطلاعات تماس',               color: 'warning' },
+        spam:                 { label: 'اسپم',                       color: 'danger' },
+        wrong_category:       { label: 'دسته‌بندی اشتباه',           color: 'warning' },
+        counterfeit:          { label: 'کالای تقلبی/فیک',           color: 'danger' },
+        price_anomaly:        { label: 'قیمت غیرمعمول',             color: 'warning' },
+        high_risk_category:   { label: 'دسته پرریسک',                color: 'warning' },
+        low_effort:           { label: 'آگهی کم‌تلاش',               color: 'warning' },
+        new_user_high_value:  { label: 'کاربر جدید + پرارزش',       color: 'warning' },
+        cash_before_delivery: { label: 'درخواست پول پیش از تحویل',   color: 'danger' },
+        unlicensed_business:  { label: 'تجاری بدون مجوز',            color: 'warning' },
+        duplicate:            { label: 'آگهی تکراری',                color: 'warning' },
+        offensive_language:   { label: 'زبان توهین‌آمیز',            color: 'danger' }
+    };
+
+    var REASON_LABELS = {
+        'R001': 'زبان نامناسب / توهین‌آمیز',
+        'R002': 'محتوای جنسی / مستهجن',
+        'R003': 'کلاهبرداری / رفتار مالی مشکوک',
+        'R004': 'اطلاعات تماس مستقیم',
+        'R005': 'لینک‌های خارجی بیش از حد',
+        'R006': 'عدم تطابق عنوان/دسته/محتوا',
+        'R007': 'نوسان غیرمعمول قیمت',
+        'R008': 'دسته‌بندی پرریسک (املاک، خودرو، خدمات، …)',
+        'R009': 'کاربر جدید + آگهی پرارزش (بالای ۵۰M)',
+        'R010': 'توضیحات ناکافی / آگهی کم‌تلاش',
+        'R011': 'اسپم / آگهی تکراری',
+        'R012': 'کالای تقلبی / فیک',
+        'R013': 'خدمت یا معامله غیرقانونی',
+        'R014': 'محتوای تستی / بی‌معنی',
+        'R015': 'محتوای سالم — تأیید خودکار'
+    };
+
+    var DECISION_LABELS = {
+        'approve':  'تأیید',
+        'reject':   'رد',
+        'escalate': 'ارجاع به ادمین'
+    };
+
+    function fmtBool(v) {
+        return v
+            ? '<span class="badge badge-danger" style="margin-inline-start:6px">بله ⚠</span>'
+            : '<span class="badge badge-success" style="margin-inline-start:6px">خیر ✓</span>';
+    }
+    function fmtNum(v)    { return '<strong style="margin-inline-start:6px">' + (v ?? 0) + '</strong>'; }
+    function fmtPct(v)    {
+        var color = (v >= 90) ? 'color:var(--success)' : (v >= 70 ? 'color:var(--text)' : 'color:var(--warning)');
+        return '<strong style="' + color + ';margin-inline-start:6px">' + (v ?? 0) + '٪</strong>';
+    }
+
+    function renderSignals(raw) {
+        if (!raw) return '<div class="fs-sm" style="color:var(--text-muted)">سیگنالی ثبت نشده است.</div>';
+        var obj = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+        var html = '';
+        Object.keys(SIGNAL_LABELS).forEach(function(key) {
+            var meta = SIGNAL_LABELS[key];
+            var val  = obj[key];
+            if (typeof val === 'undefined') return;
+            var formatted = '';
+            if (meta.type === 'bool')    formatted = fmtBool(!!val);
+            if (meta.type === 'number')  formatted = fmtNum(val);
+            if (meta.type === 'percent') formatted = fmtPct(val);
+            html += '<div title="' + meta.help + '" style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px dashed var(--border);padding:4px 0">'
+                  + '<span class="fs-sm">' + meta.label + '</span>'
+                  + formatted
+                  + '</div>';
+        });
+        return html;
+    }
+
+    function renderFlags(raw) {
+        var arr = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+        if (!arr || !arr.length) {
+            return '<div class="badge badge-success" style="font-size:0.8rem">✓ هیچ پرچم ناامنی ثبت نشد</div>';
+        }
+        return arr.map(function(f) {
+            var meta = FLAG_LABELS[f] || { label: f, color: 'warning' };
+            return '<span class="badge badge-' + meta.color + '" style="font-size:0.85rem;margin-inline-start:4px;margin-bottom:4px">'
+                 + meta.label + '</span>';
+        }).join('');
+    }
+
+    function renderReasons(raw) {
+        var arr = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+        if (!arr || !arr.length) {
+            return '<div class="fs-sm" style="color:var(--text-muted)">دلیل خاصی ثبت نشده است.</div>';
+        }
+        return arr.map(function(code) {
+            var label = REASON_LABELS[code] || code;
+            return '<div class="card" style="margin:0 0 6px">'
+                 + '<div class="card-body" style="padding:8px 12px">'
+                 + '<strong style="color:var(--primary);margin-inline-start:6px">' + code + '</strong>'
+                 + ' — <span>' + label + '</span>'
+                 + '</div></div>';
+        }).join('');
+    }
+
     function openModal() {
         aiDetailsModal.classList.add('show');
         aiDetailsModal.style.display = 'block';
         document.body.classList.add('modal-open');
     }
 
-    // Function to close the modal
     function closeModal() {
         aiDetailsModal.classList.remove('show');
         aiDetailsModal.style.display = 'none';
         document.body.classList.remove('modal-open');
     }
 
-    // Event listeners for opening the modal
     document.querySelectorAll('.view-ai-details').forEach(function(button) {
         button.addEventListener('click', function() {
             var reviewData = JSON.parse(this.getAttribute('data-review'));
-            
+
             document.getElementById('modalListingTitle').textContent = reviewData.title;
-            document.getElementById('modalAiDecision').textContent = reviewData.ai_decision;
+            document.getElementById('modalAiDecisionLabel').textContent =
+                DECISION_LABELS[reviewData.ai_decision] || reviewData.ai_decision;
             document.getElementById('modalAiConfidence').textContent = reviewData.ai_confidence;
-            document.getElementById('modalAiProvider').textContent = reviewData.ai_provider || 'نامشخص';
+            document.getElementById('modalAiProvider').textContent = reviewData.ai_provider || 'قاعده‌محور (بدون LLM)';
             document.getElementById('modalHumanReadableNote').textContent = reviewData.human_readable_note || '—';
 
-            document.getElementById('modalRuleSignals').textContent = JSON.stringify(reviewData.rule_signals, null, 2);
-            document.getElementById('modalUnsafeFlags').textContent = JSON.stringify(reviewData.unsafe_flags, null, 2);
-            document.getElementById('modalReasonCodes').textContent = JSON.stringify(reviewData.reason_codes, null, 2);
+            document.getElementById('modalRuleSignals').innerHTML  = renderSignals(reviewData.rule_signals);
+            document.getElementById('modalUnsafeFlags').innerHTML  = renderFlags(reviewData.unsafe_flags);
+            document.getElementById('modalReasonCodes').innerHTML  = renderReasons(reviewData.reason_codes);
 
             openModal();
         });
     });
 
-    // Event listeners for closing the modal
     aiDetailsModal.querySelector('.close').addEventListener('click', closeModal);
     aiDetailsModal.querySelector('.btn-secondary').addEventListener('click', closeModal);
     aiDetailsModal.addEventListener('click', function(e) {
-        if (e.target === aiDetailsModal) {
-            closeModal();
-        }
+        if (e.target === aiDetailsModal) closeModal();
     });
 });
 </script>

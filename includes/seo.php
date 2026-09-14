@@ -132,3 +132,111 @@ function seo_json_ld_breadcrumbs(array $items): array {
         'itemListElement' => $list,
     ];
 }
+
+function seo_clean_text(string $s, int $maxLen = 0): string {
+    $s = preg_replace('/\s+/u', ' ', trim(strip_tags($s)));
+    $s = preg_replace("/[«»\"'`]+/u", '', $s);
+    if ($maxLen > 0 && mb_strlen($s) > $maxLen) {
+        $s = mb_strimwidth($s, 0, $maxLen, '…');
+    }
+    return $s;
+}
+
+function seo_listing_title(array $listing): string {
+    $title       = seo_clean_text((string)($listing['title'] ?? ''), 50);
+    $catName     = seo_clean_text((string)($listing['cat_name']  ?? ''));
+    $city        = seo_clean_text((string)($listing['city']      ?? ''));
+    $want        = seo_clean_text((string)($listing['want_in_return'] ?? ''), 35);
+    $mode        = (string)($listing['listing_mode'] ?? 'swap');
+
+    $suffix = ' | ' . APP_NAME;
+    $prefix = ($mode === 'sell') ? 'فروش ' : 'معاوضه ';
+
+    $parts = [];
+
+    if ($title !== '' && $title !== '0') {
+        $parts[] = $prefix . $title;
+    } else {
+        $parts[] = $prefix . trim($catName . ' مناسب');
+    }
+
+    if ($want !== '') {
+        $parts[] = 'با ' . $want;
+    }
+
+    if ($city !== '') {
+        $parts[] = 'در ' . $city;
+    }
+
+    $combined = implode(' | ', $parts);
+
+    if (mb_strlen($combined . $suffix) > 65) {
+        $combined = mb_strimwidth($combined, 0, 63 - mb_strlen($suffix), '…');
+    }
+
+    return $combined . $suffix;
+}
+
+function seo_listing_description(array $listing): string {
+    $title       = seo_clean_text((string)($listing['title'] ?? ''));
+    $catName     = seo_clean_text((string)($listing['cat_name']  ?? ''));
+    $city        = seo_clean_text((string)($listing['city']      ?? ''));
+    $want        = seo_clean_text((string)($listing['want_in_return'] ?? ''), 60);
+    $description = seo_clean_text((string)($listing['description'] ?? ''));
+    $condition   = seo_clean_text((string)($listing['condition'] ?? ''));
+    $mode        = (string)($listing['listing_mode'] ?? 'swap');
+    $value       = (float)($listing['estimated_value'] ?? 0);
+
+    $sentences = [];
+
+    if ($mode === 'sell') {
+        $head = 'خرید و فروش ';
+    } else {
+        $head = 'معاوضه ';
+    }
+    $head .= ($catName ?: 'کالا');
+    if ($city)  $head .= ' در ' . $city;
+    $sentences[] = $head . ' در پلتفرم سواپین.';
+
+    if ($title && $title !== $catName) {
+        $sentences[] = 'عنوان آگهی: ' . $title . '.';
+    }
+
+    if ($want && $mode !== 'sell') {
+        $sentences[] = 'درخواست تعویض با: ' . $want . '.';
+    }
+
+    if ($condition && $condition !== 'good') {
+        $condMap = [
+            'new'         => 'نو',
+            'like_new'    => 'در حد نو',
+            'good'        => 'خوب',
+            'fair'        => 'قابل قبول',
+            'for_parts'   => 'قطعی',
+        ];
+        $c = $condMap[$condition] ?? $condition;
+        $sentences[] = 'وضعیت کالا: ' . $c . '.';
+    }
+
+    if ($value > 0) {
+        $toman = (int)round($value);
+        if ($toman >= 1_000_000) {
+            $sentences[] = 'ارزش تخمینی حدود ' . number_format($toman / 1_000_000, 1, '.', '') . ' میلیون تومان.';
+        } else {
+            $sentences[] = 'ارزش تخمینی حدود ' . number_format($toman) . ' تومان.';
+        }
+    }
+
+    if ($description !== '' && count($sentences) < 4) {
+        $extra = mb_strimwidth($description, 0, 80, '…');
+        if (mb_strlen($extra) > 20) {
+            $sentences[] = $extra;
+        }
+    }
+
+    $out = implode(' ', $sentences);
+    if (mb_strlen($out) > 160) {
+        $out = mb_strimwidth($out, 0, 158, '…');
+    }
+    return $out;
+}

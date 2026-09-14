@@ -287,7 +287,8 @@ $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
 $listingUrl = APP_URL . '/listings/view?id=' . $id;
 $ogImage    = $images ? UPLOAD_URL . $images[0]['filename'] : LOGO_URL;
-$metaDesc   = mb_strimwidth(strip_tags($listing['description']), 0, 160, '…');
+$seoTitle   = seo_listing_title($listing);
+$metaDesc   = seo_listing_description($listing);
 
 $wantChips = array_values(array_filter(array_map(
     'trim',
@@ -305,11 +306,12 @@ $swapCanOffer = $isOwner && listing_swap_offer_listing_swappable($listing);
 $swapSourceTitle = (string) ($listing['title'] ?? '');
 $listingIsReserved = ($listing['status'] ?? '') === 'reserved';
 
-render_head($listing['title'], $metaDesc, [
+render_head($seoTitle, $metaDesc, [
     'canonical' => $listingUrl,
     'og_type'   => 'product',
     'og_image'  => $ogImage,
-    'keywords'  => implode(', ', array_filter([$listing['cat_name'], $listing['city'], 'معاوضه', 'مبادله کالا'])),
+    'og_title'  => $seoTitle,
+    'keywords'  => implode(', ', array_filter([$listing['cat_name'], $listing['city'], 'معاوضه', 'مبادله کالا', APP_NAME])),
     'json_ld'   => [
         seo_json_ld_product($listing, $ogImage, $listingUrl),
         seo_json_ld_breadcrumbs([
