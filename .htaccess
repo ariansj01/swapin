@@ -19,6 +19,11 @@ Options +MultiViews -Indexes
   # For local development (XAMPP in /swaapin subdir):
   RewriteBase /swaapin/
 
+  # Mobile Flutter API (do not affect PWA routes)
+  RewriteRule ^api/v1/index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^api/v1/ api/v1/index.php [L,QSA]
+
   # Force HTTPS (exclude localhost & 127.0.0.1 for local dev)
   RewriteCond %{HTTPS} off
   RewriteCond %{HTTP:X-Forwarded-Proto} !https
@@ -94,6 +99,9 @@ Options +MultiViews -Indexes
   
   # PWA install landing page
   RewriteRule ^pwa/?$ pwa.php [L,NC,QSA]
+
+  # AI capabilities lab (interactive demos, no DB writes)
+  RewriteRule ^ai-lab/?$ ai-lab.php [L,NC,QSA]
 
   # Handle /sep/callback route for backward compatibility
   RewriteRule ^sep/callback/?$ payment_callback.php [L,NC,QSA]

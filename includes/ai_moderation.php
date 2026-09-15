@@ -60,7 +60,7 @@ function ai_mod_count_user_approved(int $userId): int {
     )['c'] ?? 0);
 }
 
-function ai_mod_rule_layer(array $listing, ?array $category, int $userId): array {
+function ai_mod_rule_layer(array $listing, ?array $category, int $userId, ?int $approvedCountOverride = null): array {
     $signals = [
         'bad_words_detected'   => false,
         'links_count'          => 0,
@@ -99,8 +99,11 @@ function ai_mod_rule_layer(array $listing, ?array $category, int $userId): array
         }
     }
 
-    foreach ($patterns as $p) {
-        if (preg_match($p, $allText)) {
+    foreach ($patterns as $pattern => $msg) {
+        if (!is_string($pattern) || $pattern === '' || @preg_match($pattern, '') === false) {
+            continue;
+        }
+        if (preg_match($pattern, $allText) === 1) {
             $signals['nonsense_pattern'] = true;
             $flags[] = 'spam';
             $reasons[] = 'R014';
@@ -143,7 +146,7 @@ function ai_mod_rule_layer(array $listing, ?array $category, int $userId): array
         $reasons[] = 'R010';
     }
 
-    $approvedCount = ai_mod_count_user_approved($userId);
+    $approvedCount = $approvedCountOverride !== null ? max(0, $approvedCountOverride) : ai_mod_count_user_approved($userId);
     $signals['user_approved_count'] = $approvedCount;
     $signals['is_new_user'] = $approvedCount < 2;
     if ($signals['is_new_user'] && $value >= 50_000_000) {
@@ -178,12 +181,12 @@ function ai_mod_rule_layer(array $listing, ?array $category, int $userId): array
     ];
 }
 
-function ai_mod_llm_layer(array $listing, ?array $category, int $userId): ?array {
+function ai_mod_llm_layer(array $listing, ?array $category, int $userId, ?int $approvedCountOverride = null): ?array {
     if (!ai_is_configured()) {
         return null;
     }
 
-    $approvedCount = ai_mod_count_user_approved($userId);
+    $approvedCount = $approvedCountOverride !== null ? max(0, $approvedCountOverride) : ai_mod_count_user_approved($userId);
     $payload = [
         'listing' => [
             'title'           => $listing['title'] ?? '',
@@ -480,5 +483,56 @@ function ai_mod_get_stats(): array {
         'decisions'       => $decisions + ['approve' => 0, 'reject' => 0, 'escalate' => 0],
         'admin_compared'  => $comparedTotal,
         'accuracy_pct'    => $accuracy,
+    ];
+}
+
+/**
+ * Production moderation pipeline without any INSERT/UPDATE.
+ * Does not read listing rows or user history from the database.
+ *
+ * @return array{ok:bool,shadow:true,suggestion:string,confidence:int,note:string,matched:?string,provider:string,flags:array,reasons:array,rule_signals:?array,llm:?array}
+ */
+function ai_mod_review_sandbox(array $listing, ?array $category, int $simulatedApprovedCount = 0): array {
+    $settings = [
+        'enabled'                => true,
+        'shadow_mode'            => true,
+        'auto_approve_threshold' => 93,
+        'auto_reject_threshold'  => 96,
+        'safe_category_slugs'    => ['book','game-console','toy','household-small','kitchenware','mobile-accessory','laptop-accessory','audio','clothing','watch'],
+        'never_approve_slugs'    => ['real-estate','car','motorcycle','service','job','heavy-equipment'],
+    ];
+
+    $ruleRes = ai_mod_rule_layer($listing, $category, 0, $simulatedApprovedCount);
+
+    $llmRes = null;
+    if (!empty($ruleRes['needs_llm']) && ai_is_configured()) {
+        try {
+            $llmRes = ai_mod_llm_layer($listing, $category, 0, $simulatedApprovedCount);
+        } catch (Throwable) {
+            $llmRes = null;
+        }
+    }
+
+    $merged = ai_mod_merge_results($ruleRes, $llmRes, $category, $settings);
+
+    return [
+        'ok'           => true,
+        'shadow'       => true,
+        'suggestion'   => $merged['decision'],
+        'confidence'   => $merged['confidence'],
+        'note'         => $merged['note'],
+        'matched'      => $merged['matched'] ?? null,
+        'provider'     => $merged['provider'] ?? 'rules',
+        'flags'        => $merged['flags'] ?? [],
+        'reasons'      => $merged['reasons'] ?? [],
+        'rule_signals' => $merged['rule_signals'] ?? $ruleRes['signals'] ?? null,
+        'llm'          => $llmRes ? [
+            'decision'     => $llmRes['decision'],
+            'confidence'   => (int) round(($llmRes['confidence'] ?? 0) * 100),
+            'persian_note' => $llmRes['persian_note'] ?? '',
+            'flags'        => $llmRes['flags'] ?? [],
+        ] : null,
+        'applied_action' => 'sandbox_not_applied',
+        'mode'           => 'sandbox',
     ];
 }

@@ -293,6 +293,7 @@ HTML;
         <div class="dropdown-menu" id="ai-dropdown">
           <a href="{$url}/search/ai" class="dropdown-item"><i class="bi bi-search-heart"></i> جستجوی هوشمند</a>
           <a href="{$url}/ai/chat" class="dropdown-item"><i class="bi bi-chat-dots-fill"></i> چت با دستیار</a>
+          <a href="{$url}/ai-lab" class="dropdown-item"><i class="bi bi-cpu"></i> آزمایشگاه AI</a>
           <a href="{$url}/ai-assistant" class="dropdown-item"><i class="bi bi-info-circle-fill"></i> دستیار هوشمند چیست؟</a>
         </div>
       </div>
@@ -394,6 +395,7 @@ HTML;
   <nav class="mobile-drawer__nav">
 HTML;
     echo "<a href=\"{$url}/ai/chat\" class=\"mobile-drawer__link\"><i class=\"bi bi-chat-dots-fill\"></i> چت با دستیار AI</a>";
+    echo "<a href=\"{$url}/ai-lab\" class=\"mobile-drawer__link\"><i class=\"bi bi-cpu\"></i> آزمایشگاه AI</a>";
     echo "<a href=\"{$url}/ai-assistant\" class=\"mobile-drawer__link\"><i class=\"bi bi-info-circle-fill\"></i> دستیار هوشمند چیست؟</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     echo "<a href=\"{$url}/shops\" class=\"mobile-drawer__link\"><i class=\"bi bi-shop\"></i> فروشگاه‌ها</a>";
@@ -523,6 +525,10 @@ function render_mobile_bottom_nav(?array $user = null): void {
       <a href="{$url}/ai-assistant" class="mobile-ai-submenu__item" role="menuitem">
         <i class="bi bi-info-circle-fill"></i>
         <span>آشنایی با دستیار</span>
+      </a>
+      <a href="{$url}/ai-lab" class="mobile-ai-submenu__item" role="menuitem">
+        <i class="bi bi-cpu"></i>
+        <span>آزمایشگاه AI</span>
       </a>
       <a href="{$url}/search/ai" class="mobile-ai-submenu__item" role="menuitem">
         <i class="bi bi-search-heart"></i>
