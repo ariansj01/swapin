@@ -5454,8 +5454,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .site-footer__logo {
-  height: 50%;
-  width: 50%;
+  height: 35%;
+  width: 100%;
 }
 
 .site-footer__tagline {
