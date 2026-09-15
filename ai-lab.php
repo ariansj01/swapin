@@ -54,7 +54,7 @@ function ailab_cond_options(array $conds, string $selected = 'good'): string {
 <section class="ailab-hero">
   <div class="ailab-hero__inner">
     <p class="ailab-hero__eyebrow">آزمایشگاه AI</p>
-    <h1>هوش مصنوعی سواَپین را همین‌جا آزمایش کنید</h1>
+    <h1 style="color:white">هوش مصنوعی سواَپین را همین‌جا آزمایش کنید</h1>
     <p class="ailab-hero__lead">همان موتور واقعی تولید — بدون ذخیره در دیتابیس.</p>
     <div class="ailab-hero__row">
       <a class="ailab-hero__cta" href="#moderation">شروع</a>
