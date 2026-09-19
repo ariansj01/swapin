@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-
+ 
 try {
     $tradesCols = db_table_columns('trades');
     if (!in_array('user_a_shipping_status', $tradesCols)) {
