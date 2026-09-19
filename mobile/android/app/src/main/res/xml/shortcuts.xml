@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="create"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_create">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ir.swaapin.mobile"
+            android:targetClass="ir.swaapin.mobile.MainActivity"
+            android:data="https://swaapin.ir/listings/create" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="trades"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_trades">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ir.swaapin.mobile"
+            android:targetClass="ir.swaapin.mobile.MainActivity"
+            android:data="https://swaapin.ir/trades" />
+    </shortcut>
+</shortcuts>
