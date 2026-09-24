@@ -380,8 +380,6 @@ p { color: var(--text-secondary); line-height: 1.6; }
   margin-right: 2px;
   display: none;
   min-width: 220px;
-  max-height: 85vh;
-  overflow-y: auto;
   overflow-x: visible;
   z-index: 400;
 }
