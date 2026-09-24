@@ -615,6 +615,12 @@ function normalize_shop_slug(string $slug): string {
     return trim($slug);
 }
 
+function shop_url(string $slug, string $storeType = 'both'): string {
+    $t = normalize_store_type($storeType);
+    $typeSegment = $t === 'both' ? 'both' : $t;
+    return APP_URL . '/shop/' . $typeSegment . '/' . $slug;
+}
+
 /** @return array<int, array{month_key:string,views:int,requests:int}> */
 function store_monthly_chart_data(int $userId): array {
     $months = [];

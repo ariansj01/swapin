@@ -163,8 +163,8 @@ render_navbar($user);
         $slug = $store['store_slug'];
         $storeCity = $hasStoreCity ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
         $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
-        $shopUrl = APP_URL . '/shop/' . h($slug);
         $storeTypeValue = $hasStoreType ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
+        $shopUrl = APP_URL . '/shop/' . ($storeTypeValue === 'both' ? 'both' : $storeTypeValue) . '/' . h($slug);
         $storeTypeLabels = store_type_labels();
         $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
         $storeTypeBadgeClass = match($storeTypeValue) {

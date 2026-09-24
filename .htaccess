@@ -87,10 +87,17 @@ Options +MultiViews -Indexes
   RewriteRule ^search/ai/?$ search/ai.php [L,NC,QSA]
   RewriteRule ^search/saved/?$ search/saved.php [L,NC,QSA]
 
-  # /shop/<slug>  →  shop/index.php?slug=<slug>  (skip existing files like index.php)
+  # /shop/<type>/<slug>  →  shop/index.php?type=<type>&slug=<slug>  (pretty URLs)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^shop/(.+?)/?$ shop/index.php?slug=$1 [L,NC,QSA,B]
+  RewriteRule ^shop/(online|physical|both)/(.+?)/?$ shop/index.php?type=$1&slug=$2 [L,NC,QSA,B]
+  # 301: old /shop/<slug> → redirect to /shop/both/<slug>
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^shop/([^/]+)/?$ /shop/both/$1 [R=301,L,NC]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^shop/(.+?)/?$ shop/index.php?type=both&slug=$1 [L,NC,QSA,B]
 
   # /support OR /support/  →  support/index.php
   RewriteRule ^support/?$ support/index.php [L,NC,QSA]

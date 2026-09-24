@@ -134,6 +134,59 @@ function initDropdowns() {
   });
 }
 
+/* ── Navbar hover dropdowns (desktop) — ensure .open on hover for JS-level compat ── */
+function initNavbarHoverDropdowns() {
+  if (window.matchMedia('(max-width: 991px)').matches) return;
+  const nav = document.querySelector('.navbar-nav');
+  if (!nav) return;
+
+  // Category & other dropdowns: apply .open class while hovering so nested subs stay visible
+  nav.querySelectorAll(':scope > .dropdown').forEach(dd => {
+    const menu = dd.querySelector(':scope > .dropdown-menu');
+    if (!menu) return;
+    const show = () => {
+      document.querySelectorAll('.navbar-nav > .dropdown > .dropdown-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); });
+      menu.classList.add('open');
+    };
+    const hide = () => { menu.classList.remove('open'); };
+    dd.addEventListener('mouseenter', show);
+    dd.addEventListener('mouseleave', () => {
+      setTimeout(() => { if (!dd.matches(':hover')) hide(); }, 80);
+    });
+  });
+
+  // Nested submenus (any depth): add .open on hover inside dropdown-menu for sub-submenu display
+  const applySubmenuHover = (root) => {
+    root.querySelectorAll('.dropdown-submenu').forEach(sm => {
+      const sub = sm.querySelector(':scope > .dropdown-menu--sub');
+      if (!sub) return;
+      sm.addEventListener('mouseenter', () => {
+        // Close siblings under same parent first
+        const parent = sm.parentNode;
+        parent.querySelectorAll(':scope > .dropdown-submenu > .dropdown-menu--sub.open').forEach(s => { if (s !== sub) s.classList.remove('open'); });
+        sub.classList.add('open');
+      });
+      sm.addEventListener('mouseleave', () => {
+        setTimeout(() => { if (!sm.matches(':hover')) sub.classList.remove('open'); }, 60);
+      });
+    });
+  };
+  document.querySelectorAll('.navbar-nav .dropdown-menu').forEach(applySubmenuHover);
+}
+
+/* ── Category tree toggles in listings sidebar ─────────────────────────── */
+function initCatTreeToggles() {
+  document.querySelectorAll('.cat-tree__toggle').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const item = btn.closest('.cat-tree__item');
+      if (!item) return;
+      item.classList.toggle('is-open');
+    });
+  });
+}
+
 /* ── Tab switching (generic) ───────────────────────────────────────────── */
 function switchTab(tabId) {
   const allBtns   = document.querySelectorAll('.tab-btn');
@@ -1436,6 +1489,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initFilterModal();
   initListingsLocationFilter();
   initOtpInputs();
+  initCatTreeToggles();
+  initNavbarHoverDropdowns();
 
   // Restore active tab from URL
   const tabParam = new URLSearchParams(window.location.search).get('tab');

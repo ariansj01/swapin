@@ -475,8 +475,8 @@ render_navbar($user);
               $slug = $store['store_slug'];
               $storeCity = $hStoresCityCol ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
               $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
-              $shopUrl = APP_URL . '/shop/' . h($slug);
               $storeTypeValue = $hStoresTypeCol ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
+              $shopUrl = APP_URL . '/shop/' . ($storeTypeValue === 'both' ? 'both' : $storeTypeValue) . '/' . h($slug);
               $storeTypeLabels = store_type_labels();
               $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
               $storeTypeBadgeClass = match($storeTypeValue) {
@@ -663,29 +663,6 @@ render_navbar($user);
   .home-stat-card__value { font-size: 1.35rem; }
 }
 </style>
-<section class="home-stats-pre-footer">
-  <div class="container">
-    <div>
-      <?php
-      $_s = get_site_stats();
-      $_statCards = [
-          ['bi-people-fill',     'کاربران ثبت‌شده',   (int)($_s['users']    ?? 0)],
-          ['bi-arrow-left-right','معامله‌های موفق',    (int)($_s['trades']   ?? 0)],
-          ['bi-box-seam-fill',   'کالاهای ثبت‌شده',    (int)($_s['listings'] ?? 0)],
-          ['bi-shop',            'فروشگاه‌های فعال',    (int)($_s['stores']   ?? 0)],
-      ];
-      foreach ($_statCards as [$icon, $label, $val]):
-          $fmtVal = fmt_num($val) . '+';
-      ?>
-      <div class="home-stat-card">
-        <div class="home-stat-card__icon"><i class="bi <?= $icon ?>"></i></div>
-        <div class="home-stat-card__value"><?= $fmtVal ?></div>
-        <div class="home-stat-card__label"><?= $label ?></div>
-      </div>
-      <?php endforeach; ?>
-    </div>
-  </div>
-</section>
 <?php endif; ?>
 
 <?php render_footer(); ?>
