@@ -355,7 +355,29 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .categories-dropdown {
   right: auto;
   left: 0;
-  min-width: 240px;
+  min-width: 260px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+/* Deeply nested sub-submenus (unlimited depth) open to the left on hover */
+.dropdown-menu .dropdown-submenu > .dropdown-menu--sub,
+.dropdown-menu--sub .dropdown-submenu > .dropdown-menu--sub {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  margin-right: 2px;
+  display: none;
+  min-width: 220px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.navbar-nav .dropdown-menu .dropdown-submenu:hover > .dropdown-menu--sub,
+.navbar-nav .dropdown-menu--sub .dropdown-submenu:hover > .dropdown-menu--sub { display: block; }
+.dropdown-item--parent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
 }
 
 .mobile-nav-overlay {

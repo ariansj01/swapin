@@ -169,7 +169,7 @@ if ($search) {
     $descParts[] = 'جستجو: ' . $search;
 }
 $descParts[] = 'در پلتفرم سواپین';
-$desc = implode(' - ' . $descParts);
+$desc = implode(' - ', $descParts);
 if (mb_strlen($desc) > 160) {
     $desc = mb_strimwidth($desc, 0, 158, '…');
 }

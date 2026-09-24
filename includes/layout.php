@@ -244,17 +244,39 @@ function render_navbar(?array $user = null): void {
     $loggedIn   = $user !== null;
     $GLOBALS['_nav_user'] = $user;
     
-    // Get parent categories with children
-    $categories = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order');
-    $categoryChildren = [];
-    foreach ($categories as $c) {
-        $kids = DB::fetchAll(
-            'SELECT * FROM categories WHERE parent_id = ? AND is_active = 1 ORDER BY sort_order, name',
-            [(int)$c['id']]
-        );
-        $categoryChildren[(int)$c['id']] = $kids;
+    // Build full hierarchical category tree for multi-level dropdown
+    $_allCats = DB::fetchAll('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order, name');
+    $_byParent = [];
+    foreach ($_allCats as $_c) {
+        $_pid = (int)($_c['parent_id'] ?? 0);
+        $_byParent[$_pid][] = $_c;
     }
+    $_catMap = [];
+    foreach ($_allCats as $_c) { $_catMap[(int)$_c['id']] = $_c; }
+    $categories = $_byParent[0] ?? [];
     $currentCatSlug = $_GET['cat'] ?? '';
+    $_renderCatLevel = function (array $nodes, int $depth, &$renderer) use (&$_byParent, $currentCatSlug): string {
+        $html = '';
+        foreach ($nodes as $cat) {
+            $catId    = (int)$cat['id'];
+            $catLabel = category_label($cat['slug'], $cat['name']);
+            $catUrl   = category_url($cat['slug']);
+            $isActive = $currentCatSlug === $cat['slug'] ? 'active' : '';
+            $kids     = $_byParent[$catId] ?? [];
+            $icon     = $depth === 0 ? '<i class="' . ($cat['icon'] ?? 'bi bi-collection') . '"></i> ' : '';
+            if (empty($kids)) {
+                $html .= "<a href=\"{$catUrl}\" class=\"dropdown-item {$isActive}\">{$icon}{$catLabel}</a>";
+            } else {
+                $childrenHtml = $renderer($kids, $depth + 1, $renderer);
+                $chevron = '<i class="bi bi-chevron-left" style="font-size:.7rem;opacity:.6;margin-inline-start:auto"></i>';
+                $html .= "<div class=\"dropdown-submenu\">";
+                $html .= "<a href=\"{$catUrl}\" class=\"dropdown-item dropdown-item--parent {$isActive}\">{$icon}{$catLabel} {$chevron}</a>";
+                $html .= "<div class=\"dropdown-menu dropdown-menu--sub\">{$childrenHtml}</div>";
+                $html .= "</div>";
+            }
+        }
+        return $html;
+    };
 
     $navItems = [
         ['/#home-steps', 'چگونه کار می‌کند؟', 'bi-lightbulb', ''],
@@ -284,28 +306,7 @@ function render_navbar(?array $user = null): void {
         <div class="dropdown-menu categories-dropdown" id="categories-dropdown">
           <a href="{$url}/listings/all.php" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
 HTML;
-    foreach ($categories as $cat) {
-        $catId = (int)$cat['id'];
-        $catLabel = category_label($cat['slug'], $cat['name']);
-        $catUrl = category_url($cat['slug']);
-        $isActive = $currentCatSlug === $cat['slug'] ? 'active' : '';
-        $kids = $categoryChildren[$catId] ?? [];
-        if (empty($kids)) {
-            echo "<a href=\"{$catUrl}\" class=\"dropdown-item {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel}</a>";
-        } else {
-            echo "<div class=\"dropdown-submenu\">";
-            echo "<a href=\"{$catUrl}\" class=\"dropdown-item dropdown-item--parent {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel} <i class=\"bi bi-chevron-left\" style=\"font-size:.7rem;opacity:.6\"></i></a>";
-            echo "<div class=\"dropdown-menu dropdown-menu--sub\">";
-            foreach ($kids as $k) {
-                $kLabel = category_label($k['slug'], $k['name']);
-                $kUrl = category_url($k['slug']);
-                $kActive = $currentCatSlug === $k['slug'] ? 'active' : '';
-                echo "<a href=\"{$kUrl}\" class=\"dropdown-item {$kActive}\">{$kLabel}</a>";
-            }
-            echo "</div>";
-            echo "</div>";
-        }
-    }
+    echo $_renderCatLevel($categories, 0, $_renderCatLevel);
     echo <<<HTML
         </div>
       </div>
@@ -330,8 +331,8 @@ HTML;
         </button>
         <div class="dropdown-menu" id="shops-dropdown">
           <a href="{$url}/shops" class="dropdown-item"><i class="bi bi-grid-fill"></i> همه فروشگاه‌ها</a>
-          <a href="{$url}/shops?type=physical" class="dropdown-item"><i class="bi bi-building-check"></i> فروشگاه‌های حضوری</a>
-          <a href="{$url}/shops?type=online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
+          <a href="{$url}/shops/physical" class="dropdown-item"><i class="bi bi-building-check"></i> فروشگاه‌های حضوری</a>
+          <a href="{$url}/shops/online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
         </div>
       </div>
 HTML;
@@ -424,8 +425,8 @@ HTML;
     echo "<a href=\"{$url}/ai-assistant\" class=\"mobile-drawer__link\"><i class=\"bi bi-info-circle-fill\"></i> دستیار هوشمند چیست؟</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     echo "<a href=\"{$url}/shops\" class=\"mobile-drawer__link\"><i class=\"bi bi-shop\"></i> فروشگاه‌ها</a>";
-    echo "<a href=\"{$url}/shops?type=online\" class=\"mobile-drawer__link\"><i class=\"bi bi-globe2\"></i> فروشگاه‌های آنلاین</a>";
-    echo "<a href=\"{$url}/shops?type=physical\" class=\"mobile-drawer__link\"><i class=\"bi bi-building-check\"></i> فروشگاه‌های حضوری</a>";
+    echo "<a href=\"{$url}/shops/online\" class=\"mobile-drawer__link\"><i class=\"bi bi-globe2\"></i> فروشگاه‌های آنلاین</a>";
+    echo "<a href=\"{$url}/shops/physical\" class=\"mobile-drawer__link\"><i class=\"bi bi-building-check\"></i> فروشگاه‌های حضوری</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     foreach ($navItems as [$href, $label, $icon, $extraClass]) {
         $fullHref = str_starts_with($href, '/#') ? $url . $href : $url . $href;
@@ -616,34 +617,39 @@ function render_footer(): void {
 
     $statsHtml = '';
     if ($isHomePage) {
+        $_stats = get_site_stats();
+        $_vTrades   = fmt_num((int)($_stats['trades']   ?? 0)) . '+';
+        $_vListings = fmt_num((int)($_stats['listings'] ?? 0)) . '+';
+        $_vUsers    = fmt_num((int)($_stats['users']    ?? 0)) . '+';
+        $_vStores   = fmt_num((int)($_stats['stores']   ?? 0)) . '+';
         $statsHtml = <<<HTMLSTATS
     <dl class="site-footer__stats">
       <div class="site-footer__stat">
-        <i class="bi bi-emoji-smile site-footer__stat-icon" aria-hidden="true"></i>
+        <i class="bi bi-people site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">رضایت کاربران</dt>
-          <dd class="site-footer__stat-value">۹۸٪</dd>
+          <dt class="site-footer__stat-label">کاربران ثبت‌شده</dt>
+          <dd class="site-footer__stat-value">{$_vUsers}</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-arrow-left-right site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">مبادله موفق</dt>
-          <dd class="site-footer__stat-value">۴۵,۰۰۰+</dd>
+          <dt class="site-footer__stat-label">معامله‌های موفق</dt>
+          <dd class="site-footer__stat-value">{$_vTrades}</dd>
         </div>
       </div>
       <div class="site-footer__stat">
         <i class="bi bi-box-seam site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">کالای ثبت‌شده</dt>
-          <dd class="site-footer__stat-value">۱۲۰,۰۰۰+</dd>
+          <dt class="site-footer__stat-label">کالاهای ثبت‌شده</dt>
+          <dd class="site-footer__stat-value">{$_vListings}</dd>
         </div>
       </div>
       <div class="site-footer__stat">
-        <i class="bi bi-people site-footer__stat-icon" aria-hidden="true"></i>
+        <i class="bi bi-shop site-footer__stat-icon" aria-hidden="true"></i>
         <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">کاربر فعال</dt>
-          <dd class="site-footer__stat-value">۲۵۰,۰۰۰+</dd>
+          <dt class="site-footer__stat-label">فروشگاه‌های فعال</dt>
+          <dd class="site-footer__stat-value">{$_vStores}</dd>
         </div>
       </div>
     </dl>

@@ -75,6 +75,12 @@ Options +MultiViews -Indexes
   RewriteRule ^store-offers/confirm/?$ store-offers/confirm.php [L,NC,QSA]
   RewriteRule ^store-offers/complete/?$ store-offers/complete.php [L,NC,QSA]
 
+  # 301 Redirect: old /shops?type=X to new clean URLs /shops/X
+  RewriteCond %{QUERY_STRING} (?:^|&)type=online(?:&|$) [NC]
+  RewriteRule ^shops/?$ /shops/online? [R=301,L,NC]
+  RewriteCond %{QUERY_STRING} (?:^|&)type=physical(?:&|$) [NC]
+  RewriteRule ^shops/?$ /shops/physical? [R=301,L,NC]
+
   RewriteRule ^shops/?$ shops/index.php [L,NC,QSA]
   RewriteRule ^shops/online/?$ shops/index.php?type=online [L,NC,QSA]
   RewriteRule ^shops/physical/?$ shops/index.php?type=physical [L,NC,QSA]

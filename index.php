@@ -600,36 +600,12 @@ render_navbar($user);
 <?php endif; ?>
 
 <?php if (!$search && !$catSlug && !$city && $page === 1): ?>
-<section class="home-section home-stats-pre-footer" aria-label="آمار سواَپین" style="padding: 3.5rem 0 2.5rem;">
-  <div class="container">
-    <div class="home-stats-pre-footer__inner">
-      <?php
-      $pfActiveListings = (int)$total;
-      $pfCompletedTrades = (int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE status="completed"')['c'] ?? 0);
-      $pfActiveUsers     = (int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1')['c'] ?? 0);
-      $pfStores          = (int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1 AND (seller_type="store" OR (store_name IS NOT NULL AND store_name != "")) AND store_slug IS NOT NULL AND store_slug != ""')['c'] ?? 0);
-      $pfStats = [
-          ['icon' => 'bi-box-seam',    'val' => $pfActiveListings, 'lbl' => 'آگهی فعال'],
-          ['icon' => 'bi-arrow-left-right', 'val' => $pfCompletedTrades, 'lbl' => 'مبادله انجام‌شده'],
-          ['icon' => 'bi-shop-window','val' => $pfStores,         'lbl' => 'فروشگاه فعال'],
-          ['icon' => 'bi-people',     'val' => $pfActiveUsers,    'lbl' => 'عضو'],
-      ];
-      foreach ($pfStats as $s):
-      ?>
-      <div class="home-stat-card">
-        <div class="home-stat-card__icon"><i class="bi <?= $s['icon'] ?>"></i></div>
-        <div class="home-stat-card__value"><?= fmt_num((int)$s['val']) ?>+</div>
-        <div class="home-stat-card__label"><?= h($s['lbl']) ?></div>
-      </div>
-      <?php endforeach; ?>
-    </div>
-  </div>
-</section>
 <style>
 .home-stats-pre-footer {
   background: linear-gradient(135deg, rgba(0,102,255,.06) 0%, rgba(255,102,0,.05) 100%);
   border-top: 1px solid var(--border, #eef0f4);
   border-bottom: 1px solid var(--border, #eef0f4);
+  padding: 2.5rem 0;
 }
 .home-stats-pre-footer .home-stats-pre-footer { }
 .home-stats-pre-footer .container > div {
@@ -672,11 +648,13 @@ render_navbar($user);
   font-weight: 600;
 }
 @media (max-width: 900px) {
+  .home-stats-pre-footer { padding: 2rem 0; }
   .home-stats-pre-footer .container > div {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (max-width: 520px) {
+  .home-stats-pre-footer { padding: 1.5rem 0; }
   .home-stats-pre-footer .container > div {
     grid-template-columns: 1fr 1fr;
     gap: .75rem;
@@ -685,6 +663,29 @@ render_navbar($user);
   .home-stat-card__value { font-size: 1.35rem; }
 }
 </style>
+<section class="home-stats-pre-footer">
+  <div class="container">
+    <div>
+      <?php
+      $_s = get_site_stats();
+      $_statCards = [
+          ['bi-people-fill',     'کاربران ثبت‌شده',   (int)($_s['users']    ?? 0)],
+          ['bi-arrow-left-right','معامله‌های موفق',    (int)($_s['trades']   ?? 0)],
+          ['bi-box-seam-fill',   'کالاهای ثبت‌شده',    (int)($_s['listings'] ?? 0)],
+          ['bi-shop',            'فروشگاه‌های فعال',    (int)($_s['stores']   ?? 0)],
+      ];
+      foreach ($_statCards as [$icon, $label, $val]):
+          $fmtVal = fmt_num($val) . '+';
+      ?>
+      <div class="home-stat-card">
+        <div class="home-stat-card__icon"><i class="bi <?= $icon ?>"></i></div>
+        <div class="home-stat-card__value"><?= $fmtVal ?></div>
+        <div class="home-stat-card__label"><?= $label ?></div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
 <?php endif; ?>
 
 <?php render_footer(); ?>

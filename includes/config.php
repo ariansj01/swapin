@@ -1602,6 +1602,74 @@ function db_filter_row(string $table, array $data): array {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// Site-wide aggregated stats (cached per-request, plus short file cache)
+// ══════════════════════════════════════════════════════════════════════════════
+function get_site_stats(): array {
+    static $cached = null;
+    if ($cached !== null) {
+        return $cached;
+    }
+
+    $cachePath  = __DIR__ . '/../storage/private/site_stats.json';
+    $cacheTtl   = 3600;
+    $fromCache  = false;
+
+    if (is_file($cachePath)) {
+        $mtime = filemtime($cachePath);
+        if ($mtime !== false && (time() - $mtime) < $cacheTtl) {
+            $raw = @file_get_contents($cachePath);
+            if ($raw !== false) {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded) && isset($decoded['users'], $decoded['listings'], $decoded['trades'], $decoded['stores'])) {
+                    $fromCache = true;
+                    $cached = $decoded;
+                }
+            }
+        }
+    }
+
+    if (!$fromCache) {
+        $users    = 0;
+        $listings = 0;
+        $trades   = 0;
+        $stores   = 0;
+
+        try {
+            $u = DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active = 1');
+            $users = (int)($u['c'] ?? 0);
+        } catch (Throwable) { $users = 0; }
+
+        try {
+            $l = DB::fetch("SELECT COUNT(*) AS c FROM listings WHERE status = 'active' AND review_status = 'approved'");
+            $listings = (int)($l['c'] ?? 0);
+        } catch (Throwable) { $listings = 0; }
+
+        try {
+            $t = DB::fetch("SELECT COUNT(*) AS c FROM trades WHERE status = 'completed'");
+            $trades = (int)($t['c'] ?? 0);
+        } catch (Throwable) { $trades = 0; }
+
+        try {
+            $sCol = db_has_column('users', 'seller_type') ? "seller_type = 'store'" : "store_name IS NOT NULL AND store_name != ''";
+            $s = DB::fetch("SELECT COUNT(*) AS c FROM users WHERE is_active = 1 AND ($sCol)");
+            $stores = (int)($s['c'] ?? 0);
+        } catch (Throwable) { $stores = 0; }
+
+        $cached = [
+            'users'    => $users,
+            'listings' => $listings,
+            'trades'   => $trades,
+            'stores'   => $stores,
+            'updated_at' => time(),
+        ];
+
+        @file_put_contents($cachePath, json_encode($cached, JSON_UNESCAPED_UNICODE));
+    }
+
+    return $cached;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // Auth helpers
 // ══════════════════════════════════════════════════════════════════════════════
 function auth_user(): ?array {
