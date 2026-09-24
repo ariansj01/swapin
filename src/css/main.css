@@ -356,8 +356,20 @@ p { color: var(--text-secondary); line-height: 1.6; }
   right: auto;
   left: 0;
   min-width: 260px;
-  max-height: 80vh;
-  overflow-y: auto;
+  overflow: visible !important;
+}
+/* Enable vertical scroll with a soft shadow/gradient indicator when content is long */
+.categories-dropdown > :last-child { margin-bottom: 4px; }
+.categories-dropdown::after {
+  content: "";
+  position: sticky;
+  display: block;
+  height: 0;
+  pointer-events: none;
+}
+/* For the category dropdown, keep visible for submenus; allow content-based height unless huge */
+@media (min-width: 992px) {
+  .categories-dropdown { max-height: 85vh; overflow-y: hidden; }
 }
 /* Deeply nested sub-submenus (unlimited depth) open to the left on hover */
 .dropdown-menu .dropdown-submenu > .dropdown-menu--sub,
@@ -368,14 +380,18 @@ p { color: var(--text-secondary); line-height: 1.6; }
   margin-right: 2px;
   display: none;
   min-width: 220px;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
+  overflow-x: visible;
+  z-index: 400;
 }
-/* Nested hover + .open class support (any depth) */
-.navbar-nav .dropdown-menu .dropdown-submenu:hover > .dropdown-menu--sub,
-.navbar-nav .dropdown-menu--sub .dropdown-submenu:hover > .dropdown-menu--sub,
-.navbar-nav .dropdown-menu  .dropdown-submenu > .dropdown-menu--sub.open,
-.navbar-nav .dropdown-menu--sub .dropdown-submenu > .dropdown-menu--sub.open { display: block; }
+/* Force visibility on hover for any nested submenu */
+.dropdown-menu .dropdown-submenu:hover > .dropdown-menu--sub,
+.dropdown-menu--sub .dropdown-submenu:hover > .dropdown-menu--sub,
+.dropdown-menu .dropdown-submenu.open > .dropdown-menu--sub,
+.dropdown-menu--sub .dropdown-submenu.open > .dropdown-menu--sub {
+  display: block !important;
+}
 .dropdown-item--parent {
   display: flex;
   align-items: center;
