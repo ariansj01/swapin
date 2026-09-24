@@ -172,6 +172,25 @@ function initNavbarHoverDropdowns() {
     });
   };
   document.querySelectorAll('.navbar-nav .dropdown-menu').forEach(applySubmenuHover);
+
+  // Click on parent items (dropdown-item--parent): prevent link, toggle nested submenu
+  document.querySelectorAll('.navbar-nav .dropdown-item--parent').forEach(parent => {
+    parent.addEventListener('click', e => {
+      const sm = parent.closest('.dropdown-submenu');
+      const sub = sm ? sm.querySelector(':scope > .dropdown-menu--sub') : null;
+      if (!sub) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const willOpen = !sub.classList.contains('open');
+      // Close all sibling submenus at same level
+      if (sm && sm.parentNode) {
+        sm.parentNode.querySelectorAll(':scope > .dropdown-submenu > .dropdown-menu--sub.open').forEach(s => {
+          if (s !== sub) s.classList.remove('open');
+        });
+      }
+      if (willOpen) sub.classList.add('open'); else sub.classList.remove('open');
+    });
+  });
 }
 
 /* ── Category tree toggles in listings sidebar ─────────────────────────── */
