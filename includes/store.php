@@ -320,10 +320,31 @@ function store_fields_from_input(array $input): array {
 
 function generate_store_slug(string $storeName, int $userId, ?string $currentSlug = null): string {
     $slugBase = trim($storeName) ?: ('store-' . $userId);
-    $slug = preg_replace('/[^a-zA-Z0-9_\-آ-ی۰-۹]+/u', '-', $slugBase);
+    $slug = $slugBase;
+
+    $faDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+    $enDigits = ['0','1','2','3','4','5','6','7','8','9'];
+    $slug = str_replace($faDigits, $enDigits, $slug);
+
+    $persianMap = [
+        'ا'=>'a','آ'=>'a','ب'=>'b','پ'=>'p','ت'=>'t','ث'=>'s','ج'=>'j','چ'=>'ch',
+        'ح'=>'h','خ'=>'kh','د'=>'d','ذ'=>'z','ر'=>'r','ز'=>'z','ژ'=>'zh','س'=>'s',
+        'ش'=>'sh','ص'=>'s','ض'=>'z','ط'=>'t','ظ'=>'z','ع'=>'a','غ'=>'gh','ف'=>'f',
+        'ق'=>'q','ک'=>'k','گ'=>'g','ل'=>'l','م'=>'m','ن'=>'n','و'=>'v','ه'=>'h',
+        'ی'=>'y','ئ'=>'y','ي'=>'y','ء'=>'',
+        'ك'=>'k','ى'=>'y','ؤ'=>'u','إ'=>'a','أ'=>'a',
+    ];
+    $slug = strtr($slug, $persianMap);
+
+    $arabicMap = [
+        'ذ'=>'dh','ث'=>'th','ة'=>'h','ﻙ'=>'k','ﮎ'=>'k','ﮏ'=>'k','ﮐ'=>'k','ڭ'=>'g',
+    ];
+    $slug = strtr($slug, $arabicMap);
+
+    $slug = preg_replace('/[^a-zA-Z0-9_\-]+/u', '-', $slug);
     $slug = trim((string)$slug, '-');
     $slug = mb_strtolower($slug, 'UTF-8');
-    if ($slug === '') {
+    if ($slug === '' || preg_match('/^[_\-]+$/', $slug)) {
         $slug = 'store-' . $userId;
     }
     $finalSlug = $slug;

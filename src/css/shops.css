@@ -1,6 +1,39 @@
 /* Shops directory + AI search + saved searches */
 
 .shops-page-head { margin-bottom: 1.5rem; }
+
+.shops-type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+}
+.shops-type-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .6rem 1.1rem;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: .9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.shops-type-tab i { color: var(--primary, #0A2540); opacity: .8; }
+.shops-type-tab:hover {
+  border-color: var(--primary, #0A2540);
+  color: var(--primary, #0A2540);
+  transform: translateY(-1px);
+}
+.shops-type-tab.is-active {
+  background: linear-gradient(135deg, var(--primary, #0066ff) 0%, rgba(255,102,0,.95) 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 16px -6px rgba(0,102,255,.35);
+}
+.shops-type-tab.is-active i { color: #fff; opacity: 1; }
 .shops-page-head__badge,
 .ai-search-head__badge {
   display: inline-flex;

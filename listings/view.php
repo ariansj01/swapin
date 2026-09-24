@@ -316,7 +316,7 @@ render_head($seoTitle, $metaDesc, [
         seo_json_ld_product($listing, $ogImage, $listingUrl),
         seo_json_ld_breadcrumbs([
             ['name' => 'خانه', 'url' => APP_URL . '/'],
-            ['name' => $listing['cat_name'], 'url' => APP_URL . '/category/' . $listing['cat_slug']],
+            ['name' => $listing['cat_name'], 'url' => category_url($listing['cat_slug'])],
             ['name' => $listing['title']],
         ]),
     ],

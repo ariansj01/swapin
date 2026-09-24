@@ -744,15 +744,30 @@ if ($shouldMigrate) {
             }
         }
     }
-    // Auto-populate empty store_slug from store_name / username
+    // Auto-populate empty store_slug from store_name / username (English-only, no Persian chars)
     try {
         if (in_array('store_slug', $usersCols) && in_array('store_name', $usersCols)) {
-            $usersToFix = DB::fetchAll("SELECT id, store_name, name FROM users WHERE (store_slug IS NULL OR store_slug = '') AND (store_name IS NOT NULL AND store_name != '') LIMIT 200");
+            $usersToFix = DB::fetchAll("SELECT id, store_name, name FROM users WHERE (store_slug IS NULL OR store_slug = '' OR store_slug REGEXP '[^a-zA-Z0-9_-]') AND (store_name IS NOT NULL AND store_name != '') LIMIT 200");
             foreach ($usersToFix as $u) {
                 $slugBase = trim((string)$u['store_name']) ?: trim((string)$u['name']) ?: ('user-' . (int)$u['id']);
-                $slug = preg_replace('/[^a-zA-Z0-9_\-آ-ی۰-۹]+/u', '-', $slugBase);
-                $slug = trim($slug, '-');
-                if (!$slug) $slug = 'user-' . (int)$u['id'];
+                $slug = $slugBase;
+                $faDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+                $enDigits = ['0','1','2','3','4','5','6','7','8','9'];
+                $slug = str_replace($faDigits, $enDigits, $slug);
+                $persianMap = [
+                    'ا'=>'a','آ'=>'a','ب'=>'b','پ'=>'p','ت'=>'t','ث'=>'s','ج'=>'j','چ'=>'ch',
+                    'ح'=>'h','خ'=>'kh','د'=>'d','ذ'=>'z','ر'=>'r','ز'=>'z','ژ'=>'zh','س'=>'s',
+                    'ش'=>'sh','ص'=>'s','ض'=>'z','ط'=>'t','ظ'=>'z','ع'=>'a','غ'=>'gh','ف'=>'f',
+                    'ق'=>'q','ک'=>'k','گ'=>'g','ل'=>'l','م'=>'m','ن'=>'n','و'=>'v','ه'=>'h',
+                    'ی'=>'y','ئ'=>'y','ي'=>'y','ك'=>'k','ى'=>'y','ؤ'=>'u','إ'=>'a','أ'=>'a',
+                ];
+                $slug = strtr($slug, $persianMap);
+                $slug = preg_replace('/[^a-zA-Z0-9_\-]+/u', '-', $slug);
+                $slug = trim((string)$slug, '-');
+                $slug = mb_strtolower($slug, 'UTF-8');
+                if ($slug === '' || preg_match('/^[_\-]+$/', $slug)) {
+                    $slug = 'store-' . (int)$u['id'];
+                }
                 $finalSlug = $slug;
                 $suffix = 1;
                 while (true) {

@@ -12,6 +12,12 @@ require_once __DIR__ . '/../includes/geo.php';
 
 $user = auth_user();
 
+try {
+    swaapin_ensure_category_tree();
+} catch (Throwable $e) {
+    swapin_debug_log('listings_all_cat_tree_skip', ['msg' => $e->getMessage()]);
+}
+
 // فیلترها
 $search    = clean($_GET['q']          ?? '');
 $catSlug   = clean($_GET['cat']        ?? '');
@@ -33,7 +39,11 @@ if ($locMode === 'nearby' && $nearbyCitiesList === []) {
 
 // دسته‌بندی
 $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [$catSlug]) : null;
-$catId    = $category['id'] ?? null;
+$catId    = $category ? (int)$category['id'] : null;
+$catScopeIds = [];
+if ($catId > 0) {
+    $catScopeIds = swaapin_category_descendant_ids($catId);
+}
 
 // ساخت شرط‌ها
 $whereClauses = [listing_public_sql('l'), 'l.listing_mode != "sell"'];
@@ -45,10 +55,10 @@ if ($search) {
     $params[] = "%{$search}%";
     $params[] = "%{$search}%";
 }
-if ($catId) {
-    $whereClauses[] = '(l.category_id = ? OR c.parent_id = ?)';
-    $params[] = $catId;
-    $params[] = $catId;
+if (!empty($catScopeIds)) {
+    $placeholders = implode(',', array_fill(0, count($catScopeIds), '?'));
+    $whereClauses[] = "(l.category_id IN ({$placeholders}))";
+    foreach ($catScopeIds as $cid) { $params[] = (int)$cid; }
 }
 if ($locMode === 'nearby' && $nearbyCitiesList !== []) {
     $cityPlaceholders = implode(',', array_fill(0, count($nearbyCitiesList), '?'));
@@ -106,23 +116,68 @@ $listings = DB::fetchAll(
     [...$params, $perPage, $pag['offset']]
 );
 
-// متادیتا
-$title = 'همه آگهی‌ها';
+// متادیتا — طبق قوانین سئو سواپین
+// الگو عنوان: معاوضه [عنوان] | در [شهر] | سواپین (حداکثر ۶۵ کاراکتر)
+// الگو توضیحات: شامل دسته، شهر، عنوان و ارزش تخمینی (حداکثر ۱۶۰ کاراکتر)
+$catChainNames = [];
 if ($category) {
-    $title = 'آگهی‌های ' . category_label($category['slug'], $category['name']);
+    $chainSlugs = get_category_ancestors($category['slug']);
+    foreach ($chainSlugs as $cs) {
+        $crow = DB::fetch('SELECT name FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [$cs]);
+        if ($crow) $catChainNames[] = $crow['name'];
+    }
 }
-if ($locMode === 'nearby' && $nearbyCitiesList !== []) {
-    $title = format_nearby_cities_title($nearbyCitiesList);
-} elseif ($city) {
-    $title = 'آگهی‌های شهر ' . $city;
+$catDisplayName = !empty($catChainNames) ? implode(' › ', $catChainNames) : '';
+
+$titleParts = [];
+$titleMode = 'معاوضه';
+if ($category) {
+    $titleParts[] = $titleMode . ' ' . ($catDisplayName ?: category_label($category['slug'], $category['name']));
+} else {
+    $titleParts[] = $titleMode . ' کالا';
+}
+if ($city) {
+    $titleParts[] = 'در ' . $city;
+} elseif ($locMode === 'nearby' && !empty($nearbyCitiesList)) {
+    $titleParts[] = 'در شهرهای نزدیک';
+}
+$title = implode(' | ', $titleParts) . ' | ' . APP_NAME;
+if (mb_strlen($title) > 65) {
+    $first = array_shift($titleParts);
+    $title = $first . ' | ' . APP_NAME;
+    if (mb_strlen($title) > 65) {
+        $title = mb_strimwidth($title, 0, 63, '…') . ' | ' . APP_NAME;
+    }
 }
 if ($search) {
-    $title = 'نتایج برای «' . $search . '»';
+    $searchTitle = 'نتایج برای «' . $search . '» | ' . APP_NAME;
+    $title = mb_strlen($searchTitle) > 65 ? mb_strimwidth($searchTitle, 0, 63, '…') : $searchTitle;
 }
-$desc = 'فهرست کامل آگهی‌ها با فیلتر بر اساس دسته‌بندی، شهر، وضعیت و قیمت';
 
+$descParts = [];
+if (!empty($catDisplayName)) {
+    $descParts[] = 'دسته‌بندی: ' . $catDisplayName;
+} else {
+    $descParts[] = 'بازار معاوضه کالا با کالا';
+}
+if ($city) {
+    $descParts[] = 'شهر: ' . $city;
+} elseif ($locMode === 'nearby' && !empty($nearbyCitiesList)) {
+    $descParts[] = 'شهرهای نزدیک: ' . implode('، ', array_slice($nearbyCitiesList, 0, 3));
+}
+if ($search) {
+    $descParts[] = 'جستجو: ' . $search;
+}
+$descParts[] = 'در پلتفرم سواپین';
+$desc = implode(' - ' . $descParts);
+if (mb_strlen($desc) > 160) {
+    $desc = mb_strimwidth($desc, 0, 158, '…');
+}
+
+// Canonical: بدون فیلترهای اضافی و صفحه اول، به URL دسته‌بندی سلسله‌مراتبی اشاره می‌کند
 $canonical = APP_URL . '/listings/';
-if ($category && !$search && !$city && $locMode !== 'nearby' && !$wantType && !$condition && $pmin === 0 && $pmax === 0 && $sort === 'new' && $page === 1) {
+$hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $page !== 1;
+if ($category && !$hasOtherFilters) {
     $canonical = category_url($category['slug']);
 }
 
@@ -179,34 +234,92 @@ render_navbar($user);
         </div>
 
         <h2 class="all-listings-sidebar__title">دسته‌بندی‌ها</h2>
-        <ul class="all-listings-categories">
-          <li style="cursor: pointer;padding: 12px;border: 1px solid #e1e1e1;border-radius: 8px;margin: 3px 0;">
-            <a href="<?= APP_URL ?>/listings/all.php" class="<?= $catSlug === '' ? 'text-strong' : '' ?>"><i class="bi bi-grid"></i> همه</a>
-          </li>
-          <?php foreach (DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order') as $c): ?>
-          <?php $active = $catSlug === $c['slug'] ? 'text-strong' : ''; ?>
-          <li style="cursor: pointer;padding: 12px;border: 1px solid #e1e1e1;border-radius: 8px;margin: 3px 0;">
-            <?php 
-            $baseCatUrl = category_url($c['slug']);
+        <?php
+        $allTopCats = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order');
+        $activeChainIds = [];
+        if ($catId > 0) {
+            $activeChainIds = swaapin_category_descendant_ids($catId);
+            $activeChainIds[] = $catId;
+            $up = $catId;
+            $s = 15;
+            while ($up > 0 && $s-- > 0) {
+                $parent = DB::fetch('SELECT id, parent_id FROM categories WHERE id = ? LIMIT 1', [$up]);
+                if (!$parent) break;
+                $activeChainIds[] = (int)$parent['id'];
+                $pid = (int)($parent['parent_id'] ?? 0);
+                if ($pid <= 0) break;
+                $up = $pid;
+            }
+        }
+        $buildFilterLink = function (string $slug) use ($catSlug, $search, $city, $locMode, $nearbyCitiesRaw, $wantType, $condition, $pmin, $pmax, $sort): string {
+            $baseCatUrl = category_url($slug);
             $hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new';
             if ($hasOtherFilters) {
-                $catLink = APP_URL . '/listings/all.php?cat=' . h($c['slug']) . 
-                    ($search ? '&q=' . urlencode($search) : '') .
-                    ($city ? '&city=' . urlencode($city) : '') .
-                    ($locMode === 'nearby' && $nearbyCitiesRaw ? '&loc=nearby&nearby_cities=' . urlencode($nearbyCitiesRaw) : '') .
-                    ($wantType ? '&want=' . urlencode($wantType) : '') .
-                    ($condition ? '&condition=' . urlencode($condition) : '') .
-                    ($pmin > 0 ? '&price_min=' . $pmin : '') .
-                    ($pmax > 0 ? '&price_max=' . $pmax : '') .
-                    ($sort ? '&sort=' . urlencode($sort) : '');
-            } else {
-                $catLink = $baseCatUrl;
+                $qs = http_build_query(array_filter([
+                    'cat' => $slug,
+                    'q' => $search !== '' ? $search : null,
+                    'city' => $city !== '' ? $city : null,
+                    'loc' => $locMode === 'nearby' ? 'nearby' : null,
+                    'nearby_cities' => $locMode === 'nearby' && $nearbyCitiesRaw !== '' ? $nearbyCitiesRaw : null,
+                    'want' => $wantType !== '' ? $wantType : null,
+                    'condition' => $condition !== '' ? $condition : null,
+                    'price_min' => $pmin > 0 ? $pmin : null,
+                    'price_max' => $pmax > 0 ? $pmax : null,
+                    'sort' => $sort !== 'new' ? $sort : null,
+                ]));
+                return APP_URL . '/listings/all.php?' . $qs;
             }
-            ?>
-            <a href="<?= $catLink ?>" class="<?= $active ?>"><i class="<?= h($c['icon']) ?>"></i> <?= h(category_label($c['slug'], $c['name'])) ?></a>
-          </li>
+            return $baseCatUrl;
+        };
+        ?>
+        <div class="all-listings-categories cat-tree">
+          <div class="cat-tree__item cat-tree__item--root">
+            <a href="<?= APP_URL ?>/listings/all.php" class="cat-tree__link <?= $catSlug === '' ? 'is-active' : '' ?>"><i class="bi bi-grid"></i> همه دسته‌بندی‌ها</a>
+          </div>
+          <?php foreach ($allTopCats as $tc):
+              $tcId = (int)$tc['id'];
+              $tcSlug = (string)$tc['slug'];
+              $topActive = $catSlug === $tcSlug;
+              $hasActiveInside = in_array($tcId, $activeChainIds, true) || $topActive;
+              $l2 = DB::fetchAll('SELECT * FROM categories WHERE parent_id = ? AND is_active = 1 ORDER BY sort_order, id', [$tcId]);
+              $class = 'cat-tree__item' . ($hasActiveInside ? ' is-open' : '');
+          ?>
+          <div class="<?= $class ?>">
+            <a href="<?= $buildFilterLink($tcSlug) ?>" class="cat-tree__link cat-tree__link--parent <?= $topActive ? 'is-active' : '' ?>">
+              <?php if (!empty($l2)): ?><span class="cat-tree__toggle"><i class="bi bi-chevron-left"></i></span><?php endif; ?>
+              <i class="<?= h($tc['icon']) ?>"></i> <?= h(category_label($tcSlug, $tc['name'])) ?>
+            </a>
+            <?php if (!empty($l2)): ?>
+            <div class="cat-tree__sub">
+              <?php foreach ($l2 as $lc):
+                  $lcId = (int)$lc['id'];
+                  $lcActive = ($catSlug === (string)$lc['slug']) || in_array($lcId, $activeChainIds, true);
+                  $l3 = DB::fetchAll('SELECT * FROM categories WHERE parent_id = ? AND is_active = 1 ORDER BY sort_order, id', [$lcId]);
+                  $class2 = 'cat-tree__item' . ($lcActive ? ' is-open' : '');
+              ?>
+              <div class="<?= $class2 ?>">
+                <a href="<?= $buildFilterLink((string)$lc['slug']) ?>" class="cat-tree__link cat-tree__link--l2 <?= ($catSlug === (string)$lc['slug']) ? 'is-active' : '' ?>">
+                  <?php if (!empty($l3)): ?><span class="cat-tree__toggle"><i class="bi bi-chevron-left"></i></span><?php endif; ?>
+                  <?= h(category_label((string)$lc['slug'], $lc['name'])) ?>
+                </a>
+                <?php if (!empty($l3)): ?>
+                <div class="cat-tree__sub">
+                  <?php foreach ($l3 as $gc): ?>
+                  <div class="cat-tree__item">
+                    <a href="<?= $buildFilterLink((string)$gc['slug']) ?>" class="cat-tree__link cat-tree__link--l3 <?= ($catSlug === (string)$gc['slug']) ? 'is-active' : '' ?>">
+                      <?= h(category_label((string)$gc['slug'], $gc['name'])) ?>
+                    </a>
+                  </div>
+                  <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+              </div>
+              <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+          </div>
           <?php endforeach; ?>
-        </ul>
+        </div>
 
         <h3 class="all-listings-sidebar__subtitle">فیلترهای دیگر</h3>
         <form method="GET" action="<?= APP_URL ?>/listings/all.php" class="all-listings-filters" id="all-listings-filters">
@@ -303,16 +416,64 @@ render_navbar($user);
       <?php endif; ?>
 
       <?php if ($pag['pages'] > 1): ?>
-      <nav class="pagination mt-6" aria-label="صفحه‌بندی">
-        <?php for ($p = 1; $p <= $pag['pages']; $p++): ?>
-          <?php
-          $qs = $_GET;
-          $qs['page'] = $p;
-          $href = APP_URL . '/listings/all.php?' . http_build_query($qs);
-          $cls = $p === $pag['page'] ? 'active' : '';
-          ?>
-          <a href="<?= h($href) ?>" class="page-link <?= $cls ?>"><?= fmt_num($p) ?></a>
-        <?php endfor; ?>
+      <nav class="pagination" aria-label="صفحه‌بندی">
+        <?php
+        $currentPage = $pag['page'];
+        $totalPages  = $pag['pages'];
+
+        $qs = $_GET;
+
+        $buildUrl = function($p) use ($qs) {
+            $qs['page'] = $p;
+            return APP_URL . '/listings/all.php?' . http_build_query($qs);
+        };
+
+        $isFirst = $currentPage === 1;
+        $isLast  = $currentPage === $totalPages;
+        ?>
+
+        <a href="<?= $isFirst ? '#' : h($buildUrl($currentPage - 1)) ?>"
+           class="page-link page-link__nav <?= $isFirst ? 'is-disabled' : '' ?>"
+           aria-label="صفحه قبلی"
+           <?= $isFirst ? 'tabindex="-1" aria-disabled="true"' : '' ?>>
+          <i class="bi bi-chevron-right"></i>
+        </a>
+
+        <?php
+        $range = 2;
+        $start = max(1, $currentPage - $range);
+        $end   = min($totalPages, $currentPage + $range);
+
+        if ($start > 1) {
+            $cls1 = 1 === $currentPage ? 'active' : '';
+            echo '<a href="' . h($buildUrl(1)) . '" class="page-link ' . $cls1 . '">' . fmt_num(1) . '</a>';
+            if ($start > 2) {
+                echo '<span class="pagination__ellipsis">…</span>';
+            }
+        }
+
+        for ($p = $start; $p <= $end; $p++):
+            $href = h($buildUrl($p));
+            $cls  = $p === $currentPage ? 'active' : '';
+        ?>
+          <a href="<?= $href ?>" class="page-link <?= $cls ?>" <?= $p === $currentPage ? 'aria-current="page"' : '' ?>><?= fmt_num($p) ?></a>
+        <?php endfor;
+
+        if ($end < $totalPages) {
+            if ($end < $totalPages - 1) {
+                echo '<span class="pagination__ellipsis">…</span>';
+            }
+            $clsN = $totalPages === $currentPage ? 'active' : '';
+            echo '<a href="' . h($buildUrl($totalPages)) . '" class="page-link ' . $clsN . '">' . fmt_num($totalPages) . '</a>';
+        }
+        ?>
+
+        <a href="<?= $isLast ? '#' : h($buildUrl($currentPage + 1)) ?>"
+           class="page-link page-link__nav <?= $isLast ? 'is-disabled' : '' ?>"
+           aria-label="صفحه بعدی"
+           <?= $isLast ? 'tabindex="-1" aria-disabled="true"' : '' ?>>
+          <i class="bi bi-chevron-left"></i>
+        </a>
       </nav>
       <?php endif; ?>
     </section>

@@ -100,132 +100,639 @@ function category_label(string $slug, string $name = ''): string {
     return $labels[$slug] ?? ($name ?: $slug);
 }
 
-function category_url(string $slug): string {
-    $urlMap = [
-    ];
-    if (isset($urlMap[$slug])) {
-        return APP_URL . $urlMap[$slug];
+function get_category_ancestors(string $slug): array {
+    $chain = [];
+    $current = DB::fetch(
+        'SELECT id, slug, parent_id FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1',
+        [$slug]
+    );
+    if (!$current) {
+        return [$slug];
     }
-    return APP_URL . '/category/' . $slug;
+    $chain[] = $current['slug'];
+    $pid = $current['parent_id'];
+    $safety = 10;
+    while ($pid > 0 && $safety-- > 0) {
+        $parent = DB::fetch(
+            'SELECT id, slug, parent_id FROM categories WHERE id = ? AND is_active = 1 LIMIT 1',
+            [(int)$pid]
+        );
+        if (!$parent) break;
+        array_unshift($chain, $parent['slug']);
+        $pid = (int)($parent['parent_id'] ?? 0);
+        if ($pid === 0) break;
+    }
+    return $chain;
+}
+
+function get_category_by_slug_path(array $slugParts): ?array {
+    if (empty($slugParts)) return null;
+    $lastSlug = end($slugParts);
+    $cat = DB::fetch(
+        'SELECT * FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1',
+        [$lastSlug]
+    );
+    if (!$cat) return null;
+    $chain = get_category_ancestors($cat['slug']);
+    if (array_slice($chain, -count($slugParts)) === $slugParts) {
+        return $cat;
+    }
+    if (count($chain) >= count($slugParts)) {
+        $match = true;
+        foreach ($slugParts as $i => $s) {
+            if (($chain[$i] ?? '') !== $s) { $match = false; break; }
+        }
+        if ($match) return $cat;
+    }
+    $simple = DB::fetch(
+        'SELECT * FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1',
+        [$slugParts[0]]
+    );
+    return $simple ?: null;
+}
+
+function category_url(string $slug): string {
+    $chain = get_category_ancestors($slug);
+    $path = implode('/', array_map('rawurlencode', $chain));
+    return APP_URL . '/' . $path;
 }
 
 function wizard_allowed_category_slugs(): array {
     return [
-        'electronics',
-        'clothing',
-        'home-garden',
-        'books-media',
-        'sports',
-        'toys-games',
+        'real-estate',
         'vehicles',
+        'electronics',
+        'home-kitchen',
         'services',
-        'food-drink',
-        'home-appliances',
+        'personal-items',
+        'leisure-hobbies',
+        'community',
+        'tools-equipment',
+        'jobs',
     ];
 }
 
 function wizard_category_seed(): array {
     return [
-        'electronics'     => ['name' => 'دیجیتال',        'icon' => 'bi bi-phone',      'sort_order' => 1],
-        'clothing'        => ['name' => 'پوشاک',          'icon' => 'bi bi-bag',        'sort_order' => 2],
-        'home-garden'     => ['name' => 'خانه و ویلا',    'icon' => 'bi bi-house',      'sort_order' => 3],
-        'books-media'     => ['name' => 'کتاب و رسانه',   'icon' => 'bi bi-book',       'sort_order' => 4],
-        'sports'          => ['name' => 'ورزش',           'icon' => 'bi bi-trophy',     'sort_order' => 5],
-        'toys-games'      => ['name' => 'اسباب‌بازی و بازی', 'icon' => 'bi bi-joystick', 'sort_order' => 6],
-        'vehicles'        => ['name' => 'خودرو',          'icon' => 'bi bi-car-front',  'sort_order' => 7],
-        'services'        => ['name' => 'خدمات',          'icon' => 'bi bi-tools',      'sort_order' => 8],
-        'food-drink'      => ['name' => 'غذا و نوشیدنی',  'icon' => 'bi bi-cup-hot',    'sort_order' => 9],
-        'home-appliances' => ['name' => 'لوازم خانگی',    'icon' => 'bi bi-tv',         'sort_order' => 10],
+        'real-estate'       => ['name' => 'املاک',                'icon' => 'bi bi-buildings',   'sort_order' => 1],
+        'vehicles'          => ['name' => 'وسایل نقلیه',          'icon' => 'bi bi-car-front',   'sort_order' => 2],
+        'electronics'       => ['name' => 'کالای دیجیتال',        'icon' => 'bi bi-phone',       'sort_order' => 3],
+        'home-kitchen'      => ['name' => 'خانه و آشپزخانه',      'icon' => 'bi bi-house-heart', 'sort_order' => 4],
+        'services'          => ['name' => 'خدمات',                'icon' => 'bi bi-tools',       'sort_order' => 5],
+        'personal-items'    => ['name' => 'وسایل شخصی',           'icon' => 'bi bi-person-badge','sort_order' => 6],
+        'leisure-hobbies'   => ['name' => 'سرگرمی و فراغت',       'icon' => 'bi bi-joystick',    'sort_order' => 7],
+        'community'         => ['name' => 'اجتماعی',              'icon' => 'bi bi-people',      'sort_order' => 8],
+        'tools-equipment'   => ['name' => 'تجهیزات و صنعتی',      'icon' => 'bi bi-hammer',      'sort_order' => 9],
+        'jobs'              => ['name' => 'استخدام و کاریابی',    'icon' => 'bi bi-briefcase',   'sort_order' => 10],
     ];
 }
 
-function wizard_ensure_parents_exist(): array {
-    $slugs = wizard_allowed_category_slugs();
-    $seed  = wizard_category_seed();
-    $parentCond = '(parent_id IS NULL OR parent_id = 0)';
-    $slugIn = implode(',', array_fill(0, count($slugs), '?'));
-
-    $existing = DB::fetchAll(
-        "SELECT id, slug FROM categories WHERE {$parentCond} AND slug IN ({$slugIn})",
-        $slugs
-    );
-    $bySlug = [];
-    foreach ($existing as $e) $bySlug[(string)$e['slug']] = (int)$e['id'];
-
-    foreach ($slugs as $slug) {
-        if (isset($bySlug[$slug])) {
-            $info = $seed[$slug];
-            DB::query(
-                "UPDATE categories SET name = ?, icon = ?, sort_order = ?, is_active = 1 WHERE id = ?",
-                [$info['name'], $info['icon'], $info['sort_order'], $bySlug[$slug]]
-            );
-            continue;
-        }
-        $info = $seed[$slug];
-        DB::query(
-            "INSERT INTO categories (parent_id, name, slug, icon, sort_order, is_active) VALUES (NULL, ?, ?, ?, ?, 1)",
-            [$info['name'], $slug, $info['icon'], $info['sort_order']]
-        );
-        $bySlug[$slug] = (int)DB::lastId();
-        swapin_debug_log('wizard_cat_created', ['slug' => $slug, 'name' => $info['name']]);
-    }
-
-    DB::query("UPDATE categories SET is_active = 0 WHERE slug = 'other' AND {$parentCond} AND is_active = 1");
-
-    return $bySlug;
+function swaapin_category_tree(): array {
+    return [
+        // ─────────────────────────────────────────────── 1. املاک
+        'real-estate' => [
+            'name' => 'املاک', 'icon' => 'bi bi-buildings', 'sort_order' => 1,
+            'children' => [
+                ['slug' => 'residential-apartment',  'name' => 'آپارتمان',           'sort_order' => 1,
+                    'children' => [
+                        ['slug' => 'apartment-for-sale',   'name' => 'آپارتمان برای فروش',   'sort_order' => 1],
+                        ['slug' => 'apartment-for-rent',   'name' => 'آپارتمان برای اجاره',  'sort_order' => 2],
+                    ]
+                ],
+                ['slug' => 'residential-villa',      'name' => 'خانه و ویلا',        'sort_order' => 2,
+                    'children' => [
+                        ['slug' => 'villa-for-sale',       'name' => 'خانه و ویلای فروش',   'sort_order' => 1],
+                        ['slug' => 'villa-for-rent',       'name' => 'خانه و ویلای اجاره',  'sort_order' => 2],
+                    ]
+                ],
+                ['slug' => 'commercial-office',     'name' => 'اداری و تجاری',      'sort_order' => 3],
+                ['slug' => 'industrial-land',       'name' => 'زمین و کلنگی',       'sort_order' => 4],
+                ['slug' => 'short-term-rentals',    'name' => 'اجاره موقت',         'sort_order' => 5],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 2. وسایل نقلیه
+        'vehicles' => [
+            'name' => 'وسایل نقلیه', 'icon' => 'bi bi-car-front', 'sort_order' => 2,
+            'children' => [
+                ['slug' => 'cars',                 'name' => 'خودرو',              'sort_order' => 1,
+                    'children' => [
+                        ['slug' => 'passenger-cars',     'name' => 'سواری',                'sort_order' => 1],
+                        ['slug' => 'classic-cars',       'name' => 'کلاسیک',                'sort_order' => 2],
+                        ['slug' => 'rental-cars',        'name' => 'خودرو اجاره‌ای',        'sort_order' => 3],
+                    ]
+                ],
+                ['slug' => 'motorcycles',          'name' => 'موتورسیکلت',         'sort_order' => 2],
+                ['slug' => 'commercial-vehicles',  'name' => 'خودروهای باربری و کاری', 'sort_order' => 3],
+                ['slug' => 'heavy-equipment',      'name' => 'سنگین و ساختمانی',   'sort_order' => 4],
+                ['slug' => 'car-parts',            'name' => 'قطعات و لوازم جانبی خودرو', 'sort_order' => 5],
+                ['slug' => 'bicycles',             'name' => 'دوچرخه',             'sort_order' => 6],
+                ['slug' => 'car-rental-services',  'name' => 'اجاره خودرو',        'sort_order' => 7],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 3. کالای دیجیتال
+        'electronics' => [
+            'name' => 'کالای دیجیتال', 'icon' => 'bi bi-phone', 'sort_order' => 3,
+            'children' => [
+                ['slug' => 'mobile-tablet',        'name' => 'موبایل و تبلت',      'sort_order' => 1,
+                    'children' => [
+                        ['slug' => 'mobile-phones',      'name' => 'موبایل',                 'sort_order' => 1],
+                        ['slug' => 'tablets',            'name' => 'تبلت',                   'sort_order' => 2],
+                        ['slug' => 'mobile-accessories', 'name' => 'لوازم جانبی موبایل و تبلت', 'sort_order' => 3],
+                        ['slug' => 'simcards',           'name' => 'سیم‌کارت',              'sort_order' => 4],
+                    ]
+                ],
+                ['slug' => 'computers',            'name' => 'رایانه',              'sort_order' => 2,
+                    'children' => [
+                        ['slug' => 'laptops',            'name' => 'لپ‌تاپ',                 'sort_order' => 1],
+                        ['slug' => 'desktops',           'name' => 'رایانه رومیزی',          'sort_order' => 2],
+                        ['slug' => 'computer-parts',     'name' => 'قطعات و لوازم جانبی',    'sort_order' => 3],
+                        ['slug' => 'networking',         'name' => 'مودم و تجهیزات شبکه',    'sort_order' => 4],
+                        ['slug' => 'printers-scanners',  'name' => 'پرینتر، اسکنر و کپی',    'sort_order' => 5],
+                    ]
+                ],
+                ['slug' => 'console-gaming',       'name' => 'کنسول و بازی',       'sort_order' => 3],
+                ['slug' => 'audio-visual',         'name' => 'صوتی و تصویری',      'sort_order' => 4,
+                    'children' => [
+                        ['slug' => 'music-movies',       'name' => 'فیلم و موسیقی',         'sort_order' => 1],
+                        ['slug' => 'cameras',            'name' => 'دوربین عکاسی و فیلم‌برداری', 'sort_order' => 2],
+                        ['slug' => 'headphones-speakers','name' => 'هدفون، اسپیکر و میکروفون', 'sort_order' => 3],
+                        ['slug' => 'home-audio',         'name' => 'سیستم صوتی خانگی',       'sort_order' => 4],
+                        ['slug' => 'dvd-blu-ray',        'name' => 'DVD و Blu-ray',         'sort_order' => 5],
+                        ['slug' => 'tv-projector',       'name' => 'تلویزیون و پروژکتور',    'sort_order' => 6],
+                        ['slug' => 'cctv',               'name' => 'دوربین مداربسته',        'sort_order' => 7],
+                    ]
+                ],
+                ['slug' => 'landline-phones',      'name' => 'تلفن رومیزی',        'sort_order' => 5],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 4. خانه و آشپزخانه
+        'home-kitchen' => [
+            'name' => 'خانه و آشپزخانه', 'icon' => 'bi bi-house-heart', 'sort_order' => 4,
+            'children' => [
+                ['slug' => 'furniture',            'name' => 'مبلمان و دکور',     'sort_order' => 1],
+                ['slug' => 'appliances',           'name' => 'لوازم خانگی',       'sort_order' => 2,
+                    'children' => [
+                        ['slug' => 'kitchen-appliances', 'name' => 'لوازم آشپزخانه',        'sort_order' => 1],
+                        ['slug' => 'laundry-appliances', 'name' => 'لباسشویی و خشک‌کن',     'sort_order' => 2],
+                        ['slug' => 'cooling-heating',    'name' => 'یخچال و فریزر، گرمایش', 'sort_order' => 3],
+                        ['slug' => 'small-appliances',   'name' => 'لوازم جانبی کوچک',       'sort_order' => 4],
+                    ]
+                ],
+                ['slug' => 'kitchenware',          'name' => 'ظروف و تجهیزات آشپزخانه', 'sort_order' => 3],
+                ['slug' => 'home-textile',         'name' => 'پارچه و منسوجات خانگی', 'sort_order' => 4],
+                ['slug' => 'gardening-plants',     'name' => 'باغچه و گیاهان',    'sort_order' => 5],
+                ['slug' => 'building-materials',   'name' => 'تجهیزات ساختمانی و بهسازی', 'sort_order' => 6],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 5. خدمات
+        'services' => [
+            'name' => 'خدمات', 'icon' => 'bi bi-tools', 'sort_order' => 5,
+            'children' => [
+                ['slug' => 'business-financial',   'name' => 'تجاری و مالی',      'sort_order' => 1],
+                ['slug' => 'home-services',        'name' => 'منزل و ساختمان',    'sort_order' => 2,
+                    'children' => [
+                        ['slug' => 'cleaning-services',  'name' => 'نظافت و نظافت‌چی',       'sort_order' => 1],
+                        ['slug' => 'moving-services',    'name' => 'انبارداری و باربری',      'sort_order' => 2],
+                        ['slug' => 'renovation',         'name' => 'تعمیرات و بازسازی',       'sort_order' => 3],
+                    ]
+                ],
+                ['slug' => 'legal-educational',    'name' => 'آموزشی و حقوقی',    'sort_order' => 3],
+                ['slug' => 'wedding-events',       'name' => 'مراسم و رویداد',    'sort_order' => 4],
+                ['slug' => 'vehicles-services',    'name' => 'خودرو و موتور',     'sort_order' => 5],
+                ['slug' => 'beauty-health-serv',   'name' => 'آرایشی و بهداشتی',  'sort_order' => 6],
+                ['slug' => 'electronic-services',  'name' => 'تعمیرات دیجیتال',   'sort_order' => 7],
+                ['slug' => 'tourism-travel',       'name' => 'گردشگری و سفر',     'sort_order' => 8],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 6. وسایل شخصی
+        'personal-items' => [
+            'name' => 'وسایل شخصی', 'icon' => 'bi bi-person-badge', 'sort_order' => 6,
+            'children' => [
+                ['slug' => 'clothing',             'name' => 'پوشاک و کفش',       'sort_order' => 1,
+                    'children' => [
+                        ['slug' => 'men-clothing',     'name' => 'مردانه',                 'sort_order' => 1],
+                        ['slug' => 'women-clothing',   'name' => 'زنانه',                  'sort_order' => 2],
+                        ['slug' => 'kids-clothing',    'name' => 'بچگانه',                 'sort_order' => 3],
+                        ['slug' => 'shoes',            'name' => 'کفش و بوت',              'sort_order' => 4],
+                    ]
+                ],
+                ['slug' => 'watches-jewelry',      'name' => 'ساعت و زیورآلات',   'sort_order' => 2],
+                ['slug' => 'bags-luggage',         'name' => 'کیف و بار travel',  'sort_order' => 3],
+                ['slug' => 'beauty-cosmetics',     'name' => 'آرایشی و بهداشتی',  'sort_order' => 4,
+                    'children' => [
+                        ['slug' => 'makeup',           'name' => 'آرایشی',                'sort_order' => 1],
+                        ['slug' => 'skincare',         'name' => 'مراقبت پوست',           'sort_order' => 2],
+                        ['slug' => 'haircare',         'name' => 'موی و مو',               'sort_order' => 3],
+                        ['slug' => 'perfume',          'name' => 'عطر و ادکلن',            'sort_order' => 4],
+                    ]
+                ],
+                ['slug' => 'eyeglasses',           'name' => 'عینک طبی و آفتابی', 'sort_order' => 5],
+                ['slug' => 'baby-products',        'name' => 'لوازم کودک و نوزاد', 'sort_order' => 6],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 7. سرگرمی و فراغت
+        'leisure-hobbies' => [
+            'name' => 'سرگرمی و فراغت', 'icon' => 'bi bi-joystick', 'sort_order' => 7,
+            'children' => [
+                ['slug' => 'collectibles',         'name' => 'کلکسیونی و زنجیره', 'sort_order' => 1],
+                ['slug' => 'books-magazines',      'name' => 'کتاب و مجلات',      'sort_order' => 2,
+                    'children' => [
+                        ['slug' => 'fiction',         'name' => 'داستانی و ادبیات',        'sort_order' => 1],
+                        ['slug' => 'academic',        'name' => 'آموزشی و دانشگاهی',       'sort_order' => 2],
+                        ['slug' => 'comics-manga',    'name' => 'کمیک و مانگا',            'sort_order' => 3],
+                        ['slug' => 'children-books',  'name' => 'کودک و نوجوان',           'sort_order' => 4],
+                    ]
+                ],
+                ['slug' => 'sports-fitness',       'name' => 'ورزش و تناسب اندام','sort_order' => 3,
+                    'children' => [
+                        ['slug' => 'team-sports',     'name' => 'ورزش‌های تیمی',          'sort_order' => 1],
+                        ['slug' => 'fitness-gym',     'name' => 'تناسب اندام و بدنسازی',   'sort_order' => 2],
+                        ['slug' => 'outdoor-sports',  'name' => 'کوهنوردی و کمپینگ',       'sort_order' => 3],
+                    ]
+                ],
+                ['slug' => 'musical-instruments',  'name' => 'آلات موسیقی',       'sort_order' => 4],
+                ['slug' => 'travel-tourism-items', 'name' => 'تور و گردشگری',     'sort_order' => 5],
+                ['slug' => 'pets-animals',         'name' => 'حیوانات خانگی',     'sort_order' => 6,
+                    'children' => [
+                        ['slug' => 'dogs',             'name' => 'سگ',                     'sort_order' => 1],
+                        ['slug' => 'cats',             'name' => 'گربه',                   'sort_order' => 2],
+                        ['slug' => 'birds',            'name' => 'پرنده',                  'sort_order' => 3],
+                        ['slug' => 'fish-aquarium',    'name' => 'ماهی و آکواریوم',        'sort_order' => 4],
+                        ['slug' => 'pet-accessories',  'name' => 'لوازم جانبی حیوانات',    'sort_order' => 5],
+                    ]
+                ],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 8. اجتماعی
+        'community' => [
+            'name' => 'اجتماعی', 'icon' => 'bi bi-people', 'sort_order' => 8,
+            'children' => [
+                ['slug' => 'announcements',        'name' => 'اعلامیه‌ها و اطلاعیه‌ها', 'sort_order' => 1],
+                ['slug' => 'lost-found',           'name' => 'گم‌شده و پیدا‌شده',    'sort_order' => 2],
+                ['slug' => 'volunteering',         'name' => 'خیریه و داوطلبانه',    'sort_order' => 3],
+                ['slug' => 'local-events',         'name' => 'رویدادهای محلی',       'sort_order' => 4],
+                ['slug' => 'exchange-barter',      'name' => 'معاوضه و هدیه',        'sort_order' => 5],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 9. تجهیزات و صنعتی
+        'tools-equipment' => [
+            'name' => 'تجهیزات و صنعتی', 'icon' => 'bi bi-hammer', 'sort_order' => 9,
+            'children' => [
+                ['slug' => 'power-tools',          'name' => 'ابزار برقی',          'sort_order' => 1],
+                ['slug' => 'hand-tools',           'name' => 'ابزار دستی',          'sort_order' => 2],
+                ['slug' => 'industrial-machinery', 'name' => 'ماشین‌آلات صنعتی',    'sort_order' => 3],
+                ['slug' => 'construction',         'name' => 'ساختمانی و مهندسی',   'sort_order' => 4],
+                ['slug' => 'lab-scientific',       'name' => 'آزمایشگاهی و علمی',   'sort_order' => 5],
+                ['slug' => 'medical-equipment',    'name' => 'پزشکی و درمانی',      'sort_order' => 6],
+                ['slug' => 'industrial-supplies',  'name' => 'مواد اولیه صنعتی',    'sort_order' => 7],
+            ]
+        ],
+        // ─────────────────────────────────────────────── 10. استخدام و کاریابی
+        'jobs' => [
+            'name' => 'استخدام و کاریابی', 'icon' => 'bi bi-briefcase', 'sort_order' => 10,
+            'children' => [
+                ['slug' => 'fulltime-jobs',        'name' => 'تمام‌وقت',           'sort_order' => 1],
+                ['slug' => 'parttime-jobs',        'name' => 'پاره‌وقت',           'sort_order' => 2],
+                ['slug' => 'remote-jobs',          'name' => 'دورکار / از راه دور', 'sort_order' => 3],
+                ['slug' => 'freelance-projects',   'name' => 'فریلنس و پروژه‌ای',  'sort_order' => 4],
+                ['slug' => 'internships',          'name' => 'کارآموزی',           'sort_order' => 5],
+                ['slug' => 'resume-cv',            'name' => 'رزومه و درخواست کار', 'sort_order' => 6],
+            ]
+        ],
+    ];
 }
 
-function render_wizard_category_options(array $categoriesIgnored = [], int $selectedId = 0): string {
-    try {
-        $parentIdsBySlug = wizard_ensure_parents_exist();
-    } catch (Throwable $e) {
-        swapin_debug_log('wizard_cat_ensure_fail', ['msg' => $e->getMessage()]);
-        $parentIdsBySlug = [];
+function swaapin_build_icon_map(): array {
+    $icons = [];
+    $seed = wizard_category_seed();
+    foreach ($seed as $slug => $info) {
+        $icons[$slug] = $info['icon'];
     }
+    $icons += [
+        'residential-apartment' => 'bi bi-building',
+        'apartment-for-sale' => 'bi bi-tag-fill',
+        'apartment-for-rent' => 'bi bi-key-fill',
+        'residential-villa' => 'bi bi-house-door',
+        'villa-for-sale' => 'bi bi-tag-fill',
+        'villa-for-rent' => 'bi bi-key-fill',
+        'commercial-office' => 'bi bi-building-check',
+        'industrial-land' => 'bi bi-geo-alt-fill',
+        'short-term-rentals' => 'bi bi-calendar-range',
+        'cars' => 'bi bi-car-front-fill',
+        'passenger-cars' => 'bi bi-car-front',
+        'classic-cars' => 'bi bi-car-front',
+        'rental-cars' => 'bi bi-calendar-check',
+        'motorcycles' => 'bi bi-bicycle',
+        'commercial-vehicles' => 'bi bi-truck',
+        'heavy-equipment' => 'bi bi-truck-front',
+        'car-parts' => 'bi bi-gear-wide-connected',
+        'bicycles' => 'bi bi-bicycle',
+        'car-rental-services' => 'bi bi-bag-check',
+        'mobile-tablet' => 'bi bi-tablet-landscape',
+        'mobile-phones' => 'bi bi-phone',
+        'tablets' => 'bi bi-tablet',
+        'mobile-accessories' => 'bi bi-earbuds',
+        'simcards' => 'bi bi-sim',
+        'computers' => 'bi bi-laptop',
+        'laptops' => 'bi bi-laptop',
+        'desktops' => 'bi bi-pc-display',
+        'computer-parts' => 'bi bi-motherboard',
+        'networking' => 'bi bi-wifi-2',
+        'printers-scanners' => 'bi bi-printer',
+        'console-gaming' => 'bi bi-controller',
+        'audio-visual' => 'bi bi-film',
+        'music-movies' => 'bi bi-music-note-beamed',
+        'cameras' => 'bi bi-camera',
+        'headphones-speakers' => 'bi bi-headphones',
+        'home-audio' => 'bi bi-speaker',
+        'dvd-blu-ray' => 'bi bi-disc',
+        'tv-projector' => 'bi bi-tv',
+        'cctv' => 'bi bi-camera-video',
+        'landline-phones' => 'bi bi-telephone',
+        'furniture' => 'bi bi-lamp',
+        'appliances' => 'bi bi-tv',
+        'kitchen-appliances' => 'bi bi-egg-fried',
+        'laundry-appliances' => 'bi bi-droplet-half',
+        'cooling-heating' => 'bi bi-snow',
+        'small-appliances' => 'bi bi-mic',
+        'kitchenware' => 'bi bi-mortarboard-pestle',
+        'home-textile' => 'bi bi-backpack',
+        'gardening-plants' => 'bi bi-flower1',
+        'building-materials' => 'bi bi-brick',
+        'business-financial' => 'bi bi-cash-stack',
+        'home-services' => 'bi bi-house-gear',
+        'cleaning-services' => 'bi bi-droplet',
+        'moving-services' => 'bi bi-box-seam',
+        'renovation' => 'bi bi-brush',
+        'legal-educational' => 'bi bi-mortarboard',
+        'wedding-events' => 'bi bi-balloon-heart',
+        'vehicles-services' => 'bi bi-wrench-adjustable-circle',
+        'beauty-health-serv' => 'bi bi-bandaid',
+        'electronic-services' => 'bi bi-motherboard',
+        'tourism-travel' => 'bi bi-airplane',
+        'clothing' => 'bi bi-bag',
+        'men-clothing' => 'bi bi-person',
+        'women-clothing' => 'bi bi-person-dress',
+        'kids-clothing' => 'bi bi-person-heart',
+        'shoes' => 'bi bi-bag-check-fill',
+        'watches-jewelry' => 'bi bi-watch',
+        'bags-luggage' => 'bi bi-bag-heart',
+        'beauty-cosmetics' => 'bi bi-magic',
+        'makeup' => 'bi bi-eyedropper',
+        'skincare' => 'bi bi-stars',
+        'haircare' => 'bi bi-person-check',
+        'perfume' => 'bi bi-droplet',
+        'eyeglasses' => 'bi bi-eyeglasses',
+        'baby-products' => 'bi bi-person-wheelchair',
+        'collectibles' => 'bi bi-trophy',
+        'books-magazines' => 'bi bi-book',
+        'fiction' => 'bi bi-book-half',
+        'academic' => 'bi bi-journal-text',
+        'comics-manga' => 'bi bi-mask',
+        'children-books' => 'bi bi-bookmark-star',
+        'sports-fitness' => 'bi bi-trophy',
+        'team-sports' => 'bi bi-bicycle',
+        'fitness-gym' => 'bi bi-dumbbell',
+        'outdoor-sports' => 'bi bi-mountain',
+        'musical-instruments' => 'bi bi-music-note-list',
+        'travel-tourism-items' => 'bi bi-suitcase',
+        'pets-animals' => 'bi bi-heart-pulse',
+        'dogs' => 'bi bi-bug',
+        'cats' => 'bi bi-stars',
+        'birds' => 'bi bi-bird',
+        'fish-aquarium' => 'bi bi-water',
+        'pet-accessories' => 'bi bi-bag',
+        'announcements' => 'bi bi-megaphone',
+        'lost-found' => 'bi bi-question-octagon',
+        'volunteering' => 'bi bi-heart',
+        'local-events' => 'bi bi-calendar-event',
+        'exchange-barter' => 'bi bi-arrow-left-right',
+        'power-tools' => 'bi bi-screwdriver',
+        'hand-tools' => 'bi bi-tools',
+        'industrial-machinery' => 'bi bi-gear-wide-connected',
+        'construction' => 'bi bi-brick',
+        'lab-scientific' => 'bi bi-boxes',
+        'medical-equipment' => 'bi bi-heart-pulse',
+        'industrial-supplies' => 'bi bi-box-seam',
+        'fulltime-jobs' => 'bi bi-briefcase-fill',
+        'parttime-jobs' => 'bi bi-clock',
+        'remote-jobs' => 'bi bi-pc-display',
+        'freelance-projects' => 'bi bi-diagram-3',
+        'internships' => 'bi bi-mortarboard-fill',
+        'resume-cv' => 'bi bi-file-earmark-person',
+    ];
+    return $icons;
+}
 
-    if ($selectedId > 0) {
-        $isAllowed = in_array($selectedId, array_values($parentIdsBySlug), true);
-        if (!$isAllowed) {
-            try {
-                $anc = DB::fetch('SELECT id, parent_id FROM categories WHERE id = ?', [$selectedId]);
-                if ($anc) {
-                    $pid = $anc['parent_id'];
-                    $parentCandidate = ($pid === null || $pid === '' || (int)$pid === 0) ? (int)$anc['id'] : (int)$pid;
-                    if (in_array($parentCandidate, array_values($parentIdsBySlug), true)) {
-                        $selectedId = $parentCandidate;
-                    } else {
-                        $selectedId = 0;
-                    }
-                } else {
-                    $selectedId = 0;
+function swaapin_upsert_category(array $row, ?int $parentId): int {
+    $slug       = (string)($row['slug'] ?? '');
+    $name       = (string)($row['name'] ?? '');
+    $sortOrder  = (int)($row['sort_order'] ?? 0);
+    $iconMap    = swaapin_build_icon_map();
+    $icon       = $row['icon'] ?? ($iconMap[$slug] ?? 'bi bi-tag');
+    if ($slug === '' || $name === '') return 0;
+
+    $pidSql = $parentId === null ? ' (parent_id IS NULL OR parent_id = 0)' : ' parent_id = ? ';
+    if ($parentId === null) {
+        $params = [$slug];
+    } else {
+        $params = [$parentId, $slug];
+    }
+    $existing = DB::fetch("SELECT id FROM categories WHERE {$pidSql} AND slug = ? LIMIT 1", $params);
+    if ($existing) {
+        DB::query(
+            "UPDATE categories SET name = ?, icon = ?, sort_order = ?, is_active = 1 WHERE id = ?",
+            [$name, $icon, $sortOrder, (int)$existing['id']]
+        );
+        return (int)$existing['id'];
+    }
+    DB::query(
+        "INSERT INTO categories (parent_id, name, slug, icon, sort_order, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+        [$parentId, $name, $slug, $icon, $sortOrder]
+    );
+    return (int)DB::lastId();
+}
+
+function swaapin_ensure_category_tree(): array {
+    $tree = swaapin_category_tree();
+    $idsBySlug = [];
+    foreach ($tree as $topSlug => $topNode) {
+        $topId = swaapin_upsert_category([
+            'slug' => $topSlug,
+            'name' => $topNode['name'],
+            'sort_order' => (int)($topNode['sort_order'] ?? 0),
+            'icon' => $topNode['icon'] ?? null,
+        ], null);
+        if ($topId <= 0) continue;
+        $idsBySlug[$topSlug] = $topId;
+        $level2 = $topNode['children'] ?? [];
+        foreach ($level2 as $l2Idx => $l2Node) {
+            $l2Slug = (string)($l2Node['slug'] ?? '');
+            if ($l2Slug === '') continue;
+            $l2Id = swaapin_upsert_category([
+                'slug' => $l2Slug,
+                'name' => (string)($l2Node['name'] ?? ''),
+                'sort_order' => (int)($l2Node['sort_order'] ?? ($l2Idx + 1)),
+                'icon' => $l2Node['icon'] ?? null,
+            ], $topId);
+            if ($l2Id <= 0) continue;
+            $idsBySlug[$l2Slug] = $l2Id;
+            $level3 = $l2Node['children'] ?? [];
+            foreach ($level3 as $l3Idx => $l3Node) {
+                $l3Slug = (string)($l3Node['slug'] ?? '');
+                if ($l3Slug === '') continue;
+                $l3Id = swaapin_upsert_category([
+                    'slug' => $l3Slug,
+                    'name' => (string)($l3Node['name'] ?? ''),
+                    'sort_order' => (int)($l3Node['sort_order'] ?? ($l3Idx + 1)),
+                    'icon' => $l3Node['icon'] ?? null,
+                ], $l2Id);
+                if ($l3Id > 0) {
+                    $idsBySlug[$l3Slug] = $l3Id;
                 }
-            } catch (Throwable) {
-                $selectedId = 0;
             }
         }
     }
 
-    $slugs = wizard_allowed_category_slugs();
-    $html  = '';
+    $allowedSlugs = array_keys($idsBySlug);
+    if (!empty($allowedSlugs)) {
+        $placeholders = implode(',', array_fill(0, count($allowedSlugs), '?'));
+        try {
+            DB::query(
+                "UPDATE categories SET is_active = 0 WHERE slug NOT IN ({$placeholders}) AND is_active = 1",
+                $allowedSlugs
+            );
+        } catch (Throwable $e) {
+            swapin_debug_log('cat_tree_deactivate_skip', ['msg' => $e->getMessage()]);
+        }
+    }
+    try {
+        DB::query("UPDATE categories SET is_active = 0 WHERE slug = 'other' AND is_active = 1");
+    } catch (Throwable $e) {}
 
-    foreach ($slugs as $slug) {
-        if (!isset($parentIdsBySlug[$slug])) continue;
-        $pid   = (int)$parentIdsBySlug[$slug];
-        $label = category_label($slug, '');
-        $sel   = $selectedId === $pid ? ' selected' : '';
-        $html .= '<option value="' . $pid . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
+    return $idsBySlug;
+}
+
+function swaapin_category_descendant_ids(int $categoryId): array {
+    $ids = [$categoryId];
+    $queue = [$categoryId];
+    $safety = 2000;
+    while (!empty($queue) && $safety-- > 0) {
+        $pid = (int)array_shift($queue);
+        $children = DB::fetchAll('SELECT id FROM categories WHERE parent_id = ? AND is_active = 1', [$pid]);
+        foreach ($children as $c) {
+            $cid = (int)$c['id'];
+            if (!in_array($cid, $ids, true)) {
+                $ids[] = $cid;
+                $queue[] = $cid;
+            }
+        }
+    }
+    return $ids;
+}
+
+function wizard_ensure_parents_exist(): array {
+    try {
+        $allBySlug = swaapin_ensure_category_tree();
+    } catch (Throwable $e) {
+        swapin_debug_log('cat_tree_ensure_fail', ['msg' => $e->getMessage()]);
+        $allBySlug = [];
+    }
+    $parentIds = [];
+    $parents = DB::fetchAll('SELECT id, slug FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1');
+    foreach ($parents as $p) {
+        $parentIds[(string)$p['slug']] = (int)$p['id'];
+    }
+    foreach ($allBySlug as $s => $id) {
+        if (!isset($parentIds[$s])) {
+            $row = DB::fetch('SELECT id, parent_id FROM categories WHERE id = ?', [(int)$id]);
+            if ($row && (($row['parent_id'] ?? 0) == 0)) {
+                $parentIds[(string)$s] = (int)$id;
+            }
+        }
+    }
+    return $parentIds;
+}
+
+function render_wizard_category_options(array $categoriesIgnored = [], int $selectedId = 0): string {
+    try {
+        $idsBySlug = swaapin_ensure_category_tree();
+    } catch (Throwable $e) {
+        swapin_debug_log('wizard_cat_tree_fail', ['msg' => $e->getMessage()]);
+        $idsBySlug = [];
+    }
+    $rows = DB::fetchAll('SELECT id, name, slug, parent_id FROM categories WHERE is_active = 1 ORDER BY sort_order, id');
+    $byId = [];
+    foreach ($rows as $r) $byId[(int)$r['id']] = $r;
+
+    $pathOf = function (int $id) use ($byId): string {
+        $parts = [];
+        $cur = $id;
+        $s = 30;
+        while ($cur > 0 && $s-- > 0 && isset($byId[$cur])) {
+            $parts[] = (string)$byId[$cur]['name'];
+            $pid = (int)($byId[$cur]['parent_id'] ?? 0);
+            if ($pid <= 0) break;
+            $cur = $pid;
+        }
+        $parts = array_reverse($parts);
+        return implode(' › ', $parts);
+    };
+
+    $leaves = [];
+    $parentsOf = [];
+    foreach ($rows as $r) {
+        $pid = (int)($r['parent_id'] ?? 0);
+        if ($pid > 0) {
+            $parentsOf[$pid][] = (int)$r['id'];
+        }
+    }
+    foreach ($rows as $r) {
+        $id = (int)$r['id'];
+        if (empty($parentsOf[$id] ?? [])) {
+            $leaves[$id] = $r;
+        }
+    }
+
+    uasort($leaves, function ($a, $b) use ($byId, $idsBySlug): int {
+        $chainA = $chainB = [];
+        $c = (int)$a['id'];
+        $s = 20;
+        while ($c > 0 && $s-- > 0 && isset($byId[$c])) {
+            $chainA[] = (int)($byId[$c]['sort_order'] ?? 0);
+            $c = (int)($byId[$c]['parent_id'] ?? 0);
+        }
+        $chainA = array_reverse($chainA);
+        $c = (int)$b['id'];
+        $s = 20;
+        while ($c > 0 && $s-- > 0 && isset($byId[$c])) {
+            $chainB[] = (int)($byId[$c]['sort_order'] ?? 0);
+            $c = (int)($byId[$c]['parent_id'] ?? 0);
+        }
+        $chainB = array_reverse($chainB);
+        $n = min(count($chainA), count($chainB));
+        for ($i = 0; $i < $n; $i++) {
+            if ($chainA[$i] !== $chainB[$i]) return $chainA[$i] <=> $chainB[$i];
+        }
+        return count($chainA) <=> count($chainB);
+    });
+
+    $html = '<option value="">— انتخاب دسته‌بندی —</option>';
+    foreach ($leaves as $id => $r) {
+        $label = $pathOf((int)$id);
+        $sel = ((int)$r['id'] === $selectedId) ? ' selected' : '';
+        $html .= '<option value="' . (int)$id . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
     }
     return $html;
 }
 
 function wizard_validate_category_id(int $categoryId): bool {
-    $allowList = [];
+    if ($categoryId <= 0) return false;
     try {
-        $allowList = wizard_ensure_parents_exist();
-    } catch (Throwable) {
-    }
-    if (empty($allowList)) return $categoryId > 0;
-    return in_array($categoryId, array_values($allowList), true);
+        swaapin_ensure_category_tree();
+    } catch (Throwable) {}
+    $row = DB::fetch('SELECT id, is_active FROM categories WHERE id = ? LIMIT 1', [$categoryId]);
+    return ($row && (int)($row['is_active'] ?? 0) === 1);
 }
 
 function want_type_label(string $type): string {

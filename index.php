@@ -599,4 +599,92 @@ render_navbar($user);
 </section>
 <?php endif; ?>
 
+<?php if (!$search && !$catSlug && !$city && $page === 1): ?>
+<section class="home-section home-stats-pre-footer" aria-label="آمار سواَپین" style="padding: 3.5rem 0 2.5rem;">
+  <div class="container">
+    <div class="home-stats-pre-footer__inner">
+      <?php
+      $pfActiveListings = (int)$total;
+      $pfCompletedTrades = (int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE status="completed"')['c'] ?? 0);
+      $pfActiveUsers     = (int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1')['c'] ?? 0);
+      $pfStores          = (int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1 AND (seller_type="store" OR (store_name IS NOT NULL AND store_name != "")) AND store_slug IS NOT NULL AND store_slug != ""')['c'] ?? 0);
+      $pfStats = [
+          ['icon' => 'bi-box-seam',    'val' => $pfActiveListings, 'lbl' => 'آگهی فعال'],
+          ['icon' => 'bi-arrow-left-right', 'val' => $pfCompletedTrades, 'lbl' => 'مبادله انجام‌شده'],
+          ['icon' => 'bi-shop-window','val' => $pfStores,         'lbl' => 'فروشگاه فعال'],
+          ['icon' => 'bi-people',     'val' => $pfActiveUsers,    'lbl' => 'عضو'],
+      ];
+      foreach ($pfStats as $s):
+      ?>
+      <div class="home-stat-card">
+        <div class="home-stat-card__icon"><i class="bi <?= $s['icon'] ?>"></i></div>
+        <div class="home-stat-card__value"><?= fmt_num((int)$s['val']) ?>+</div>
+        <div class="home-stat-card__label"><?= h($s['lbl']) ?></div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<style>
+.home-stats-pre-footer {
+  background: linear-gradient(135deg, rgba(0,102,255,.06) 0%, rgba(255,102,0,.05) 100%);
+  border-top: 1px solid var(--border, #eef0f4);
+  border-bottom: 1px solid var(--border, #eef0f4);
+}
+.home-stats-pre-footer .home-stats-pre-footer { }
+.home-stats-pre-footer .container > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+.home-stat-card {
+  background: var(--bg-card, #fff);
+  border-radius: 16px;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 4px 16px -8px rgba(10,37,64,.08);
+  border: 1px solid var(--border, #eef0f4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.home-stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -10px rgba(0,102,255,.22); }
+.home-stat-card__icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary, #0066ff) 0%, rgba(255,102,0,.9) 100%);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  margin-bottom: .35rem;
+}
+.home-stat-card__value {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--primary-text, #0A2540);
+  line-height: 1.15;
+}
+.home-stat-card__label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+@media (max-width: 900px) {
+  .home-stats-pre-footer .container > div {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .home-stats-pre-footer .container > div {
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+  }
+  .home-stat-card { padding: 1rem .75rem; }
+  .home-stat-card__value { font-size: 1.35rem; }
+}
+</style>
+<?php endif; ?>
+
 <?php render_footer(); ?>

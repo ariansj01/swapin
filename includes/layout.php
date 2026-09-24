@@ -244,15 +244,23 @@ function render_navbar(?array $user = null): void {
     $loggedIn   = $user !== null;
     $GLOBALS['_nav_user'] = $user;
     
-    // Get parent categories
+    // Get parent categories with children
     $categories = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order');
+    $categoryChildren = [];
+    foreach ($categories as $c) {
+        $kids = DB::fetchAll(
+            'SELECT * FROM categories WHERE parent_id = ? AND is_active = 1 ORDER BY sort_order, name',
+            [(int)$c['id']]
+        );
+        $categoryChildren[(int)$c['id']] = $kids;
+    }
     $currentCatSlug = $_GET['cat'] ?? '';
 
     $navItems = [
         ['/#home-steps', 'چگونه کار می‌کند؟', 'bi-lightbulb', ''],
         ['/trades', 'اتاق امن', 'bi-shield-lock', ''],
-        ['/about', 'درباره ما', 'bi-question-circle', ''],
-        ['/contact', 'تماس با ما', 'bi-envelope', ''],
+        // ['/about', 'درباره ما', 'bi-question-circle', ''],
+        // ['/contact', 'تماس با ما', 'bi-envelope', ''],
     ];
 
     echo <<<HTML
@@ -277,9 +285,26 @@ function render_navbar(?array $user = null): void {
           <a href="{$url}/listings/all.php" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
 HTML;
     foreach ($categories as $cat) {
+        $catId = (int)$cat['id'];
         $catLabel = category_label($cat['slug'], $cat['name']);
+        $catUrl = category_url($cat['slug']);
         $isActive = $currentCatSlug === $cat['slug'] ? 'active' : '';
-        echo "<a href=\"{$url}/category/{$cat['slug']}\" class=\"dropdown-item {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel}</a>";
+        $kids = $categoryChildren[$catId] ?? [];
+        if (empty($kids)) {
+            echo "<a href=\"{$catUrl}\" class=\"dropdown-item {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel}</a>";
+        } else {
+            echo "<div class=\"dropdown-submenu\">";
+            echo "<a href=\"{$catUrl}\" class=\"dropdown-item dropdown-item--parent {$isActive}\"><i class=\"{$cat['icon']}\"></i> {$catLabel} <i class=\"bi bi-chevron-left\" style=\"font-size:.7rem;opacity:.6\"></i></a>";
+            echo "<div class=\"dropdown-menu dropdown-menu--sub\">";
+            foreach ($kids as $k) {
+                $kLabel = category_label($k['slug'], $k['name']);
+                $kUrl = category_url($k['slug']);
+                $kActive = $currentCatSlug === $k['slug'] ? 'active' : '';
+                echo "<a href=\"{$kUrl}\" class=\"dropdown-item {$kActive}\">{$kLabel}</a>";
+            }
+            echo "</div>";
+            echo "</div>";
+        }
     }
     echo <<<HTML
         </div>

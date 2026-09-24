@@ -75,8 +75,10 @@ $pageTitle = $type !== '' ? ($typeLabels[$type] ?? 'فهرست فروشگاه‌
 $pageDesc  = $type !== '' ? ($typeLabels[$type] ?? 'فروشگاه‌های ثبت‌شده در سواَپین') . ' — خرید نقدی و معاوضه' : 'فروشگاه‌های ثبت‌شده در سواَپین — خرید نقدی و معاوضه';
 
 $canonical = APP_URL . '/shops';
-if ($type !== '') {
-    $canonical .= '?type=' . $type;
+if ($type === 'online') {
+    $canonical = APP_URL . '/shops/online';
+} elseif ($type === 'physical') {
+    $canonical = APP_URL . '/shops/physical';
 }
 
 render_head($pageTitle, $pageDesc . ' — ' . fmt_num($total) . ' فروشگاه', [
@@ -96,6 +98,29 @@ render_navbar($user);
         <p>فروشگاه‌های معتبر با امکان خرید نقدی و معاوضه — <?= fmt_num($total) ?> فروشگاه</p>
       </div>
     </header>
+
+    <?php
+    $shopTabs = [
+        ''         => ['label' => 'همه',      'url' => APP_URL . '/shops',           'icon' => 'bi-grid-3x3-gap'],
+        'online'   => ['label' => 'آنلاین',    'url' => APP_URL . '/shops/online',    'icon' => 'bi-globe2'],
+        'physical' => ['label' => 'حضوری',    'url' => APP_URL . '/shops/physical',  'icon' => 'bi-building-check'],
+    ];
+    $shopsTabQuery = http_build_query(array_filter([
+        'q'    => $search ?: null,
+        'city' => $city ?: null,
+    ]));
+    ?>
+    <nav class="shops-type-tabs mb-5" aria-label="نوع فروشگاه">
+      <?php foreach ($shopTabs as $tabKey => $tab):
+        $active = ($type === $tabKey) ? ' is-active' : '';
+        $tabHref = $tab['url'] . ($shopsTabQuery !== '' ? '?' . $shopsTabQuery : '');
+      ?>
+        <a href="<?= $tabHref ?>" class="shops-type-tab<?= $active ?>">
+          <i class="bi <?= $tab['icon'] ?>"></i>
+          <span><?= h($tab['label']) ?></span>
+        </a>
+      <?php endforeach; ?>
+    </nav>
 
     <form method="GET" class="shops-filter-bar card mb-6">
       <div class="card-body shops-filter-bar__inner">
@@ -195,15 +220,23 @@ render_navbar($user);
     <?php if ($pag['pages'] > 1): ?>
     <nav class="pagination-wrap mt-6" aria-label="صفحه‌بندی">
       <?php
-      $base = APP_URL . '/shops?' . http_build_query(array_filter([
+      if ($type === 'online') {
+          $base = APP_URL . '/shops/online';
+      } elseif ($type === 'physical') {
+          $base = APP_URL . '/shops/physical';
+      } else {
+          $base = APP_URL . '/shops';
+      }
+      $query = http_build_query(array_filter([
           'q'    => $search ?: null,
           'city' => $city ?: null,
-          'type' => $type ?: null,
       ]));
+      $base .= ($query !== '' ? '?' . $query : '');
+      $sep = ($query !== '' ? '&' : '?');
       for ($i = 1; $i <= $pag['pages']; $i++):
         $active = $i === $pag['page'] ? 'is-active' : '';
       ?>
-      <a href="<?= $base . '&page=' . $i ?>" class="pagination-btn <?= $active ?>"><?= $i ?></a>
+      <a href="<?= $base . ($i === 1 ? '' : $sep . 'page=' . $i) ?>" class="pagination-btn <?= $active ?>"><?= $i ?></a>
       <?php endfor; ?>
     </nav>
     <?php endif; ?>

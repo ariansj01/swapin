@@ -76,6 +76,8 @@ Options +MultiViews -Indexes
   RewriteRule ^store-offers/complete/?$ store-offers/complete.php [L,NC,QSA]
 
   RewriteRule ^shops/?$ shops/index.php [L,NC,QSA]
+  RewriteRule ^shops/online/?$ shops/index.php?type=online [L,NC,QSA]
+  RewriteRule ^shops/physical/?$ shops/index.php?type=physical [L,NC,QSA]
   RewriteRule ^search/ai/?$ search/ai.php [L,NC,QSA]
   RewriteRule ^search/saved/?$ search/saved.php [L,NC,QSA]
 
@@ -106,21 +108,18 @@ Options +MultiViews -Indexes
   # Handle /sep/callback route for backward compatibility
   RewriteRule ^sep/callback/?$ payment_callback.php [L,NC,QSA]
 
-  # Category URLs (e.g., /category/digital → /listings/all.php?cat=electronics)
+  # 301 Redirect old /category/* URLs to new hierarchical URLs (without /category prefix)
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^category/digital/?$ listings/all.php?cat=electronics [L,NC,QSA]
-  RewriteRule ^category/electronics/?$ listings/all.php?cat=electronics [L,NC,QSA]
-  RewriteRule ^category/clothing/?$ listings/all.php?cat=clothing [L,NC,QSA]
-  RewriteRule ^category/home-and-villa/?$ listings/all.php?cat=home-garden [L,NC,QSA]
-  RewriteRule ^category/home-garden/?$ listings/all.php?cat=home-garden [L,NC,QSA]
-  RewriteRule ^category/books-media/?$ listings/all.php?cat=books-media [L,NC,QSA]
-  RewriteRule ^category/sports/?$ listings/all.php?cat=sports [L,NC,QSA]
-  RewriteRule ^category/toys-games/?$ listings/all.php?cat=toys-games [L,NC,QSA]
-  RewriteRule ^category/vehicles/?$ listings/all.php?cat=vehicles [L,NC,QSA]
-  RewriteRule ^category/services/?$ listings/all.php?cat=services [L,NC,QSA]
-  RewriteRule ^category/food-drink/?$ listings/all.php?cat=food-drink [L,NC,QSA]
-  RewriteRule ^category/other/?$ listings/all.php?cat=other [L,NC,QSA]
+  RewriteRule ^category/(.+)$ category/index.php?redirect_slugs=$1 [L,NC,QSA]
+
+  # New hierarchical category URLs (e.g., /electronics/phones → without /category prefix)
+  # Must exclude real routes/files/dirs and known system prefixes
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_URI} !^/(api|admin|includes|seed|database|storage|tools|vendor|logs|backups|sql|store|orders|store-offers|shops|search|shop|support|pwa|ai-lab|sep|iso|listings|auth|page|src|css|js|assets|scripts|ops)/ [NC]
+  RewriteCond %{REQUEST_URI} !^/(index\.php|profile\.php|dashboard\.php|404\.php|500\.php|sitemap\.php|payment_callback\.php|ai-lab\.php|pwa\.php|migration_[^/]+\.php) [NC]
+  RewriteRule ^([^/].+)$ category/index.php?slug_path=$1 [L,QSA]
 
   # Handle subdirectories like /auth/login
   RewriteCond %{REQUEST_FILENAME} !-d

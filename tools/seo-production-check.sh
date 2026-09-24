@@ -161,8 +161,12 @@ check_self_canonical "$BASE/contact"
 check_self_canonical "$BASE/terms"
 check_self_canonical "$BASE/privacy"
 check_self_canonical "$BASE/listings/"
-check_self_canonical "$BASE/category/electronics"
-check_self_canonical "$BASE/category/home-appliances"
+check_self_canonical "$BASE/electronics"
+check_self_canonical "$BASE/home-appliances"
+
+# Also verify the legacy /category/* URLs 301-redirect to new canonical-style URLs
+check_legacy_redirect "$BASE/category/electronics"      "$BASE/electronics"
+check_legacy_redirect "$BASE/category/home-appliances" "$BASE/home-appliances"
 
 # --------------------------------------------------
 # 5. Legacy .php duplicates

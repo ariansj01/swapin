@@ -1,11 +1,22 @@
+import java.util.Properties
+import java.io.File
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+flutter {
+    source = "../.."
 }
 
 android {
     namespace = "ir.swaapin.mobile"
     compileSdk = 34
+    buildToolsVersion = "34.0.0"
+    ndkVersion = "28.2.13676358"
 
     defaultConfig {
         applicationId = "ir.swaapin.mobile"
@@ -22,16 +33,38 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("SWAAPIN_KEYSTORE_PATH") ?: ""
-            val keystorePassword = System.getenv("SWAAPIN_KEYSTORE_PASSWORD") ?: ""
-            val keyAlias = System.getenv("SWAAPIN_KEY_ALIAS") ?: ""
-            val keyPassword = System.getenv("SWAAPIN_KEY_PASSWORD") ?: ""
+            val localProperties = Properties()
+            val localFile = rootProject.file("local.properties")
+            if (localFile.exists()) {
+                localProperties.load(localFile.inputStream())
+            }
+
+            val keystorePath = localProperties.getProperty("SWAAPIN_KEYSTORE_PATH")
+                ?: System.getenv("SWAAPIN_KEYSTORE_PATH")
+                ?: ""
+            val keystorePassword = localProperties.getProperty("SWAAPIN_KEYSTORE_PASSWORD")
+                ?: System.getenv("SWAAPIN_KEYSTORE_PASSWORD")
+                ?: ""
+            val keyAlias = localProperties.getProperty("SWAAPIN_KEY_ALIAS")
+                ?: System.getenv("SWAAPIN_KEY_ALIAS")
+                ?: "swaapin"
+            val keyPassword = localProperties.getProperty("SWAAPIN_KEY_PASSWORD")
+                ?: System.getenv("SWAAPIN_KEY_PASSWORD")
+                ?: ""
 
             if (keystorePath.isNotEmpty()) {
                 storeFile = file(keystorePath)
                 storePassword = keystorePassword
                 this.keyAlias = keyAlias
                 this.keyPassword = keyPassword
+            } else {
+                val defaultKeystore = rootProject.file("app/swaapin-release.jks")
+                if (defaultKeystore.exists()) {
+                    storeFile = defaultKeystore
+                    storePassword = "Swaapin1234"
+                    this.keyAlias = "swaapin"
+                    this.keyPassword = "Swaapin1234"
+                }
             }
         }
     }
@@ -48,7 +81,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile != null && releaseSigning.storeFile?.exists() == true) {
+                signingConfig = releaseSigning
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 

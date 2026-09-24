@@ -1,10 +1,17 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/i18n.php';
 
 header('Content-Type: application/xml; charset=utf-8');
 
 $base = rtrim(APP_URL, '/');
 $now  = date('c');
+
+try {
+    swaapin_ensure_category_tree();
+} catch (Throwable $e) {
+    swapin_debug_log('sitemap_cat_tree_skip', ['msg' => $e->getMessage()]);
+}
 
 $urls = [
     ['loc' => $base . '/',              'priority' => '1.0', 'changefreq' => 'daily'],
@@ -16,11 +23,28 @@ $urls = [
     ['loc' => $base . '/ai/chat',   'priority' => '0.5', 'changefreq' => 'weekly'],
 ];
 
-$cats = DB::fetchAll('SELECT slug FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1');
+$cats = DB::fetchAll('SELECT id, slug, parent_id FROM categories WHERE is_active = 1 ORDER BY parent_id IS NULL DESC, parent_id ASC, sort_order, id');
+$parentCount = [];
+foreach ($cats as $c) {
+    $pid = (int)($c['parent_id'] ?? 0);
+    if ($pid > 0) {
+        $parentCount[$pid] = ($parentCount[$pid] ?? 0) + 1;
+    }
+}
 foreach ($cats as $cat) {
+    $catUrl = category_url($cat['slug']);
+    $pid = (int)($cat['parent_id'] ?? 0);
+    $hasChildren = !empty($parentCount[(int)$cat['id']]);
+    if ($pid === 0) {
+        $priority = '0.9';
+    } elseif ($hasChildren) {
+        $priority = '0.8';
+    } else {
+        $priority = '0.7';
+    }
     $urls[] = [
-        'loc'        => $base . '/category/' . rawurlencode($cat['slug']),
-        'priority'   => '0.7',
+        'loc'        => $catUrl,
+        'priority'   => $priority,
         'changefreq' => 'daily',
     ];
 }
