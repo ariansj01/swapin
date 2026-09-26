@@ -6573,41 +6573,73 @@ body.is-offline::after {
   gap: var(--sp-2);
   padding: var(--sp-6) 0;
   margin-top: var(--sp-6);
+  position: relative;
+}
+.pagination::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
 }
 
 .page-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 42px;
-  height: 42px;
+  min-width: 44px;
+  height: 44px;
   padding: 0 var(--sp-3);
   border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   background: var(--surface);
   color: var(--text-secondary);
   font-size: .875rem;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  transition: all var(--duration) var(--ease);
+  transition: all .25s cubic-bezier(.4,0,.2,1);
   user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+.page-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,102,255,.08), rgba(255,102,0,.06));
+  opacity: 0;
+  transition: opacity .25s ease;
+  pointer-events: none;
 }
 
 .page-link:hover {
   border-color: var(--primary);
   color: var(--primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px -4px rgba(0, 102, 255, .25),
+              0 2px 6px -2px rgba(0, 102, 255, .12);
+  background: #fff;
 }
+.page-link:hover::after { opacity: 1; }
 
 .page-link.active {
-  background: var(--gradient-brand);
-  border-color: var(--primary);
-  color: var(--accent);
-  box-shadow: 0 4px 14px rgba(7, 26, 51, .25);
+  background: linear-gradient(135deg, #0066FF 0%, #0A84FF 100%);
+  border-color: #0066FF;
+  color: #fff;
   cursor: default;
   transform: none;
+  box-shadow:
+    0 6px 20px -4px rgba(0, 102, 255, .45),
+    0 0 0 3px rgba(0, 102, 255, .12),
+    inset 0 1px 0 rgba(255,255,255,.2);
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.page-link.active::after {
+  background: linear-gradient(135deg, rgba(255,255,255,.15), rgba(255,102,0,.15));
+  opacity: 1;
 }
 
 .page-link:disabled,
@@ -6617,38 +6649,72 @@ body.is-offline::after {
   pointer-events: none;
   transform: none;
   box-shadow: none;
+  background: var(--surface);
+  color: var(--text-muted);
+  border-color: var(--border);
 }
 
 .page-link__nav {
-  font-weight: 600;
+  font-weight: 700;
+  min-width: 48px;
+  background: linear-gradient(135deg, rgba(0,102,255,.04), rgba(255,102,0,.04));
+  border-color: rgba(0,102,255,.2);
+  color: var(--primary);
 }
-
+.page-link__nav:hover {
+  background: linear-gradient(135deg, rgba(0,102,255,.1), rgba(255,102,0,.08));
+  border-color: var(--primary);
+  transform: translateY(-2px) scale(1.04);
+}
 .page-link__nav i {
-  font-size: 1rem;
+  font-size: 1.1rem;
+  font-weight: 900;
 }
 
 .pagination__ellipsis {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 42px;
-  height: 42px;
+  min-width: 44px;
+  height: 44px;
   color: var(--text-muted);
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  padding-inline: 4px;
+}
+.pagination__ellipsis span { animation: paginationBlink 1.4s infinite; }
+.pagination__ellipsis span:nth-child(2) { animation-delay: .2s; }
+.pagination__ellipsis span:nth-child(3) { animation-delay: .4s; }
+@keyframes paginationBlink {
+  0%, 80%, 100% { opacity: .3; }
+  40% { opacity: 1; }
 }
 
 @media (max-width: 576px) {
   .pagination {
-    gap: 4px;
-    padding: var(--sp-4) 0;
+    gap: 6px;
+    padding: var(--sp-5) 0;
   }
   .page-link,
   .pagination__ellipsis {
-    min-width: 36px;
-    height: 36px;
+    min-width: 40px;
+    height: 40px;
     padding: 0 var(--sp-2);
     font-size: .8125rem;
-    border-radius: var(--radius-sm);
+    border-radius: 12px;
   }
+  .page-link__nav {
+    min-width: 44px;
+  }
+}
+@media (max-width: 380px) {
+  .page-link {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 6px;
+    font-size: .75rem;
+    border-radius: 10px;
+  }
+  .page-link__nav { min-width: 40px; }
 }
