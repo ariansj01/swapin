@@ -184,14 +184,6 @@ function initNavbarHoverDropdowns() {
     }
   };
 
-  // Also ensure the top-level categories dropdown allows overflow for submenus
-  const catDropdown = document.getElementById('categories-dropdown');
-  if (catDropdown) {
-    catDropdown.style.setProperty('overflow', 'visible', 'important');
-    catDropdown.style.setProperty('overflow-x', 'visible', 'important');
-    catDropdown.style.setProperty('overflow-y', 'auto', 'important');
-  }
-
   // Nested submenus (any depth): add .open on hover inside dropdown-menu for sub-submenu display
   const applySubmenuHover = (root) => {
     root.querySelectorAll('.dropdown-submenu').forEach(sm => {

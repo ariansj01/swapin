@@ -290,6 +290,20 @@ $ogImage    = $images ? UPLOAD_URL . $images[0]['filename'] : LOGO_URL;
 $seoTitle   = seo_listing_title($listing);
 $metaDesc   = seo_listing_description($listing);
 
+$_catChainSlugs = get_category_ancestors((string)$listing['cat_slug']);
+$_catChain = [];
+foreach ($_catChainSlugs as $_cs) {
+    $_crow = DB::fetch('SELECT slug, name FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [$_cs]);
+    if ($_crow) {
+        $_catChain[] = [
+            'slug' => $_crow['slug'],
+            'name' => category_label($_crow['slug'], $_crow['name']),
+            'url'  => category_url($_crow['slug']),
+        ];
+    }
+}
+$_catChainCount = count($_catChain);
+
 $wantChips = array_values(array_filter(array_map(
     'trim',
     preg_split('/[,،]+/u', (string)($listing['want_in_return'] ?? ''))
@@ -314,11 +328,11 @@ render_head($seoTitle, $metaDesc, [
     'keywords'  => implode(', ', array_filter([$listing['cat_name'], $listing['city'], 'معاوضه', 'مبادله کالا', APP_NAME])),
     'json_ld'   => [
         seo_json_ld_product($listing, $ogImage, $listingUrl),
-        seo_json_ld_breadcrumbs([
-            ['name' => 'خانه', 'url' => APP_URL . '/'],
-            ['name' => $listing['cat_name'], 'url' => category_url($listing['cat_slug'])],
-            ['name' => $listing['title']],
-        ]),
+        seo_json_ld_breadcrumbs(array_merge(
+            [['name' => 'خانه', 'url' => APP_URL . '/']],
+            array_map(function ($c) { return ['name' => $c['name'], 'url' => $c['url']]; }, $_catChain),
+            [['name' => $listing['title']]]
+        )),
     ],
 ]);
 render_navbar($user);
@@ -689,8 +703,10 @@ render_navbar($user);
   <div class="container">
     <nav class="lv-breadcrumb" aria-label="مسیر صفحه">
       <a href="<?= APP_URL ?>/">خانه</a>
+      <?php foreach ($_catChain as $_i => $_cc): ?>
       <i class="bi bi-chevron-left"></i>
-      <a href="<?= APP_URL ?>/category/<?= h($listing['cat_slug']) ?>"><?= h($listing['cat_name']) ?></a>
+      <a href="<?= h($_cc['url']) ?>"><?= h($_cc['name']) ?></a>
+      <?php endforeach; ?>
       <i class="bi bi-chevron-left"></i>
       <span><?= h(mb_strimwidth($listing['title'], 0, 40, '…')) ?></span>
     </nav>
