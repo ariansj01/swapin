@@ -799,6 +799,86 @@ HTML;
 HTML;
 }
 
+function render_listing_simple_footer(): void {
+    $url      = APP_URL;
+    $appName  = APP_NAME;
+    $logoUrl  = $url . '/src/img/swapin-light-png.png';
+    $user     = $GLOBALS['_nav_user'] ?? null;
+    render_mobile_bottom_nav($user);
+
+    $footerLinks = [
+        [$url . '/',                   'صفحه اصلی',  'bi-house'],
+        [$url . '/listings/all.php',   'آگهی‌ها',    'bi-grid'],
+        [$url . '/shops',              'فروشگاه‌ها', 'bi-shop'],
+        [$url . '/search/ai',          'دستیار AI',  'bi-stars'],
+        [$url . '/trades',             'اتاق امن',   'bi-shield-lock'],
+        [$url . '/about',              'درباره ما',  'bi-info-circle'],
+        [$url . '/contact',            'تماس با ما', 'bi-envelope'],
+    ];
+
+    $linksHtml = '';
+    foreach ($footerLinks as [$href, $label, $icon]) {
+        $linksHtml .= '<a href="' . h($href) . '" class="listing-footer__link">'
+                   .   '<i class="bi ' . $icon . '"></i> '
+                   .   h($label)
+                   . '</a>';
+    }
+
+    echo <<<HTML
+<footer class="listing-footer">
+  <div class="container listing-footer__inner">
+    <a href="{$url}/" class="listing-footer__brand" aria-label="{$appName}">
+      <img src="{$logoUrl}" alt="{$appName}" class="listing-footer__logo">
+    </a>
+    <nav class="listing-footer__nav" aria-label="لینک‌های فوتر">
+      {$linksHtml}
+    </nav>
+    <div class="listing-footer__social" aria-label="شبکه‌های اجتماعی">
+      <a href="https://www.instagram.com/swaapin_official" class="listing-footer__social-link" target="_blank" rel="noopener" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
+      <a href="#" class="listing-footer__social-link" target="_blank" rel="noopener" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
+      <a href="#" class="listing-footer__social-link" target="_blank" rel="noopener" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
+      <a href="https://www.linkedin.com/company/swaapin" class="listing-footer__social-link" target="_blank" rel="noopener" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
+    </div>
+  </div>
+</footer>
+HTML;
+
+    render_support_widget($user);
+    if ($user) {
+        echo '<script src="' . $url . '/src/js/push-alerts.js?v=' . (@filemtime(__DIR__ . '/../src/js/push-alerts.js') ?: time()) . '"></script>';
+    }
+    $appJsVer = @filemtime(__DIR__ . '/../src/js/app.js') ?: time();
+    $pwaDetVer = @filemtime(__DIR__ . '/../src/js/pwa/platform-detector.js') ?: time();
+    $pwaCoreVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-core.js') ?: time();
+    $pwaAndroidVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-android.js') ?: time();
+    $pwaIosVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-ios.js') ?: time();
+    echo <<<HTML
+<script src="{$url}/src/js/app.js?v={$appJsVer}"></script>
+<script src="{$url}/src/js/pwa/platform-detector.js?v={$pwaDetVer}"></script>
+<script src="{$url}/src/js/pwa/pwa-core.js?v={$pwaCoreVer}"></script>
+<script>
+(function () {
+  if (!window.SwaapinPWA || !window.SwaapinPlatform) return;
+  var platform = window.SwaapinPlatform.getPlatform();
+  window.SwaapinPWA.init();
+  if (platform === 'android') {
+    var s = document.createElement('script');
+    s.src = '{$url}/src/js/pwa/pwa-android.js?v={$pwaAndroidVer}';
+    s.onload = function () { if (window.SwaapinPWAAndroid) window.SwaapinPWAAndroid.init(); };
+    document.head.appendChild(s);
+  } else if (platform === 'ios') {
+    var s2 = document.createElement('script');
+    s2.src = '{$url}/src/js/pwa/pwa-ios.js?v={$pwaIosVer}';
+    s2.onload = function () { if (window.SwaapinPWAIos) window.SwaapinPWAIos.init(); };
+    document.head.appendChild(s2);
+  }
+})();
+</script>
+</body>
+</html>
+HTML;
+}
+
 function render_full_page_modal(string $title, string $message, string $buttonText, string $buttonUrl, string $icon): void {
     render_head($title);
     render_navbar(auth_user());

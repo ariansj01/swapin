@@ -369,26 +369,41 @@ p { color: var(--text-secondary); line-height: 1.6; }
 }
 /* For the category dropdown, keep visible for submenus; allow content-based height unless huge */
 @media (min-width: 992px) {
-  .categories-dropdown { max-height: 85vh; overflow-y: hidden; }
+  .categories-dropdown { max-height: 85vh; overflow-y: auto; overflow-x: visible; }
 }
 /* Deeply nested sub-submenus (unlimited depth) open to the left on hover */
 .dropdown-menu .dropdown-submenu > .dropdown-menu--sub,
-.dropdown-menu--sub .dropdown-submenu > .dropdown-menu--sub {
-  position: absolute;
-  top: 0;
-  right: 100%;
-  margin-right: 2px;
-  display: none;
-  min-width: 220px;
-  overflow-x: visible;
-  z-index: 400;
+.dropdown-menu--sub .dropdown-submenu > .dropdown-menu--sub,
+.categories-dropdown .dropdown-submenu > .dropdown-menu--sub,
+.dropdown-submenu > .dropdown-menu.dropdown-menu--sub {
+  position: absolute !important;
+  top: 0 !important;
+  right: 100% !important;
+  left: auto !important;
+  margin-right: 2px !important;
+  display: none !important;
+  min-width: 220px !important;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  z-index: 400 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 10px 25px -5px rgba(10, 37, 64, 0.1), 0 8px 10px -6px rgba(10, 37, 64, 0.1) !important;
 }
-/* Force visibility on hover for any nested submenu */
+/* Force visibility on hover for any nested submenu at any depth */
 .dropdown-menu .dropdown-submenu:hover > .dropdown-menu--sub,
 .dropdown-menu--sub .dropdown-submenu:hover > .dropdown-menu--sub,
+.categories-dropdown .dropdown-submenu:hover > .dropdown-menu--sub,
 .dropdown-menu .dropdown-submenu.open > .dropdown-menu--sub,
-.dropdown-menu--sub .dropdown-submenu.open > .dropdown-menu--sub {
+.dropdown-menu--sub .dropdown-submenu.open > .dropdown-menu--sub,
+.categories-dropdown .dropdown-submenu.open > .dropdown-menu--sub,
+.dropdown-submenu:hover > .dropdown-menu.dropdown-menu--sub,
+.dropdown-submenu.open > .dropdown-menu.dropdown-menu--sub {
   display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 .dropdown-item--parent {
   display: flex;
@@ -2703,7 +2718,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   box-shadow: 0 10px 25px -5px rgba(10, 37, 64, 0.1), 0 8px 10px -6px rgba(10, 37, 64, 0.1);
   z-index: 300;
   display: none;
-  overflow: hidden;
+  overflow: visible;
   animation: dropdownFadeIn 0.18s ease-out;
 }
 
@@ -2751,18 +2766,36 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   transform: translateX(-2px);
 }
 
-.dropdown-submenu { position: relative; }
-.dropdown-submenu > .dropdown-menu--sub {
-  position: absolute;
-  top: 0;
-  right: 100%;
-  margin-right: 2px;
-  display: none;
-  min-width: 200px;
+.dropdown-submenu { position: relative !important; overflow: visible !important; }
+.dropdown-submenu > .dropdown-menu--sub,
+.dropdown-submenu > .dropdown-menu.dropdown-menu--sub {
+  position: absolute !important;
+  top: 0 !important;
+  right: 100% !important;
+  left: auto !important;
+  margin-right: 2px !important;
+  display: none !important;
+  min-width: 200px !important;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  z-index: 400 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 10px 25px -5px rgba(10, 37, 64, 0.1), 0 8px 10px -6px rgba(10, 37, 64, 0.1) !important;
 }
-.navbar-nav .dropdown-submenu:hover > .dropdown-menu--sub { display: block; }
+.navbar-nav .dropdown-submenu:hover > .dropdown-menu--sub,
+.navbar-nav .dropdown-submenu:hover > .dropdown-menu.dropdown-menu--sub,
+.navbar-nav .dropdown-submenu.open > .dropdown-menu--sub,
+.navbar-nav .dropdown-submenu.open > .dropdown-menu.dropdown-menu--sub {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
 .dropdown-item--parent {
   justify-content: space-between;
+  cursor: pointer;
 }
 .dropdown-item.active {
   background: linear-gradient(90deg, rgba(0,102,255,0.10) 0%, rgba(0,102,255,0.02) 100%);
@@ -2771,6 +2804,78 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 .dropdown-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FINAL OVERRIDE — Dropdown Submenu Multi-Level Fix
+   HIGHEST specificity — placed AFTER all other CSS.
+   Dual trigger: pure CSS :hover  +  .open class (applied by app.js)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1) Parent wrapper: must allow overflow for absolutely-positioned children */
+html body .navbar-nav .dropdown-submenu,
+html body .dropdown-menu .dropdown-submenu,
+html body .dropdown-menu--sub .dropdown-submenu,
+html body .categories-dropdown .dropdown-submenu {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* 2) The nested submenu element itself:
+      CLOSED STATE — no !important here so HOVER/OPEN can win easily */
+html body .navbar-nav .dropdown-submenu > .dropdown-menu.dropdown-menu--sub,
+html body .dropdown-menu .dropdown-submenu > .dropdown-menu.dropdown-menu--sub,
+html body .dropdown-menu--sub .dropdown-submenu > .dropdown-menu.dropdown-menu--sub,
+html body .categories-dropdown .dropdown-submenu > .dropdown-menu.dropdown-menu--sub {
+  position: absolute !important;
+  top: 0 !important;
+  right: 100% !important;
+  left: auto !important;
+  bottom: auto !important;
+  margin-right: 2px !important;
+  margin-top: 0 !important;
+  display: none; /* NOTE: no !important so hover/open can override */
+  min-width: 220px !important;
+  width: max-content !important;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  z-index: 9999 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 10px 25px -5px rgba(10, 37, 64, 0.15), 0 8px 10px -6px rgba(10, 37, 64, 0.12) !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* 3) OPEN STATE with !important — triggered either by pure CSS :hover on parent,
+      or by the .open class that app.js adds on mouseenter, OR directly on the sub */
+html body .navbar-nav .dropdown-submenu:hover > .dropdown-menu.dropdown-menu--sub,
+html body .dropdown-menu .dropdown-submenu:hover > .dropdown-menu.dropdown-menu--sub,
+html body .dropdown-menu--sub .dropdown-submenu:hover > .dropdown-menu.dropdown-menu--sub,
+html body .categories-dropdown .dropdown-submenu:hover > .dropdown-menu.dropdown-menu--sub,
+/* parent .open (hover handler in some code paths) */
+html body .navbar-nav .dropdown-submenu.open > .dropdown-menu.dropdown-menu--sub,
+html body .dropdown-menu .dropdown-submenu.open > .dropdown-menu.dropdown-menu--sub,
+html body .dropdown-menu--sub .dropdown-submenu.open > .dropdown-menu.dropdown-menu--sub,
+html body .categories-dropdown .dropdown-submenu.open > .dropdown-menu.dropdown-menu--sub,
+/* direct .open on the submenu itself (app.js mouseenter adds this) */
+html body .dropdown-menu.dropdown-menu--sub.open {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  right: 100% !important;
+  top: 0 !important;
+  left: auto !important;
+  position: absolute !important;
+}
+
+/* 4) Also allow overflow on the top-level categories dropdown container */
+html body #categories-dropdown.categories-dropdown,
+html body .categories-dropdown {
+  overflow: visible !important;
+  overflow-x: visible !important;
+}
 
 /* ── 18. Tabs ──────────────────────────────────────────────────────────── */
 .tabs {
@@ -6001,6 +6106,89 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ── Listing View Simple Footer ───────────────────────────────────────── */
+.listing-footer {
+  background: var(--primary);
+  color: rgba(255,255,255,.8);
+  padding: var(--sp-6) 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.listing-footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+.listing-footer__brand {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.listing-footer__logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+.listing-footer__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.listing-footer__link {
+  color: rgba(255,255,255,.8);
+  font-size: .875rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color var(--duration) var(--ease);
+}
+.listing-footer__link i {
+  font-size: .95rem;
+}
+.listing-footer__link:hover {
+  color: var(--accent);
+}
+.listing-footer__social {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+.listing-footer__social-link {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.85);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease), transform var(--duration) var(--ease);
+}
+.listing-footer__social-link:hover {
+  background: var(--accent);
+  color: var(--primary);
+  transform: translateY(-2px);
+}
+@media (max-width: 991px) {
+  .listing-footer__inner {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--sp-5);
+  }
+  .listing-footer__nav {
+    gap: var(--sp-3);
+  }
 }
 
 /* ── Support widget ────────────────────────────────────────────────────── */

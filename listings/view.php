@@ -44,7 +44,7 @@ if (!$listing) {
     render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
     render_navbar($user);
     echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-exclamation-circle"></i><h1>آگهی یافت نشد</h1><p>این آگهی ممکن است حذف یا معامله شده باشد.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
-    render_footer();
+    render_listing_simple_footer();
     exit;
 }
 
@@ -95,7 +95,7 @@ if ($reviewStatus !== 'approved' && !$isOwner && !$isAdmin) {
     render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
     render_navbar($user);
     echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-hourglass-split"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی هنوز تأیید نشده یا رد شده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
-    render_footer();
+    render_listing_simple_footer();
     exit;
 }
 
@@ -1173,4 +1173,4 @@ document.addEventListener('keydown', function(e) {
 <script src="<?= APP_URL ?>/src/js/listing-nearby.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-nearby.js') ?>"></script>
 <?php endif; ?>
 
-<?php render_footer(); ?>
+<?php render_listing_simple_footer(); ?>

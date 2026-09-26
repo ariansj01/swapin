@@ -100,7 +100,7 @@ $totalRow = DB::fetch(
     $params
 );
 $total = (int)($totalRow['c'] ?? 0);
-$perPage = 24;
+$perPage = 9;
 $pag = paginate($total, $perPage, $page);
 
 $listings = DB::fetchAll(

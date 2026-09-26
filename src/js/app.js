@@ -155,6 +155,43 @@ function initNavbarHoverDropdowns() {
     });
   });
 
+  // Apply forced inline styles to ensure submenu position & visibility (CSS override fallback)
+  const forceSubmenuStyles = (sub, open) => {
+    if (!sub) return;
+    if (open) {
+      sub.style.setProperty('display', 'block', 'important');
+      sub.style.setProperty('visibility', 'visible', 'important');
+      sub.style.setProperty('opacity', '1', 'important');
+      sub.style.setProperty('position', 'absolute', 'important');
+      sub.style.setProperty('top', '0', 'important');
+      sub.style.setProperty('right', '100%', 'important');
+      sub.style.setProperty('left', 'auto', 'important');
+      sub.style.setProperty('bottom', 'auto', 'important');
+      sub.style.setProperty('margin-right', '2px', 'important');
+      sub.style.setProperty('margin-top', '0', 'important');
+      sub.style.setProperty('min-width', '220px', 'important');
+      sub.style.setProperty('width', 'max-content', 'important');
+      sub.style.setProperty('overflow', 'visible', 'important');
+      sub.style.setProperty('overflow-x', 'visible', 'important');
+      sub.style.setProperty('overflow-y', 'visible', 'important');
+      sub.style.setProperty('z-index', '9999', 'important');
+      sub.style.setProperty('background', '#ffffff', 'important');
+      sub.style.setProperty('border', '1px solid #e5e7eb', 'important');
+      sub.style.setProperty('border-radius', '16px', 'important');
+      sub.style.setProperty('box-shadow', '0 10px 25px -5px rgba(10, 37, 64, 0.15), 0 8px 10px -6px rgba(10, 37, 64, 0.12)', 'important');
+    } else {
+      sub.style.setProperty('display', 'none', 'important');
+    }
+  };
+
+  // Also ensure the top-level categories dropdown allows overflow for submenus
+  const catDropdown = document.getElementById('categories-dropdown');
+  if (catDropdown) {
+    catDropdown.style.setProperty('overflow', 'visible', 'important');
+    catDropdown.style.setProperty('overflow-x', 'visible', 'important');
+    catDropdown.style.setProperty('overflow-y', 'auto', 'important');
+  }
+
   // Nested submenus (any depth): add .open on hover inside dropdown-menu for sub-submenu display
   const applySubmenuHover = (root) => {
     root.querySelectorAll('.dropdown-submenu').forEach(sm => {
@@ -163,11 +200,22 @@ function initNavbarHoverDropdowns() {
       sm.addEventListener('mouseenter', () => {
         // Close siblings under same parent first
         const parent = sm.parentNode;
-        parent.querySelectorAll(':scope > .dropdown-submenu > .dropdown-menu--sub.open').forEach(s => { if (s !== sub) s.classList.remove('open'); });
+        parent.querySelectorAll(':scope > .dropdown-submenu > .dropdown-menu--sub.open').forEach(s => {
+          if (s !== sub) {
+            s.classList.remove('open');
+            forceSubmenuStyles(s, false);
+          }
+        });
         sub.classList.add('open');
+        forceSubmenuStyles(sub, true);
       });
       sm.addEventListener('mouseleave', () => {
-        setTimeout(() => { if (!sm.matches(':hover')) sub.classList.remove('open'); }, 60);
+        setTimeout(() => {
+          if (!sm.matches(':hover')) {
+            sub.classList.remove('open');
+            forceSubmenuStyles(sub, false);
+          }
+        }, 60);
       });
     });
   };
@@ -185,10 +233,19 @@ function initNavbarHoverDropdowns() {
       // Close all sibling submenus at same level
       if (sm && sm.parentNode) {
         sm.parentNode.querySelectorAll(':scope > .dropdown-submenu > .dropdown-menu--sub.open').forEach(s => {
-          if (s !== sub) s.classList.remove('open');
+          if (s !== sub) {
+            s.classList.remove('open');
+            forceSubmenuStyles(s, false);
+          }
         });
       }
-      if (willOpen) sub.classList.add('open'); else sub.classList.remove('open');
+      if (willOpen) {
+        sub.classList.add('open');
+        forceSubmenuStyles(sub, true);
+      } else {
+        sub.classList.remove('open');
+        forceSubmenuStyles(sub, false);
+      }
     });
   });
 }
