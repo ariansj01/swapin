@@ -342,10 +342,10 @@ HTML;
       <!-- How It Works Dropdown -->
       <div class="dropdown">
         <button class="navbar-nav__link" id="how-dropdown-btn" style="border:none;background:none;cursor:pointer">
-          <i class="bi bi-lightbulb"></i> چگونه کار می‌کند؟ <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+          <i class="bi bi-lightbulb"></i> چگونه کار می‌کند؟ سواَپین <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
         <div class="dropdown-menu" id="how-dropdown">
-          <a href="{$url}/#home-steps" class="dropdown-item"><i class="bi bi-diagram-3"></i> چگونه کار می‌کند؟ سواَپین</a>
+          <a href="{$url}/#home-steps" class="dropdown-item"><i class="bi bi-diagram-3"></i> نحوه کار سواَپین</a>
           <a href="{$url}/installment-swap" class="dropdown-item"><i class="bi bi-calendar-check"></i> مبادله قسطی</a>
         </div>
       </div>

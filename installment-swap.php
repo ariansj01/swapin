@@ -69,7 +69,7 @@ render_head($metaTitle, $metaDesc, [
 render_navbar($user);
 ?>
 <div class="installment-swap-hero-image" style="width: 100%; text-align: center; margin-bottom: var(--sp-6);">
-  <img src="<?= APP_URL ?>/src/img/Group%201171277459%20(2).png" alt="خرید قسطی و معاوضه کالا با سواَپین" style="max-width: 65%; height: auto; display: block; margin: 0 auto;">
+  <img src="<?= APP_URL ?>/src/img/Group%201171277459%20(2).png" alt="خرید قسطی و معاوضه کالا با سواَپین" style="max-width: 50%; height: auto; display: block; margin: 0 auto;">
 </div>
 
 <main id="main-content" class="section-sm">
@@ -113,36 +113,7 @@ render_navbar($user);
           </div>
           <div style="background:linear-gradient(135deg,rgba(26,107,74,.06),rgba(56,178,172,.08));padding:var(--sp-6);border-radius:20px;border:1px dashed rgba(26,107,74,.2)">
             <div style="font-weight:700;font-size:1.125rem;margin-bottom:var(--sp-4);text-align:center">نمودار یک معامله اقساطی</div>
-            <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
-              <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:#fff;border-radius:12px">
-                <div style="width:40px;height:40px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">۱</div>
-                <div>
-                  <div style="font-weight:600">ثبت آگهی با گزینه «اقساطی»</div>
-                  <div class="fs-sm" style="color:var(--text-muted)">فروشنده نوع مبادله و تعداد اقساط را مشخص می‌کند</div>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:#fff;border-radius:12px">
-                <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-dark);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">۲</div>
-                <div>
-                  <div style="font-weight:600">ارسال پیشنهاد قسطی</div>
-                  <div class="fs-sm" style="color:var(--text-muted)">خریدار مبلغ و تعداد ماه اقساط را پیشنهاد می‌دهد</div>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:#fff;border-radius:12px">
-                <div style="width:40px;height:40px;border-radius:50%;background:var(--success);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">۳</div>
-                <div>
-                  <div style="font-weight:600">اسباب‌کشی و تحویل کالا</div>
-                  <div class="fs-sm" style="color:var(--text-muted)">کالا توسط سواَپین بررسی و به خریدار تحویل داده می‌شود</div>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:#fff;border-radius:12px">
-                <div style="width:40px;height:40px;border-radius:50%;background:var(--warning);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">۴</div>
-                <div>
-                  <div style="font-weight:600">پرداخت ماهانه و آزادسازی کالا</div>
-                  <div class="fs-sm" style="color:var(--text-muted)">پس از آخرین قسط، سند مالکیت نهایی تحویل خریدار می‌گردد</div>
-                </div>
-              </div>
-            </div>
+            <img src="https://core-normal.traeapi.us/api/ide/v1/text_to_image?prompt=Flowchart%20of%20an%20installment%20transaction%20process%20with%204%20steps:%201.%20Register%20ad%20with%20installment%20option%20->%202.%20Submit/Receive%20installment%20offer%20->%203.%20Agree%20and%20Confirm%20->%204.%20Swapin%20product%20delivery%20and%20monthly%20payments.%20Modern%20design%20with%20arrows.&image_size=landscape_16_9" alt="نمودار یک معامله اقساطی" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
           </div>
         </div>
       </div>
@@ -181,7 +152,7 @@ render_navbar($user);
     <!-- How It Works Steps -->
     <div class="card mb-6" id="how" style="border-radius:20px;overflow:hidden">
       <div class="card-body" style="padding:var(--sp-10)">
-        <h2 style="font-size:1.5rem;margin-bottom:var(--sp-7);text-align:center">
+        <h2 style="font-size:1.5rem;margin-bottom:var(--sp-7);text-align:center;margin-bottom: 30px;">
           <i class="bi bi-diagram-3" style="color:var(--primary)"></i> مراحل انجام مبادله قسطی
         </h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-6)">
@@ -303,7 +274,7 @@ render_navbar($user);
         <p style="color:var(--text-secondary);line-height:2;margin-bottom:var(--sp-5);font-size:1rem">
           کمیسیون پلتفرم در مبادله قسطی، دقیقاً مشابه معامله عادی سواَپین محاسبه می‌شود؛ یعنی بر اساس درصد اختصاصی دسته‌بندی کالا (مثلاً ۱.۲۵٪ برای خودرو و ۰.۷۵٪ برای ملک) و تنها یک‌بار در شروع معامله دریافت می‌گردد.
         </p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--sp-4)">
+        <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--sp-4)">
           <?php
           $fees = [
             ['auto', 'خودرو',       '۱.۲۵٪', 'bi-car-front-fill', 'primary'],
