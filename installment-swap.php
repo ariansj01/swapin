@@ -68,6 +68,9 @@ render_head($metaTitle, $metaDesc, [
 ]);
 render_navbar($user);
 ?>
+<div class="installment-swap-hero-image" style="width: 100%; text-align: center; margin-bottom: var(--sp-6);">
+  <img src="<?= APP_URL ?>/src/img/Group%201171277459%20(2).png" alt="خرید قسطی و معاوضه کالا با سواَپین" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+</div>
 
 <main id="main-content" class="section-sm">
   <div class="container-md">
@@ -79,14 +82,14 @@ render_navbar($user);
       <h1 style="font-size:2.125rem;margin:0 0 var(--sp-3);background:linear-gradient(135deg,var(--primary),var(--accent-dark));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
         مبادله قسطی در سواَپین
       </h1>
-      <p style="font-size:1.125rem;color:var(--text-secondary);max-width:620px;margin:0 auto;line-height:1.9;font-weight:500">
+      <p style="font-size:1.125rem;color:var(--text-secondary);margin:0 auto;line-height:1.9;font-weight:500">
         کالا یا خدمات خود را بدون نیاز به یکدستی، به صورت اقساط ماهانه معاوضه کنید. با ضمانت اسباب‌کشی امن سواَپین و کنترل هوشمند سررسید اقساط، ریسک معامله نزدیک صفر است.
       </p>
     </div>
 
     <!-- Overview -->
     <div class="card mb-6" style="border-right:4px solid var(--primary);border-radius:20px;overflow:hidden">
-      <div class="card-body" style="padding:var(--sp-8)">
+      <div class="card-body" style="padding:var(--sp-10)">
         <h2 style="font-size:1.375rem;margin-bottom:var(--sp-5)">
           <i class="bi bi-info-circle-fill" style="color:var(--primary)"></i> مبادله قسطی چیست؟
         </h2>
@@ -147,7 +150,7 @@ render_navbar($user);
 
     <!-- Use Cases -->
     <div class="card mb-6">
-      <div class="card-body" style="padding:var(--sp-8)">
+      <div class="card-body" style="padding:var(--sp-10)">
         <h2 style="font-size:1.5rem;margin-bottom:var(--sp-6);text-align:center">
           چه مواردی برای مبادله قسطی مناسب‌اند؟
         </h2>
@@ -177,7 +180,7 @@ render_navbar($user);
 
     <!-- How It Works Steps -->
     <div class="card mb-6" id="how" style="border-radius:20px;overflow:hidden">
-      <div class="card-body" style="padding:var(--sp-8)">
+      <div class="card-body" style="padding:var(--sp-10)">
         <h2 style="font-size:1.5rem;margin-bottom:var(--sp-7);text-align:center">
           <i class="bi bi-diagram-3" style="color:var(--primary)"></i> مراحل انجام مبادله قسطی
         </h2>
@@ -246,7 +249,7 @@ render_navbar($user);
 
     <!-- Security & Escrow -->
     <div class="card mb-6" style="background:linear-gradient(135deg,rgba(25,135,84,.04),rgba(13,110,253,.05));border:1px solid rgba(25,135,84,.12);border-radius:20px">
-      <div class="card-body" style="padding:var(--sp-8)">
+      <div class="card-body" style="padding:var(--sp-10)">
         <h2 style="font-size:1.5rem;margin-bottom:var(--sp-6);text-align:center">
           <i class="bi bi-shield-lock-fill" style="color:var(--success)"></i> چرا مبادله قسطی در سواَپین امن است؟
         </h2>
@@ -293,7 +296,7 @@ render_navbar($user);
 
     <!-- Commission Info -->
     <div class="card mb-6" style="border-left:4px solid var(--accent-dark)">
-      <div class="card-body" style="padding:var(--sp-8)">
+      <div class="card-body" style="padding:var(--sp-10)">
         <h2 style="font-size:1.375rem;margin-bottom:var(--sp-4)">
           <i class="bi bi-cash-stack" style="color:var(--accent-dark)"></i> هزینه مبادله قسطی در سواَپین
         </h2>
@@ -327,7 +330,7 @@ render_navbar($user);
 
     <!-- FAQ -->
     <div class="card mb-8" id="faq">
-      <div class="card-body" style="padding:var(--sp-8)">
+      <div class="card-body" style="padding:var(--sp-10)">
         <h2 style="font-size:1.375rem;margin-bottom:var(--sp-6);text-align:center">
           <i class="bi bi-question-circle-fill" style="color:var(--info)"></i> سوالات متداول مبادله قسطی
         </h2>
