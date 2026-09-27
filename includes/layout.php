@@ -157,6 +157,10 @@ GTM;
 GA;
     }
 
+    $fontsCssVer    = @filemtime(__DIR__ . '/../src/css/fonts.css') ?: time();
+    $biCssVer       = @filemtime(__DIR__ . '/../src/vendor/bootstrap-icons/bootstrap-icons.css') ?: time();
+    $mainCssVer     = @filemtime(__DIR__ . '/../src/css/main.css') ?: time();
+
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -184,9 +188,9 @@ GA;
 <meta name="twitter:image" content="{$ogImage}">
 <meta name="theme-color" content="#0a2540">
 {$keywords}{$jsonLd}
-<link rel="stylesheet" href="{$url}/src/css/fonts.css">
-<link rel="stylesheet" href="{$url}/src/vendor/bootstrap-icons/bootstrap-icons.css">
-<link rel="stylesheet" href="{$url}/src/css/main.css">
+<link rel="stylesheet" href="{$url}/src/css/fonts.css?v={$fontsCssVer}">
+<link rel="stylesheet" href="{$url}/src/vendor/bootstrap-icons/bootstrap-icons.css?v={$biCssVer}">
+<link rel="stylesheet" href="{$url}/src/css/main.css?v={$mainCssVer}">
 <link rel="icon" type="image/x-icon" href="{$url}/src/img/fav_icon/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="{$url}/src/img/fav_icon/web-app-manifest-512x512.png">
 <link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/web-app-manifest-192x192.png">
@@ -279,7 +283,6 @@ function render_navbar(?array $user = null): void {
     };
 
     $navItems = [
-        ['/#home-steps', 'چگونه کار می‌کند؟', 'bi-lightbulb', ''],
         ['/trades', 'اتاق امن', 'bi-shield-lock', ''],
         // ['/about', 'درباره ما', 'bi-question-circle', ''],
         // ['/contact', 'تماس با ما', 'bi-envelope', ''],
@@ -333,6 +336,17 @@ HTML;
           <a href="{$url}/shops" class="dropdown-item"><i class="bi bi-grid-fill"></i> همه فروشگاه‌ها</a>
           <a href="{$url}/shops/physical" class="dropdown-item"><i class="bi bi-building-check"></i> فروشگاه‌های حضوری</a>
           <a href="{$url}/shops/online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
+        </div>
+      </div>
+
+      <!-- How It Works Dropdown -->
+      <div class="dropdown">
+        <button class="navbar-nav__link" id="how-dropdown-btn" style="border:none;background:none;cursor:pointer">
+          <i class="bi bi-lightbulb"></i> چگونه کار می‌کند؟ <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+        </button>
+        <div class="dropdown-menu" id="how-dropdown">
+          <a href="{$url}/#home-steps" class="dropdown-item"><i class="bi bi-diagram-3"></i> چگونه کار می‌کند؟ سواَپین</a>
+          <a href="{$url}/installment-swap" class="dropdown-item"><i class="bi bi-calendar-check"></i> مبادله قسطی</a>
         </div>
       </div>
 HTML;
@@ -427,6 +441,9 @@ HTML;
     echo "<a href=\"{$url}/shops\" class=\"mobile-drawer__link\"><i class=\"bi bi-shop\"></i> فروشگاه‌ها</a>";
     echo "<a href=\"{$url}/shops/online\" class=\"mobile-drawer__link\"><i class=\"bi bi-globe2\"></i> فروشگاه‌های آنلاین</a>";
     echo "<a href=\"{$url}/shops/physical\" class=\"mobile-drawer__link\"><i class=\"bi bi-building-check\"></i> فروشگاه‌های حضوری</a>";
+    echo "<div class=\"mobile-drawer__divider\"></div>";
+    echo "<a href=\"{$url}/#home-steps\" class=\"mobile-drawer__link\"><i class=\"bi bi-diagram-3\"></i> چگونه کار می‌کند؟ سواَپین</a>";
+    echo "<a href=\"{$url}/installment-swap\" class=\"mobile-drawer__link\"><i class=\"bi bi-calendar-check\"></i> مبادله قسطی</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     foreach ($navItems as [$href, $label, $icon, $extraClass]) {
         $fullHref = str_starts_with($href, '/#') ? $url . $href : $url . $href;

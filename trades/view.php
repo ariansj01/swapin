@@ -397,8 +397,8 @@ $receivedTheirs  = $isA ? !empty($trade['user_b_received']) : !empty($trade['use
 $receivedAll     = !empty($trade['user_a_received']) && !empty($trade['user_b_received']);
 $completedTrade  = ($trade['status'] ?? '') === 'completed';
 
-$feeA = (float)($trade['listing_a_val'] ?? 0) * PLATFORM_FEE_RATE;
-$feeB = (float)($trade['listing_b_val'] ?? 0) * PLATFORM_FEE_RATE;
+$feeA = trade_user_fee_amount($trade, true);
+$feeB = trade_user_fee_amount($trade, false);
 $myFee = $isA ? $feeA : $feeB;
 
 $allowedTabs = ['chat', 'fee', 'contract', 'diff', 'shipping', 'details', 'final'];

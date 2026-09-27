@@ -6,6 +6,82 @@ const BUMP_DURATION_H   = ['bump' => 24, 'feature' => 72];
 const INSPECTION_KBC    = 300;
 const FREE_LISTING_MAX  = 5;
 
+const CATEGORY_COMMISSION_MAP = [
+    'real-estate'        => 0.0075,
+    'vehicles'           => 0.0125,
+    'electronics'        => 0.035,
+    'home-kitchen'       => 0.030,
+    'services'           => 0.050,
+    'personal-items'     => 0.030,
+    'leisure-hobbies'    => 0.030,
+    'community'          => 0.025,
+    'tools-equipment'    => 0.0275,
+    'jobs'               => 0.025,
+];
+
+const STORE_COMMISSION_RATE = 0.025;
+
+function category_ancestor_slugs(int $categoryId): array {
+    static $cache = [];
+    $cid = $categoryId;
+    if (isset($cache[$cid])) return $cache[$cid];
+
+    $chain = [];
+    $cur = DB::fetch('SELECT id, slug, parent_id FROM categories WHERE id = ? LIMIT 1', [$cid]);
+    if (!$cur) { $cache[$cid] = []; return []; }
+
+    $safety = 10;
+    while ($cur && $safety-- > 0) {
+        $chain[] = (string)$cur['slug'];
+        $pid = (int)($cur['parent_id'] ?? 0);
+        if ($pid <= 0) break;
+        $cur = DB::fetch('SELECT id, slug, parent_id FROM categories WHERE id = ? LIMIT 1', [$pid]);
+    }
+    $chain = array_reverse($chain);
+    $cache[$cid] = $chain;
+    return $chain;
+}
+
+function get_commission_rate_for(int $categoryId, ?string $providerType = null): float {
+    $chain = category_ancestor_slugs($categoryId);
+    $rate = (float)PLATFORM_FEE_RATE;
+    foreach (CATEGORY_COMMISSION_MAP as $slug => $r) {
+        if (in_array($slug, $chain, true)) {
+            $rate = (float)$r;
+            break;
+        }
+    }
+    $pt = is_string($providerType) ? trim($providerType) : '';
+    if ($pt !== '' && $pt !== 'normal' && $pt !== 'user' && $pt !== 'normal_store') {
+        $storeRate = (float)STORE_COMMISSION_RATE;
+        if ($storeRate > $rate) {
+            $rate = $storeRate;
+        }
+    }
+    return $rate;
+}
+
+function get_commission_rate_for_listing(array $listing, ?array $user = null): float {
+    $cid = (int)($listing['category_id'] ?? 0);
+    $pt = null;
+    if (is_array($user) && !empty($user['provider_type'])) {
+        $pt = (string)$user['provider_type'];
+    } elseif (is_array($listing) && !empty($listing['user_id'])) {
+        $u = DB::fetch('SELECT provider_type FROM users WHERE id = ? LIMIT 1', [(int)$listing['user_id']]);
+        if ($u && !empty($u['provider_type'])) $pt = (string)$u['provider_type'];
+    }
+    return get_commission_rate_for($cid, $pt);
+}
+
+function commission_rate_label(float $rate): string {
+    $pct = round($rate * 100, 2);
+    $s = (string)$pct;
+    if (strpos($s, '.') === false) {
+        return $s . '٪';
+    }
+    return rtrim(rtrim($s, '0'), '.') . '٪';
+}
+
 function validate_national_id(string $nid): bool {
     if (!preg_match('/^\d{10}$/', $nid)) return false;
     $check = (int)$nid[9];
@@ -415,7 +491,29 @@ function trade_user_fee_amount(array $trade, bool $isUserA): float {
     $value = $isUserA
         ? (float)($trade['listing_a_val'] ?? $trade['listing_a_value'] ?? 0)
         : (float)($trade['listing_b_val'] ?? $trade['listing_b_value'] ?? 0);
-    return $value * PLATFORM_FEE_RATE;
+    $listingId = $isUserA
+        ? (int)($trade['listing_a_id'] ?? 0)
+        : (int)($trade['listing_b_id'] ?? 0);
+    $userId = $isUserA
+        ? (int)($trade['user_a_id'] ?? 0)
+        : (int)($trade['user_b_id'] ?? 0);
+    $rate = (float)PLATFORM_FEE_RATE;
+    if ($listingId > 0) {
+        $row = DB::fetch(
+            'SELECT l.category_id, u.provider_type
+             FROM listings l
+             LEFT JOIN users u ON u.id = ?
+             WHERE l.id = ? LIMIT 1',
+            [$userId, $listingId]
+        );
+        if ($row) {
+            $rate = get_commission_rate_for(
+                (int)($row['category_id'] ?? 0),
+                isset($row['provider_type']) ? (string)$row['provider_type'] : null
+            );
+        }
+    }
+    return $value * $rate;
 }
 
 function trade_user_fee_paid(array $trade, bool $isUserA): bool {
@@ -743,19 +841,20 @@ function complete_trade(int $tradeId): array {
     DB::query('UPDATE trades SET status = "completed", completed_at = NOW() WHERE id = ?', [$tradeId]);
 
     $fee = 0.0;
-    // Check for sufficient funds for fees before proceeding
     if ($trade['escrow_status'] === 'held') {
-        $listingA = DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$trade['listing_a_id']]);
-        $listingB = $trade['listing_b_id'] ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$trade['listing_b_id']]) : null;
-        
+        $listingA = DB::fetch('SELECT id, category_id, estimated_value FROM listings WHERE id = ?', [$trade['listing_a_id']]);
+        $listingB = $trade['listing_b_id'] ? DB::fetch('SELECT id, category_id, estimated_value FROM listings WHERE id = ?', [$trade['listing_b_id']]) : null;
+        $userA = DB::fetch('SELECT provider_type, credit_balance FROM users WHERE id = ?', [(int)$trade['user_a_id']]);
+        $userB = DB::fetch('SELECT provider_type, credit_balance FROM users WHERE id = ?', [(int)$trade['user_b_id']]);
+
         $valueA = (float)($listingA['estimated_value'] ?? 0);
         $valueB = (float)($listingB['estimated_value'] ?? 0);
-        
-        $feeA = $valueA > 0 ? max(1, (int)round($valueA * PLATFORM_FEE_RATE)) : 0;
-        $feeB = $valueB > 0 ? max(1, (int)round($valueB * PLATFORM_FEE_RATE)) : 0;
 
-        $userA = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [(int)$trade['user_a_id']]);
-        $userB = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [(int)$trade['user_b_id']]);
+        $rateA = get_commission_rate_for((int)($listingA['category_id'] ?? 0), (string)($userA['provider_type'] ?? null));
+        $rateB = $listingB ? get_commission_rate_for((int)($listingB['category_id'] ?? 0), (string)($userB['provider_type'] ?? null)) : (float)PLATFORM_FEE_RATE;
+
+        $feeA = $valueA > 0 ? max(1, (int)round($valueA * $rateA)) : 0;
+        $feeB = $valueB > 0 ? max(1, (int)round($valueB * $rateB)) : 0;
 
         if ($feeA > 0 && (float)($userA['credit_balance'] ?? 0) < $feeA) {
             return ['error' => 'موجودی شما برای پرداخت کارمزد پلتفرم کافی نیست. نیاز به ' . fmt_credit($feeA - (float)($userA['credit_balance'] ?? 0)) . ' دارید.', 'required_amount' => $feeA - (float)($userA['credit_balance'] ?? 0), 'user_id' => (int)$trade['user_a_id']];
@@ -787,25 +886,29 @@ function escrow_release_with_fee(int $tradeId): float {
     $trade = DB::fetch('SELECT * FROM trades WHERE id = ?', [$tradeId]);
     if (!$trade) return 0.0;
 
-    // Get both listings' estimated values
-    $listingA = DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$trade['listing_a_id']]);
-    $listingB = $trade['listing_b_id'] ? DB::fetch('SELECT estimated_value FROM listings WHERE id = ?', [$trade['listing_b_id']]) : null;
-    
+    $listingA = DB::fetch('SELECT id, category_id, estimated_value FROM listings WHERE id = ?', [$trade['listing_a_id']]);
+    $listingB = $trade['listing_b_id'] ? DB::fetch('SELECT id, category_id, estimated_value FROM listings WHERE id = ?', [$trade['listing_b_id']]) : null;
+    $userA = DB::fetch('SELECT provider_type FROM users WHERE id = ?', [(int)$trade['user_a_id']]);
+    $userB = DB::fetch('SELECT provider_type FROM users WHERE id = ?', [(int)$trade['user_b_id']]);
+
     $valueA = (float)($listingA['estimated_value'] ?? 0);
     $valueB = (float)($listingB['estimated_value'] ?? 0);
-    
-    // Calculate 1% fee from each user
-    $feeA = $valueA > 0 ? max(1, (int)round($valueA * PLATFORM_FEE_RATE)) : 0;
-    $feeB = $valueB > 0 ? max(1, (int)round($valueB * PLATFORM_FEE_RATE)) : 0;
-    $totalFee = $feeA + $feeB;
 
-    // Charge fees from both users
+    $rateA = get_commission_rate_for((int)($listingA['category_id'] ?? 0), (string)($userA['provider_type'] ?? null));
+    $rateB = $listingB ? get_commission_rate_for((int)($listingB['category_id'] ?? 0), (string)($userB['provider_type'] ?? null)) : (float)PLATFORM_FEE_RATE;
+
+    $feeA = $valueA > 0 ? max(1, (int)round($valueA * $rateA)) : 0;
+    $feeB = $valueB > 0 ? max(1, (int)round($valueB * $rateB)) : 0;
+    $totalFee = $feeA + $feeB;
+    $rateALabel = commission_rate_label($rateA);
+    $rateBLabel = commission_rate_label($rateB);
+
     if ($feeA > 0) {
         credit_transact(
             (int)$trade['user_a_id'],
             'fee',
             -$feeA,
-            'کارمزد پلتفرم ' . (int)(PLATFORM_FEE_RATE * 100) . '٪ — معامله #' . $tradeId,
+            'کارمزد پلتفرم ' . $rateALabel . ' — معامله #' . $tradeId,
             [
                 'ref_type'   => 'trade',
                 'ref_id'     => $tradeId,
@@ -818,7 +921,7 @@ function escrow_release_with_fee(int $tradeId): float {
             'user_id'  => $trade['user_a_id'],
             'amount'   => $feeA,
             'type'     => 'fee_deduct',
-            'note'     => 'کارمزد پلتفرم ' . (int)(PLATFORM_FEE_RATE * 100) . '٪ — معامله #' . $tradeId,
+            'note'     => 'کارمزد پلتفرم ' . $rateALabel . ' — معامله #' . $tradeId,
         ]);
     }
     
@@ -827,7 +930,7 @@ function escrow_release_with_fee(int $tradeId): float {
             (int)$trade['user_b_id'],
             'fee',
             -$feeB,
-            'کارمزد پلتفرم ' . (int)(PLATFORM_FEE_RATE * 100) . '٪ — معامله #' . $tradeId,
+            'کارمزد پلتفرم ' . $rateBLabel . ' — معامله #' . $tradeId,
             [
                 'ref_type'   => 'trade',
                 'ref_id'     => $tradeId,
@@ -840,7 +943,7 @@ function escrow_release_with_fee(int $tradeId): float {
             'user_id'  => $trade['user_b_id'],
             'amount'   => $feeB,
             'type'     => 'fee_deduct',
-            'note'     => 'کارمزد پلتفرم ' . (int)(PLATFORM_FEE_RATE * 100) . '٪ — معامله #' . $tradeId,
+            'note'     => 'کارمزد پلتفرم ' . $rateBLabel . ' — معامله #' . $tradeId,
         ]);
     }
 

@@ -918,3 +918,95 @@ function shipping_label(string $method): string {
     default     => $method,
   };
 }
+
+function render_wizard_category_picker(int $selectedId = 0): string {
+    try {
+        swaapin_ensure_category_tree();
+    } catch (Throwable $e) {
+        swapin_debug_log('wizard_cat_picker_tree_fail', ['msg' => $e->getMessage()]);
+    }
+    $all = DB::fetchAll('SELECT id, name, slug, parent_id, icon FROM categories WHERE is_active = 1 ORDER BY sort_order, id');
+    $byId = [];
+    $byParent = [];
+    foreach ($all as $r) {
+        $id = (int)$r['id'];
+        $byId[$id] = $r;
+        $pid = (int)($r['parent_id'] ?? 0);
+        $byParent[$pid][] = $r;
+    }
+    $topLevel = $byParent[0] ?? [];
+
+    $selLabel = 'انتخاب دسته‌بندی…';
+    if ($selectedId > 0 && isset($byId[$selectedId])) {
+        $parts = [];
+        $cur = $byId[$selectedId];
+        $safety = 20;
+        while ($cur && $safety-- > 0) {
+            $parts[] = (string)$cur['name'];
+            $pid = (int)($cur['parent_id'] ?? 0);
+            if ($pid <= 0) break;
+            $cur = $byId[$pid] ?? null;
+        }
+        $parts = array_reverse($parts);
+        $selLabel = implode(' › ', $parts);
+    }
+
+    $renderer = null;
+    $renderer = function (array $nodes, int $depth) use (&$renderer, &$byParent, $selectedId, $byId): string {
+        $html = '';
+        foreach ($nodes as $cat) {
+            $cid = (int)$cat['id'];
+            $label = category_label($cat['slug'], $cat['name']);
+            $iconHtml = $depth === 0 ? '<i class="cat-pick-icon ' . h($cat['icon'] ?? 'bi bi-collection') . '"></i> ' : '';
+            $kids = $byParent[$cid] ?? [];
+            $isSelected = $selectedId === $cid ? ' cat-pick-selected' : '';
+
+            if (empty($kids)) {
+                $html .= '<a href="javascript:void(0)" class="dropdown-item cat-pick-leaf' . $isSelected . '" data-cat-id="' . $cid . '" data-cat-label="' . h($label) . '">'
+                    . $iconHtml . h($label) . '</a>';
+            } else {
+                $chevron = '<i class="bi bi-chevron-left cat-pick-chevron"></i>';
+                $kidsHtml = $renderer($kids, $depth + 1);
+                $html .= '<div class="dropdown-submenu">'
+                    . '<a href="javascript:void(0)" class="dropdown-item dropdown-item--parent cat-pick-parent">'
+                    . $iconHtml . h($label) . ' ' . $chevron . '</a>'
+                    . '<div class="dropdown-menu dropdown-menu--sub">' . $kidsHtml . '</div>'
+                    . '</div>';
+            }
+        }
+        return $html;
+    };
+
+    $topHtml = '';
+    foreach ($topLevel as $cat) {
+        $cid = (int)$cat['id'];
+        $label = category_label($cat['slug'], $cat['name']);
+        $iconHtml = '<i class="cat-pick-icon ' . h($cat['icon'] ?? 'bi bi-collection') . '"></i> ';
+        $kids = $byParent[$cid] ?? [];
+        $isSelected = $selectedId === $cid ? ' cat-pick-selected' : '';
+
+        if (empty($kids)) {
+            $topHtml .= '<a href="javascript:void(0)" class="dropdown-item cat-pick-leaf' . $isSelected . '" data-cat-id="' . $cid . '" data-cat-label="' . h($label) . '">'
+                . $iconHtml . h($label) . '</a>';
+        } else {
+            $chevron = '<i class="bi bi-chevron-left cat-pick-chevron"></i>';
+            $kidsHtml = $renderer($kids, 1);
+            $topHtml .= '<div class="dropdown-submenu">'
+                . '<a href="javascript:void(0)" class="dropdown-item dropdown-item--parent cat-pick-parent">'
+                . $iconHtml . h($label) . ' ' . $chevron . '</a>'
+                . '<div class="dropdown-menu dropdown-menu--sub">' . $kidsHtml . '</div>'
+                . '</div>';
+        }
+    }
+
+    $html = '<div class="wizard-category-picker" id="wizard-category-picker">';
+    $html .= '<div class="cat-pick-trigger" id="cat-pick-trigger" data-empty="' . ($selectedId === 0 ? '1' : '0') . '">';
+    $html .= '<i class="bi bi-grid-3x3-gap-fill cat-pick-trigger-icon"></i>';
+    $html .= '<span class="cat-pick-trigger-label" id="cat-pick-label">' . h($selLabel) . '</span>';
+    $html .= '<i class="bi bi-chevron-down cat-pick-trigger-caret"></i>';
+    $html .= '</div>';
+    $html .= '<div class="dropdown-menu cat-pick-menu categories-dropdown" id="cat-pick-menu">' . $topHtml . '</div>';
+    $html .= '<input type="hidden" name="category_id" id="step3-category-hidden" value="' . $selectedId . '">';
+    $html .= '</div>';
+    return $html;
+}

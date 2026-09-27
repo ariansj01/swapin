@@ -286,10 +286,7 @@ render_navbar($user);
 
           <div class="wizard-form-group">
             <label class="wizard-form-label">دسته‌بندی *</label>
-            <select name="category_id" id="step3-category" class="wizard-form-select">
-              <option value="">انتخاب دسته‌بندی…</option>
-              <?= render_wizard_category_options($categories, (int)$vals['category_id']) ?>
-            </select>
+            <?= render_wizard_category_picker((int)$vals['category_id']) ?>
           </div>
 
           <div class="wizard-form-group">
@@ -504,6 +501,60 @@ render_navbar($user);
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-wizard.css">
+<style>
+.wizard-category-picker { position: relative; width: 100%; }
+.cat-pick-trigger {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 48px; padding: 10px 16px;
+  background: #fff; border: 1.5px solid #e5e7eb; border-radius: 12px;
+  cursor: pointer; transition: all .15s ease; user-select: none;
+}
+.cat-pick-trigger:hover { border-color: var(--primary,#0066FF); box-shadow: 0 0 0 3px rgba(0,102,255,.08); }
+.cat-pick-trigger.cat-pick-open { border-color: var(--primary,#0066FF); box-shadow: 0 0 0 3px rgba(0,102,255,.12); }
+.cat-pick-trigger[data-empty="1"] .cat-pick-trigger-label { color: #9ca3af; }
+.cat-pick-trigger[data-empty="0"] .cat-pick-trigger-label { color: #111827; font-weight: 600; }
+.cat-pick-trigger-icon { color: var(--primary,#0066FF); font-size: 1.05rem; flex-shrink: 0; }
+.cat-pick-trigger-label { flex: 1; text-align: right; font-size: .9375rem; }
+.cat-pick-trigger-caret { color: #6b7280; font-size: .75rem; transition: transform .2s ease; }
+.cat-pick-trigger.cat-pick-open .cat-pick-trigger-caret { transform: rotate(180deg); }
+
+.cat-pick-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; left: 0;
+  z-index: 9999; display: none;
+  max-height: 480px; overflow-y: auto; overflow-x: visible;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+  padding: 6px; box-shadow: 0 12px 40px rgba(17,24,39,.12);
+  direction: rtl; columns: 2; column-gap: 2px;
+}
+.cat-pick-menu.show { display: block; }
+@media (max-width: 640px) { .cat-pick-menu { columns: 1; } }
+
+.cat-pick-menu .dropdown-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 8px; color: #1f2937;
+  font-size: .875rem; text-decoration: none; cursor: pointer;
+  break-inside: avoid; margin-bottom: 2px;
+  transition: background-color .1s ease;
+}
+.cat-pick-menu .dropdown-item:hover { background: rgba(0,102,255,.08); color: var(--primary,#0066FF); }
+.cat-pick-menu .cat-pick-selected { background: rgba(0,102,255,.12) !important; color: var(--primary,#0066FF) !important; font-weight: 700; }
+.cat-pick-menu .cat-pick-icon { color: #6b7280; font-size: .95rem; width: 20px; text-align: center; flex-shrink: 0; }
+.cat-pick-menu .cat-pick-chevron { margin-inline-start: auto; opacity: .55; font-size: .7rem; }
+.cat-pick-menu .dropdown-submenu { position: relative; break-inside: avoid; }
+.cat-pick-menu .dropdown-submenu > .dropdown-menu--sub {
+  position: absolute; top: -6px; right: calc(100% + 4px);
+  min-width: 240px; max-height: 460px; overflow-y: auto; overflow-x: visible;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+  padding: 6px; box-shadow: 0 12px 40px rgba(17,24,39,.12);
+  display: none; z-index: 10000;
+}
+.cat-pick-menu .dropdown-submenu:hover > .dropdown-menu--sub,
+.cat-pick-menu .dropdown-submenu:focus-within > .dropdown-menu--sub,
+.cat-pick-menu .dropdown-submenu.cat-pick-sub-open > .dropdown-menu--sub { display: block; }
+
+#step7-category, #review-category { padding-right: 0; }
+.wizard-form-group.is-invalid .cat-pick-trigger { border-color: var(--danger,#ef4444) !important; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
+</style>
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-location.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-location.css') ?>">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="<?= APP_URL ?>/src/js/listing-location.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-location.js') ?>"></script>
@@ -528,9 +579,95 @@ document.addEventListener('DOMContentLoaded', () => {
   initStep1Counters();
   initStep2Upload();
   initStep3Fields();
+  initWizardCategoryPicker();
   initStep6Price();
   initWizardSubmit();
 });
+
+function initWizardCategoryPicker() {
+  const trigger = document.getElementById('cat-pick-trigger');
+  const menu = document.getElementById('cat-pick-menu');
+  const labelEl = document.getElementById('cat-pick-label');
+  const hiddenEl = document.getElementById('step3-category-hidden');
+  if (!trigger || !menu) return;
+
+  function closeMenu() {
+    menu.classList.remove('show');
+    trigger.classList.remove('cat-pick-open');
+    document.querySelectorAll('.cat-pick-sub-open').forEach(el => el.classList.remove('cat-pick-sub-open'));
+  }
+  function openMenu() {
+    menu.classList.add('show');
+    trigger.classList.add('cat-pick-open');
+  }
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (menu.classList.contains('show')) closeMenu(); else openMenu();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!menu.classList.contains('show')) return;
+    if (!menu.contains(e.target) && !trigger.contains(e.target)) closeMenu();
+  });
+
+  // Touch support for submenus
+  menu.querySelectorAll('.cat-pick-parent').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (window.matchMedia('(hover: none)').matches || 'ontouchstart' in window) {
+        e.preventDefault();
+        e.stopPropagation();
+        const sub = btn.closest('.dropdown-submenu');
+        if (sub) {
+          const isOpen = sub.classList.contains('cat-pick-sub-open');
+          menu.querySelectorAll('.cat-pick-sub-open').forEach(el => {
+            if (el !== sub) el.classList.remove('cat-pick-sub-open');
+          });
+          if (!isOpen) sub.classList.add('cat-pick-sub-open');
+          else sub.classList.remove('cat-pick-sub-open');
+        }
+      }
+    });
+  });
+
+  // Leaf selection
+  menu.querySelectorAll('.cat-pick-leaf').forEach(leaf => {
+    leaf.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const catId = leaf.getAttribute('data-cat-id');
+      const catLabel = leaf.getAttribute('data-cat-label');
+      let fullPath = catLabel;
+      // Build path from ancestors' text
+      const parents = [];
+      let el = leaf.parentElement;
+      let safety = 10;
+      while (el && safety-- > 0) {
+        const sub = el.closest('.dropdown-submenu');
+        if (!sub) break;
+        const parentLink = sub.querySelector(':scope > .cat-pick-parent');
+        if (parentLink) {
+          const icon = parentLink.querySelector('.cat-pick-icon');
+          let txt = parentLink.textContent.trim().replace(/\s+/g, ' ');
+          if (icon) txt = txt.replace(icon.textContent.trim(), '').trim();
+          txt = txt.replace('‹', '').replace('›', '').trim();
+          parents.unshift(txt);
+        }
+        el = sub.parentElement;
+      }
+      if (parents.length) fullPath = parents.join(' › ') + ' › ' + catLabel;
+
+      if (hiddenEl) hiddenEl.value = catId;
+      if (labelEl) {
+        labelEl.textContent = fullPath;
+        trigger.setAttribute('data-empty', '0');
+      }
+      menu.querySelectorAll('.cat-pick-selected').forEach(el => el.classList.remove('cat-pick-selected'));
+      leaf.classList.add('cat-pick-selected');
+      closeMenu();
+      updateButtons();
+    });
+  });
+}
 
 function initStep6Price() {
   const customInput = document.getElementById('step6-custom-price-input');
@@ -556,11 +693,15 @@ function initStep6Price() {
 }
 
 function initStep3Fields() {
-  const catSelect = document.getElementById('step3-category');
+  const catHidden = document.getElementById('step3-category-hidden');
   const condSelect = document.getElementById('step3-condition');
   const cityInput = document.getElementById('step3-city');
   const locationPicker = document.querySelector('.listing-location-picker');
-  if (catSelect) catSelect.addEventListener('change', updateButtons);
+  if (catHidden && typeof MutationObserver !== 'undefined') {
+    const obs = new MutationObserver(() => updateButtons());
+    obs.observe(catHidden, { attributes: true, attributeFilter: ['value'] });
+    document.addEventListener('change', () => updateButtons());
+  }
   if (condSelect) condSelect.addEventListener('change', updateButtons);
   if (cityInput) cityInput.addEventListener('change', updateButtons);
   locationPicker?.addEventListener('listing-location-change', updateButtons);
@@ -707,7 +848,7 @@ function validateCurrentStep() {
       return uploadedFiles.filter(Boolean).length > 0;
 
     case 3: {
-      const catId = document.getElementById('step3-category').value;
+      const catId = document.getElementById('step3-category-hidden').value;
       const city = document.getElementById('step3-city').value.trim();
       const lat = document.getElementById('step3-latitude').value.trim();
       const lng = document.getElementById('step3-longitude').value.trim();
@@ -811,8 +952,12 @@ function populateReview() {
   document.getElementById('step7-description').textContent = document.getElementById('step1-description').value;
 
   // Step 3
-  const catSelect = document.getElementById('step3-category');
-  document.getElementById('step7-category').textContent = catSelect.options[catSelect.selectedIndex].text;
+  const catLabel = document.getElementById('cat-pick-label');
+  const catHidden = document.getElementById('step3-category-hidden');
+  document.getElementById('step7-category').textContent =
+    (catHidden?.value && catLabel?.textContent && catLabel.textContent !== 'انتخاب دسته‌بندی…')
+      ? catLabel.textContent
+      : 'انتخاب نشده';
   
   const condSelect = document.getElementById('step3-condition');
   const condLabels = { 'new' : 'نو', 'like_new' : 'مثل نو', 'good' : 'خوب', 'fair' : 'متوسط', 'poor' : 'خورده'};
