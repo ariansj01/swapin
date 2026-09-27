@@ -111,38 +111,142 @@ render_navbar($user);
               </div>
             </div>
           </div>
-          <div style="background:linear-gradient(135deg,rgba(26,107,74,.06),rgba(56,178,172,.08));padding:var(--sp-6);border-radius:20px;border:1px dashed rgba(26,107,74,.2)">
-            <div style="font-weight:700;font-size:1.125rem;margin-bottom:var(--sp-4);text-align:center">نمودار یک معامله اقساطی</div>
-            <div class="flowchart-steps" style="display:flex;flex-direction:column;gap:var(--sp-3);position:relative;">
-              <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:#fff;border-radius:12px">
-                <div style="width:40px;height:40px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">۱</div>
-                <div>
-                  <div style="font-weight:600">ثبت آگهی با گزینه «اقساطی»</div>
-                  <div class="fs-sm" style="color:var(--text-muted)">فروشنده نوع مبادله و تعداد اقساط را مشخص می‌کند</div>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:#fff;border-radius:12px">
-                <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-dark);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">۲</div>
-                <div>
-                  <div style="font-weight:600">ارسال پیشنهاد قسطی</div>
-                  <div class="fs-sm" style="color:var(--text-muted)">خریدار مبلغ و تعداد ماه اقساط را پیشنهاد می‌دهد</div>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:#fff;border-radius:12px">
-                <div style="width:40px;height:40px;border-radius:50%;background:var(--success);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">۳</div>
-                <div>
-                  <div style="font-weight:600">اسباب‌کشی و تحویل کالا</div>
-                  <div class="fs-sm" style="color:var(--text-muted)">کالا توسط سواَپین بررسی و به خریدار تحویل داده می‌شود</div>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:#fff;border-radius:12px">
-                <div style="width:40px;height:40px;border-radius:50%;background:var(--warning);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">۴</div>
-                <div>
-                  <div style="font-weight:600">پرداخت ماهانه و آزادسازی کالا</div>
-                  <div class="fs-sm" style="color:var(--text-muted)">پس از آخرین قسط، سند مالکیت نهایی تحویل خریدار می‌گردد</div>
-                </div>
-              </div>
+          <div style="background:#fff;padding:var(--sp-5);border-radius:20px;border:1px solid var(--border);box-shadow:0 4px 20px rgba(10,37,64,.06)">
+            <div style="font-weight:700;font-size:1.125rem;margin-bottom:var(--sp-4);text-align:center;color:var(--primary)">
+              <i class="bi bi-bar-chart-line-fill"></i> نمودار واقعی یک معامله اقساطی
             </div>
+            <div style="font-size:.875rem;color:var(--text-muted);text-align:center;margin-bottom:var(--sp-4);line-height:1.8">
+              مثال: پراید ۹۰ (۳۰۰M) معاوضه با پژو ۲۰۶ (۴۵۰M) | تفاوت: ۱۵۰M | پیش‌پرداخت: ۵۰M | اقساط ۱۲ ماهه
+            </div>
+            <svg viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;direction:ltr;font-family:IRANSans,Tahoma,sans-serif">
+              <defs>
+                <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#0066FF"/>
+                  <stop offset="100%" stop-color="#0A84FF"/>
+                </linearGradient>
+                <linearGradient id="gOrange" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#FF6600"/>
+                  <stop offset="100%" stop-color="#FF8F3F"/>
+                </linearGradient>
+                <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#198754"/>
+                  <stop offset="100%" stop-color="#20A96B"/>
+                </linearGradient>
+                <linearGradient id="gGray" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#E8EEF7"/>
+                  <stop offset="100%" stop-color="#D4DEED"/>
+                </linearGradient>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity=".15"/>
+                </filter>
+                <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#0066FF"/>
+                </marker>
+                <marker id="arrowOrange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#FF6600"/>
+                </marker>
+              </defs>
+
+              <text x="300" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#0A2540">جریان معامله و تحویل</text>
+
+              <g filter="url(#shadow)">
+                <rect x="20" y="40" width="140" height="70" rx="14" fill="url(#gBlue)"/>
+                <text x="90" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">فروشنده</text>
+                <text x="90" y="88" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.9)">پُراید ۹۰ · ۳۰۰M</text>
+              </g>
+
+              <g filter="url(#shadow)">
+                <rect x="230" y="40" width="140" height="70" rx="14" fill="url(#gGreen)"/>
+                <text x="300" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">اسباب‌کشی سواپین</text>
+                <text x="300" y="88" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.9)">بررسی و نگهداری</text>
+              </g>
+
+              <g filter="url(#shadow)">
+                <rect x="440" y="40" width="140" height="70" rx="14" fill="url(#gOrange)"/>
+                <text x="510" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">خریدار</text>
+                <text x="510" y="88" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.9)">پژو ۲۰۶ · ۴۵۰M</text>
+              </g>
+
+              <path d="M160 75 C 195 75, 195 75, 230 75" stroke="#0066FF" stroke-width="2.5" fill="none" stroke-dasharray="6 3" marker-end="url(#arrowBlue)"/>
+              <text x="195" y="63" text-anchor="middle" font-size="9" font-weight="600" fill="#0066FF">تحویل کالا</text>
+              <path d="M370 75 C 405 75, 405 75, 440 75" stroke="#198754" stroke-width="2.5" fill="none" stroke-dasharray="6 3"/>
+              <polygon points="440 71.5, 449 75, 440 78.5" fill="#198754"/>
+              <text x="405" y="63" text-anchor="middle" font-size="9" font-weight="600" fill="#198754">استفاده موقت</text>
+
+              <text x="90" y="132" text-anchor="middle" font-size="11" font-weight="700" fill="#FF6600">۵۰M پیش‌پرداخت</text>
+              <path d="M90 138 C 90 155, 300 155, 300 150" stroke="#FF6600" stroke-width="2" fill="none" marker-end="url(#arrowOrange)"/>
+              <text x="510" y="132" text-anchor="middle" font-size="11" font-weight="700" fill="#FF6600">۱۰M × ۱۲ قسط</text>
+              <path d="M510 138 C 510 165, 300 165, 300 160" stroke="#FF6600" stroke-width="2" fill="none" marker-end="url(#arrowOrange)"/>
+              <text x="300" y="182" text-anchor="middle" font-size="10" fill="#6B7A92">پس از آخرین قسط → آزادسازی سند نهایی به خریدار</text>
+
+              <line x1="20" y1="195" x2="580" y2="195" stroke="#E8EEF7" stroke-width="1"/>
+
+              <text x="300" y="218" text-anchor="middle" font-size="13" font-weight="700" fill="#0A2540">جدول پرداخت اقساط ماهانه (میلیون تومان)</text>
+
+              <line x1="45" y1="420" x2="560" y2="420" stroke="#B8C4D6" stroke-width="1.5"/>
+              <line x1="45" y1="240" x2="45" y2="420" stroke="#B8C4D6" stroke-width="1.5"/>
+
+              <text x="30" y="245" text-anchor="middle" font-size="9" font-weight="600" fill="#0A2540" transform="rotate(-90 30 330)">مبلغ (M)</text>
+
+              <g font-size="8" fill="#6B7A92" text-anchor="end">
+                <line x1="42" y1="240" x2="45" y2="240" stroke="#B8C4D6"/><text x="40" y="243">۱۲</text>
+                <line x1="42" y1="270" x2="45" y2="270" stroke="#E8EEF7" stroke-dasharray="3 3"/><text x="40" y="273">۱۰</text>
+                <line x1="42" y1="300" x2="45" y2="300" stroke="#E8EEF7" stroke-dasharray="3 3"/><text x="40" y="303">۸</text>
+                <line x1="42" y1="330" x2="45" y2="330" stroke="#E8EEF7" stroke-dasharray="3 3"/><text x="40" y="333">۶</text>
+                <line x1="42" y1="360" x2="45" y2="360" stroke="#E8EEF7" stroke-dasharray="3 3"/><text x="40" y="363">۴</text>
+                <line x1="42" y1="390" x2="45" y2="390" stroke="#E8EEF7" stroke-dasharray="3 3"/><text x="40" y="393">۲</text>
+                <line x1="42" y1="420" x2="45" y2="420" stroke="#B8C4D6"/><text x="40" y="423">۰</text>
+              </g>
+
+              <g>
+                <rect x="55" y="320" width="30" height="100" rx="4" fill="url(#gOrange)" filter="url(#shadow)"/>
+                <text x="70" y="312" text-anchor="middle" font-size="9" font-weight="700" fill="#FF6600">۵۰M</text>
+                <text x="70" y="440" text-anchor="middle" font-size="8" font-weight="600" fill="#0A2540">پیش</text>
+              </g>
+
+              <g fill="url(#gBlue)" filter="url(#shadow)">
+                <rect x="102" y="270" width="28" height="150" rx="3"/>
+                <rect x="138" y="270" width="28" height="150" rx="3"/>
+                <rect x="174" y="270" width="28" height="150" rx="3"/>
+                <rect x="210" y="270" width="28" height="150" rx="3"/>
+                <rect x="246" y="270" width="28" height="150" rx="3"/>
+                <rect x="282" y="270" width="28" height="150" rx="3"/>
+                <rect x="318" y="270" width="28" height="150" rx="3"/>
+                <rect x="354" y="270" width="28" height="150" rx="3"/>
+                <rect x="390" y="270" width="28" height="150" rx="3"/>
+                <rect x="426" y="270" width="28" height="150" rx="3"/>
+                <rect x="462" y="270" width="28" height="150" rx="3"/>
+              </g>
+
+              <g>
+                <rect x="498" y="270" width="28" height="150" rx="4" fill="url(#gGreen)" filter="url(#shadow)"/>
+                <polygon points="498 264, 526 264, 512 248" fill="#198754"/>
+                <text x="512" y="242" text-anchor="middle" font-size="8" font-weight="700" fill="#198754">آخرین قسط</text>
+                <text x="512" y="260" text-anchor="middle" font-size="8" font-weight="700" fill="#198754">+ آزادسازی</text>
+              </g>
+
+              <g font-size="7.5" fill="#0A2540" text-anchor="middle" font-weight="600">
+                <text x="116" y="262">۱۰M</text><text x="152" y="262">۱۰M</text>
+                <text x="188" y="262">۱۰M</text><text x="224" y="262">۱۰M</text>
+                <text x="260" y="262">۱۰M</text><text x="296" y="262">۱۰M</text>
+                <text x="332" y="262">۱۰M</text><text x="368" y="262">۱۰M</text>
+                <text x="404" y="262">۱۰M</text><text x="440" y="262">۱۰M</text>
+                <text x="476" y="262">۱۰M</text><text x="512" y="262" fill="#198754">۱۰M</text>
+              </g>
+
+              <g font-size="7" fill="#6B7A92" text-anchor="middle">
+                <text x="116" y="440">ماه ۱</text><text x="152" y="440">۲</text>
+                <text x="188" y="440">۳</text><text x="224" y="440">۴</text>
+                <text x="260" y="440">۵</text><text x="296" y="440">۶</text>
+                <text x="332" y="440">۷</text><text x="368" y="440">۸</text>
+                <text x="404" y="440">۹</text><text x="440" y="440">۱۰</text>
+                <text x="476" y="440">۱۱</text><text x="512" y="440" fill="#198754" font-weight="700">۱۲</text>
+              </g>
+
+              <text x="300" y="462" text-anchor="middle" font-size="10" font-weight="700" fill="#0A2540">
+                کل پرداختی خریدار: ۵۰M + (۱۲ × ۱۰M) = <tspan fill="#0066FF">۱۷۰M</tspan> کمیسیون ۱.۲۵٪ خودرو: ۱.۸۷۵M
+              </text>
+            </svg>
           </div>
         </div>
       </div>
