@@ -3,6 +3,36 @@
    Stack: Vanilla CSS (no framework dependency)
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* Flowchart steps styling */
+.flowchart-steps > div:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  width: 2px;
+  height: var(--sp-3);
+  background-color: var(--border);
+  z-index: 0;
+}
+
+.flowchart-steps > div {
+  position: relative;
+  z-index: 1;
+}
+
+/* Optional: Add arrow to the connector */
+.flowchart-steps > div:not(:last-child)::before {
+  content: '▼';
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%) translateY(50%);
+  color: var(--border);
+  font-size: 0.8rem;
+  z-index: 2;
+}
+
 /* ── 1. Design Tokens ──────────────────────────────────────────────────── */
 :root {
   /* Brand palette — Navy + Gold (trade marketplace) */
