@@ -69,7 +69,7 @@ render_head($metaTitle, $metaDesc, [
 render_navbar($user);
 ?>
 <div class="installment-swap-hero-image" style="width: 100%; text-align: center; margin-bottom: var(--sp-6);">
-  <img src="<?= APP_URL ?>/src/img/Group%201171277459%20(2).png" alt="خرید قسطی و معاوضه کالا با سواَپین" style="max-width: 650%; height: auto; display: block; margin: 0 auto;">
+  <img src="<?= APP_URL ?>/src/img/Group%201171277459%20(2).png" alt="خرید قسطی و معاوضه کالا با سواَپین" style="max-width: 65%; height: auto; display: block; margin: 0 auto;">
 </div>
 
 <main id="main-content" class="section-sm">
