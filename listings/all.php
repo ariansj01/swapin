@@ -202,7 +202,7 @@ render_navbar($user);
     <div id="filter-modal-overlay" class="filter-modal-overlay"></div>
 
     <!-- Sidebar / Filter Modal -->
-    <aside aria-label="فیلترها" class="all-listings-sidebar" id="filter-modal">
+    <aside aria-label="فیلترها" class="all-listings-sidebar" id="filter-modal" style="width: 85%;">
       <!-- Close Button (Mobile Only) -->
       <div class="filter-modal-header d-flex justify-between align-center d-lg-none mb-4">
         <h2>فیلترها</h2>

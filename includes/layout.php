@@ -342,7 +342,7 @@ HTML;
       <!-- How It Works Dropdown -->
       <div class="dropdown">
         <button class="navbar-nav__link" id="how-dropdown-btn" style="border:none;background:none;cursor:pointer">
-          <i class="bi bi-lightbulb"></i> چگونه کار می‌کند؟ سواَپین <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+          <i class="bi bi-lightbulb"></i> سواَپین چگونه کار می‌کند؟ <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
         </button>
         <div class="dropdown-menu" id="how-dropdown">
           <a href="{$url}/#home-steps" class="dropdown-item"><i class="bi bi-diagram-3"></i> نحوه کار سواَپین</a>
@@ -442,7 +442,7 @@ HTML;
     echo "<a href=\"{$url}/shops/online\" class=\"mobile-drawer__link\"><i class=\"bi bi-globe2\"></i> فروشگاه‌های آنلاین</a>";
     echo "<a href=\"{$url}/shops/physical\" class=\"mobile-drawer__link\"><i class=\"bi bi-building-check\"></i> فروشگاه‌های حضوری</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
-    echo "<a href=\"{$url}/#home-steps\" class=\"mobile-drawer__link\"><i class=\"bi bi-diagram-3\"></i> چگونه کار می‌کند؟ سواَپین</a>";
+    echo "<a href=\"{$url}/#home-steps\" class=\"mobile-drawer__link\"><i class=\"bi bi-diagram-3\"></i> سواَپین چگونه کار می‌کند؟</a>";
     echo "<a href=\"{$url}/installment-swap\" class=\"mobile-drawer__link\"><i class=\"bi bi-calendar-check\"></i> مبادله قسطی</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     foreach ($navItems as [$href, $label, $icon, $extraClass]) {
