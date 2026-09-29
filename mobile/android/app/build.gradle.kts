@@ -16,7 +16,6 @@ android {
     namespace = "ir.swaapin.mobile"
     compileSdk = 34
     buildToolsVersion = "34.0.0"
-    ndkVersion = "28.2.13676358"
 
     defaultConfig {
         applicationId = "ir.swaapin.mobile"
