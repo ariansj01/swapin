@@ -981,10 +981,42 @@ function initAiChat() {
   });
 }
 
-/* ── AI Valuation Form (sidebar) ────────────────────────────────────────── */
+/* ── AI Valuation Form (tab-box below chat) ─────────────────────────────── */
 (function () {
   function init() {
     const form       = document.getElementById('ai-valuation-form');
+    const tabsWrap   = document.querySelector('.ai-chat-tabs');
+
+    function switchTab(tabName) {
+      if (!tabsWrap) return;
+      tabsWrap.querySelectorAll('.ai-chat-tab').forEach(t => {
+        const active = t.getAttribute('data-tab') === tabName;
+        t.classList.toggle('ai-chat-tab--active', active);
+        t.setAttribute('aria-selected', active ? 'true' : 'false');
+        if (active) {
+          t.style.background = 'var(--primary,#0A2540)';
+          t.style.color = '#fff';
+        } else {
+          t.style.background = 'transparent';
+          t.style.color = 'var(--text-muted,#6B7280)';
+        }
+      });
+      document.querySelectorAll('[data-tab-panel]').forEach(panel => {
+        const show = panel.getAttribute('data-tab-panel') === tabName;
+        panel.classList.toggle('ai-chat-tab-panel--active', show);
+        panel.style.display = show ? '' : 'none';
+      });
+    }
+
+    if (tabsWrap) {
+      tabsWrap.querySelectorAll('.ai-chat-tab').forEach(t => {
+        t.addEventListener('click', () => {
+          const name = t.getAttribute('data-tab');
+          if (name) switchTab(name);
+        });
+      });
+    }
+
     if (!form) return;
 
     const titleInput   = document.getElementById('val-title');
@@ -998,6 +1030,7 @@ function initAiChat() {
     const resultDiv    = document.getElementById('ai-valuation-result');
     const createLink   = document.getElementById('ai-valuation-create-link');
     const chatMessages = document.getElementById('ai-chat-messages');
+    const valBox       = document.querySelector('.ai-valuation-box');
 
     if (!titleInput || !descInput || !catSelect || !condSelect || !submitBtn) return;
 
@@ -1040,32 +1073,39 @@ function initAiChat() {
     }
 
     function pulseHighlight() {
-      const orig = form.style.boxShadow;
-      const origTrans = form.style.transition;
-      form.style.transition = 'box-shadow .25s ease';
+      const target = valBox || form;
+      if (!target) return;
+      const orig = target.style.boxShadow;
+      const origTrans = target.style.transition;
+      target.style.transition = 'box-shadow .25s ease';
       let step = 0;
       const tick = () => {
         step++;
-        form.style.boxShadow = step % 2 === 1
-          ? '0 0 0 4px rgba(26,107,74,.28), 0 10px 25px -5px rgba(10,37,64,.15)'
-          : '0 0 0 2px rgba(26,107,74,.12), 0 4px 12px -4px rgba(10,37,64,.1)';
+        target.style.boxShadow = step % 2 === 1
+          ? '0 0 0 4px rgba(255,209,102,.55), 0 10px 25px -5px rgba(10,37,64,.15)'
+          : '0 0 0 2px rgba(255,209,102,.28), 0 4px 12px -4px rgba(10,37,64,.1)';
         if (step < 5) setTimeout(tick, 200);
         else {
-          form.style.boxShadow = orig;
-          form.style.transition = origTrans;
+          target.style.boxShadow = orig;
+          target.style.transition = origTrans;
         }
       };
       tick();
     }
 
     document.querySelectorAll('[data-prompt], .ai-chip').forEach(chip => {
+      const switchTabAttr = chip.getAttribute('data-switch-tab');
       const prompt = (chip.getAttribute('data-prompt') || chip.textContent || '').toString();
       const txt    = (chip.textContent || '').toString();
-      if (prompt.includes('ارزش‌گذاری') || txt.includes('ارزش‌گذاری')) {
-        chip.addEventListener('click', () => {
+      if (switchTabAttr === 'valuation' || prompt.includes('ارزش‌گذاری') || txt.includes('ارزش‌گذاری')) {
+        chip.addEventListener('click', (e) => {
           setTimeout(() => {
-            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            pulseHighlight();
+            switchTab('valuation');
+            setTimeout(() => {
+              if (valBox) valBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              pulseHighlight();
+              if (titleInput) titleInput.focus({ preventScroll: true });
+            }, 220);
           }, 30);
         });
       }
@@ -1152,6 +1192,7 @@ function initAiChat() {
           });
 
           resultDiv.style.display = 'block';
+          resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         if (createLink) {

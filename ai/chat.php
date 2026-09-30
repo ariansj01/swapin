@@ -89,108 +89,158 @@ render_navbar($user);
     ];
     ?>
     <div class="ai-chat-layout" id="ai-chat-app">
-      <div class="ai-chat-window">
-        <div class="ai-chat-window__head">
-          <span class="ai-dot ai-dot--green"></span>
-          <strong>دستیار سواَپین</strong>
-          <span class="ai-chat-window__status">آنلاین · دستیار هوشمند</span>
-        </div>
-        <div class="ai-chat-window__body" id="ai-chat-messages">
-          <div class="ai-msg ai-msg--bot">
-            <div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>
-            <div class="ai-msg__bubble">
-              سلام <?= h(explode(' ', $user['name'])[0]) ?>! 👋<br>
-              من دستیار معاوضه سواَپین هستم. می‌توانید درباره ارزش کالا، پیشنهاد معاوضه یا نحوه معامله امن سؤال بپرسید.
-              <div class="ai-quick-chips">
-                <button type="button" class="ai-chip" data-prompt="چطور ارزش کالایم را تخمین بزنم؟">ارزش‌گذاری کالا</button>
-                <button type="button" class="ai-chip" data-prompt="چه کالایی برای معاوضه با لپ‌تاپ من مناسب است؟">پیشنهاد معاوضه</button>
-                <button type="button" class="ai-chip" data-prompt="مراحل معامله امن در سواَپین چیست؟">معامله امن</button>
-                <a href="<?= $url ?>/dashboard#swap-matches" class="ai-chip" style="text-decoration:none;display:inline-flex;align-items:center">Matching Engine</a>
+
+      <div class="ai-chat-tabs" role="tablist" style="margin-bottom:var(--sp-4);display:inline-flex;gap:6px;padding:6px;background:rgba(10,37,64,.04);border-radius:14px;border:1px solid var(--border-color,#e5e7eb)">
+        <button type="button" class="ai-chat-tab ai-chat-tab--active" data-tab="chat" role="tab" aria-selected="true"
+                style="border:none;cursor:pointer;padding:10px 22px;border-radius:10px;font-weight:700;font-size:.95rem;background:var(--primary,#0A2540);color:#fff;transition:all .2s ease">
+          <i class="bi bi-chat-dots-fill" style="margin-left:6px"></i> چت
+        </button>
+        <button type="button" class="ai-chat-tab" data-tab="valuation" role="tab" aria-selected="false"
+                style="border:none;cursor:pointer;padding:10px 22px;border-radius:10px;font-weight:700;font-size:.95rem;background:transparent;color:var(--text-muted,#6B7280);transition:all .2s ease">
+          <i class="bi bi-calculator-fill" style="margin-left:6px"></i> تخمین قیمت
+        </button>
+      </div>
+
+      <!-- تب چت -->
+      <div class="ai-chat-tab-panel ai-chat-tab-panel--active" data-tab-panel="chat">
+        <div class="ai-chat-window">
+          <div class="ai-chat-window__head">
+            <span class="ai-dot ai-dot--green"></span>
+            <strong>دستیار سواَپین</strong>
+            <span class="ai-chat-window__status">آنلاین · دستیار هوشمند</span>
+          </div>
+          <div class="ai-chat-window__body" id="ai-chat-messages">
+            <div class="ai-msg ai-msg--bot">
+              <div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>
+              <div class="ai-msg__bubble">
+                سلام <?= h(explode(' ', $user['name'])[0]) ?>! 👋<br>
+                من دستیار معاوضه سواَپین هستم. می‌توانید درباره ارزش کالا، پیشنهاد معاوضه یا نحوه معامله امن سؤال بپرسید.
+                <div class="ai-quick-chips">
+                  <button type="button" class="ai-chip" data-prompt="چطور ارزش کالایم را تخمین بزنم؟" data-switch-tab="valuation">ارزش‌گذاری کالا</button>
+                  <button type="button" class="ai-chip" data-prompt="چه کالایی برای معاوضه با لپ‌تاپ من مناسب است؟">پیشنهاد معاوضه</button>
+                  <button type="button" class="ai-chip" data-prompt="مراحل معامله امن در سواَپین چیست؟">معامله امن</button>
+                  <a href="<?= $url ?>/dashboard#swap-matches" class="ai-chip" style="text-decoration:none;display:inline-flex;align-items:center">Matching Engine</a>
+                </div>
               </div>
             </div>
           </div>
+          <form class="ai-chat-window__input" id="ai-chat-form">
+            <input type="text" id="ai-chat-input" placeholder="سؤال خود را بنویسید…" autocomplete="off" maxlength="500">
+            <button type="submit" class="btn btn-accent" aria-label="ارسال">
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </form>
         </div>
-        <form class="ai-chat-window__input" id="ai-chat-form">
-          <input type="text" id="ai-chat-input" placeholder="سؤال خود را بنویسید…" autocomplete="off" maxlength="500">
-          <button type="submit" class="btn btn-accent" aria-label="ارسال">
-            <i class="bi bi-send-fill"></i>
-          </button>
-        </form>
       </div>
 
-      <aside class="ai-chat-sidebar">
-        <div class="card">
-          <div class="card-body">
-            <h3 style="font-size:1rem;margin-bottom:var(--sp-3)"><i class="bi bi-calculator" style="color:var(--accent-dark)"></i> ارزش‌گذاری سریع</h3>
-            <form id="ai-valuation-form" method="post" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+      <!-- تب تخمین قیمت -->
+      <div class="ai-chat-tab-panel" data-tab-panel="valuation" style="display:none">
+        <div class="ai-valuation-box card" style="padding:0;overflow:hidden;border-radius:var(--wizard-radius,16px);box-shadow:0 10px 30px -15px rgba(10,37,64,.18)">
+          <div style="padding:var(--wizard-gap,20px);background:linear-gradient(135deg,var(--primary,#0A2540),#0f3a66);color:#fff">
+            <h2 style="font-size:1.35rem;margin:0 0 4px 0;font-weight:800">
+              <i class="bi bi-stars" style="color:#FFD166;margin-left:8px"></i>
+              تخمین هوشمند قیمت کالا
+            </h2>
+            <p style="margin:0;opacity:.92;font-size:.95rem">مشخصات کالای خود را وارد کنید تا قیمت تقریبی آن بر اساس داده‌های بازار داخلی سواَپین محاسبه شود.</p>
+          </div>
+
+          <div style="padding:var(--wizard-gap,20px)">
+            <form id="ai-valuation-form" method="post" style="display:flex;flex-direction:column;gap:var(--sp-4)">
               <?= csrf_field() ?>
-              <div>
-                <label for="val-title" style="display:block;font-size:.85rem;font-weight:600;margin-bottom:6px">عنوان کالا</label>
-                <input type="text" id="val-title" name="title" class="wizard-form-input" placeholder="مثلاً آیفون ۱۳ پرو ۲۵۶ گیگ" maxlength="200" style="min-height:40px;padding:8px 12px;font-size:.9rem">
+
+              <div class="wizard-form-group">
+                <label class="wizard-form-label" for="val-title">عنوان کالا *</label>
+                <input type="text" id="val-title" name="title" class="wizard-form-input"
+                       placeholder="مثلاً: آیفون ۱۳ پرو ۲۵۶ گیگ — تمیز با گارانتی" maxlength="200">
               </div>
-              <div>
-                <label for="val-description" style="display:block;font-size:.85rem;font-weight:600;margin-bottom:6px">توضیحات</label>
-                <textarea id="val-description" name="description" class="wizard-form-textarea" rows="3" placeholder="سن، برند، مشخصات، ایرادات…" style="padding:8px 12px;font-size:.9rem;resize:vertical"></textarea>
+
+              <div class="wizard-form-group">
+                <label class="wizard-form-label" for="val-description">توضیحات کامل *</label>
+                <textarea id="val-description" name="description" class="wizard-form-textarea" rows="4"
+                          placeholder="سن، برند، مشخصات فنی، وضعیت بدنی، سلامت قطعات داخلی، ایرادات (اگر وجود دارد)…"></textarea>
               </div>
-              <div>
-                <label for="val-category" style="display:block;font-size:.85rem;font-weight:600;margin-bottom:6px">دسته‌بندی</label>
-                <select id="val-category" name="category_id" class="wizard-form-select" style="min-height:40px;padding:8px 12px;font-size:.9rem">
-                  <option value="">انتخاب دسته‌بندی…</option>
-                  <?php foreach ($categories as $cat): ?>
-                    <?php $label = $cat['parent_name'] ? $cat['parent_name'] . ' › ' . $cat['name'] : $cat['name']; ?>
-                    <option value="<?= (int)$cat['id'] ?>"><?= h($label) ?></option>
-                  <?php endforeach; ?>
-                </select>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">
+                <div class="wizard-form-group">
+                  <label class="wizard-form-label" for="val-category">دسته‌بندی *</label>
+                  <select id="val-category" name="category_id" class="wizard-form-select">
+                    <option value="">انتخاب دسته‌بندی…</option>
+                    <?php foreach ($categories as $cat): ?>
+                      <?php $label = $cat['parent_name'] ? $cat['parent_name'] . ' › ' . $cat['name'] : $cat['name']; ?>
+                      <option value="<?= (int)$cat['id'] ?>"><?= h($label) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+
+                <div class="wizard-form-group">
+                  <label class="wizard-form-label" for="val-condition">وضعیت کالا *</label>
+                  <select id="val-condition" name="condition" class="wizard-form-select">
+                    <?php foreach ($conditionOptions as $val => $lbl): ?>
+                      <option value="<?= h($val) ?>" <?= $val === 'good' ? 'selected' : '' ?>><?= h($lbl) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label for="val-condition" style="display:block;font-size:.85rem;font-weight:600;margin-bottom:6px">وضعیت کالا</label>
-                <select id="val-condition" name="condition" class="wizard-form-select" style="min-height:40px;padding:8px 12px;font-size:.9rem">
-                  <?php foreach ($conditionOptions as $val => $lbl): ?>
-                    <option value="<?= h($val) ?>" <?= $val === 'good' ? 'selected' : '' ?>><?= h($lbl) ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-              <button type="submit" class="btn btn-accent" style="width:100%" id="val-submit-btn">
-                <span id="val-btn-label" class="val-btn-label"><i class="bi bi-magic"></i> محاسبه ارزش</span>
-                <span id="val-btn-loading" class="val-btn-loading" style="display:none;align-items:center;gap:8px"><span class="spinner" style="width:16px;height:16px;border-width:2px"></span> در حال محاسبه…</span>
+
+              <div id="ai-valuation-error"
+                   style="display:none;padding:10px 14px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;font-size:.875rem;line-height:1.6"></div>
+
+              <button type="submit" class="btn btn-accent btn-lg" style="width:100%" id="val-submit-btn">
+                <span id="val-btn-label" class="val-btn-label" style="display:inline-flex;align-items:center;gap:8px"><i class="bi bi-magic"></i> محاسبه ارزش با AI</span>
+                <span id="val-btn-loading" class="val-btn-loading" style="display:none;align-items:center;gap:8px"><span class="spinner" style="width:16px;height:16px;border-width:2px"></span> در حال تحلیل بازار و محاسبه…</span>
               </button>
-              <div id="ai-valuation-error" style="display:none;margin-top:6px;padding:8px 10px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:8px;font-size:.85rem"></div>
             </form>
 
-            <div id="ai-valuation-result" style="display:none;margin-top:var(--sp-4);padding-top:var(--sp-4);border-top:1px solid var(--border-color,#e5e7eb)">
-              <div style="margin-bottom:var(--sp-3)">
-                <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 2px 0">ارزش تخمینی</p>
-                <p style="font-size:1.25rem;font-weight:800;color:var(--primary);margin:0" data-result="value_fmt">—</p>
+            <div id="ai-valuation-result"
+                 style="display:none;margin-top:calc(var(--wizard-gap,20px) + 8px);padding:var(--wizard-gap,20px);border-radius:14px;background:linear-gradient(180deg,rgba(26,107,74,.05),rgba(10,37,64,.02));border:1px solid rgba(26,107,74,.15)">
+              <div style="margin-bottom:16px">
+                <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 4px 0;text-transform:uppercase;font-weight:800;letter-spacing:.3px">✨ نتیجه ارزش‌گذاری هوشمند</p>
               </div>
-              <div style="margin-bottom:var(--sp-3)">
-                <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 2px 0">بازه معتبر</p>
-                <p style="font-size:.95rem;font-weight:600;margin:0" data-result="range_fmt">—</p>
+              <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin-bottom:var(--sp-4)">
+                <div>
+                  <div style="padding:18px;border-radius:12px;background:var(--primary,#0A2540);color:#fff;box-shadow:0 8px 20px -10px var(--primary,#0A2540)">
+                    <p style="font-size:.78rem;opacity:.85;margin:0 0 6px 0">ارزش تخمینی</p>
+                    <p style="font-size:1.75rem;font-weight:800;margin:0" data-result="value_fmt">—</p>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;justify-content:space-between">
+                  <div>
+                    <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 2px 0">محدوده پیشنهادی</p>
+                    <p style="font-size:1.05rem;font-weight:700;margin:0;color:var(--primary)" data-result="range_fmt">—</p>
+                  </div>
+                  <div>
+                    <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 2px 0">ضریب اطمینان</p>
+                    <p style="font-size:1.05rem;font-weight:700;margin:0" data-result="confidence">—</p>
+                  </div>
+                </div>
               </div>
-              <div style="margin-bottom:var(--sp-3)">
-                <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 2px 0">ضریب اطمینان</p>
-                <p style="font-size:.95rem;font-weight:600;margin:0" data-result="confidence">—</p>
-              </div>
-              <div style="margin-bottom:var(--sp-3)">
-                <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 6px 0">دلایل ارزش‌گذاری</p>
-                <ul data-result="reasons" style="margin:0;padding-right:18px;font-size:.875rem;line-height:1.8;color:var(--text,#1f2937)">
+
+              <div style="margin-bottom:var(--sp-4)">
+                <p style="font-size:.85rem;color:var(--text-muted);margin:0 0 8px 0;font-weight:700">
+                  <i class="bi bi-info-circle" style="color:var(--accent-dark);margin-left:6px"></i>
+                  دلایل ارزش‌گذاری:
+                </p>
+                <ul data-result="reasons"
+                    style="margin:0;padding-right:20px;font-size:.925rem;line-height:2;color:var(--text,#1f2937)">
                   <li style="color:var(--text-muted)">—</li>
                 </ul>
               </div>
-              <div style="margin-bottom:var(--sp-4)">
-                <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 2px 0">توجه</p>
-                <p style="font-size:.85rem;margin:0;line-height:1.7;color:var(--text,#1f2937)" data-result="note">—</p>
-              </div>
+
+              <div style="margin-bottom:var(--sp-4);padding:12px 14px;border-radius:10px;background:#FFF8E1;border:1px dashed #F5C518;color:#856404;font-size:.875rem;line-height:1.75" data-result="note">—</div>
+
               <a href="<?= $url ?>/listings/create.php"
                  id="ai-valuation-create-link"
-                 class="btn btn-primary"
+                 class="btn btn-primary btn-lg"
                  style="width:100%"
                  target="_self">
-                <i class="bi bi-plus-circle"></i> ثبت این کالا در آگهی با این قیمت
+                <i class="bi bi-plus-circle"></i> ثبت این کالا در آگهی با همین قیمت
               </a>
             </div>
           </div>
         </div>
+      </div>
 
+      <aside class="ai-chat-sidebar" style="margin-top:var(--sp-4)">
         <div class="card">
           <div class="card-body">
             <h3 style="font-size:1rem;margin-bottom:var(--sp-3)"><i class="bi bi-lightbulb" style="color:var(--accent-dark)"></i> نکته</h3>
