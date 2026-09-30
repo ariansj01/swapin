@@ -37,6 +37,29 @@ $vals = [
 
 $suggestedValue = (int)($_POST['suggested_value'] ?? rand(10000000, 50000000));
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if (isset($_GET['prefill_title'])) {
+        $vals['title'] = clean($_GET['prefill_title']);
+    }
+    if (isset($_GET['prefill_desc'])) {
+        $vals['description'] = clean($_GET['prefill_desc']);
+    }
+    if (isset($_GET['prefill_cat'])) {
+        $vals['category_id'] = (int)$_GET['prefill_cat'];
+    }
+    if (isset($_GET['prefill_cond'])) {
+        $allowedCond = ['new', 'like_new', 'good', 'fair', 'poor'];
+        $prefillCond = clean($_GET['prefill_cond']);
+        if (in_array($prefillCond, $allowedCond, true)) {
+            $vals['condition'] = $prefillCond;
+        }
+    }
+    if (isset($_GET['prefill_value'])) {
+        $suggestedValue = max(0, (int)$_GET['prefill_value']);
+        $vals['estimated_value'] = $suggestedValue;
+    }
+}
+
 // Category data
 $categories = DB::fetchAll(
     'SELECT c.*, p.name AS parent_name FROM categories c
@@ -367,7 +390,7 @@ render_navbar($user);
               <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">قیمت معاوضه (تخمین ارزش کالا)</h3>
             </div>
             <p class="price-estimate-note" style="margin:0 0 var(--wizard-gap) 0">این قیمت برای پیشنهاد معاوضه، محاسبه «اختلاف قیمت» و امتیازدهی هوشمند استفاده می‌شود.</p>
-            <p class="price-estimate-label">قیمت پیشنهادی سیستم</p>
+            <p class="price-estimate-label"> قیمت پیشنهاد سیستم(تومان) </p>
             <div class="wizard-form-group" style="margin-top: var(--wizard-gap)">
               <input type="text" id="step6-suggested-price-input" class="wizard-form-input"
                      value="<?= h(number_format($suggestedValue)) ?>"

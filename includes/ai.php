@@ -320,8 +320,8 @@ function ai_chat_respond(string $userMessage, array $history = [], ?array $user 
 
 function ai_chat_fallback(string $userMessage): string {
     $t = mb_strtolower($userMessage);
-    if (str_contains($t, 'قیمت') || str_contains($t, 'ارزش')) {
-        return 'برای ارزش‌گذاری، کالا را در «ثبت کالا» ثبت کنید — دستیار هوشمند ارزش ' . CREDIT_UNIT . ' را به‌صورت محدوده پیشنهاد می‌دهد.';
+    if (str_contains($t, 'قیمت') || str_contains($t, 'ارزش') || str_contains($t, 'چقدر') || str_contains($t, 'تخمین')) {
+        return 'فرم ارزش‌گذاری سریع در کنار همین پنجره چت در دسترس است — مشخصات کالای خود را وارد کنید تا دستیار سواَپین قیمت تقریبی را بر اساس آگهی‌های مشابه بازار داخلی محاسبه کند.';
     }
     if (str_contains($t, 'معاوضه') || str_contains($t, 'تعویض')) {
         return 'برای یافتن معاوضه مناسب، از فیلترهای صفحه اصلی و بخش پیشنهادهای داشبورد استفاده کنید.';
@@ -329,7 +329,7 @@ function ai_chat_fallback(string $userMessage): string {
     return 'سؤال شما دریافت شد. لطفاً کمی بعد دوباره تلاش کنید یا از بخش ثبت کالا و راهنما کمک بگیرید.';
 }
 
-function ai_fetch_similar_listings(int $categoryId, int $limit = 6): array {
+function ai_fetch_similar_listings(int $categoryId, int $limit = 10): array {
     if ($categoryId <= 0) {
         return [];
     }
@@ -343,6 +343,45 @@ function ai_fetch_similar_listings(int $categoryId, int $limit = 6): array {
          LIMIT ?',
         [$categoryId, $limit]
     );
+}
+
+function ai_category_stats(int $categoryId): array {
+    if ($categoryId <= 0) {
+        return [
+            'total_listings' => 0,
+            'avg_value'      => 0.0,
+            'median_value'   => 0.0,
+            'p25'            => 0.0,
+            'p75'            => 0.0,
+        ];
+    }
+    $row = DB::fetch(
+        'SELECT
+            COUNT(*) AS total_listings,
+            AVG(estimated_value) AS avg_value,
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(GROUP_CONCAT(estimated_value ORDER BY estimated_value SEPARATOR \',\'), \',\', 1 + FLOOR(COUNT(*) * 0.25)), \',\', -1) AS DECIMAL(18,2)) AS p25,
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(GROUP_CONCAT(estimated_value ORDER BY estimated_value SEPARATOR \',\'), \',\', 1 + FLOOR(COUNT(*) * 0.50)), \',\', -1) AS DECIMAL(18,2)) AS median_value,
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(GROUP_CONCAT(estimated_value ORDER BY estimated_value SEPARATOR \',\'), \',\', 1 + FLOOR(COUNT(*) * 0.75)), \',\', -1) AS DECIMAL(18,2)) AS p75
+         FROM listings
+         WHERE category_id = ? AND status = "active" AND review_status = "approved" AND estimated_value > 0',
+        [$categoryId]
+    );
+    if (!$row) {
+        return [
+            'total_listings' => 0,
+            'avg_value'      => 0.0,
+            'median_value'   => 0.0,
+            'p25'            => 0.0,
+            'p75'            => 0.0,
+        ];
+    }
+    return [
+        'total_listings' => (int) ($row['total_listings'] ?? 0),
+        'avg_value'      => (float) ($row['avg_value'] ?? 0),
+        'median_value'   => (float) ($row['median_value'] ?? 0),
+        'p25'            => (float) ($row['p25'] ?? 0),
+        'p75'            => (float) ($row['p75'] ?? 0),
+    ];
 }
 
 function ai_demand_level(int $categoryId): string {
@@ -375,6 +414,9 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
         ];
     }, $similarItems);
 
+    $categoryId = (int) ($listing['category_id'] ?? 0);
+    $catStats   = ai_category_stats($categoryId);
+
     $payload = [
         'listing' => [
             'title'       => $listing['title'],
@@ -383,9 +425,16 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
             'condition'   => $listing['condition'],
         ],
         'context' => [
-            'similar_items' => $similar,
-            'demand_level'  => $listing['demand_level'] ?? 'medium',
-            'credit_unit'   => CREDIT_UNIT,
+            'similar_items'      => $similar,
+            'demand_level'       => $listing['demand_level'] ?? 'medium',
+            'credit_unit'        => CREDIT_UNIT,
+            'category_stats'     => [
+                'total_listings' => $catStats['total_listings'],
+                'avg_value'      => $catStats['avg_value'],
+                'median_value'   => $catStats['median_value'],
+                'p25'            => $catStats['p25'],
+                'p75'            => $catStats['p75'],
+            ],
         ],
     ];
 
@@ -453,15 +502,35 @@ function ai_price_listing_fallback(array $listing): array {
     $title       = $listing['title'] ?? '';
     $description = $listing['description'] ?? '';
     $condition   = $listing['condition'] ?? 'good';
+    $categoryId  = (int) ($listing['category_id'] ?? 0);
 
     $condMul = ['new' => 1.0, 'like_new' => 0.88, 'good' => 0.72, 'fair' => 0.58, 'poor' => 0.42];
     $mul       = $condMul[$condition] ?? 0.72;
     $seed      = abs(crc32($title . $description . $condition));
-    $base      = 3_500_000 + ($seed % 42_000_000);
+    $seedBase  = 3_500_000 + ($seed % 42_000_000);
+
+    $usedCatStats = false;
+    if ($categoryId > 0) {
+        $catStats = ai_category_stats($categoryId);
+        if ($catStats['total_listings'] > 0 && $catStats['avg_value'] > 0) {
+            $base = (int) round(0.7 * $catStats['avg_value'] + 0.3 * $seedBase);
+            $usedCatStats = true;
+        } else {
+            $base = $seedBase;
+        }
+    } else {
+        $base = $seedBase;
+    }
+
     $value     = (int) round($base * $mul / 100_000) * 100_000;
     $value     = max(500_000, min($value, 500_000_000_000));
     $rangeLow  = (int) round($value * 0.88 / 100_000) * 100_000;
     $rangeHigh = (int) round($value * 1.12 / 100_000) * 100_000;
+
+    $reasons = ['تخمین پشتیبان سیستم (دستیار در دسترس نبود)'];
+    if ($usedCatStats) {
+        $reasons[] = 'مبنای تخمین: میانگین دسته (ترکیب ۷۰٪ میانگین دسته + ۳۰٪ تخمین هش)';
+    }
 
     return [
         'value'       => $value,
@@ -471,7 +540,7 @@ function ai_price_listing_fallback(array $listing): array {
         'range_fmt'   => fmt_credit((float) $rangeLow) . ' — ' . fmt_credit((float) $rangeHigh),
         'confidence'  => 55,
         'uncertain'   => true,
-        'reasons'     => ['تخمین پشتیبان سیستم (دستیار در دسترس نبود)'],
+        'reasons'     => $reasons,
         'note'        => 'اتصال دستیار هوشمند برقرار نشد — از تخمین داخلی استفاده شد.',
         'ai_source'   => 'fallback',
     ];

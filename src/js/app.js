@@ -981,6 +981,216 @@ function initAiChat() {
   });
 }
 
+/* ── AI Valuation Form (sidebar) ────────────────────────────────────────── */
+(function () {
+  function init() {
+    const form       = document.getElementById('ai-valuation-form');
+    if (!form) return;
+
+    const titleInput   = document.getElementById('val-title');
+    const descInput    = document.getElementById('val-description');
+    const catSelect    = document.getElementById('val-category');
+    const condSelect   = document.getElementById('val-condition');
+    const submitBtn    = document.getElementById('val-submit-btn');
+    const btnLabel     = document.getElementById('val-btn-label');
+    const btnLoading   = document.getElementById('val-btn-loading');
+    const errorDiv     = document.getElementById('ai-valuation-error');
+    const resultDiv    = document.getElementById('ai-valuation-result');
+    const createLink   = document.getElementById('ai-valuation-create-link');
+    const chatMessages = document.getElementById('ai-chat-messages');
+
+    if (!titleInput || !descInput || !catSelect || !condSelect || !submitBtn) return;
+
+    const appUrl = (typeof getAppUrl === 'function') ? getAppUrl() : '';
+
+    function escHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str == null ? '' : String(str);
+      return d.innerHTML;
+    }
+
+    function setLoading(loading) {
+      if (btnLabel)   btnLabel.style.display   = loading ? 'none'       : '';
+      if (btnLoading) btnLoading.style.display = loading ? 'inline-flex' : 'none';
+      submitBtn.disabled = !!loading;
+    }
+
+    function showError(msg) {
+      if (!errorDiv) return;
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+    }
+
+    function hideError() {
+      if (!errorDiv) return;
+      errorDiv.style.display = 'none';
+      errorDiv.textContent = '';
+    }
+
+    function appendBotMsg(text) {
+      if (!chatMessages) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'ai-msg ai-msg--bot';
+      const safe = escHtml(text).replace(/\n/g, '<br>');
+      wrap.innerHTML =
+        '<div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>' +
+        '<div class="ai-msg__bubble">' + safe + '</div>';
+      chatMessages.appendChild(wrap);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function pulseHighlight() {
+      const orig = form.style.boxShadow;
+      const origTrans = form.style.transition;
+      form.style.transition = 'box-shadow .25s ease';
+      let step = 0;
+      const tick = () => {
+        step++;
+        form.style.boxShadow = step % 2 === 1
+          ? '0 0 0 4px rgba(26,107,74,.28), 0 10px 25px -5px rgba(10,37,64,.15)'
+          : '0 0 0 2px rgba(26,107,74,.12), 0 4px 12px -4px rgba(10,37,64,.1)';
+        if (step < 5) setTimeout(tick, 200);
+        else {
+          form.style.boxShadow = orig;
+          form.style.transition = origTrans;
+        }
+      };
+      tick();
+    }
+
+    document.querySelectorAll('[data-prompt], .ai-chip').forEach(chip => {
+      const prompt = (chip.getAttribute('data-prompt') || chip.textContent || '').toString();
+      const txt    = (chip.textContent || '').toString();
+      if (prompt.includes('ارزش‌گذاری') || txt.includes('ارزش‌گذاری')) {
+        chip.addEventListener('click', () => {
+          setTimeout(() => {
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            pulseHighlight();
+          }, 30);
+        });
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const title = titleInput.value.trim();
+      const desc  = descInput.value.trim();
+      const catId = catSelect.value;
+      const cond  = condSelect.value;
+
+      if (title.length < 5)      { showError('عنوان حداقل ۵ کاراکتر باشد');           return; }
+      if (desc.length  < 20)     { showError('توضیحات حداقل ۲۰ کاراکتر باشد');        return; }
+      if (!(Number(catId) > 0))  { showError('دسته‌بندی را انتخاب کنید');             return; }
+      if (!cond)                 { showError('وضعیت کالا را انتخاب کنید');            return; }
+
+      setLoading(true);
+
+      const fd = new FormData();
+      fd.append('title', title);
+      fd.append('description', desc);
+      fd.append('condition', cond);
+      fd.append('category_id', catId);
+      if (typeof appendCsrf === 'function') appendCsrf(fd);
+      else {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        if (token) fd.append('_csrf', token);
+      }
+
+      const csrfHeader = {};
+      if (typeof withCsrfHeaders === 'function') {
+        Object.assign(csrfHeader, withCsrfHeaders());
+      } else {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        if (token) csrfHeader['X-CSRF-Token'] = token;
+      }
+
+      const minDelay = new Promise(r => setTimeout(r, 2800));
+
+      try {
+        const [res] = await Promise.all([
+          fetch(appUrl + '/api/ai_valuate.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: csrfHeader,
+            body: fd,
+          }),
+          minDelay,
+        ]);
+
+        let data;
+        try { data = await res.json(); } catch { data = { ok: false, error: 'parse_error' }; }
+
+        if (!res.ok || !data || data.ok !== true) {
+          if (data && data.error === 'rate_limited') {
+            throw new Error('حداکثر ۳ بار در ۱۵ دقیقه می‌توانید ارزش‌گذاری AI بگیرید.');
+          }
+          throw new Error((data && (data.message || data.error)) || 'خطا در دریافت ارزش‌گذاری. دوباره تلاش کنید.');
+        }
+
+        if (resultDiv) {
+          resultDiv.style.display = 'none';
+
+          resultDiv.querySelectorAll('[data-result]').forEach(el => {
+            const key = el.getAttribute('data-result');
+            if (key === 'confidence') {
+              const warn = data.uncertain ? '⚠ ' : '';
+              el.textContent = warn + 'اطمینان AI: ' + (data.confidence ?? '') + '%';
+            } else if (key === 'reasons') {
+              el.innerHTML = '';
+              if (Array.isArray(data.reasons)) {
+                data.reasons.forEach(r => {
+                  const li = document.createElement('li');
+                  li.innerHTML = '<i class="bi bi-check2"></i>' + escHtml(r);
+                  el.appendChild(li);
+                });
+              }
+            } else if (data && key in data) {
+              el.textContent = data[key] == null ? '' : String(data[key]);
+            }
+          });
+
+          resultDiv.style.display = 'block';
+        }
+
+        if (createLink) {
+          const params = new URLSearchParams();
+          params.set('prefill_title', title);
+          params.set('prefill_desc',  desc);
+          params.set('prefill_cat',   catId);
+          params.set('prefill_cond',  cond);
+          if (data.value !== undefined && data.value !== null) {
+            params.set('prefill_value', String(data.value));
+          }
+          const base = createLink.getAttribute('href') || (appUrl + '/listings/create.php');
+          const sep  = base.includes('?') ? '&' : '?';
+          createLink.href = base + sep + params.toString();
+        }
+
+        if (chatMessages) {
+          const summary =
+            'برآورد ارزش برای «' + title + '»: ' +
+            (data.value_fmt || '') +
+            (data.range_fmt ? ' (محدوده: ' + data.range_fmt + ')' : '');
+          appendBotMsg(summary);
+        }
+
+      } catch (err) {
+        showError(err && err.message ? err.message : 'خطای شبکه. اتصال را بررسی کنید.');
+      } finally {
+        setLoading(false);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
 /* ── AI Matching Engine (dashboard) ─────────────────────────────────────── */
 function initAiMatch() {
   const hub     = document.getElementById('swap-matches');

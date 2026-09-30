@@ -14,15 +14,15 @@ flutter {
 
 android {
     namespace = "ir.swaapin.mobile"
-    compileSdk = 34
-    buildToolsVersion = "34.0.0"
+    compileSdk = 37
+    buildToolsVersion = "36.0.0"
 
     defaultConfig {
         applicationId = "ir.swaapin.mobile"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 37
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
