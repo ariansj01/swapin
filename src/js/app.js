@@ -981,41 +981,11 @@ function initAiChat() {
   });
 }
 
-/* ── AI Valuation Form (tab-box below chat) ─────────────────────────────── */
+/* ── AI Valuation Form (section below chat) ─────────────────────────────── */
 (function () {
   function init() {
-    const form       = document.getElementById('ai-valuation-form');
-    const tabsWrap   = document.querySelector('.ai-chat-tabs');
-
-    function switchTab(tabName) {
-      if (!tabsWrap) return;
-      tabsWrap.querySelectorAll('.ai-chat-tab').forEach(t => {
-        const active = t.getAttribute('data-tab') === tabName;
-        t.classList.toggle('ai-chat-tab--active', active);
-        t.setAttribute('aria-selected', active ? 'true' : 'false');
-        if (active) {
-          t.style.background = 'var(--primary,#0A2540)';
-          t.style.color = '#fff';
-        } else {
-          t.style.background = 'transparent';
-          t.style.color = 'var(--text-muted,#6B7280)';
-        }
-      });
-      document.querySelectorAll('[data-tab-panel]').forEach(panel => {
-        const show = panel.getAttribute('data-tab-panel') === tabName;
-        panel.classList.toggle('ai-chat-tab-panel--active', show);
-        panel.style.display = show ? '' : 'none';
-      });
-    }
-
-    if (tabsWrap) {
-      tabsWrap.querySelectorAll('.ai-chat-tab').forEach(t => {
-        t.addEventListener('click', () => {
-          const name = t.getAttribute('data-tab');
-          if (name) switchTab(name);
-        });
-      });
-    }
+    const form          = document.getElementById('ai-valuation-form');
+    const valSection    = document.getElementById('ai-valuation-section');
 
     if (!form) return;
 
@@ -1073,7 +1043,7 @@ function initAiChat() {
     }
 
     function pulseHighlight() {
-      const target = valBox || form;
+      const target = valBox || valSection || form;
       if (!target) return;
       const orig = target.style.boxShadow;
       const origTrans = target.style.transition;
@@ -1094,19 +1064,17 @@ function initAiChat() {
     }
 
     document.querySelectorAll('[data-prompt], .ai-chip').forEach(chip => {
-      const switchTabAttr = chip.getAttribute('data-switch-tab');
+      const scrollTargetId = chip.getAttribute('data-scroll-target');
       const prompt = (chip.getAttribute('data-prompt') || chip.textContent || '').toString();
       const txt    = (chip.textContent || '').toString();
-      if (switchTabAttr === 'valuation' || prompt.includes('ارزش‌گذاری') || txt.includes('ارزش‌گذاری')) {
-        chip.addEventListener('click', (e) => {
+      if (scrollTargetId === 'ai-valuation-section' || prompt.includes('ارزش‌گذاری') || txt.includes('ارزش‌گذاری')) {
+        chip.addEventListener('click', () => {
           setTimeout(() => {
-            switchTab('valuation');
-            setTimeout(() => {
-              if (valBox) valBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              pulseHighlight();
-              if (titleInput) titleInput.focus({ preventScroll: true });
-            }, 220);
-          }, 30);
+            const scrollTo = valSection || valBox || form;
+            if (scrollTo) scrollTo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            pulseHighlight();
+            if (titleInput) titleInput.focus({ preventScroll: true });
+          }, 40);
         });
       }
     });

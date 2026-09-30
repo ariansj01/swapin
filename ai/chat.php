@@ -90,19 +90,8 @@ render_navbar($user);
     ?>
     <div class="ai-chat-layout" id="ai-chat-app">
 
-      <div class="ai-chat-tabs" role="tablist" style="margin-bottom:var(--sp-4);display:inline-flex;gap:6px;padding:6px;background:rgba(10,37,64,.04);border-radius:14px;border:1px solid var(--border-color,#e5e7eb)">
-        <button type="button" class="ai-chat-tab ai-chat-tab--active" data-tab="chat" role="tab" aria-selected="true"
-                style="border:none;cursor:pointer;padding:10px 22px;border-radius:10px;font-weight:700;font-size:.95rem;background:var(--primary,#0A2540);color:#fff;transition:all .2s ease">
-          <i class="bi bi-chat-dots-fill" style="margin-left:6px"></i> چت
-        </button>
-        <button type="button" class="ai-chat-tab" data-tab="valuation" role="tab" aria-selected="false"
-                style="border:none;cursor:pointer;padding:10px 22px;border-radius:10px;font-weight:700;font-size:.95rem;background:transparent;color:var(--text-muted,#6B7280);transition:all .2s ease">
-          <i class="bi bi-calculator-fill" style="margin-left:6px"></i> تخمین قیمت
-        </button>
-      </div>
-
-      <!-- تب چت -->
-      <div class="ai-chat-tab-panel ai-chat-tab-panel--active" data-tab-panel="chat">
+      <!-- بخش اول: چت دستیار -->
+      <section aria-label="چت دستیار سواَپین" style="margin-bottom:calc(var(--wizard-gap,20px) + var(--sp-5))">
         <div class="ai-chat-window">
           <div class="ai-chat-window__head">
             <span class="ai-dot ai-dot--green"></span>
@@ -116,7 +105,7 @@ render_navbar($user);
                 سلام <?= h(explode(' ', $user['name'])[0]) ?>! 👋<br>
                 من دستیار معاوضه سواَپین هستم. می‌توانید درباره ارزش کالا، پیشنهاد معاوضه یا نحوه معامله امن سؤال بپرسید.
                 <div class="ai-quick-chips">
-                  <button type="button" class="ai-chip" data-prompt="چطور ارزش کالایم را تخمین بزنم؟" data-switch-tab="valuation">ارزش‌گذاری کالا</button>
+                  <button type="button" class="ai-chip" data-prompt="چطور ارزش کالایم را تخمین بزنم؟" data-scroll-target="ai-valuation-section">ارزش‌گذاری کالا</button>
                   <button type="button" class="ai-chip" data-prompt="چه کالایی برای معاوضه با لپ‌تاپ من مناسب است؟">پیشنهاد معاوضه</button>
                   <button type="button" class="ai-chip" data-prompt="مراحل معامله امن در سواَپین چیست؟">معامله امن</button>
                   <a href="<?= $url ?>/dashboard#swap-matches" class="ai-chip" style="text-decoration:none;display:inline-flex;align-items:center">Matching Engine</a>
@@ -131,17 +120,24 @@ render_navbar($user);
             </button>
           </form>
         </div>
-      </div>
+      </section>
 
-      <!-- تب تخمین قیمت -->
-      <div class="ai-chat-tab-panel" data-tab-panel="valuation" style="display:none">
+      <!-- بخش دوم: تخمین قیمت (زیر چت) -->
+      <section id="ai-valuation-section" aria-label="تخمین قیمت کالا" style="margin-bottom:calc(var(--wizard-gap,20px) + var(--sp-4))">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-3)">
+          <div style="width:4px;height:28px;border-radius:3px;background:linear-gradient(180deg,var(--primary),var(--accent-dark))"></div>
+          <h2 style="font-size:1.3rem;margin:0;font-weight:800;color:var(--primary,#0A2540)">
+            <i class="bi bi-calculator-fill" style="margin-left:8px;color:var(--accent-dark)"></i>
+            تخمین قیمت کالا با AI
+          </h2>
+        </div>
         <div class="ai-valuation-box card" style="padding:0;overflow:hidden;border-radius:var(--wizard-radius,16px);box-shadow:0 10px 30px -15px rgba(10,37,64,.18)">
           <div style="padding:var(--wizard-gap,20px);background:linear-gradient(135deg,var(--primary,#0A2540),#0f3a66);color:#fff">
-            <h2 style="font-size:1.35rem;margin:0 0 4px 0;font-weight:800">
+            <h3 style="font-size:1.2rem;margin:0 0 4px 0;font-weight:800">
               <i class="bi bi-stars" style="color:#FFD166;margin-left:8px"></i>
-              تخمین هوشمند قیمت کالا
-            </h2>
-            <p style="margin:0;opacity:.92;font-size:.95rem">مشخصات کالای خود را وارد کنید تا قیمت تقریبی آن بر اساس داده‌های بازار داخلی سواَپین محاسبه شود.</p>
+              تخمین هوشمند قیمت کالا بر اساس بازار داخلی سواَپین
+            </h3>
+            <p style="margin:0;opacity:.92;font-size:.95rem">مشخصات کالای خود را وارد کنید تا قیمت تقریبی آن بر اساس آگهی‌های تاییدشده و آمار دسته‌بندی محاسبه شود.</p>
           </div>
 
           <div style="padding:var(--wizard-gap,20px)">
@@ -238,9 +234,9 @@ render_navbar($user);
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <aside class="ai-chat-sidebar" style="margin-top:var(--sp-4)">
+      <aside class="ai-chat-sidebar">
         <div class="card">
           <div class="card-body">
             <h3 style="font-size:1rem;margin-bottom:var(--sp-3)"><i class="bi bi-lightbulb" style="color:var(--accent-dark)"></i> نکته</h3>
