@@ -134,11 +134,11 @@ render_navbar($user);
           </div>
           <div class="ai-valuation-box">
             <div class="ai-valuation-box__head">
-              <h3 class="ai-valuation-box__head-title">
+              <h3 class="ai-valuation-box__head-title" style="color: #fff;">
                 <i class="bi bi-stars"></i>
                 تخمین هوشمند قیمت کالا بر اساس بازار داخلی سواَپین
               </h3>
-              <p class="ai-valuation-box__head-desc">مشخصات کالای خود را وارد کنید تا قیمت تقریبی آن بر اساس آگهی‌های تاییدشده و آمار دسته‌بندی محاسبه شود.</p>
+              <p class="ai-valuation-box__head-desc" style="color: #FFC928;">مشخصات کالای خود را وارد کنید تا قیمت تقریبی آن بر اساس آگهی‌های تاییدشده و آمار دسته‌بندی محاسبه شود.</p>
             </div>
 
             <div class="ai-valuation-box__body">
