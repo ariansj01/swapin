@@ -123,26 +123,26 @@ render_navbar($user);
           </div>
         </section>
 
-        <!-- بخش دوم: تخمین قیمت (کنار چت) -->
+        <!-- بخش دوم: تخمین قیمت (زیر چت) -->
         <section id="ai-valuation-section" aria-label="تخمین قیمت کالا" class="ai-valuation-panel">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-3)">
-            <div style="width:4px;height:28px;border-radius:3px;background:linear-gradient(180deg,var(--primary),var(--accent-dark))"></div>
-            <h2 style="font-size:1.3rem;margin:0;font-weight:800;color:var(--primary,#0A2540)">
-              <i class="bi bi-calculator-fill" style="margin-left:8px;color:var(--accent-dark)"></i>
+          <div class="ai-valuation-panel__header">
+            <div class="ai-valuation-panel__bar"></div>
+            <h2 class="ai-valuation-panel__title">
+              <i class="bi bi-calculator-fill"></i>
               تخمین قیمت کالا با AI
             </h2>
           </div>
-          <div class="ai-valuation-box card" style="padding:0;overflow:hidden;border-radius:var(--wizard-radius,16px);box-shadow:0 10px 30px -15px rgba(10,37,64,.18)">
-            <div style="padding:var(--wizard-gap,20px);background:linear-gradient(135deg,var(--primary,#0A2540),#0f3a66);color:#fff">
-              <h3 style="font-size:1.2rem;margin:0 0 4px 0;font-weight:800">
-                <i class="bi bi-stars" style="color:#FFD166;margin-left:8px"></i>
+          <div class="ai-valuation-box">
+            <div class="ai-valuation-box__head">
+              <h3 class="ai-valuation-box__head-title">
+                <i class="bi bi-stars"></i>
                 تخمین هوشمند قیمت کالا بر اساس بازار داخلی سواَپین
               </h3>
-              <p style="margin:0;opacity:.92;font-size:.95rem">مشخصات کالای خود را وارد کنید تا قیمت تقریبی آن بر اساس آگهی‌های تاییدشده و آمار دسته‌بندی محاسبه شود.</p>
+              <p class="ai-valuation-box__head-desc">مشخصات کالای خود را وارد کنید تا قیمت تقریبی آن بر اساس آگهی‌های تاییدشده و آمار دسته‌بندی محاسبه شود.</p>
             </div>
 
-            <div style="padding:var(--wizard-gap,20px)">
-              <form id="ai-valuation-form" method="post" style="display:flex;flex-direction:column;gap:var(--sp-4)">
+            <div class="ai-valuation-box__body">
+              <form id="ai-valuation-form" method="post" class="ai-valuation-form">
                 <?= csrf_field() ?>
 
                 <div class="wizard-form-group">
@@ -157,7 +157,7 @@ render_navbar($user);
                             placeholder="سن، برند، مشخصات فنی، وضعیت بدنی، سلامت قطعات داخلی، ایرادات (اگر وجود دارد)…"></textarea>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">
+                <div class="ai-valuation-form__row">
                   <div class="wizard-form-group">
                     <label class="wizard-form-label" for="val-category">دسته‌بندی *</label>
                     <select id="val-category" name="category_id" class="wizard-form-select">
@@ -179,56 +179,52 @@ render_navbar($user);
                   </div>
                 </div>
 
-                <div id="ai-valuation-error"
-                     style="display:none;padding:10px 14px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;font-size:.875rem;line-height:1.6"></div>
+                <div id="ai-valuation-error" class="ai-valuation-form__error"></div>
 
-                <button type="submit" class="btn btn-accent btn-lg" style="width:100%" id="val-submit-btn">
-                  <span id="val-btn-label" class="val-btn-label" style="display:inline-flex;align-items:center;gap:8px"><i class="bi bi-magic"></i> محاسبه ارزش با AI</span>
-                  <span id="val-btn-loading" class="val-btn-loading" style="display:none;align-items:center;gap:8px"><span class="spinner" style="width:16px;height:16px;border-width:2px"></span> در حال تحلیل بازار و محاسبه…</span>
+                <button type="submit" class="btn btn-accent btn-lg ai-valuation-submit" id="val-submit-btn">
+                  <span id="val-btn-label" class="val-btn-label"><i class="bi bi-magic"></i> محاسبه ارزش با AI</span>
+                  <span id="val-btn-loading" class="val-btn-loading"><span class="spinner" style="width:16px;height:16px;border-width:2px"></span> در حال تحلیل بازار و محاسبه…</span>
                 </button>
               </form>
 
-              <div id="ai-valuation-result"
-                   style="display:none;margin-top:calc(var(--wizard-gap,20px) + 8px);padding:var(--wizard-gap,20px);border-radius:14px;background:linear-gradient(180deg,rgba(26,107,74,.05),rgba(10,37,64,.02));border:1px solid rgba(26,107,74,.15)">
-                <div style="margin-bottom:16px">
-                  <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 4px 0;text-transform:uppercase;font-weight:800;letter-spacing:.3px">✨ نتیجه ارزش‌گذاری هوشمند</p>
+              <div id="ai-valuation-result" class="ai-valuation-result">
+                <div class="ai-valuation-result__head">
+                  <p class="ai-valuation-result__badge">✨ نتیجه ارزش‌گذاری هوشمند</p>
                 </div>
-                <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin-bottom:var(--sp-4)">
+                <div class="ai-valuation-result__grid">
                   <div>
-                    <div style="padding:18px;border-radius:12px;background:var(--primary,#0A2540);color:#fff;box-shadow:0 8px 20px -10px var(--primary,#0A2540)">
-                      <p style="font-size:.78rem;opacity:.85;margin:0 0 6px 0">ارزش تخمینی</p>
-                      <p style="font-size:1.75rem;font-weight:800;margin:0" data-result="value_fmt">—</p>
+                    <div class="ai-valuation-result__value-card">
+                      <p class="ai-valuation-result__value-label">ارزش تخمینی</p>
+                      <p class="ai-valuation-result__value-num" data-result="value_fmt">—</p>
                     </div>
                   </div>
-                  <div style="display:flex;flex-direction:column;gap:10px;justify-content:space-between">
+                  <div class="ai-valuation-result__meta">
                     <div>
-                      <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 2px 0">محدوده پیشنهادی</p>
-                      <p style="font-size:1.05rem;font-weight:700;margin:0;color:var(--primary)" data-result="range_fmt">—</p>
+                      <p class="ai-valuation-result__meta-item-label">محدوده پیشنهادی</p>
+                      <p class="ai-valuation-result__meta-item-value" data-result="range_fmt">—</p>
                     </div>
                     <div>
-                      <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 2px 0">ضریب اطمینان</p>
-                      <p style="font-size:1.05rem;font-weight:700;margin:0" data-result="confidence">—</p>
+                      <p class="ai-valuation-result__meta-item-label">ضریب اطمینان</p>
+                      <p class="ai-valuation-result__meta-item-value" data-result="confidence">—</p>
                     </div>
                   </div>
                 </div>
 
-                <div style="margin-bottom:var(--sp-4)">
-                  <p style="font-size:.85rem;color:var(--text-muted);margin:0 0 8px 0;font-weight:700">
-                    <i class="bi bi-info-circle" style="color:var(--accent-dark);margin-left:6px"></i>
+                <div class="ai-valuation-result__reasons">
+                  <p class="ai-valuation-result__reasons-title">
+                    <i class="bi bi-info-circle"></i>
                     دلایل ارزش‌گذاری:
                   </p>
-                  <ul data-result="reasons"
-                      style="margin:0;padding-right:20px;font-size:.925rem;line-height:2;color:var(--text,#1f2937)">
+                  <ul class="ai-valuation-result__reasons-list" data-result="reasons">
                     <li style="color:var(--text-muted)">—</li>
                   </ul>
                 </div>
 
-                <div style="margin-bottom:var(--sp-4);padding:12px 14px;border-radius:10px;background:#FFF8E1;border:1px dashed #F5C518;color:#856404;font-size:.875rem;line-height:1.75" data-result="note">—</div>
+                <div class="ai-valuation-result__note" data-result="note">—</div>
 
                 <a href="<?= $url ?>/listings/create.php"
                    id="ai-valuation-create-link"
-                   class="btn btn-primary btn-lg"
-                   style="width:100%"
+                   class="btn btn-primary btn-lg ai-valuation-result__create-btn"
                    target="_self">
                   <i class="bi bi-plus-circle"></i> ثبت این کالا در آگهی با همین قیمت
                 </a>
