@@ -2224,7 +2224,7 @@ if (!defined('GROQ_API_KEY')) {
     define('GROQ_API_KEY', '');
 }
 if (!defined('GROQ_MODEL')) {
-    define('GROQ_MODEL', 'llama-3.3-70b-versatile');
+    define('GROQ_MODEL', 'openai/gpt-oss-120b');
 }
 if (!defined('OPENROUTER_API_KEY')) {
     define('OPENROUTER_API_KEY', '');

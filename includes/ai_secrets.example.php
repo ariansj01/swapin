@@ -3,7 +3,7 @@
 // Never commit ai_secrets.php to version control.
 
 define('GROQ_API_KEY', 'gsk_your_key_here');
-define('GROQ_MODEL', 'llama-3.3-70b-versatile');
+define('GROQ_MODEL', 'openai/gpt-oss-120b');
 
 define('OPENROUTER_API_KEY', 'sk-or-v1_your_key_here');
 define('OPENROUTER_MODEL', 'meta-llama/llama-3.3-70b-instruct');

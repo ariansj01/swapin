@@ -47,28 +47,21 @@ if (!is_array($history)) {
     $history = [];
 }
 
-$result = ai_chat_respond($message, $history, $user);
-
-$logFile = ai_log_dir() . DIRECTORY_SEPARATOR . 'ai_errors.log';
-$recentLogs = null;
-if (is_readable($logFile)) {
-    $lines = @file($logFile, FILE_IGNORE_NEW_LINES);
-    if (is_array($lines)) {
-        $recentLogs = array_slice($lines, -30);
-    }
+$providers = ai_client_providers();
+if (empty($providers)) {
+    http_response_code(503);
+    echo json_encode(['ok' => false, 'error' => 'ai_not_configured']);
+    exit;
 }
 
-$response = [
-    'ok'       => true,
-    'type'     => 'chat',
-    'message'  => $result['message'],
-    'provider' => $result['provider'] ?? null,
-    'fallback' => !empty($result['fallback']),
-    'debug'    => $result['debug'] ?? [],
-];
+$isPricing = str_contains($message, '"mode":"pricing"') || str_contains($message, 'pricing');
 
-if ($recentLogs !== null) {
-    $response['debug']['recent_logs'] = $recentLogs;
-}
-
-echo json_encode($response, JSON_UNESCAPED_UNICODE);
+echo json_encode([
+    'ok'               => true,
+    'type'             => 'client_prepare',
+    'messages'         => ai_chat_build_messages($message, $history, $user),
+    'temperature'      => 0.35,
+    'max_tokens'       => $isPricing ? 500 : 1200,
+    'providers'        => $providers,
+    'fallback_message' => ai_chat_fallback($message),
+], JSON_UNESCAPED_UNICODE);

@@ -187,7 +187,7 @@ function groq_chat_completion_once(array $messages, float $temperature): array {
     }
 
     $payload = [
-        'model'           => defined('GROQ_MODEL') ? GROQ_MODEL : 'llama-3.3-70b-versatile',
+        'model'           => defined('GROQ_MODEL') ? GROQ_MODEL : 'openai/gpt-oss-120b',
         'messages'        => $messages,
         'temperature'     => $temperature,
         'max_tokens'      => $isPricing ? 500 : 1200,
@@ -461,7 +461,36 @@ function ai_parse_json_response(?array $parsed): ?array {
 }
 
 /** @return array{message:string,provider:?string,debug:array,fallback:bool} */
-function ai_chat_respond(string $userMessage, array $history = [], ?array $user = null): array {
+/** @return list<array{id:string,url:string,model:string,headers:array<string,string>}> */
+function ai_client_providers(): array {
+    $providers = [];
+    if (groq_is_configured()) {
+        $providers[] = [
+            'id'      => 'groq',
+            'url'     => 'https://api.groq.com/openai/v1/chat/completions',
+            'model'   => defined('GROQ_MODEL') ? GROQ_MODEL : 'openai/gpt-oss-120b',
+            'headers' => [
+                'Authorization' => 'Bearer ' . GROQ_API_KEY,
+            ],
+        ];
+    }
+    if (openrouter_is_configured()) {
+        $providers[] = [
+            'id'      => 'openrouter',
+            'url'     => 'https://openrouter.ai/api/v1/chat/completions',
+            'model'   => defined('OPENROUTER_MODEL') ? OPENROUTER_MODEL : 'meta-llama/llama-3.3-70b-instruct',
+            'headers' => [
+                'Authorization' => 'Bearer ' . OPENROUTER_API_KEY,
+                'HTTP-Referer'  => defined('APP_URL') ? APP_URL : 'https://swaapin.ir',
+                'X-Title'       => defined('APP_NAME') ? APP_NAME : 'Swapin',
+            ],
+        ];
+    }
+    return $providers;
+}
+
+/** @return list<array{role:string,content:string}> */
+function ai_chat_build_messages(string $userMessage, array $history = [], ?array $user = null): array {
     $history = array_slice($history, -10);
     $messages = [
         ['role' => 'system', 'content' => ai_system_prompt()],
@@ -484,6 +513,12 @@ function ai_chat_respond(string $userMessage, array $history = [], ?array $user 
         'message' => $userMessage,
         'user'    => $user ? ['name' => $user['name']] : null,
     ], JSON_UNESCAPED_UNICODE)];
+
+    return $messages;
+}
+
+function ai_chat_respond(string $userMessage, array $history = [], ?array $user = null): array {
+    $messages = ai_chat_build_messages($userMessage, $history, $user);
 
     $result = ai_chat_completion($messages, 0.35);
     $parsed = ai_parse_json_response($result['parsed']);

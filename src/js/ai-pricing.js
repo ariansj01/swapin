@@ -277,40 +277,24 @@
       'دستور ارزش‌گذاری کالا — فقط و فقط JSON خروجی بده و هیچ حرف متنی ننویس:\n' +
       JSON.stringify(payload, null, 0);
 
-    const fd = new FormData();
-    fd.append('message', chatMessage);
-    fd.append('history', JSON.stringify([]));
-    const csrf = getCsrfToken();
-    if (csrf) fd.append('_csrf', csrf);
-
-    const csrfHeader = csrf ? { 'X-CSRF-Token': csrf } : {};
-
     const minDelay = new Promise(r => setTimeout(r, 2800));
 
     let data = null;
 
     try {
-      const [_d, res] = await Promise.all([
+      if (typeof swaapinAiChatFromBrowser !== 'function') {
+        throw new Error('ai_client_missing');
+      }
+      const [_d, chatResp] = await Promise.all([
         minDelay,
-        fetch(getAppUrl() + '/api/ai_chat.php', {
-          method: 'POST',
-          body: fd,
-          credentials: 'same-origin',
-          headers: csrfHeader,
-        }),
+        swaapinAiChatFromBrowser(getAppUrl(), chatMessage, []),
       ]);
 
-      let chatResp;
-      try { chatResp = await res.json(); } catch { chatResp = { ok: false, error: 'parse_error' }; }
-
-      if (!res.ok || !chatResp || chatResp.ok !== true || !chatResp.message) {
-        if (chatResp && chatResp.error === 'rate_limited') {
-          throw new Error(chatResp.message || 'سقف پیام‌های AI پر شده. کمی بعد دوباره تلاش کنید.');
-        }
+      if (!chatResp || chatResp.ok !== true) {
         throw new Error((chatResp && (chatResp.message || chatResp.error)) || 'خطا در دریافت پاسخ AI.');
       }
 
-      const parsed = extractJsonFromText(chatResp.message);
+      const parsed = extractJsonFromText(chatResp.content || chatResp.message);
       data = normalisePricingFromAi(parsed);
       if (!data) {
         data = buildValuationFallback(titleRaw, descRaw, condVal);

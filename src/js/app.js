@@ -23,6 +23,123 @@ function appendCsrf(formData) {
   return formData;
 }
 
+function swaapinExtractJsonFromText(text) {
+  if (!text) return null;
+  const clean = String(text).trim();
+  try {
+    const parsed = JSON.parse(clean);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch {}
+  const fenced = clean.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  if (fenced && fenced[1]) {
+    try { return JSON.parse(fenced[1]); } catch {}
+  }
+  const braceStart = clean.indexOf('{');
+  const braceEnd = clean.lastIndexOf('}');
+  if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
+    try { return JSON.parse(clean.substring(braceStart, braceEnd + 1)); } catch {}
+  }
+  return null;
+}
+
+function swaapinAiContentFromCompletion(body) {
+  const msg = body && body.choices && body.choices[0] && body.choices[0].message;
+  const text = msg && msg.content != null ? msg.content : '';
+  return String(text).trim();
+}
+
+async function swaapinProviderChatOnce(provider, messages, temperature, maxTokens) {
+  const headers = Object.assign({
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  }, provider.headers || {});
+  if (provider.id === 'openrouter') {
+    headers['HTTP-Referer'] = headers['HTTP-Referer'] || window.location.origin;
+  }
+  const res = await fetch(provider.url, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify({
+      model: provider.model,
+      messages: messages,
+      temperature: temperature,
+      max_tokens: maxTokens,
+    }),
+  });
+  let body = null;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) {
+    throw new Error((provider.id || 'ai') + '_http_' + res.status);
+  }
+  const content = swaapinAiContentFromCompletion(body);
+  if (!content) throw new Error('empty_completion');
+  return { content: content, provider: provider.id };
+}
+
+async function swaapinBrowserCompleteChat(prepare) {
+  const providers = Array.isArray(prepare.providers) ? prepare.providers : [];
+  const messages = prepare.messages || [];
+  const temperature = Number(prepare.temperature) || 0.35;
+  const maxTokens = Number(prepare.max_tokens) || 1200;
+  for (let i = 0; i < providers.length; i++) {
+    try {
+      return await swaapinProviderChatOnce(providers[i], messages, temperature, maxTokens);
+    } catch (_e) {
+      /* next provider — request is from the visitor IP */
+    }
+  }
+  return null;
+}
+
+function swaapinChatDisplayMessage(content, fallbackMessage) {
+  const parsed = swaapinExtractJsonFromText(content);
+  if (parsed && typeof parsed.message === 'string' && parsed.message.trim()) {
+    return parsed.message.trim();
+  }
+  if (content && String(content).trim()) {
+    return String(content).trim();
+  }
+  return fallbackMessage || '';
+}
+
+async function swaapinAiChatFromBrowser(appUrl, message, history) {
+  const fd = new FormData();
+  fd.append('message', message);
+  fd.append('history', JSON.stringify(history || []));
+  appendCsrf(fd);
+  const res = await fetch(appUrl + '/api/ai_chat.php', {
+    method: 'POST',
+    body: fd,
+    credentials: 'same-origin',
+    headers: withCsrfHeaders(),
+  });
+  let prepare;
+  try { prepare = await res.json(); } catch { prepare = { ok: false }; }
+  if (prepare && prepare.error === 'rate_limited') {
+    throw new Error(prepare.message || 'سقف پیام‌های AI پر شده. کمی بعد دوباره تلاش کنید.');
+  }
+  if (!res.ok || !prepare || prepare.ok !== true) {
+    throw new Error((prepare && (prepare.message || prepare.error)) || 'خطا');
+  }
+  const done = await swaapinBrowserCompleteChat(prepare);
+  if (!done) {
+    return {
+      ok: true,
+      message: prepare.fallback_message || 'سؤال شما دریافت شد. لطفاً کمی بعد دوباره تلاش کنید یا از بخش ثبت کالا و راهنما کمک بگیرید.',
+      content: '',
+      provider: null,
+      fallback: true,
+    };
+  }
+  return {
+    ok: true,
+    message: swaapinChatDisplayMessage(done.content, prepare.fallback_message),
+    content: done.content,
+    provider: done.provider,
+    fallback: false,
+  };
+}
+
 /* ── Toast notification system ─────────────────────────────────────────── */
 function showToast(msg, type = 'info', duration = 3500) {
   const container = document.getElementById('toast-container');
@@ -937,24 +1054,10 @@ function initAiChat() {
     appendTyping();
 
     try {
-      const fd = new FormData();
-      fd.append('message', msg);
-      fd.append('history', JSON.stringify(history.slice(0, -1)));
-      appendCsrf(fd);
-
-      const res  = await fetch(appUrl + '/api/ai_chat.php', {
-        method: 'POST',
-        body: fd,
-        credentials: 'same-origin',
-        headers: withCsrfHeaders(),
-      });
-      const data = await res.json();
+      const data = await swaapinAiChatFromBrowser(appUrl, msg, history.slice(0, -1));
       removeTyping();
 
       if (!data.ok || !data.message) {
-        if (data.error === 'rate_limited') {
-          throw new Error(data.message || 'سقف پیام‌های AI پر شده. کمی بعد دوباره تلاش کنید.');
-        }
         throw new Error(data.error || 'خطا');
       }
 
@@ -1262,56 +1365,29 @@ function initAiChat() {
         'دستور ارزش‌گذاری کالا — فقط و فقط JSON خروجی بده و هیچ حرف متنی ننویس:\n' +
         JSON.stringify(payload, null, 0);
 
-      const fd = new FormData();
-      fd.append('message', chatMessage);
-      fd.append('history', JSON.stringify([]));
-      if (typeof appendCsrf === 'function') appendCsrf(fd);
-      else {
-        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
-        if (token) fd.append('_csrf', token);
-      }
-
-      const csrfHeader = {};
-      if (typeof withCsrfHeaders === 'function') {
-        Object.assign(csrfHeader, withCsrfHeaders());
-      } else {
-        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
-        if (token) csrfHeader['X-CSRF-Token'] = token;
-      }
-
       const minDelay = new Promise(r => setTimeout(r, 2800));
 
       let data = null;
 
       try {
-        const [res] = await Promise.all([
-          fetch(appUrl + '/api/ai_chat.php', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: csrfHeader,
-            body: fd,
-          }),
+        const [chatResp] = await Promise.all([
+          swaapinAiChatFromBrowser(appUrl, chatMessage, []),
           minDelay,
         ]);
 
-        let chatResp;
-        try { chatResp = await res.json(); } catch { chatResp = { ok: false, error: 'parse_error' }; }
-
-        if (!res.ok || !chatResp || chatResp.ok !== true || !chatResp.message) {
-          if (chatResp && chatResp.error === 'rate_limited') {
-            throw new Error('سقف پیام‌های AI پر شده. کمی بعد دوباره تلاش کنید.');
-          }
+        if (!chatResp || chatResp.ok !== true) {
           throw new Error((chatResp && (chatResp.message || chatResp.error)) || 'خطا در دریافت پاسخ AI.');
         }
 
-        const parsed = extractJsonFromText(chatResp.message);
+        const raw = chatResp.content || chatResp.message || '';
+        const parsed = extractJsonFromText(raw);
         data = normalisePricingFromAi(parsed, title, desc, cond);
         if (!data) {
           data = buildValuationFallback(title, desc, cond, catId);
           if (chatMessages) {
             appendBotMsg(
               'پاسخ AI قابل خواندن نبود، از تخمین محلی استفاده شد. پاسخ خام AI برای ارزش‌گذاری «' + title + '»: ' +
-              String(chatResp.message || '').substring(0, 300)
+              String(raw || '').substring(0, 300)
             );
           }
         }
