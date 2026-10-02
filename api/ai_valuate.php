@@ -40,8 +40,9 @@ if (mb_strlen($title) < 5) {
     exit;
 }
 
-$conditionLabels = ['new' => 'نو', 'like_new' => 'مثل نو', 'good' => 'خوب', 'fair' => 'متوسط', 'poor' => 'خورده'];
-$conditionLabel = $conditionLabels[$condition] ?? ($condition ?: 'خوب');
+if (!in_array($condition, ['new', 'like_new', 'good', 'fair', 'poor'], true)) {
+    $condition = 'good';
+}
 
 $cat = $categoryId
     ? DB::fetch('SELECT name, slug FROM categories WHERE id = ?', [$categoryId])
@@ -49,158 +50,34 @@ $cat = $categoryId
 
 $categoryLabel = $cat ? category_label($cat['slug'], $cat['name']) : 'عمومی';
 $demandLevel   = ai_demand_level($categoryId);
+$similar       = $categoryId > 0 ? ai_fetch_similar_listings($categoryId, 6) : [];
 
-$titleShort       = mb_substr(trim($title), 0, 120);
-$descriptionShort = trim(preg_replace('/\s+/', ' ', $description));
-if (mb_strlen($descriptionShort) > 220) {
-    $descriptionShort = mb_substr($descriptionShort, 0, 220) . '...';
-}
-
-$pricingPayload = [
-    'mode' => 'pricing',
-    'listing' => [
-        'title'          => $titleShort,
-        'description'  => $descriptionShort,
-        'category'     => mb_substr($categoryLabel, 0, 80),
-        'condition'       => $condition,
-        'condition_label' => $conditionLabel,
-    ],
-    'context' => [
-        'unit'             => (string)CREDIT_UNIT,
-        'demand'           => $demandLevel,
-    ],
-    'instruction' =>
-        'فقط خروجی JSON تولید کن و هیچ توضیح متنی قبل یا بعد آن ننویس. ساختار JSON: ' .
-        '{"type":"pricing","value_range":{"min":عدد,"max":عدد},"confidence":0.xx,"reason":"متن کوتاه دلیل","reasons":["دلیل ۱"]}',
+$listing = [
+    'title'           => $title,
+    'description'     => $description,
+    'condition'       => $condition,
+    'category_id'     => $categoryId,
+    'category_label'  => $categoryLabel,
+    'demand_level'    => $demandLevel,
 ];
 
-$chatMessage =
-    "دستور ارزش‌گذاری کالا — فقط و فقط JSON خروجی بده و هیچ حرف متنی ننویس:\n" .
-    json_encode($pricingPayload, JSON_UNESCAPED_UNICODE);
-
-$chatResult = ai_chat_respond($chatMessage, [], $user);
-
-$parsed = null;
-if (!empty($chatResult['message'])) {
-    $parsed = ai_parse_completion_text(
-        ['choices' => [['message' => ['content' => $chatResult['message']]]]],
-        $chatResult['provider'] ?? null
-    );
-    if (is_array($parsed)) {
-        $afterJson = ai_parse_json_response($parsed);
-        if (is_array($afterJson)) {
-            $parsed = $afterJson;
-        }
-    }
-}
-
-if ((!$parsed || !is_array($parsed)) && !empty($chatResult['message'])) {
-    $text = $chatResult['message'];
-    $cleaned = null;
-    if (preg_match('/\{[\s\S]*\}/', $text, $m)) {
-        $cleaned = json_decode($m[0], true);
-    }
-    if (is_array($cleaned)) {
-        $parsed = $cleaned;
-    }
-}
-
-function ai_valuate_extract_range($parsed, $provider = null) {
-    if (!$parsed || !is_array($parsed)) return null;
-
-    $min = 0;
-    $max = 0;
-    if (isset($parsed['value_range']) && is_array($parsed['value_range'])) {
-        $min = (int)($parsed['value_range']['min'] ?? 0);
-        $max = (int)($parsed['value_range']['max'] ?? 0);
-    }
-    if ($min <= 0 && $max <= 0) {
-        $min = (int)($parsed['min'] ?? 0);
-        $max = (int)($parsed['max'] ?? 0);
-    }
-    if ($min <= 0 && $max <= 0) {
-        $val = (int)($parsed['estimated_value'] ?? $parsed['valuation'] ?? $parsed['value'] ?? $parsed['price'] ?? 0);
-        if ($val > 0) {
-            $min = (int)round($val * 0.88);
-            $max = (int)round($val * 1.12);
-        }
-    }
-    if ($min <= 0 && $max <= 0) return null;
-    if ($min > $max) [$min, $max] = [$max, $min];
-    if ($min <= 0) $min = (int)max(500000, round($max * 0.85));
-    if ($max <= 0) $max = (int)min(500000000000, round($min * 1.15));
-
-    $min = (int)round($min / 100000) * 100000;
-    $max = (int)round($max / 100000) * 100000;
-    $min = max(500000, $min);
-    $max = min(500000000000, $max);
-    if ($min > $max) $min = (int)round($max * 0.88 / 100000) * 100000;
-
-    $value = (int)round(($min + $max) / 2 / 100000) * 100000;
-
-    $conf = $parsed['confidence'] ?? $parsed['certainty'] ?? 0.55;
-    if (is_string($conf)) {
-        $cn = (float)preg_replace('/[^\d.]/', '', $conf);
-        $conf = $cn > 1 ? $cn / 100 : (float)$conf;
-    }
-    $conf = (float)$conf;
-    if ($conf > 1) $conf = $conf / 100;
-    $confPct = (int)round(max(0, min(1, $conf)) * 100);
-    $uncertain = $confPct < 60;
-
-    $reasons = [];
-    if (!empty($parsed['reasons']) && is_array($parsed['reasons'])) {
-        foreach ($parsed['reasons'] as $r) {
-            $s = trim((string)$r);
-            if ($s !== '') $reasons[] = $s;
-        }
-    }
-    $singleReason = trim((string)($parsed['reason'] ?? ''));
-    if ($singleReason !== '' && !in_array($singleReason, $reasons, true)) {
-        array_unshift($reasons, $singleReason);
-    }
-    if ($uncertain) $reasons[] = 'اطمینان پایین — محدوده تقریبی است؛ در صورت نیاز مقدار را دستی تنظیم کنید.';
-    if (!$reasons) $reasons[] = 'ارزش‌گذاری هوشمند بر اساس مشخصات کالای شما.';
-
-    return [
-        'value'      => $value,
-        'value_fmt'  => fmt_credit((float)$value),
-        'range_low'  => $min,
-        'range_high' => $max,
-        'range_fmt'  => fmt_credit((float)$min) . ' — ' . fmt_credit((float)$max),
-        'confidence' => $confPct,
-        'uncertain'  => $uncertain,
-        'reasons'    => array_values($reasons),
-        'note'       => $uncertain
-            ? 'ارزش‌گذاری با اطمینان پایین — پیشنهاد را راهنما در نظر بگیرید.'
-            : 'ارزش‌گذاری هوشمند سواَپین بر اساس مشخصات و آگهی‌های مشابه.',
-        'ai_source'  => $provider ?? 'ai',
-    ];
-}
-
-$result = ai_valuate_extract_range($parsed, $chatResult['provider'] ?? null);
-
+// Must go through ai_call('pricing', …) — never wrap pricing inside mode:chat.
+$result = ai_price_listing($listing, $similar);
 $fallbackUsed = false;
+$provider = is_array($result) ? ($result['ai_source'] ?? null) : null;
+
 if (!$result) {
     $fallbackUsed = true;
-    $fallbackListing = [
-        'title'           => $title,
-        'description'     => $description,
-        'condition'       => $condition,
-        'category_id'     => $categoryId,
-        'category_label'  => $categoryLabel,
-        'demand_level'    => $demandLevel,
-    ];
-    $result = ai_price_listing_fallback($fallbackListing);
+    $result = ai_price_listing_fallback($listing);
+    $provider = null;
 }
 
-$debug = $chatResult['debug'] ?? [];
-$debug['fallback_used'] = $fallbackUsed;
-$debug['chat_message_preview'] = mb_substr($chatResult['message'] ?? '', 0, 500);
-$debug['parsed_ok'] = is_array($parsed);
-if (is_array($parsed)) {
-    $debug['parsed_snippet'] = $parsed;
-}
+$debug = [
+    'fallback_used'   => $fallbackUsed,
+    'similar_count'   => count($similar),
+    'category_id'     => $categoryId,
+    'demand_level'    => $demandLevel,
+];
 
 $logFile = ai_log_dir() . DIRECTORY_SEPARATOR . 'ai_errors.log';
 if (is_readable($logFile)) {
@@ -211,7 +88,7 @@ if (is_readable($logFile)) {
 }
 
 $response = array_merge(['ok' => true], ai_sanitize_pricing_for_client($result));
-$response['provider'] = $chatResult['provider'] ?? null;
+$response['provider'] = $provider && $provider !== 'fallback' ? $provider : null;
 $response['fallback'] = $fallbackUsed;
 $response['debug']    = $debug;
 

@@ -1,8 +1,7 @@
 /**
  * AI pricing flow — listings/create.php
- * Uses the same chat endpoint as the AI assistant (/api/ai_chat.php) so it goes
- * through the exact same code path (proxy, failover) instead of the legacy
- * ai_valuate.php path.
+ * Posts to /api/ai_valuate.php so the server calls ai_price_listing with mode:pricing.
+ * Do not route valuation through /api/ai_chat.php (that always wraps mode:chat).
  */
 (function () {
   const form      = document.getElementById('create-form');
@@ -250,55 +249,56 @@
     const titleRaw = document.getElementById('title').value;
     const descRaw  = document.getElementById('description').value;
     const condVal  = document.getElementById('condition').value;
-    const condEl   = document.getElementById('condition');
-    const condLabel = condEl && condEl.options[condEl.selectedIndex] ? condEl.options[condEl.selectedIndex].textContent : condVal;
     const catEl    = document.getElementById('category_id');
-    const catLabel = catEl && catEl.options[catEl.selectedIndex] ? catEl.options[catEl.selectedIndex].textContent : 'عمومی';
+    const catId    = catEl ? catEl.value : '';
 
-    const payload = {
-      mode: 'pricing',
-      listing: {
-        title: titleRaw.trim().substring(0, 120),
-        description: descRaw.trim().length > 220 ? descRaw.trim().substring(0, 220) + '...' : descRaw.trim(),
-        category: (catLabel || 'عمومی').substring(0, 80),
-        condition: condVal,
-        condition_label: condLabel,
-      },
-      context: {
-        unit: getCreditUnit(),
-        demand: 'medium',
-      },
-      instruction:
-        'فقط خروجی JSON تولید کن و هیچ توضیح متنی قبل یا بعد آن ننویس. ' +
-        'ساختار JSON باید این باشد: ' +
-        '{"type":"pricing","value_range":{"min":عدد,"max":عدد},"confidence":0.xx,"reason":"متن کوتاه دلیل ارزش‌گذاری","reasons":["دلیل ۱","دلیل ۲"]}',
-    };
-    const chatMessage =
-      'دستور ارزش‌گذاری کالا — فقط و فقط JSON خروجی بده و هیچ حرف متنی ننویس:\n' +
-      JSON.stringify(payload, null, 0);
+    // Pricing must go through /api/ai_valuate.php (server uses mode:pricing).
+    // Never wrap valuation prompts inside mode:chat via ai_chat.php.
+    const fd = new FormData();
+    fd.append('title', titleRaw.trim());
+    fd.append('description', descRaw.trim());
+    fd.append('condition', condVal);
+    fd.append('category_id', catId);
+    const csrf = getCsrfToken();
+    if (csrf) fd.append('_csrf', csrf);
 
     const minDelay = new Promise(r => setTimeout(r, 2800));
 
     let data = null;
 
     try {
-      if (typeof swaapinAiChatFromBrowser !== 'function') {
-        throw new Error('ai_client_missing');
-      }
-      const [_d, chatResp] = await Promise.all([
+      const [_d, apiResp] = await Promise.all([
         minDelay,
-        swaapinAiChatFromBrowser(getAppUrl(), chatMessage, []),
+        fetch(getAppUrl() + '/api/ai_valuate.php', {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: csrf ? { 'X-CSRF-Token': csrf } : {},
+        }).then(async (res) => {
+          let body;
+          try { body = await res.json(); } catch { body = { ok: false }; }
+          return { res, body };
+        }),
       ]);
 
-      if (!chatResp || chatResp.ok !== true) {
-        throw new Error((chatResp && (chatResp.message || chatResp.error)) || 'خطا در دریافت پاسخ AI.');
+      const body = apiResp.body;
+      if (!apiResp.res.ok || !body || body.ok !== true) {
+        throw new Error((body && (body.message || body.error)) || 'خطا در دریافت پاسخ ارزش‌گذاری.');
       }
 
-      const parsed = extractJsonFromText(chatResp.content || chatResp.message);
-      data = normalisePricingFromAi(parsed);
-      if (!data) {
-        data = buildValuationFallback(titleRaw, descRaw, condVal);
-      }
+      data = {
+        ok: true,
+        value: body.value,
+        value_fmt: body.value_fmt,
+        range_low: body.range_low,
+        range_high: body.range_high,
+        range_fmt: body.range_fmt,
+        confidence: body.confidence,
+        uncertain: !!body.uncertain,
+        reasons: Array.isArray(body.reasons) ? body.reasons : [],
+        note: body.note || '',
+        ai_source: body.fallback ? 'fallback' : 'assistant',
+      };
       showResult(data);
     } catch (err) {
       data = buildValuationFallback(titleRaw, descRaw, condVal);
