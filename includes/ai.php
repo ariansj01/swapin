@@ -84,7 +84,7 @@ function ai_provider_order(): array {
 }
 
 /**
- * @return array{parsed:?array,provider:?string,rate_limited:bool}
+ * @return array{parsed:?array,provider:?string,rate_limited:bool,transient_fail:bool,http_code:int}
  */
 function ai_provider_chat_once(string $provider, array $messages, float $temperature): array {
     if ($provider === 'groq') {
@@ -93,7 +93,7 @@ function ai_provider_chat_once(string $provider, array $messages, float $tempera
     if ($provider === 'openrouter') {
         return openrouter_chat_completion_once($messages, $temperature);
     }
-    return ['parsed' => null, 'provider' => null, 'rate_limited' => false];
+    return ['parsed' => null, 'provider' => null, 'rate_limited' => false, 'transient_fail' => false, 'http_code' => 0];
 }
 
 /**
@@ -105,8 +105,12 @@ function ai_chat_completion(array $messages, float $temperature = 0.25): array {
         return ['parsed' => null, 'provider' => null];
     }
 
+    $skipProvider = [];
     for ($attempt = 0; $attempt < 2; $attempt++) {
         foreach ($providers as $provider) {
+            if (!empty($skipProvider[$provider])) {
+                continue;
+            }
             if (ai_provider_is_rate_limited($provider)) {
                 continue;
             }
@@ -117,6 +121,14 @@ function ai_chat_completion(array $messages, float $temperature = 0.25): array {
             }
             if (!empty($result['rate_limited'])) {
                 ai_mark_provider_rate_limited($provider);
+                $skipProvider[$provider] = true;
+                continue;
+            }
+            if (!empty($result['transient_fail'])) {
+                ai_log_error("{$provider} transient fail - skipping in this round", [
+                    'http_code' => (int)($result['http_code'] ?? 0),
+                ]);
+                $skipProvider[$provider] = true;
                 continue;
             }
         }
@@ -130,15 +142,15 @@ function ai_chat_completion(array $messages, float $temperature = 0.25): array {
 }
 
 /**
- * @return array{parsed:?array,provider:?string,rate_limited:bool}
+ * @return array{parsed:?array,provider:?string,rate_limited:bool,transient_fail:bool,http_code:int}
  */
 function groq_chat_completion_once(array $messages, float $temperature): array {
     if (!groq_is_configured()) {
-        return ['parsed' => null, 'provider' => null, 'rate_limited' => false];
+        return ['parsed' => null, 'provider' => null, 'rate_limited' => false, 'transient_fail' => false, 'http_code' => 0];
     }
 
     $payload = [
-        'model'           => defined('GROQ_MODEL') ? GROQ_MODEL : 'qwen/qwen3.8-27b',
+        'model'           => defined('GROQ_MODEL') ? GROQ_MODEL : 'llama-3.3-70b-versatile',
         'messages'        => $messages,
         'temperature'     => $temperature,
         'max_tokens'      => 1200,
@@ -150,28 +162,35 @@ function groq_chat_completion_once(array $messages, float $temperature): array {
         $payload,
         'groq'
     );
+    $code = (int)($response['code'] ?? 0);
+    $transientFail = $code === 0 || $code === 401 || $code === 403 || $code >= 500;
 
     if ($response['rate_limited']) {
-        return ['parsed' => null, 'provider' => 'groq', 'rate_limited' => true];
+        return ['parsed' => null, 'provider' => 'groq', 'rate_limited' => true, 'transient_fail' => false, 'http_code' => $code];
     }
     if (!empty($response['model_not_found'])) {
         ai_log_error('groq model not found: ' . ($payload['model'] ?? '?'));
-        return ['parsed' => null, 'provider' => 'groq', 'rate_limited' => false];
+        return ['parsed' => null, 'provider' => 'groq', 'rate_limited' => false, 'transient_fail' => true, 'http_code' => $code];
+    }
+    if ($transientFail) {
+        return ['parsed' => null, 'provider' => 'groq', 'rate_limited' => false, 'transient_fail' => true, 'http_code' => $code];
     }
 
     return [
-        'parsed'       => ai_parse_completion_text($response['body']),
-        'provider'     => 'groq',
-        'rate_limited' => false,
+        'parsed'         => ai_parse_completion_text($response['body']),
+        'provider'       => 'groq',
+        'rate_limited'   => false,
+        'transient_fail' => false,
+        'http_code'      => $code,
     ];
 }
 
 /**
- * @return array{parsed:?array,provider:?string,rate_limited:bool}
+ * @return array{parsed:?array,provider:?string,rate_limited:bool,transient_fail:bool,http_code:int}
  */
 function openrouter_chat_completion_once(array $messages, float $temperature): array {
     if (!openrouter_is_configured()) {
-        return ['parsed' => null, 'provider' => null, 'rate_limited' => false];
+        return ['parsed' => null, 'provider' => null, 'rate_limited' => false, 'transient_fail' => false, 'http_code' => 0];
     }
 
     $payload = [
@@ -193,15 +212,22 @@ function openrouter_chat_completion_once(array $messages, float $temperature): a
         $payload,
         'openrouter'
     );
+    $code = (int)($response['code'] ?? 0);
+    $transientFail = $code === 0 || $code === 401 || $code === 403 || $code >= 500;
 
     if ($response['rate_limited']) {
-        return ['parsed' => null, 'provider' => 'openrouter', 'rate_limited' => true];
+        return ['parsed' => null, 'provider' => 'openrouter', 'rate_limited' => true, 'transient_fail' => false, 'http_code' => $code];
+    }
+    if ($transientFail) {
+        return ['parsed' => null, 'provider' => 'openrouter', 'rate_limited' => false, 'transient_fail' => true, 'http_code' => $code];
     }
 
     return [
-        'parsed'       => ai_parse_completion_text($response['body']),
-        'provider'     => 'openrouter',
-        'rate_limited' => false,
+        'parsed'         => ai_parse_completion_text($response['body']),
+        'provider'       => 'openrouter',
+        'rate_limited'   => false,
+        'transient_fail' => false,
+        'http_code'      => $code,
     ];
 }
 
