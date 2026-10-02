@@ -97,31 +97,53 @@ function ai_provider_chat_once(string $provider, array $messages, float $tempera
 }
 
 /**
- * @return array{parsed:?array,provider:?string}
+ * @return array{parsed:?array,provider:?string,debug:array}
  */
 function ai_chat_completion(array $messages, float $temperature = 0.25): array {
+    $debug = [
+        'providers_available' => ai_provider_order(),
+        'proxy_configured'    => defined('AI_PROXY_URL') && AI_PROXY_URL !== '' ? AI_PROXY_URL : null,
+        'attempts'            => [],
+    ];
+
     $providers = ai_provider_order();
     if (empty($providers)) {
-        return ['parsed' => null, 'provider' => null];
+        $debug['reason'] = 'no_providers_configured';
+        return ['parsed' => null, 'provider' => null, 'debug' => $debug];
     }
 
     $skipProvider = [];
     for ($attempt = 0; $attempt < 2; $attempt++) {
         foreach ($providers as $provider) {
+            $attemptDebug = ['provider' => $provider, 'attempt' => $attempt + 1];
+
             if (!empty($skipProvider[$provider])) {
+                $attemptDebug['skipped'] = 'skip_list';
+                $debug['attempts'][] = $attemptDebug;
                 continue;
             }
             if (ai_provider_is_rate_limited($provider)) {
+                $attemptDebug['skipped'] = 'rate_limited_circuit';
+                $debug['attempts'][] = $attemptDebug;
                 continue;
             }
 
             $result = ai_provider_chat_once($provider, $messages, $temperature);
+            $attemptDebug['http_code']      = (int)($result['http_code'] ?? 0);
+            $attemptDebug['rate_limited']   = !empty($result['rate_limited']);
+            $attemptDebug['transient_fail'] = !empty($result['transient_fail']);
+            $attemptDebug['has_parsed']     = !empty($result['parsed']);
+
             if (!empty($result['parsed'])) {
-                return ['parsed' => $result['parsed'], 'provider' => $provider];
+                $attemptDebug['success'] = true;
+                $debug['attempts'][] = $attemptDebug;
+                $debug['winner'] = $provider;
+                return ['parsed' => $result['parsed'], 'provider' => $provider, 'debug' => $debug];
             }
             if (!empty($result['rate_limited'])) {
                 ai_mark_provider_rate_limited($provider);
                 $skipProvider[$provider] = true;
+                $debug['attempts'][] = $attemptDebug;
                 continue;
             }
             if (!empty($result['transient_fail'])) {
@@ -129,8 +151,10 @@ function ai_chat_completion(array $messages, float $temperature = 0.25): array {
                     'http_code' => (int)($result['http_code'] ?? 0),
                 ]);
                 $skipProvider[$provider] = true;
+                $debug['attempts'][] = $attemptDebug;
                 continue;
             }
+            $debug['attempts'][] = $attemptDebug;
         }
 
         if ($attempt === 0) {
@@ -138,7 +162,8 @@ function ai_chat_completion(array $messages, float $temperature = 0.25): array {
         }
     }
 
-    return ['parsed' => null, 'provider' => null];
+    $debug['reason'] = 'all_providers_failed';
+    return ['parsed' => null, 'provider' => null, 'debug' => $debug];
 }
 
 /**
@@ -435,7 +460,7 @@ function ai_parse_json_response(?array $parsed): ?array {
     return $parsed;
 }
 
-/** @return array{message:string,provider:?string} */
+/** @return array{message:string,provider:?string,debug:array,fallback:bool} */
 function ai_chat_respond(string $userMessage, array $history = [], ?array $user = null): array {
     $history = array_slice($history, -10);
     $messages = [
@@ -462,18 +487,33 @@ function ai_chat_respond(string $userMessage, array $history = [], ?array $user 
 
     $result = ai_chat_completion($messages, 0.35);
     $parsed = ai_parse_json_response($result['parsed']);
+    $debug  = $result['debug'] ?? [];
 
     if ($parsed && !empty($parsed['message'])) {
         $type = $parsed['type'] ?? 'chat';
         if ($type === 'chat' || $type === 'response') {
+            $debug['parsed_ok'] = true;
+            $debug['parsed_type'] = $type;
             return [
                 'message'  => trim((string) $parsed['message']),
                 'provider' => $result['provider'],
+                'debug'    => $debug,
+                'fallback' => false,
             ];
         }
+        $debug['parsed_ignored_type'] = $type;
+    } else {
+        $debug['parsed_ok'] = false;
+        $debug['parsed_raw'] = $result['parsed'];
     }
 
-    return ['message' => ai_chat_fallback($userMessage), 'provider' => null];
+    $debug['fallback_used'] = true;
+    return [
+        'message'  => ai_chat_fallback($userMessage),
+        'provider' => null,
+        'debug'    => $debug,
+        'fallback' => true,
+    ];
 }
 
 function ai_chat_fallback(string $userMessage): string {

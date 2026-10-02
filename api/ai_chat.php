@@ -49,8 +49,26 @@ if (!is_array($history)) {
 
 $result = ai_chat_respond($message, $history, $user);
 
-echo json_encode([
-    'ok'      => true,
-    'type'    => 'chat',
-    'message' => $result['message'],
-], JSON_UNESCAPED_UNICODE);
+$logFile = ai_log_dir() . DIRECTORY_SEPARATOR . 'ai_errors.log';
+$recentLogs = null;
+if (is_readable($logFile)) {
+    $lines = @file($logFile, FILE_IGNORE_NEW_LINES);
+    if (is_array($lines)) {
+        $recentLogs = array_slice($lines, -30);
+    }
+}
+
+$response = [
+    'ok'       => true,
+    'type'     => 'chat',
+    'message'  => $result['message'],
+    'provider' => $result['provider'] ?? null,
+    'fallback' => !empty($result['fallback']),
+    'debug'    => $result['debug'] ?? [],
+];
+
+if ($recentLogs !== null) {
+    $response['debug']['recent_logs'] = $recentLogs;
+}
+
+echo json_encode($response, JSON_UNESCAPED_UNICODE);

@@ -180,7 +180,9 @@ function ai_valuate_extract_range($parsed, $provider = null) {
 
 $result = ai_valuate_extract_range($parsed, $chatResult['provider'] ?? null);
 
+$fallbackUsed = false;
 if (!$result) {
+    $fallbackUsed = true;
     $fallbackListing = [
         'title'           => $title,
         'description'     => $description,
@@ -192,4 +194,25 @@ if (!$result) {
     $result = ai_price_listing_fallback($fallbackListing);
 }
 
-echo json_encode(array_merge(['ok' => true], ai_sanitize_pricing_for_client($result)), JSON_UNESCAPED_UNICODE);
+$debug = $chatResult['debug'] ?? [];
+$debug['fallback_used'] = $fallbackUsed;
+$debug['chat_message_preview'] = mb_substr($chatResult['message'] ?? '', 0, 500);
+$debug['parsed_ok'] = is_array($parsed);
+if (is_array($parsed)) {
+    $debug['parsed_snippet'] = $parsed;
+}
+
+$logFile = ai_log_dir() . DIRECTORY_SEPARATOR . 'ai_errors.log';
+if (is_readable($logFile)) {
+    $lines = @file($logFile, FILE_IGNORE_NEW_LINES);
+    if (is_array($lines)) {
+        $debug['recent_logs'] = array_slice($lines, -30);
+    }
+}
+
+$response = array_merge(['ok' => true], ai_sanitize_pricing_for_client($result));
+$response['provider'] = $chatResult['provider'] ?? null;
+$response['fallback'] = $fallbackUsed;
+$response['debug']    = $debug;
+
+echo json_encode($response, JSON_UNESCAPED_UNICODE);
