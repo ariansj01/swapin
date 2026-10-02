@@ -229,7 +229,10 @@ function ai_log_error(string $message, ?array $context = null): void {
 }
 
 /** @return array{body:?array,code:int,rate_limited:bool,model_not_found:bool,raw?:?string} */
-function ai_http_chat_request(string $url, array $headers, array $payload, string $provider = 'unknown'): array {
+function ai_http_chat_request(string $url, array $headers, array $payload, string $provider = 'unknown', int $timeoutSec = 0): array {
+    if ($timeoutSec <= 0) {
+        $timeoutSec = 120;
+    }
     $ch = curl_init($url);
     $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36';
     curl_setopt_array($ch, [
@@ -240,8 +243,8 @@ function ai_http_chat_request(string $url, array $headers, array $payload, strin
             $headers
         ),
         CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
-        CURLOPT_TIMEOUT        => 120,
-        CURLOPT_CONNECTTIMEOUT => 45,
+        CURLOPT_TIMEOUT        => $timeoutSec,
+        CURLOPT_CONNECTTIMEOUT => max(45, (int)min($timeoutSec, 60)),
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_FOLLOWLOCATION => true,
