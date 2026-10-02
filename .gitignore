@@ -8,8 +8,17 @@ uploads/*
 !uploads/.gitkeep
 storage/rate_limit/*
 storage/private/*
+storage/sessions/*
+storage/logs/*
+storage/*.php
+storage/*.json
 !storage/.gitkeep
 !storage/private/.gitkeep
+!storage/logs/.gitkeep
+!storage/logs/.htaccess
+!storage/.htaccess
+!storage/rate_limit/.gitkeep
+!storage/sessions/.gitkeep
 /vendor/
 composer.phar
 composer-setup.php
