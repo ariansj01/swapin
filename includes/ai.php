@@ -329,10 +329,29 @@ function ai_parse_completion_text(?array $body, ?string $provider = null): ?arra
         return null;
     }
 
+    $normalize = function (&$val) use (&$normalize): void {
+        if (is_array($val)) {
+            foreach ($val as &$v) {
+                $normalize($v);
+            }
+            unset($v);
+            return;
+        }
+        if (is_string($val) && $val !== '' && preg_match('/[۰-۹\d,]/', $val) && !preg_match('/[a-zA-Z]/', $val)) {
+            $tmp = str_replace(['٬', '،', ',', ' ', "\xc2\xa0"], '', $val);
+            $tmp = strtr($tmp, '۰۱۲۳۴۵۶۷۸۹', '0123456789');
+            $tmp = strtr($tmp, '٠١٢٣٤٥٦٧٨٩', '0123456789');
+            if ($tmp !== '' && preg_match('/^-?\d+(?:\.\d+)?$/', $tmp)) {
+                $val = str_contains($tmp, '.') ? (float)$tmp : (int)$tmp;
+            }
+        }
+    };
+    $normalize($parsed);
+
     return $parsed;
 }
 
-function ai_call(string $mode, array $payload): array {
+function ai_call(string $mode, array $payload, ?float $temperature = null): array {
     $userContent = json_encode(array_merge(['mode' => $mode], $payload), JSON_UNESCAPED_UNICODE);
 
     $messages = [
@@ -340,7 +359,11 @@ function ai_call(string $mode, array $payload): array {
         ['role' => 'user', 'content' => $userContent],
     ];
 
-    return ai_chat_completion($messages);
+    if ($temperature === null) {
+        $temperature = $mode === 'pricing' || $mode === 'matching' ? 0.10 : 0.25;
+    }
+
+    return ai_chat_completion($messages, $temperature);
 }
 
 function ai_parse_json_response(?array $parsed): ?array {
@@ -524,16 +547,62 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
     $parsed = ai_parse_json_response($result['parsed']);
     $provider = $result['provider'] ?? null;
 
-    if (!$parsed || ($parsed['type'] ?? '') !== 'pricing') {
+    $isPricing = false;
+    if ($parsed && is_array($parsed)) {
+        $type = (string) ($parsed['type'] ?? '');
+        $hasRange = isset($parsed['value_range'])
+            || (isset($parsed['min']) && isset($parsed['max']))
+            || isset($parsed['estimated_value'])
+            || isset($parsed['value']);
+        if ($type === 'pricing' || $type === 'price_estimation' || $type === 'valuation' || $type === 'estimate') {
+            $isPricing = true;
+        } elseif ($hasRange && !empty($type) && $type !== 'error' && $type !== 'chat') {
+            $isPricing = true;
+        } elseif ($hasRange && empty($type)) {
+            $isPricing = true;
+        }
+    }
+
+    if (!$parsed || !$isPricing) {
+        ai_log_error('pricing_fallback', [
+            'result_parsed_null' => $result['parsed'] === null,
+            'result_parsed_type' => is_array($result['parsed']) ? ($result['parsed']['type'] ?? '?') : 'not_array',
+            'parsed_null' => $parsed === null,
+            'parsed_type' => is_array($parsed) ? ($parsed['type'] ?? '?') : 'not_array',
+            'provider' => $provider,
+            'is_pricing_detected' => $isPricing,
+            'parsed_snippet' => is_array($result['parsed'])
+                ? mb_substr(json_encode($result['parsed'], JSON_UNESCAPED_UNICODE), 0, 800)
+                : null,
+        ]);
         return null;
     }
 
-    $min        = (int) ($parsed['value_range']['min'] ?? 0);
-    $max        = (int) ($parsed['value_range']['max'] ?? 0);
-    $confidence = (float) ($parsed['confidence'] ?? 0);
+    $min = 0;
+    $max = 0;
+    if (isset($parsed['value_range']) && is_array($parsed['value_range'])) {
+        $min = (int) ($parsed['value_range']['min'] ?? 0);
+        $max = (int) ($parsed['value_range']['max'] ?? 0);
+    }
+    if ($min <= 0 && $max <= 0) {
+        $min = (int) ($parsed['min'] ?? 0);
+        $max = (int) ($parsed['max'] ?? 0);
+    }
+    if ($min <= 0 && $max <= 0) {
+        $val = (int) ($parsed['estimated_value'] ?? $parsed['value'] ?? 0);
+        if ($val > 0) {
+            $min = (int) round($val * 0.88);
+            $max = (int) round($val * 1.12);
+        }
+    }
+    $confidence = (float) ($parsed['confidence'] ?? 0.55);
     $reason     = trim((string) ($parsed['reason'] ?? ''));
 
     if ($min <= 0 && $max <= 0) {
+        ai_log_error('pricing_invalid_range', [
+            'parsed' => $parsed,
+            'provider' => $provider,
+        ]);
         return null;
     }
     if ($min > $max) {

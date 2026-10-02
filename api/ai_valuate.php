@@ -48,6 +48,7 @@ $listing = [
     'title'           => $title,
     'description'     => $description,
     'condition'       => $condition,
+    'category_id'     => $categoryId,
     'category_label'  => $cat ? category_label($cat['slug'], $cat['name']) : 'عمومی',
     'demand_level'    => ai_demand_level($categoryId),
 ];
