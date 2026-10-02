@@ -2232,6 +2232,12 @@ if (!defined('OPENROUTER_API_KEY')) {
 if (!defined('OPENROUTER_MODEL')) {
     define('OPENROUTER_MODEL', 'meta-llama/llama-3.3-70b-instruct');
 }
+if (!defined('GEMINI_API_KEY')) {
+    define('GEMINI_API_KEY', '');
+}
+if (!defined('GEMINI_MODEL')) {
+    define('GEMINI_MODEL', 'gemini-3.8-flash');
+}
 if (!defined('AI_CHAT_USER_LIMIT')) {
     define('AI_CHAT_USER_LIMIT', 30);
 }

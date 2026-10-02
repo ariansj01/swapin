@@ -48,7 +48,73 @@ function swaapinAiContentFromCompletion(body) {
   return String(text).trim();
 }
 
+function swaapinAiContentFromGemini(body) {
+  const parts = body && body.candidates && body.candidates[0]
+    && body.candidates[0].content && body.candidates[0].content.parts;
+  if (!Array.isArray(parts)) return '';
+  return parts.map(p => (p && p.text) ? String(p.text) : '').join('').trim();
+}
+
+function swaapinGeminiBodyFromMessages(messages, temperature, maxTokens, useSearch) {
+  let systemText = '';
+  const contents = [];
+  (messages || []).forEach(m => {
+    const text = m && m.content != null ? String(m.content) : '';
+    if (!text) return;
+    if (m.role === 'system') {
+      systemText += (systemText ? '\n\n' : '') + text;
+      return;
+    }
+    contents.push({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: text }],
+    });
+  });
+  const body = {
+    contents: contents,
+    generationConfig: {
+      temperature: temperature,
+      maxOutputTokens: maxTokens,
+    },
+  };
+  if (systemText) {
+    body.systemInstruction = { parts: [{ text: systemText }] };
+  }
+  if (useSearch) {
+    body.tools = [{ google_search: {} }];
+  }
+  return body;
+}
+
+async function swaapinProviderGeminiOnce(provider, messages, temperature, maxTokens) {
+  const headers = Object.assign({
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  }, provider.headers || {});
+  const res = await fetch(provider.url, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify(swaapinGeminiBodyFromMessages(
+      messages,
+      temperature,
+      maxTokens,
+      provider.google_search !== false
+    )),
+  });
+  let body = null;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) {
+    throw new Error((provider.id || 'gemini') + '_http_' + res.status);
+  }
+  const content = swaapinAiContentFromGemini(body);
+  if (!content) throw new Error('empty_completion');
+  return { content: content, provider: provider.id || 'gemini' };
+}
+
 async function swaapinProviderChatOnce(provider, messages, temperature, maxTokens) {
+  if ((provider.api || provider.id) === 'gemini') {
+    return swaapinProviderGeminiOnce(provider, provider.messages || messages, temperature, maxTokens);
+  }
   const headers = Object.assign({
     'Content-Type': 'application/json',
     'Accept': 'application/json',

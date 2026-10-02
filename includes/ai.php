@@ -28,8 +28,29 @@ function openrouter_is_configured(): bool {
     return defined('OPENROUTER_API_KEY') && OPENROUTER_API_KEY !== '';
 }
 
+function gemini_is_configured(): bool {
+    return defined('GEMINI_API_KEY') && GEMINI_API_KEY !== '';
+}
+
+function gemini_model_name(): string {
+    return defined('GEMINI_MODEL') && GEMINI_MODEL !== '' ? GEMINI_MODEL : 'gemini-3.8-flash';
+}
+
 function ai_is_configured(): bool {
     return groq_is_configured() || openrouter_is_configured();
+}
+
+function ai_pricing_is_configured(): bool {
+    return gemini_is_configured() || ai_is_configured();
+}
+
+function ai_pricing_system_prompt(): string {
+    static $prompt = null;
+    if ($prompt === null) {
+        $path = __DIR__ . '/ai_pricing_prompt.txt';
+        $prompt = is_readable($path) ? trim((string) file_get_contents($path)) : '';
+    }
+    return $prompt;
 }
 
 function ai_provider_status_file(): string {
@@ -489,6 +510,34 @@ function ai_client_providers(): array {
     return $providers;
 }
 
+/**
+ * Pricing-only providers: Gemini + Google Search first, then Groq/OpenRouter.
+ *
+ * @param list<array{role:string,content:string}> $geminiMessages
+ * @return list<array<string,mixed>>
+ */
+function ai_pricing_client_providers(array $geminiMessages = []): array {
+    $providers = [];
+    if (gemini_is_configured()) {
+        $model = gemini_model_name();
+        $providers[] = [
+            'id'            => 'gemini',
+            'api'           => 'gemini',
+            'url'           => 'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent',
+            'model'         => $model,
+            'google_search' => true,
+            'messages'      => $geminiMessages,
+            'headers'       => [
+                'x-goog-api-key' => GEMINI_API_KEY,
+            ],
+        ];
+    }
+    foreach (ai_client_providers() as $fallback) {
+        $providers[] = $fallback;
+    }
+    return $providers;
+}
+
 /** @return list<array{role:string,content:string}> */
 function ai_chat_build_messages(string $userMessage, array $history = [], ?array $user = null): array {
     $history = array_slice($history, -10);
@@ -630,6 +679,7 @@ function ai_demand_level(int $categoryId): string {
 
 function ai_provider_label(?string $provider): string {
     return match ($provider) {
+        'gemini'     => 'Gemini',
         'groq'       => 'Groq',
         'openrouter' => 'OpenRouter',
         default      => 'AI',
@@ -692,6 +742,28 @@ function ai_pricing_build_messages(array $listing, array $similarItems = []): ar
     return [
         ['role' => 'system', 'content' => ai_system_prompt()],
         ['role' => 'user', 'content' => json_encode(array_merge(['mode' => 'pricing'], $payload), JSON_UNESCAPED_UNICODE)],
+    ];
+}
+
+/**
+ * Messages for Gemini + Google Search grounding (Divar / Digikala first).
+ *
+ * @return list<array{role:string,content:string}>
+ */
+function ai_pricing_build_gemini_messages(array $listing, array $similarItems = []): array {
+    $payload = ai_pricing_build_payload($listing, $similarItems);
+    $system  = ai_pricing_system_prompt();
+    if ($system === '') {
+        $system = 'Estimate used-item Toman prices in Iran from Divar, then Digikala, then Google. JSON only.';
+    }
+    return [
+        ['role' => 'system', 'content' => $system],
+        ['role' => 'user', 'content' => json_encode([
+            'task'                 => 'estimate_used_item_price_iran',
+            'listing'              => $payload['listing'],
+            'internal_market_hint' => $payload['context'],
+            'search_priority'      => ['divar.ir', 'digikala.com', 'google'],
+        ], JSON_UNESCAPED_UNICODE)],
     ];
 }
 
@@ -1193,7 +1265,7 @@ function ai_match_clear_cache(int $userId): void {
 }
 
 function ai_source_is_ai(string $source): bool {
-    return in_array($source, ['groq', 'openrouter', 'ai', 'assistant'], true);
+    return in_array($source, ['gemini', 'groq', 'openrouter', 'ai', 'assistant'], true);
 }
 
 /** Public-facing label — never expose vendor names (Groq/OpenRouter). */

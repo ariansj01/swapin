@@ -61,7 +61,8 @@ $listing = [
     'demand_level'    => $demandLevel,
 ];
 
-$providers = ai_client_providers();
+$geminiMessages = ai_pricing_build_gemini_messages($listing, $similar);
+$providers      = ai_pricing_client_providers($geminiMessages);
 if (empty($providers)) {
     http_response_code(503);
     echo json_encode(['ok' => false, 'error' => 'ai_not_configured']);
@@ -77,7 +78,7 @@ echo json_encode([
     'type'        => 'client_prepare',
     'messages'    => ai_pricing_build_messages($listing, $similar),
     'temperature' => 0.10,
-    'max_tokens'  => 500,
+    'max_tokens'  => 2048,
     'providers'   => $providers,
     'fallback'    => $fallback,
     'meta'        => [

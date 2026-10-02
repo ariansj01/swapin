@@ -395,7 +395,7 @@ render_navbar($user);
               <input type="text" id="step6-suggested-price-input" class="wizard-form-input"
                      value="<?= h(number_format($suggestedValue)) ?>"
                      readonly>
-              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این مبلغ فقط پیشنهاد سیستم است و در صورت خالی گذاشتن فیلد پایین، همین مقدار ثبت می‌شود.</p>
+              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این مبلغ از بازار (دیوار، دیجی‌کالا و در صورت نیاز گوگل) پیشنهاد می‌شود؛ در صورت خالی گذاشتن فیلد پایین، همین مقدار ثبت می‌شود.</p>
             </div>
           </div>
 
@@ -715,6 +715,59 @@ function initStep6Price() {
   syncPriceValue();
 }
 
+let step6AiKey = '';
+let step6AiBusy = false;
+
+function runStep6AiPricing() {
+  const titleEl = document.getElementById('step1-title');
+  const descEl = document.getElementById('step1-description');
+  const catEl = document.getElementById('step3-category-hidden');
+  const condEl = document.getElementById('step3-condition');
+  const suggestedInput = document.getElementById('step6-suggested-price-input');
+  const suggestedHiddenInput = document.getElementById('step6-suggested-value');
+  const selectedHiddenInput = document.getElementById('step6-estimated-value');
+  const customHiddenInput = document.getElementById('step6-custom-value');
+  if (!titleEl || !descEl || !catEl || !condEl || !suggestedInput || !suggestedHiddenInput) return;
+  if (typeof swaapinAiValuateFromBrowser !== 'function') return;
+
+  const title = titleEl.value.trim();
+  const desc = descEl.value.trim();
+  const catId = catEl.value;
+  const cond = condEl.value;
+  const key = title + '|' + desc + '|' + catId + '|' + cond;
+  if (key === step6AiKey || step6AiBusy) return;
+  if (title.length < 5 || desc.length < 20 || !(Number(catId) > 0)) return;
+
+  const appUrl = document.querySelector('meta[name="app-url"]')?.content || '';
+  const fd = new FormData();
+  fd.append('title', title);
+  fd.append('description', desc);
+  fd.append('condition', cond);
+  fd.append('category_id', catId);
+  if (typeof appendCsrf === 'function') appendCsrf(fd);
+
+  step6AiBusy = true;
+  suggestedInput.value = 'در حال استعلام قیمت بازار…';
+
+  swaapinAiValuateFromBrowser(appUrl, fd).then(data => {
+    const value = Math.round(Number(data && data.value) || 0);
+    if (value <= 0) return;
+    step6AiKey = key;
+    const formatted = value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    suggestedInput.value = formatted;
+    suggestedHiddenInput.value = String(value);
+    if (!customHiddenInput || !String(customHiddenInput.value || '').replace(/[^\d]/g, '')) {
+      selectedHiddenInput.value = String(value);
+    }
+  }).catch(() => {
+    suggestedInput.value = suggestedHiddenInput.value
+      ? Number(suggestedHiddenInput.value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+      : '';
+  }).finally(() => {
+    step6AiBusy = false;
+  });
+}
+
 function initStep3Fields() {
   const catHidden = document.getElementById('step3-category-hidden');
   const condSelect = document.getElementById('step3-condition');
@@ -914,6 +967,10 @@ function goToStep(step) {
   updateStepper();
   updateButtons();
   
+  if (step === 6) {
+    runStep6AiPricing();
+  }
+
   if (step === 7) {
     populateReview();
   }
