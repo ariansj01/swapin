@@ -149,11 +149,23 @@ function groq_chat_completion_once(array $messages, float $temperature): array {
         return ['parsed' => null, 'provider' => null, 'rate_limited' => false, 'transient_fail' => false, 'http_code' => 0];
     }
 
+    $isPricing = false;
+    $lastUser = '';
+    foreach (array_reverse($messages) as $m) {
+        if (($m['role'] ?? '') === 'user' && is_string($m['content'] ?? null)) {
+            $lastUser = $m['content'];
+            break;
+        }
+    }
+    if ($lastUser !== '') {
+        $isPricing = str_contains($lastUser, '"mode":"pricing"') || str_contains($lastUser, 'pricing');
+    }
+
     $payload = [
         'model'           => defined('GROQ_MODEL') ? GROQ_MODEL : 'llama-3.3-70b-versatile',
         'messages'        => $messages,
         'temperature'     => $temperature,
-        'max_tokens'      => 1200,
+        'max_tokens'      => $isPricing ? 500 : 1200,
     ];
 
     $response = ai_http_chat_request(
@@ -193,11 +205,23 @@ function openrouter_chat_completion_once(array $messages, float $temperature): a
         return ['parsed' => null, 'provider' => null, 'rate_limited' => false, 'transient_fail' => false, 'http_code' => 0];
     }
 
+    $isPricing = false;
+    $lastUser = '';
+    foreach (array_reverse($messages) as $m) {
+        if (($m['role'] ?? '') === 'user' && is_string($m['content'] ?? null)) {
+            $lastUser = $m['content'];
+            break;
+        }
+    }
+    if ($lastUser !== '') {
+        $isPricing = str_contains($lastUser, '"mode":"pricing"') || str_contains($lastUser, 'pricing');
+    }
+
     $payload = [
         'model'           => defined('OPENROUTER_MODEL') ? OPENROUTER_MODEL : 'meta-llama/llama-3.3-70b-instruct',
         'messages'        => $messages,
         'temperature'     => $temperature,
-        'max_tokens'      => 1200,
+        'max_tokens'      => $isPricing ? 500 : 1200,
     ];
 
     $headers = [
@@ -539,35 +563,41 @@ function ai_provider_label(?string $provider): string {
 
 /** @return array|null Normalized pricing result for API */
 function ai_price_listing(array $listing, array $similarItems = []): ?array {
+    $similarTrim = array_slice($similarItems, 0, 3);
     $similar = array_map(static function ($row) {
         return [
-            'title'           => $row['title'],
-            'condition'       => $row['condition'],
-            'estimated_value' => (float) $row['estimated_value'],
-            'category'        => category_label($row['category_slug'] ?? '', $row['category_name'] ?? ''),
+            't' => mb_substr((string)($row['title'] ?? ''), 0, 70),
+            'c' => (string)($row['condition'] ?? ''),
+            'v' => (int)($row['estimated_value'] ?? 0),
         ];
-    }, $similarItems);
+    }, $similarTrim);
 
     $categoryId = (int) ($listing['category_id'] ?? 0);
     $catStats   = ai_category_stats($categoryId);
 
+    $titleShort       = mb_substr(trim((string)($listing['title'] ?? '')), 0, 120);
+    $descriptionShort = trim(preg_replace('/\s+/', ' ', (string)($listing['description'] ?? '')));
+    if (mb_strlen($descriptionShort) > 220) {
+        $descriptionShort = mb_substr($descriptionShort, 0, 220) . '...';
+    }
+
     $payload = [
         'listing' => [
-            'title'       => $listing['title'],
-            'description' => $listing['description'],
-            'category'    => $listing['category_label'] ?? $listing['category'] ?? '',
-            'condition'   => $listing['condition'],
+            'title'       => $titleShort,
+            'description' => $descriptionShort,
+            'category'    => mb_substr((string)($listing['category_label'] ?? $listing['category'] ?? ''), 0, 80),
+            'condition'   => (string)($listing['condition'] ?? 'good'),
         ],
         'context' => [
-            'similar_items'      => $similar,
-            'demand_level'       => $listing['demand_level'] ?? 'medium',
-            'credit_unit'        => CREDIT_UNIT,
-            'category_stats'     => [
-                'total_listings' => $catStats['total_listings'],
-                'avg_value'      => $catStats['avg_value'],
-                'median_value'   => $catStats['median_value'],
-                'p25'            => $catStats['p25'],
-                'p75'            => $catStats['p75'],
+            'similar'          => $similar,
+            'demand'           => (string)($listing['demand_level'] ?? 'medium'),
+            'unit'             => (string)CREDIT_UNIT,
+            'stats'            => [
+                'n'      => (int)$catStats['total_listings'],
+                'avg'    => (int)$catStats['avg_value'],
+                'med'    => (int)$catStats['median_value'],
+                'p25'    => (int)$catStats['p25'],
+                'p75'    => (int)$catStats['p75'],
             ],
         ],
     ];
@@ -575,6 +605,45 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
     $result = ai_call('pricing', $payload);
     $parsed = ai_parse_json_response($result['parsed']);
     $provider = $result['provider'] ?? null;
+
+    $hitWaf = !$parsed && !$provider && ($result['parsed'] === null);
+    if ($hitWaf) {
+        $miniPayload = [
+            'listing' => [
+                'title'       => $titleShort,
+                'description' => $descriptionShort,
+                'category'    => $payload['listing']['category'],
+                'condition'   => $payload['listing']['condition'],
+            ],
+            'context' => [
+                'demand' => $payload['context']['demand'],
+                'unit'   => $payload['context']['unit'],
+                'stats'  => [
+                    'n'   => $payload['context']['stats']['n'],
+                    'avg' => $payload['context']['stats']['avg'],
+                ],
+            ],
+        ];
+        $retry = ai_call('pricing', $miniPayload);
+        if (!empty($retry['parsed']) || !empty($retry['provider'])) {
+            $result   = $retry;
+            $parsed   = ai_parse_json_response($result['parsed']);
+            $provider = $result['provider'] ?? null;
+        } else {
+            $microPayload = [
+                'title'       => $titleShort,
+                'description' => $descriptionShort,
+                'category'    => $payload['listing']['category'],
+                'condition'   => $payload['listing']['condition'],
+            ];
+            $retry2 = ai_call('pricing', $microPayload);
+            if (!empty($retry2['parsed']) || !empty($retry2['provider'])) {
+                $result   = $retry2;
+                $parsed   = ai_parse_json_response($result['parsed']);
+                $provider = $result['provider'] ?? null;
+            }
+        }
+    }
 
     $isPricing = false;
     if ($parsed && is_array($parsed)) {
