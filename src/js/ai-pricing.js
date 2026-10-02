@@ -252,53 +252,25 @@
     const catEl    = document.getElementById('category_id');
     const catId    = catEl ? catEl.value : '';
 
-    // Pricing must go through /api/ai_valuate.php (server uses mode:pricing).
-    // Never wrap valuation prompts inside mode:chat via ai_chat.php.
     const fd = new FormData();
     fd.append('title', titleRaw.trim());
     fd.append('description', descRaw.trim());
     fd.append('condition', condVal);
     fd.append('category_id', catId);
-    const csrf = getCsrfToken();
-    if (csrf) fd.append('_csrf', csrf);
 
     const minDelay = new Promise(r => setTimeout(r, 2800));
 
     let data = null;
 
     try {
-      const [_d, apiResp] = await Promise.all([
-        minDelay,
-        fetch(getAppUrl() + '/api/ai_valuate.php', {
-          method: 'POST',
-          body: fd,
-          credentials: 'same-origin',
-          headers: csrf ? { 'X-CSRF-Token': csrf } : {},
-        }).then(async (res) => {
-          let body;
-          try { body = await res.json(); } catch { body = { ok: false }; }
-          return { res, body };
-        }),
-      ]);
-
-      const body = apiResp.body;
-      if (!apiResp.res.ok || !body || body.ok !== true) {
-        throw new Error((body && (body.message || body.error)) || 'خطا در دریافت پاسخ ارزش‌گذاری.');
+      if (typeof swaapinAiValuateFromBrowser !== 'function') {
+        throw new Error('ai_client_missing');
       }
-
-      data = {
-        ok: true,
-        value: body.value,
-        value_fmt: body.value_fmt,
-        range_low: body.range_low,
-        range_high: body.range_high,
-        range_fmt: body.range_fmt,
-        confidence: body.confidence,
-        uncertain: !!body.uncertain,
-        reasons: Array.isArray(body.reasons) ? body.reasons : [],
-        note: body.note || '',
-        ai_source: body.fallback ? 'fallback' : 'assistant',
-      };
+      const [_d, valuate] = await Promise.all([
+        minDelay,
+        swaapinAiValuateFromBrowser(getAppUrl(), fd),
+      ]);
+      data = valuate || buildValuationFallback(titleRaw, descRaw, condVal);
       showResult(data);
     } catch (err) {
       data = buildValuationFallback(titleRaw, descRaw, condVal);

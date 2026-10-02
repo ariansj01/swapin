@@ -61,35 +61,28 @@ $listing = [
     'demand_level'    => $demandLevel,
 ];
 
-// Must go through ai_call('pricing', …) — never wrap pricing inside mode:chat.
-$result = ai_price_listing($listing, $similar);
-$fallbackUsed = false;
-$provider = is_array($result) ? ($result['ai_source'] ?? null) : null;
-
-if (!$result) {
-    $fallbackUsed = true;
-    $result = ai_price_listing_fallback($listing);
-    $provider = null;
+$providers = ai_client_providers();
+if (empty($providers)) {
+    http_response_code(503);
+    echo json_encode(['ok' => false, 'error' => 'ai_not_configured']);
+    exit;
 }
 
-$debug = [
-    'fallback_used'   => $fallbackUsed,
-    'similar_count'   => count($similar),
-    'category_id'     => $categoryId,
-    'demand_level'    => $demandLevel,
-];
+// Server IP is often blocked (403) by Groq/OpenRouter; same as chat:
+// prepare mode:pricing messages here, complete from the visitor browser.
+$fallback = ai_sanitize_pricing_for_client(ai_price_listing_fallback($listing));
 
-$logFile = ai_log_dir() . DIRECTORY_SEPARATOR . 'ai_errors.log';
-if (is_readable($logFile)) {
-    $lines = @file($logFile, FILE_IGNORE_NEW_LINES);
-    if (is_array($lines)) {
-        $debug['recent_logs'] = array_slice($lines, -30);
-    }
-}
-
-$response = array_merge(['ok' => true], ai_sanitize_pricing_for_client($result));
-$response['provider'] = $provider && $provider !== 'fallback' ? $provider : null;
-$response['fallback'] = $fallbackUsed;
-$response['debug']    = $debug;
-
-echo json_encode($response, JSON_UNESCAPED_UNICODE);
+echo json_encode([
+    'ok'          => true,
+    'type'        => 'client_prepare',
+    'messages'    => ai_pricing_build_messages($listing, $similar),
+    'temperature' => 0.10,
+    'max_tokens'  => 500,
+    'providers'   => $providers,
+    'fallback'    => $fallback,
+    'meta'        => [
+        'similar_count' => count($similar),
+        'category_id'   => $categoryId,
+        'demand_level'  => $demandLevel,
+    ],
+], JSON_UNESCAPED_UNICODE);

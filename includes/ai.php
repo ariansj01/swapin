@@ -636,8 +636,12 @@ function ai_provider_label(?string $provider): string {
     };
 }
 
-/** @return array|null Normalized pricing result for API */
-function ai_price_listing(array $listing, array $similarItems = []): ?array {
+/**
+ * Build pricing mode payload (listing + market context) for LLM.
+ *
+ * @return array{listing:array,context:array}
+ */
+function ai_pricing_build_payload(array $listing, array $similarItems = []): array {
     $similarTrim = array_slice($similarItems, 0, 3);
     $similar = array_map(static function ($row) {
         return [
@@ -656,7 +660,7 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
         $descriptionShort = mb_substr($descriptionShort, 0, 220) . '...';
     }
 
-    $payload = [
+    return [
         'listing' => [
             'title'       => $titleShort,
             'description' => $descriptionShort,
@@ -664,18 +668,38 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
             'condition'   => (string)($listing['condition'] ?? 'good'),
         ],
         'context' => [
-            'similar'          => $similar,
-            'demand'           => (string)($listing['demand_level'] ?? 'medium'),
-            'unit'             => (string)CREDIT_UNIT,
-            'stats'            => [
-                'n'      => (int)$catStats['total_listings'],
-                'avg'    => (int)$catStats['avg_value'],
-                'med'    => (int)$catStats['median_value'],
-                'p25'    => (int)$catStats['p25'],
-                'p75'    => (int)$catStats['p75'],
+            'similar' => $similar,
+            'demand'  => (string)($listing['demand_level'] ?? 'medium'),
+            'unit'    => (string)CREDIT_UNIT,
+            'stats'   => [
+                'n'   => (int)$catStats['total_listings'],
+                'avg' => (int)$catStats['avg_value'],
+                'med' => (int)$catStats['median_value'],
+                'p25' => (int)$catStats['p25'],
+                'p75' => (int)$catStats['p75'],
             ],
         ],
     ];
+}
+
+/**
+ * Chat messages for pricing — outer mode MUST be "pricing" (never wrap in chat).
+ *
+ * @return list<array{role:string,content:string}>
+ */
+function ai_pricing_build_messages(array $listing, array $similarItems = []): array {
+    $payload = ai_pricing_build_payload($listing, $similarItems);
+    return [
+        ['role' => 'system', 'content' => ai_system_prompt()],
+        ['role' => 'user', 'content' => json_encode(array_merge(['mode' => 'pricing'], $payload), JSON_UNESCAPED_UNICODE)],
+    ];
+}
+
+/** @return array|null Normalized pricing result for API */
+function ai_price_listing(array $listing, array $similarItems = []): ?array {
+    $payload = ai_pricing_build_payload($listing, $similarItems);
+    $titleShort = $payload['listing']['title'];
+    $descriptionShort = $payload['listing']['description'];
 
     $result = ai_call('pricing', $payload);
     $parsed = ai_parse_json_response($result['parsed']);

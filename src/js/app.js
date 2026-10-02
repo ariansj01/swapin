@@ -102,6 +102,146 @@ function swaapinChatDisplayMessage(content, fallbackMessage) {
   return fallbackMessage || '';
 }
 
+function swaapinNormaliseNumber(v) {
+  if (v == null) return 0;
+  let s = String(v).trim();
+  s = s.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+  s = s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  s = s.replace(/[^\d.-]/g, '');
+  const n = Number(s);
+  return isFinite(n) ? Math.round(n) : 0;
+}
+
+function swaapinFormatCreditLocal(amount) {
+  const n = Math.round(Number(amount) || 0);
+  const unit = (typeof getCreditUnit === 'function') ? getCreditUnit() : 'تومان';
+  return new Intl.NumberFormat('fa-IR').format(n) + ' ' + unit;
+}
+
+/** Normalize LLM pricing JSON into UI fields. Returns null if not a pricing payload. */
+function swaapinNormalisePricingFromAi(parsed) {
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  const type = String(parsed.type || '');
+  if (type === 'chat' || type === 'error') return null;
+
+  let min = 0, max = 0;
+  if (parsed.value_range && typeof parsed.value_range === 'object') {
+    min = swaapinNormaliseNumber(parsed.value_range.min);
+    max = swaapinNormaliseNumber(parsed.value_range.max);
+  }
+  if (min <= 0 && max <= 0) {
+    min = swaapinNormaliseNumber(parsed.min);
+    max = swaapinNormaliseNumber(parsed.max);
+  }
+  if (min <= 0 && max <= 0) {
+    const val = swaapinNormaliseNumber(
+      parsed.estimated_value ?? parsed.valuation ?? parsed.value ?? parsed.price ?? 0
+    );
+    if (val > 0) {
+      min = Math.round(val * 0.88);
+      max = Math.round(val * 1.12);
+    }
+  }
+  if (min <= 0 && max <= 0) return null;
+  if (min > max) [min, max] = [max, min];
+  if (min <= 0) min = Math.max(500000, Math.round(max * 0.85));
+  if (max <= 0) max = Math.min(500000000000, Math.round(min * 1.15));
+
+  min = Math.round(min / 100000) * 100000;
+  max = Math.round(max / 100000) * 100000;
+  min = Math.max(500000, min);
+  max = Math.min(500000000000, max);
+  if (min > max) min = Math.round(max * 0.88 / 100000) * 100000;
+
+  const value = Math.round((min + max) / 2 / 100000) * 100000;
+  let conf = parsed.confidence ?? parsed.certainty ?? 0.55;
+  if (typeof conf === 'string') conf = swaapinNormaliseNumber(conf) / 100;
+  if (conf > 1) conf = conf / 100;
+  const confPct = Math.round(Math.max(0, Math.min(1, Number(conf) || 0.55)) * 100);
+  const uncertain = confPct < 60;
+
+  const reasons = [];
+  if (Array.isArray(parsed.reasons) && parsed.reasons.length) {
+    parsed.reasons.forEach(r => {
+      const s = String(r).trim();
+      if (s) reasons.push(s);
+    });
+  }
+  const singleReason = String(parsed.reason ?? '').trim();
+  if (singleReason && !reasons.includes(singleReason)) reasons.unshift(singleReason);
+  if (uncertain) reasons.push('اطمینان پایین — محدوده تقریبی است؛ در صورت نیاز مقدار را دستی تنظیم کنید.');
+  if (reasons.length === 0) reasons.push('ارزش‌گذاری هوشمند بر اساس مشخصات کالای شما.');
+
+  return {
+    ok: true,
+    value: value,
+    value_fmt: swaapinFormatCreditLocal(value),
+    range_low: min,
+    range_high: max,
+    range_fmt: swaapinFormatCreditLocal(min) + ' — ' + swaapinFormatCreditLocal(max),
+    confidence: confPct,
+    uncertain: uncertain,
+    reasons: reasons,
+    note: uncertain
+      ? 'ارزش‌گذاری با اطمینان پایین — پیشنهاد را راهنما در نظر بگیرید.'
+      : 'ارزش‌گذاری هوشمند سواَپین بر اساس مشخصات و آگهی‌های مشابه.',
+    ai_source: String(parsed.ai_source ?? parsed.provider ?? 'assistant'),
+    fallback: false,
+  };
+}
+
+/**
+ * Prepare on server (mode:pricing messages), complete from browser IP.
+ * Falls back to prepare.fallback when providers are unreachable.
+ */
+async function swaapinAiValuateFromBrowser(appUrl, formData) {
+  appendCsrf(formData);
+  const res = await fetch(appUrl + '/api/ai_valuate.php', {
+    method: 'POST',
+    body: formData,
+    credentials: 'same-origin',
+    headers: withCsrfHeaders(),
+  });
+  let prepare;
+  try { prepare = await res.json(); } catch { prepare = { ok: false }; }
+
+  if (prepare && prepare.error === 'rate_limited') {
+    throw new Error(prepare.message || 'سقف درخواست‌های ارزش‌گذاری پر شده. کمی بعد دوباره تلاش کنید.');
+  }
+  if (prepare && prepare.error === 'login_required') {
+    throw new Error('برای تخمین قیمت باید وارد حساب کاربری شوید.');
+  }
+  if (!res.ok || !prepare || prepare.ok !== true) {
+    throw new Error((prepare && (prepare.message || prepare.error)) || 'خطا در آماده‌سازی ارزش‌گذاری.');
+  }
+
+  const serverFallback = prepare.fallback && typeof prepare.fallback === 'object'
+    ? Object.assign({ ok: true, fallback: true, ai_source: 'fallback' }, prepare.fallback)
+    : null;
+
+  if (prepare.type === 'client_prepare') {
+    const done = await swaapinBrowserCompleteChat(prepare);
+    if (done && done.content) {
+      const parsed = swaapinExtractJsonFromText(done.content);
+      const normalised = swaapinNormalisePricingFromAi(parsed);
+      if (normalised) {
+        normalised.ai_source = done.provider || normalised.ai_source;
+        return normalised;
+      }
+    }
+    if (serverFallback) return serverFallback;
+    throw new Error('پاسخ ارزش‌گذاری قابل خواندن نبود.');
+  }
+
+  // Legacy direct-result response
+  if (prepare.value != null || prepare.value_fmt) {
+    return Object.assign({ ok: true, fallback: !!prepare.fallback }, prepare);
+  }
+  if (serverFallback) return serverFallback;
+  throw new Error('پاسخ ارزش‌گذاری نامعتبر بود.');
+}
+
 async function swaapinAiChatFromBrowser(appUrl, message, history) {
   const fd = new FormData();
   fd.append('message', message);
@@ -1242,60 +1382,23 @@ function initAiChat() {
 
       setLoading(true);
 
-      // Pricing must go through /api/ai_valuate.php (server uses mode:pricing).
-      // Never wrap valuation prompts inside mode:chat via ai_chat.php.
+      // Server prepares mode:pricing messages; browser completes (server IP is often 403'd).
       const fd = new FormData(form);
       fd.set('title', title);
       fd.set('description', desc);
       fd.set('category_id', catId);
       fd.set('condition', cond);
-      appendCsrf(fd);
 
       const minDelay = new Promise(r => setTimeout(r, 2800));
 
       let data = null;
 
       try {
-        const [apiResp] = await Promise.all([
-          fetch(appUrl + '/api/ai_valuate.php', {
-            method: 'POST',
-            body: fd,
-            credentials: 'same-origin',
-            headers: withCsrfHeaders(),
-          }).then(async (res) => {
-            let body;
-            try { body = await res.json(); } catch { body = { ok: false }; }
-            return { res, body };
-          }),
+        const [valuate] = await Promise.all([
+          swaapinAiValuateFromBrowser(appUrl, fd),
           minDelay,
         ]);
-
-        const body = apiResp.body;
-        if (!apiResp.res.ok || !body || body.ok !== true) {
-          const errCode = body && body.error ? String(body.error) : '';
-          if (errCode === 'rate_limited' || apiResp.res.status === 429) {
-            throw new Error((body && body.message) || 'سقف درخواست‌های ارزش‌گذاری پر شده. کمی بعد دوباره تلاش کنید.');
-          }
-          if (errCode === 'login_required' || apiResp.res.status === 401) {
-            throw new Error('برای تخمین قیمت باید وارد حساب کاربری شوید.');
-          }
-          throw new Error((body && (body.message || body.error)) || 'خطا در دریافت پاسخ ارزش‌گذاری.');
-        }
-
-        data = {
-          ok: true,
-          value: body.value,
-          value_fmt: body.value_fmt,
-          range_low: body.range_low,
-          range_high: body.range_high,
-          range_fmt: body.range_fmt,
-          confidence: body.confidence,
-          uncertain: !!body.uncertain,
-          reasons: Array.isArray(body.reasons) ? body.reasons : [],
-          note: body.note || '',
-          ai_source: body.fallback ? 'fallback' : 'assistant',
-          fallback: !!body.fallback,
-        };
+        data = valuate;
       } catch (err) {
         data = buildValuationFallback(title, desc, cond, catId);
         if (chatMessages) {
