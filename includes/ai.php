@@ -138,21 +138,25 @@ function groq_chat_completion_once(array $messages, float $temperature): array {
     }
 
     $payload = [
-        'model'           => defined('GROQ_MODEL') ? GROQ_MODEL : 'llama-3.3-70b-versatile',
+        'model'           => defined('GROQ_MODEL') ? GROQ_MODEL : 'qwen/qwen3.8-27b',
         'messages'        => $messages,
         'temperature'     => $temperature,
         'max_tokens'      => 1200,
-        'response_format' => ['type' => 'json_object'],
     ];
 
     $response = ai_http_chat_request(
         'https://api.groq.com/openai/v1/chat/completions',
         ['Authorization: Bearer ' . GROQ_API_KEY],
-        $payload
+        $payload,
+        'groq'
     );
 
     if ($response['rate_limited']) {
         return ['parsed' => null, 'provider' => 'groq', 'rate_limited' => true];
+    }
+    if (!empty($response['model_not_found'])) {
+        ai_log_error('groq model not found: ' . ($payload['model'] ?? '?'));
+        return ['parsed' => null, 'provider' => 'groq', 'rate_limited' => false];
     }
 
     return [
@@ -175,7 +179,6 @@ function openrouter_chat_completion_once(array $messages, float $temperature): a
         'messages'        => $messages,
         'temperature'     => $temperature,
         'max_tokens'      => 1200,
-        'response_format' => ['type' => 'json_object'],
     ];
 
     $headers = [
@@ -187,7 +190,8 @@ function openrouter_chat_completion_once(array $messages, float $temperature): a
     $response = ai_http_chat_request(
         'https://openrouter.ai/api/v1/chat/completions',
         $headers,
-        $payload
+        $payload,
+        'openrouter'
     );
 
     if ($response['rate_limited']) {
@@ -201,44 +205,104 @@ function openrouter_chat_completion_once(array $messages, float $temperature): a
     ];
 }
 
-/** @return array{body:?array,code:int,rate_limited:bool} */
-function ai_http_chat_request(string $url, array $headers, array $payload): array {
+function ai_log_dir(): string {
+    static $dir = null;
+    if ($dir === null) {
+        $base = defined('STORAGE_DIR') ? STORAGE_DIR : __DIR__ . '/../storage';
+        $dir = rtrim($base, '/\\') . DIRECTORY_SEPARATOR . 'logs';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+    }
+    return $dir;
+}
+
+function ai_log_error(string $message, ?array $context = null): void {
+    try {
+        $line = @date('[Y-m-d H:i:s]') . ' ' . trim($message);
+        if ($context !== null) {
+            $line .= ' | ' . @json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+        @file_put_contents(ai_log_dir() . DIRECTORY_SEPARATOR . 'ai_errors.log', $line . PHP_EOL, FILE_APPEND | LOCK_EX);
+    } catch (Throwable) {
+    }
+}
+
+/** @return array{body:?array,code:int,rate_limited:bool,model_not_found:bool,raw?:?string} */
+function ai_http_chat_request(string $url, array $headers, array $payload, string $provider = 'unknown'): array {
     $ch = curl_init($url);
+    $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36';
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => array_merge(['Content-Type: application/json'], $headers),
+        CURLOPT_HTTPHEADER     => array_merge(
+            ['Content-Type: application/json', 'User-Agent: ' . $ua, 'Accept: application/json'],
+            $headers
+        ),
         CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
-        CURLOPT_TIMEOUT        => 45,
-        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT        => 120,
+        CURLOPT_CONNECTTIMEOUT => 45,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => false,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_ENCODING       => '',
+        CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
+        CURLOPT_DNS_CACHE_TIMEOUT => 3600,
+        CURLOPT_TCP_FASTOPEN   => true,
     ]);
+    if (defined('AI_PROXY_URL') && AI_PROXY_URL !== '' && $provider !== 'local') {
+        curl_setopt($ch, CURLOPT_PROXY, AI_PROXY_URL);
+        if (defined('AI_PROXY_AUTH') && AI_PROXY_AUTH !== '') {
+            curl_setopt($ch, CURLOPT_PROXYUSERPWD, AI_PROXY_AUTH);
+        }
+    }
 
     $raw  = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_error($ch);
+    $dns  = curl_getinfo($ch, CURLINFO_NAMELOOKUP_TIME);
+    $conn = curl_getinfo($ch, CURLINFO_CONNECT_TIME);
     curl_close($ch);
 
     if ($raw === false) {
-        return ['body' => null, 'code' => 0, 'rate_limited' => false];
+        ai_log_error("{$provider} curl failed", [
+            'error' => $err,
+            'url'   => $url,
+            'dns_time' => $dns,
+            'connect_time' => $conn,
+        ]);
+        return ['body' => null, 'code' => 0, 'rate_limited' => false, 'model_not_found' => false, 'raw' => null];
     }
 
     $body = json_decode($raw, true);
+    $rawLower = strtolower((string)$raw);
     $rateLimited = $code === 429
-        || ($code === 403 && is_array($body) && str_contains(strtolower(json_encode($body)), 'rate'));
+        || ($code === 403 && $rawLower !== '' && str_contains($rawLower, 'rate'));
+    $modelNotFound = ($code === 404 || $code === 400)
+        && $rawLower !== ''
+        && (str_contains($rawLower, 'model_not_found') || str_contains($rawLower, 'does not exist') || str_contains($rawLower, 'not found'));
+
+    if ($code >= 400 && !$rateLimited && !$modelNotFound) {
+        ai_log_error("{$provider} HTTP {$code}", ['response' => substr((string)$raw, 0, 800)]);
+    }
 
     return [
-        'body'         => is_array($body) ? $body : null,
-        'code'         => $code,
-        'rate_limited' => $rateLimited,
+        'body'            => is_array($body) ? $body : null,
+        'code'            => $code,
+        'rate_limited'    => $rateLimited,
+        'model_not_found' => $modelNotFound,
+        'raw'             => is_string($raw) ? $raw : null,
     ];
 }
 
-function ai_parse_completion_text(?array $body): ?array {
+function ai_parse_completion_text(?array $body, ?string $provider = null): ?array {
     if (!$body) {
         return null;
     }
 
     $text = trim($body['choices'][0]['message']['content'] ?? '');
     if ($text === '') {
+        ai_log_error("{$provider} empty completion", ['body_keys' => array_keys($body)]);
         return null;
     }
 
@@ -246,8 +310,26 @@ function ai_parse_completion_text(?array $body): ?array {
     if (!is_array($parsed) && preg_match('/\{[\s\S]*\}/', $text, $m)) {
         $parsed = json_decode($m[0], true);
     }
+    if (!is_array($parsed)) {
+        $cleaned = preg_replace('/^```(?:json)?\s*|\s*```$/i', '', trim($text));
+        if ($cleaned !== $text) {
+            $parsed = json_decode($cleaned, true);
+        }
+    }
+    if (!is_array($parsed)) {
+        $braces = [strpos($text, '{'), strrpos($text, '}')];
+        if ($braces[0] !== false && $braces[1] !== false && $braces[1] > $braces[0]) {
+            $slice = substr($text, $braces[0], $braces[1] - $braces[0] + 1);
+            $parsed = json_decode($slice, true);
+        }
+    }
 
-    return is_array($parsed) ? $parsed : null;
+    if (!is_array($parsed)) {
+        ai_log_error("{$provider} cannot parse JSON from completion", ['text_snippet' => mb_substr($text, 0, 400)]);
+        return null;
+    }
+
+    return $parsed;
 }
 
 function ai_call(string $mode, array $payload): array {

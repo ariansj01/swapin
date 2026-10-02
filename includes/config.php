@@ -101,6 +101,20 @@ if (!defined('SKIP_SESSION') && session_status() === PHP_SESSION_NONE) {
         || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443
         || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
 
+    $sessDir = STORAGE_DIR . '/sessions';
+    if (!is_dir($sessDir)) {
+        @mkdir($sessDir, 0755, true);
+    }
+    if (is_dir($sessDir) && is_writable($sessDir)) {
+        session_save_path($sessDir);
+    } elseif (function_exists('sys_get_temp_dir')) {
+        $alt = sys_get_temp_dir() . '/swapin_sess_' . substr(md5(__DIR__), 0, 8);
+        if (!is_dir($alt)) @mkdir($alt, 0755, true);
+        if (is_dir($alt) && is_writable($alt)) session_save_path($alt);
+    }
+    ini_set('session.gc_probability', '1');
+    ini_set('session.gc_divisor', '100');
+
     // Bank gateways usually return to the callback with a cross-site POST.
     // SameSite=None keeps the existing session attached on that return trip.
     $sameSite = $https ? 'None' : 'Lax';

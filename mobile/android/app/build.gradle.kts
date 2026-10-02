@@ -17,12 +17,21 @@ android {
     compileSdk = 37
     buildToolsVersion = "36.0.0"
 
+    val localProperties = Properties()
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        localProperties.load(FileInputStream(localFile))
+    }
+
+    val flutterVersionCode = (localProperties.getProperty("flutter.versionCode") ?: "3").toInt()
+    val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0.2"
+
     defaultConfig {
         applicationId = "ir.swaapin.mobile"
         minSdk = 24
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = flutterVersionCode
+        versionName = flutterVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -32,12 +41,6 @@ android {
 
     signingConfigs {
         create("release") {
-            val localProperties = Properties()
-            val localFile = rootProject.file("local.properties")
-            if (localFile.exists()) {
-                localProperties.load(localFile.inputStream())
-            }
-
             val keystorePath = localProperties.getProperty("SWAAPIN_KEYSTORE_PATH")
                 ?: System.getenv("SWAAPIN_KEYSTORE_PATH")
                 ?: ""
@@ -81,11 +84,10 @@ android {
                 "proguard-rules.pro"
             )
             val releaseSigning = signingConfigs.getByName("release")
-            if (releaseSigning.storeFile != null && releaseSigning.storeFile?.exists() == true) {
-                signingConfig = releaseSigning
-            } else {
-                signingConfig = signingConfigs.getByName("debug")
+            check(releaseSigning.storeFile != null && releaseSigning.storeFile?.exists() == true) {
+                "Release keystore not found! Check SWAAPIN_KEYSTORE_PATH in local.properties"
             }
+            signingConfig = releaseSigning
         }
     }
 
