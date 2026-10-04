@@ -3,7 +3,8 @@ importScripts('/sw-core.js');
 (function () {
   'use strict';
 
-  const CACHE_NAME = 'swaapin-cache-ios-v1';
+  // SW v2 — align with sw-core 1.0.1 (fixed defaultFetchResponse returning undefined)
+  const CACHE_NAME = 'swaapin-cache-ios-v2';
   const EXTRA_PRECACHE = [
     '/src/js/pwa/pwa-ios.js',
     '/src/img/fav_icon/site-ios.webmanifest',
@@ -39,7 +40,10 @@ importScripts('/sw-core.js');
                 }
                 return res;
               })
-              .catch(() => cached || caches.match(self.SwaapinSWCore.OFFLINE_URL));
+              .catch(() =>
+                cached ||
+                caches.match(self.SwaapinSWCore.OFFLINE_URL).then((o) => o || new Response('', { status: 503 }))
+              );
             return cached || networkFetch;
           })
         );

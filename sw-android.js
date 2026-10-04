@@ -3,7 +3,8 @@ importScripts('/sw-core.js');
 (function () {
   'use strict';
 
-  const CACHE_NAME = 'swaapin-cache-android-v1';
+  // SW v2 — align with sw-core 1.0.1 (fixed defaultFetchResponse returning undefined)
+  const CACHE_NAME = 'swaapin-cache-android-v2';
   const EXTRA_PRECACHE = [
     '/src/js/pwa/pwa-android.js',
     '/src/img/fav_icon/site-android.webmanifest',
@@ -27,7 +28,9 @@ importScripts('/sw-core.js');
       const isAdmin = self.SwaapinSWCore.isAdminRoute(url);
       if (!isAdmin) return false;
       event.respondWith(
-        fetch(req).catch(() => caches.match(req).then((r) => r || caches.match(self.SwaapinSWCore.OFFLINE_URL)))
+        fetch(req).catch(() =>
+          caches.match(req).then((r) => r || caches.match(self.SwaapinSWCore.OFFLINE_URL))
+        )
       );
       return true;
     },

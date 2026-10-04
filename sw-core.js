@@ -3,7 +3,7 @@
  * Imported by: sw-android.js, sw-ios.js, sw.js (fallback)
  * ========================================================= */
 
-self.SWAAPIN_SW_CORE_VERSION = '1.0.0';
+self.SWAAPIN_SW_CORE_VERSION = '1.0.1';
 self.SWAAPIN_CACHE_BASE = 'swaapin-cache';
 
 self.SwaapinSWCore = (function () {
@@ -52,6 +52,10 @@ self.SwaapinSWCore = (function () {
     return /\.(css|js|woff2?|ttf|eot|png|jpg|jpeg|gif|svg|webp|ico|mp4|webm|ogg|mp3|wasm)$/i.test(url.pathname);
   }
 
+  function emptyResponse(status) {
+    return new Response('', { status: status || 503, statusText: 'Service Unavailable', headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
+
   function installHandler(cacheName, extraUrls) {
     const urls = PRECACHE_URLS.concat(Array.isArray(extraUrls) ? extraUrls : []);
     return caches.open(cacheName).then((cache) =>
@@ -73,11 +77,15 @@ self.SwaapinSWCore = (function () {
   function navigateResponse(req, cacheName) {
     return fetch(req)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
+        }
         return res;
       })
-      .catch(() => caches.match(req).then((r) => r || caches.match(OFFLINE_URL)));
+      .catch(() =>
+        caches.match(req).then((r) => r || caches.match(OFFLINE_URL).then((o) => o || emptyResponse(503)))
+      );
   }
 
   function staticResponse(req, cacheName) {
@@ -89,18 +97,22 @@ self.SwaapinSWCore = (function () {
           caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
         }
         return res;
-      }).catch(() => cached)
+      }).catch(() => cached || emptyResponse(503))
     );
   }
 
   function defaultFetchResponse(req, cacheName) {
     return fetch(req)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
+        }
         return res;
       })
-      .catch(() => caches.match(req));
+      .catch(() =>
+        caches.match(req).then((r) => r || emptyResponse(503))
+      );
   }
 
   function defaultFetchHandler(event, cacheName, extensions) {
