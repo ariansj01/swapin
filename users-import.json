@@ -1,0 +1,114 @@
+[
+  {
+    "name": "پوریا محمدی",
+    "email": "pouriya@gmail.com",
+    "phone": "09121111111",
+    "city": "تهران",
+    "password": "Test@1234",
+    "seller_type": "personal",
+    "role": "user",
+    "bio": "عاشق تکنولوژی و گجت‌های جدید. معاوضه می‌کنم تا چیز جدیدی بیاموزم!",
+    "avatar": "https://i.pravatarr.cc/150?img=11"
+  },
+  {
+    "name": "نگار کریمی",
+    "email": "negar@gmail.com",
+    "phone": "09122222222",
+    "city": "کرج",
+    "password": "Test@1234",
+    "seller_type": "store",
+    "role": "user",
+    "store_name": "گجت نگر",
+    "bio": "مدیر فروشگاه آنلاین گجت نگر. فروش و معاوضه لوازم دیجیتال نو و دست دوم با گارانتی.",
+    "avatar": "https://i.pravatarr.cc/150?img=12"
+  },
+  {
+    "name": "امیرحسین رضایی",
+    "email": "amir@gmail.com",
+    "phone": "09123333333",
+    "city": "اصفهان",
+    "password": "Test@1234",
+    "seller_type": "personal",
+    "role": "user",
+    "bio": "دانشجوی مهندسی کامپیوتر. به دنبال لپ‌تاپ و سخت افزار گیمینگ خوبم.",
+    "avatar": "https://i.pravatarr.cc/150?img=13"
+  },
+  {
+    "name": "مریم حسینی",
+    "email": "maryam@gmail.com",
+    "phone": "09124444444",
+    "city": "مشهد",
+    "password": "Test@1234",
+    "seller_type": "personal",
+    "role": "user",
+    "bio": "عکاس آماتور و محتوا تولید کننده. دوربین و تجهیزات استودیویی را دنبال می‌کنم.",
+    "avatar": "https://i.pravatarr.cc/150?img=14"
+  },
+  {
+    "name": "رضا طاهری",
+    "email": "reza@gmail.com",
+    "phone": "09125555555",
+    "city": "تبریز",
+    "password": "Test@1234",
+    "seller_type": "personal",
+    "role": "user",
+    "bio": "عاشق موزیک و هدفون‌های حرفه‌ای. دامنه‌ی من صداست!",
+    "avatar": "https://i.pravatarr.cc/150?img=15"
+  },
+  {
+    "name": "سارا اسدی",
+    "email": "sara.s@gmail.com",
+    "phone": "09126666666",
+    "city": "اهواز",
+    "password": "Test@1234",
+    "seller_type": "personal",
+    "role": "user",
+    "bio": "گیمر حرفه‌ای. کنسول بازی و تجهیزات گیمینگ خرید و فروش می‌کنم.",
+    "avatar": "https://i.pravatarr.cc/150?img=16"
+  },
+  {
+    "name": "محمد کاظمی",
+    "email": "mohammad@gmail.com",
+    "phone": "09127777777",
+    "city": "شیراز",
+    "password": "Test@1234",
+    "seller_type": "store",
+    "role": "user",
+    "store_name": "شیراز دجیتال",
+    "bio": "فروشنده لوازم الکترونیکی در شیراز. معاوضه با فاکتور و گارانتی معتبر.",
+    "avatar": "https://i.pravatarr.cc/150?img=17"
+  },
+  {
+    "name": "نیلوفر احمدی",
+    "email": "niloufar@gmail.com",
+    "phone": "09128888888",
+    "city": "قم",
+    "password": "Test@1234",
+    "seller_type": "personal",
+    "role": "user",
+    "bio": "طراح گرافیک و ویدیو ایدیتور. به دنبال مک بوک و مانیتور باکیفیت.",
+    "avatar": "https://i.pravatarr.cc/150?img=18"
+  },
+  {
+    "name": "کیان شریفی",
+    "email": "kiyan@gmail.com",
+    "phone": "09129999999",
+    "city": "تهران",
+    "password": "Test@1234",
+    "seller_type": "personal",
+    "role": "user",
+    "bio": "تکنولوژی را دنبال می‌کنم، گوشی‌های فلگ‌شیپ و تبلت‌ها را معاوضه می‌کنم.",
+    "avatar": "https://i.pravatarr.cc/150?img=19"
+  },
+  {
+    "name": "حسین احمدی",
+    "email": "hossein@gmail.com",
+    "phone": "09121010101",
+    "city": "کرج",
+    "password": "Test@1234",
+    "seller_type": "personal",
+    "role": "user",
+    "bio": "برنامه نویس فول‌استک. به دنبال سخت‌افزار مناسب برنامه نویسی و گیمینگ.",
+    "avatar": "https://i.pravatarr.cc/150?img=20"
+  }
+]
