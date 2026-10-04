@@ -3,7 +3,7 @@
  * Imported by: sw-android.js, sw-ios.js, sw.js (fallback)
  * ========================================================= */
 
-self.SWAAPIN_SW_CORE_VERSION = '1.0.1';
+self.SWAAPIN_SW_CORE_VERSION = '1.0.2';
 self.SWAAPIN_CACHE_BASE = 'swaapin-cache';
 
 self.SwaapinSWCore = (function () {
@@ -48,6 +48,11 @@ self.SwaapinSWCore = (function () {
     );
   }
 
+  function isApiRoute(url) {
+    const p = url.pathname;
+    return p.startsWith('/api/') || p.endsWith('.php');
+  }
+
   function isStaticAsset(url) {
     return /\.(css|js|woff2?|ttf|eot|png|jpg|jpeg|gif|svg|webp|ico|mp4|webm|ogg|mp3|wasm)$/i.test(url.pathname);
   }
@@ -75,71 +80,110 @@ self.SwaapinSWCore = (function () {
   }
 
   function navigateResponse(req, cacheName) {
-    return fetch(req)
-      .then((res) => {
-        if (res && res.ok) {
-          const copy = res.clone();
-          caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
-        }
-        return res;
-      })
-      .catch(() =>
-        caches.match(req).then((r) => r || caches.match(OFFLINE_URL).then((o) => o || emptyResponse(503)))
-      );
+    try {
+      return fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            try {
+              const copy = res.clone();
+              caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
+            } catch (e) {}
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(req).then((r) => {
+            if (r) return r;
+            return caches.match(OFFLINE_URL).then((o) => o || emptyResponse(503));
+          })
+        );
+    } catch (e) {
+      return Promise.resolve(emptyResponse(503));
+    }
   }
 
   function staticResponse(req, cacheName) {
-    return caches.match(req).then((cached) =>
-      cached ||
-      fetch(req).then((res) => {
-        if (res && res.status === 200) {
-          const copy = res.clone();
-          caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
-        }
-        return res;
-      }).catch(() => cached || emptyResponse(503))
-    );
+    try {
+      return caches.match(req).then((cached) => {
+        if (cached) return cached;
+        return fetch(req)
+          .then((res) => {
+            if (res && res.status === 200) {
+              try {
+                const copy = res.clone();
+                caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
+              } catch (e) {}
+            }
+            return res;
+          })
+          .catch(() => cached || emptyResponse(503));
+      });
+    } catch (e) {
+      return Promise.resolve(emptyResponse(503));
+    }
   }
 
   function defaultFetchResponse(req, cacheName) {
-    return fetch(req)
-      .then((res) => {
-        if (res && res.ok) {
-          const copy = res.clone();
-          caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
-        }
-        return res;
-      })
-      .catch(() =>
-        caches.match(req).then((r) => r || emptyResponse(503))
-      );
+    try {
+      return fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            try {
+              const copy = res.clone();
+              caches.open(cacheName).then((c) => c.put(req, copy)).catch(() => {});
+            } catch (e) {}
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(req).then((r) => r || emptyResponse(503))
+        );
+    } catch (e) {
+      return Promise.resolve(emptyResponse(503));
+    }
   }
 
   function defaultFetchHandler(event, cacheName, extensions) {
     const req = event.request;
-    if (req.method !== 'GET') return;
-    const url = new URL(req.url);
+    if (!req || req.method !== 'GET') return;
+
+    let url;
+    try {
+      url = new URL(req.url);
+    } catch (e) {
+      return;
+    }
+
     if (url.origin !== location.origin) return;
     if (isAdminRoute(url)) return;
 
-    if (req.mode === 'navigate') {
-      event.respondWith(navigateResponse(req, cacheName));
-      return;
-    }
+    if (isApiRoute(url)) return;
 
-    if (isStaticAsset(url)) {
-      event.respondWith(staticResponse(req, cacheName));
-      return;
-    }
+    try {
+      if (req.mode === 'navigate') {
+        event.respondWith(navigateResponse(req, cacheName));
+        return;
+      }
 
-    event.respondWith(defaultFetchResponse(req, cacheName));
+      if (isStaticAsset(url)) {
+        event.respondWith(staticResponse(req, cacheName));
+        return;
+      }
+
+      event.respondWith(defaultFetchResponse(req, cacheName));
+    } catch (e) {
+      // If respondWith already called or any other issue, ignore to avoid
+      // "Failed to convert value to Response"
+    }
   }
 
   function defaultMessageHandler(event) {
-    if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
-    if (event.data && event.data.type === 'GET_VERSION') {
-      event.source?.postMessage({ type: 'SW_VERSION', value: self.SWAAPIN_SW_CORE_VERSION });
-    }
+    try {
+      if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+      if (event.data && event.data.type === 'GET_VERSION') {
+        event.source?.postMessage({ type: 'SW_VERSION', value: self.SWAAPIN_SW_CORE_VERSION });
+      }
+    } catch (e) {}
   }
 
   function registerCoreLifecycle(cacheName, options) {
@@ -156,6 +200,7 @@ self.SwaapinSWCore = (function () {
           .then(() => installHandler(cacheName, extraPrecache))
           .then(() => (onInstall ? onInstall(cacheName, event) : undefined))
           .then(() => self.skipWaiting())
+          .catch(() => self.skipWaiting())
       );
     });
 
@@ -165,20 +210,25 @@ self.SwaapinSWCore = (function () {
           .then(() => activateHandler(cacheName))
           .then(() => (onActivate ? onActivate(cacheName, event) : undefined))
           .then(() => self.clients.claim())
+          .catch(() => self.clients.claim())
       );
     });
 
     self.addEventListener('fetch', (event) => {
-      if (onFetch) {
-        const handled = onFetch(event, cacheName);
-        if (handled === true) return;
-      }
-      defaultFetchHandler(event, cacheName, opts.fetchExtensions);
+      try {
+        if (onFetch) {
+          const handled = onFetch(event, cacheName);
+          if (handled === true) return;
+        }
+        defaultFetchHandler(event, cacheName, opts.fetchExtensions);
+      } catch (e) {}
     });
 
     self.addEventListener('message', (event) => {
-      defaultMessageHandler(event);
-      if (onMessage) onMessage(event, cacheName);
+      try {
+        defaultMessageHandler(event);
+        if (onMessage) onMessage(event, cacheName);
+      } catch (e) {}
     });
   }
 
@@ -186,6 +236,7 @@ self.SwaapinSWCore = (function () {
     PRECACHE_URLS,
     OFFLINE_URL,
     isAdminRoute,
+    isApiRoute,
     isStaticAsset,
     installHandler,
     activateHandler,

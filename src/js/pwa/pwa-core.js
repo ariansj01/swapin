@@ -47,6 +47,7 @@
             }
           });
         });
+        try { if (typeof reg.update === 'function') reg.update(); } catch (e) {}
         return reg;
       })
       .catch((err) => {
