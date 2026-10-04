@@ -4,8 +4,36 @@ define('CLI_MODE', true);
 
 require_once __DIR__ . '/includes/config.php';
 
-$usersFile = $argv[1] ?? __DIR__ . '/users-import.json';
-$adsFile   = $argv[2] ?? __DIR__ . '/ads-import.json';
+$useManifest   = false;
+$manifestData  = null;
+$cacheDir      = __DIR__ . '/import_cache_images';
+$manifestFile  = __DIR__ . '/image_manifest.json';
+
+$usersFile = __DIR__ . '/users-import.json';
+$adsFile   = __DIR__ . '/ads-import.json';
+
+foreach (array_slice($argv, 1) as $arg) {
+    if ($arg === '--use-manifest') {
+        $useManifest = true;
+    } elseif (file_exists($arg) && pathinfo($arg, PATHINFO_EXTENSION) === 'json') {
+        if (str_contains(basename($arg), 'user'))  $usersFile = $arg;
+        elseif (str_contains(basename($arg), 'ads'))  $adsFile = $arg;
+    }
+}
+
+if ($useManifest) {
+    if (!file_exists($manifestFile)) {
+        die("❌ image_manifest.json پیدا نشد. ابتدا در لوکال download_images_local.php را اجرا کن.\n");
+    }
+    if (!is_dir($cacheDir)) {
+        die("❌ پوشه import_cache پیدا نشد: $cacheDir\n");
+    }
+    $manifestData = json_decode(file_get_contents($manifestFile), true);
+    if (!is_array($manifestData)) {
+        die("❌ ساختار image_manifest.json معتبر نیست\n");
+    }
+    echo "ℹ️ حالت مانیفست فعال شد — استفاده از کش محلی عکس‌ها\n\n";
+}
 
 echo "╔══════════════════════════════════════════════════════════╗\n";
 echo "║         سواپین — ابزار وارد کردن کاربران و آگهی‌ها        ║\n";
@@ -70,7 +98,15 @@ try {
 
         $avatarLocal = '';
         if (!empty($u['avatar'])) {
-            $avatarLocal = downloadExternalImage($u['avatar'], 'avatars');
+            if ($useManifest && isset($manifestData['users'][$idx]) && $manifestData['users'][$idx]) {
+                $cachedFile = $cacheDir . '/' . $manifestData['users'][$idx];
+                if (file_exists($cachedFile)) {
+                    $avatarLocal = importCachedFile($cachedFile, 'avatars');
+                }
+            }
+            if (!$avatarLocal) {
+                $avatarLocal = downloadExternalImage($u['avatar'], 'avatars');
+            }
         }
 
         $sellerType = $u['seller_type'] ?? 'personal';
@@ -197,7 +233,18 @@ try {
             foreach ($images as $imgIdx => $imgUrl) {
                 $url = trim($imgUrl, " \t\n\r\0\x0B`\"'");
                 if (!$url) continue;
-                $savedAs = downloadExternalImage($url, "listings/$listingId");
+
+                $savedAs = '';
+                if ($useManifest && isset($manifestData['ads'][$idx][$imgIdx]) && $manifestData['ads'][$idx][$imgIdx]) {
+                    $cachedFile = $cacheDir . '/' . $manifestData['ads'][$idx][$imgIdx];
+                    if (file_exists($cachedFile)) {
+                        $savedAs = importCachedFile($cachedFile, "listings/$listingId");
+                    }
+                }
+                if (!$savedAs) {
+                    $savedAs = downloadExternalImage($url, "listings/$listingId");
+                }
+
                 if ($savedAs) {
                     DB::insert('listing_images', [
                         'listing_id' => $listingId,
@@ -299,4 +346,33 @@ function createPlaceholderImage(string $dir, string $fname): string {
     imagedestroy($img);
     $sub = str_replace(UPLOAD_DIR . '/', '', $dir);
     return $sub . '/' . $fname;
+}
+
+function importCachedFile(string $sourcePath, string $subDir): string {
+    $baseDir = UPLOAD_DIR;
+    $targetDir = $baseDir . '/' . rtrim($subDir, '/');
+    if (!is_dir($targetDir)) @mkdir($targetDir, 0755, true);
+    if (!is_dir($targetDir) || !is_writable($targetDir)) return '';
+
+    $sourceSize = @filesize($sourcePath);
+    if (!$sourceSize || $sourceSize < 300) return '';
+
+    $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+    if (!in_array($ext, ['jpg','jpeg','png','webp','gif'], true)) $ext = 'jpg';
+
+    $fname = 'imp_' . substr(md5($sourcePath . microtime(true) . rand()), 0, 12) . '.' . $ext;
+    $fullPath = $targetDir . '/' . $fname;
+
+    if (!@copy($sourcePath, $fullPath)) {
+        return '';
+    }
+
+    $finalSize = @filesize($fullPath);
+    if (!$finalSize || $finalSize < 300) {
+        @unlink($fullPath);
+        return '';
+    }
+
+    $relPath = rtrim($subDir, '/') . '/' . $fname;
+    return $relPath;
 }
