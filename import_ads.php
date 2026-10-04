@@ -153,6 +153,7 @@ try {
     $importedCount = 0;
     $imageCount    = 0;
     $skipCount     = 0;
+    $promoCount    = 0;
 
     $validConditions = ['new','like_new','good','fair','poor'];
     $validModes      = ['swap','sell','both'];
@@ -255,6 +256,76 @@ try {
 
         $importedCount++;
         echo "  ✅ آگهی #$line: {$listingData['title']} (ID: $listingId | " . (is_countable($images) ? count($images) : 0) . " عکس)\n";
+
+        // پلن آگهی در جدول listings ستون subscription_plan ندارد
+        // (آن ستون مال users است: none/bronze/silver/gold).
+        // پلن آگهی در listing_promotions.plan و ستون‌های until ذخیره می‌شود.
+        // JSON می‌تواند subscription_plan یا promotion_plan بدهد.
+        $promoPlan = $ad['promotion_plan'] ?? $ad['subscription_plan'] ?? null;
+        if ($promoPlan) {
+            $validPromos = ['boost','featured','vip','targeted','ai','gold'];
+            if (!in_array($promoPlan, $validPromos, true)) {
+                echo "      ⚠️  پلن نامعتبر $promoPlan نادیده گرفته شد\n";
+            } else {
+                $hours = (int)($ad['promotion_hours'] ?? (30 * 24));
+                if ($hours < 1) $hours = 24;
+                if ($hours > 365 * 24) $hours = 365 * 24;
+                $startsAt = date('Y-m-d H:i:s');
+                $endsAt = date('Y-m-d H:i:s', time() + ($hours * 3600));
+
+                try {
+                    DB::insert('listing_promotions', [
+                        'listing_id'  => $listingId,
+                        'user_id'     => $userIdMap[$jsonUserId],
+                        'plan'        => $promoPlan,
+                        'starts_at'   => $startsAt,
+                        'ends_at'     => $endsAt,
+                        'amount_paid' => 0,
+                    ]);
+
+                    $promoUpdate = [];
+                    switch ($promoPlan) {
+                        case 'boost':
+                            $promoUpdate['bump_until'] = $endsAt;
+                            break;
+                        case 'featured':
+                            $promoUpdate['featured_until'] = $endsAt;
+                            $promoUpdate['is_featured']  = 1;
+                            break;
+                        case 'vip':
+                            $promoUpdate['featured_until'] = $endsAt;
+                            $promoUpdate['vip_until']      = $endsAt;
+                            $promoUpdate['is_featured']    = 1;
+                            break;
+                        case 'targeted':
+                            $promoUpdate['targeted_until'] = $endsAt;
+                            break;
+                        case 'ai':
+                            $promoUpdate['ai_promo_until'] = $endsAt;
+                            break;
+                        case 'gold':
+                            $promoUpdate['bump_until']     = $endsAt;
+                            $promoUpdate['featured_until'] = $endsAt;
+                            $promoUpdate['vip_until']      = $endsAt;
+                            $promoUpdate['targeted_until'] = $endsAt;
+                            $promoUpdate['ai_promo_until'] = $endsAt;
+                            $promoUpdate['is_featured']    = 1;
+                            break;
+                    }
+                    if ($promoUpdate) {
+                        $promoUpdate = db_filter_row('listings', $promoUpdate);
+                        if ($promoUpdate) {
+                            DB::update('listings', $promoUpdate, 'id = ?', [$listingId]);
+                        }
+                    }
+                    $planNames = ['boost'=>'بازدید بیشتر','featured'=>'داغ','vip'=>'ویژه','targeted'=>'هدفمند','ai'=>'هوشمند','gold'=>'طلایی'];
+                    $promoCount++;
+                    echo "      🏷️  پلن {$planNames[$promoPlan]} به مدت {$hours} ساعت فعال شد (تا {$endsAt})\n";
+                } catch (Throwable $e) {
+                    echo "      ⚠️  خطا در اعمال پلن: " . $e->getMessage() . "\n";
+                }
+            }
+        }
     }
 
     $pdo->commit();
@@ -263,6 +334,7 @@ try {
     echo "  کاربران وارد شده  : " . (count($userIdMap) - 3) . " نفر جدید\n";
     echo "  آگهی‌های موفق    : $importedCount\n";
     echo "  تصاویر ذخیره شده: $imageCount\n";
+    echo "  پلن‌های فعال     : $promoCount\n";
     echo "  موارد رد شده     : $skipCount\n";
     echo "\n🎉 تمام مراحل با موفقیت انجام شد.\n";
 

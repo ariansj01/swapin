@@ -115,6 +115,10 @@ Options +MultiViews -Indexes
   # PWA install landing page
   RewriteRule ^pwa/?$ pwa.php [L,NC,QSA]
 
+  # ── FIX: صفحه همه آگهی‌ها /listings (جلوگیری از تداخل با دایرکتوری listings/) ──
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^listings/?$ listings.php [L,NC,QSA]
+
   # AI capabilities lab (interactive demos, no DB writes)
   RewriteRule ^ai-lab/?$ ai-lab.php [L,NC,QSA]
 

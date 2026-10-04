@@ -1,6 +1,6 @@
 <?php
 // SWAPIN_DIRECT_ALL_PHP_301
-if (isset($_SERVER["REQUEST_URI"]) && preg_match("#^/listings/all\.php(?:\?|$)#", $_SERVER["REQUEST_URI"])) {
+if (!defined('SKIP_301') && isset($_SERVER["REQUEST_URI"]) && preg_match("#^/listings/all\.php(?:\?|$)#", $_SERVER["REQUEST_URI"])) {
     $query = $_SERVER["QUERY_STRING"] ?? "";
     header("Location: /listings" . ($query ? "?" . $query : ""), true, 301);
     exit;
@@ -100,7 +100,7 @@ $totalRow = DB::fetch(
     $params
 );
 $total = (int)($totalRow['c'] ?? 0);
-$perPage = 9;
+$perPage = 25;
 $pag = paginate($total, $perPage, $page);
 
 $listings = DB::fetchAll(
@@ -274,7 +274,7 @@ render_navbar($user);
         ?>
         <div class="all-listings-categories cat-tree">
           <div class="cat-tree__item cat-tree__item--root">
-            <a href="<?= APP_URL ?>/listings/all.php" class="cat-tree__link <?= $catSlug === '' ? 'is-active' : '' ?>"><i class="bi bi-grid"></i> همه دسته‌بندی‌ها</a>
+            <a href="<?= APP_URL ?>/listings" class="cat-tree__link <?= $catSlug === '' ? 'is-active' : '' ?>"><i class="bi bi-grid"></i> همه دسته‌بندی‌ها</a>
           </div>
           <?php foreach ($allTopCats as $tc):
               $tcId = (int)$tc['id'];
@@ -425,7 +425,7 @@ render_navbar($user);
 
         $buildUrl = function($p) use ($qs) {
             $qs['page'] = $p;
-            return APP_URL . '/listings/all.php?' . http_build_query($qs);
+            return APP_URL . '/listings?' . http_build_query($qs);
         };
 
         $isFirst = $currentPage === 1;

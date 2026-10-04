@@ -11,6 +11,8 @@
         "want_type": "any",
         "city": "تهران",
         "user_id": 2,
+        "subscription_plan": "gold",
+        "promotion_hours": 720,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1632633173522-47456de71b76?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1591337676887-a217a6970a8a?w=800&q=80"
@@ -44,6 +46,8 @@
         "want_type": "any",
         "city": "تهران",
         "user_id": 2,
+        "subscription_plan": "vip",
+        "promotion_hours": 336,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1517336714731-489689fd1ca8?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1611186871348-b1ce696e52c9?w=800&q=80"
@@ -77,6 +81,8 @@
         "want_type": "any",
         "city": "کرج",
         "user_id": 3,
+        "subscription_plan": "featured",
+        "promotion_hours": 168,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1502920917128-1aa500764cbd?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1606986628025-35d57e735ae0?w=800&q=80"
@@ -142,6 +148,8 @@
         "want_type": "any",
         "city": "اهواز",
         "user_id": 2,
+        "subscription_plan": "boost",
+        "promotion_hours": 24,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1606813907291-d86efa9b94db?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1607853202273-797f1c22a38e?w=800&q=80"
@@ -175,6 +183,8 @@
         "want_type": "credit",
         "city": "تهران",
         "user_id": 5,
+        "subscription_plan": "gold",
+        "promotion_hours": 720,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1695048133142-1a20484d2569?w=800&q=80"
         ]
@@ -367,6 +377,8 @@
         "want_type": "any",
         "city": "کرج",
         "user_id": 7,
+        "subscription_plan": "vip",
+        "promotion_hours": 336,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1537498425277-c283d32ef9db?w=800&q=80"
         ]
@@ -495,6 +507,8 @@
         "want_type": "any",
         "city": "تهران",
         "user_id": 5,
+        "subscription_plan": "featured",
+        "promotion_hours": 168,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1502920917128-1aa500764cbd?w=800&q=80"
         ]
@@ -527,6 +541,8 @@
         "want_type": "any",
         "city": "مشهد",
         "user_id": 7,
+        "subscription_plan": "gold",
+        "promotion_hours": 720,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1606986628025-35d57e735ae0?w=800&q=80"
         ]
@@ -655,6 +671,8 @@
         "want_type": "any",
         "city": "تهران",
         "user_id": 5,
+        "subscription_plan": "boost",
+        "promotion_hours": 24,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1606220588913-b3aacb4d2f46?w=800&q=80"
         ]
@@ -815,6 +833,8 @@
         "want_type": "any",
         "city": "تهران",
         "user_id": 5,
+        "subscription_plan": "vip",
+        "promotion_hours": 336,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1621259182978-fbf93132d53d?w=800&q=80"
         ]
@@ -847,6 +867,8 @@
         "want_type": "item",
         "city": "مشهد",
         "user_id": 7,
+        "subscription_plan": "targeted",
+        "promotion_hours": 336,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1661133944949-7cc48cf6b8d3?w=800&q=80"
         ]
@@ -959,6 +981,8 @@
         "want_type": "item",
         "city": "کرج",
         "user_id": 14,
+        "subscription_plan": "ai",
+        "promotion_hours": 168,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1523275335684-37898b6baf30?w=800&q=80"
         ]
@@ -992,6 +1016,8 @@
         "want_type": "any",
         "city": "کرج",
         "user_id": 3,
+        "subscription_plan": "targeted",
+        "promotion_hours": 336,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1551028719-00167b16eac5?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1594938298603-c8148c4dae35?w=800&q=80"
@@ -1380,6 +1406,8 @@
         "want_type": "credit",
         "city": "کرج",
         "user_id": 14,
+        "subscription_plan": "featured",
+        "promotion_hours": 168,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1555041469-a586c61ea9bc?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1567538096630-e0c55bd6374c?w=800&q=80"
@@ -1509,6 +1537,8 @@
         "want_type": "any",
         "city": "کرج",
         "user_id": 9,
+        "subscription_plan": "boost",
+        "promotion_hours": 24,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1571175443880-49e1d25b2bc5?w=800&q=80"
         ]
