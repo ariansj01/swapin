@@ -4,35 +4,36 @@ define('CLI_MODE', true);
 
 require_once __DIR__ . '/includes/config.php';
 
-$useManifest   = false;
-$manifestData  = null;
-$cacheDir      = __DIR__ . '/import_cache_images';
-$manifestFile  = __DIR__ . '/image_manifest.json';
-
-$usersFile = __DIR__ . '/users-import.json';
-$adsFile   = __DIR__ . '/ads-import.json';
-
-foreach (array_slice($argv, 1) as $arg) {
-    if ($arg === '--use-manifest') {
-        $useManifest = true;
-    } elseif (file_exists($arg) && pathinfo($arg, PATHINFO_EXTENSION) === 'json') {
-        if (str_contains(basename($arg), 'user'))  $usersFile = $arg;
-        elseif (str_contains(basename($arg), 'ads'))  $adsFile = $arg;
-    }
+// -----------------------
+// پارس کردن آرگومان‌ها:
+//   php import_ads.php [users.json [ads.json]] [--use-manifest]
+// -----------------------
+$args = array_slice($argv, 1);
+$useManifest = false;
+$positional = [];
+foreach ($args as $a) {
+    if ($a === '--use-manifest') { $useManifest = true; continue; }
+    $positional[] = $a;
 }
 
+$usersFile = $positional[0] ?? __DIR__ . '/users-import.json';
+$adsFile   = $positional[1] ?? __DIR__ . '/ads-import.json';
+
+$manifestFile   = __DIR__ . '/image_manifest.json';
+$manifestCacheDir = __DIR__ . '/import_cache_images';
+$manifestData = null;
 if ($useManifest) {
     if (!file_exists($manifestFile)) {
-        die("❌ image_manifest.json پیدا نشد. ابتدا در لوکال download_images_local.php را اجرا کن.\n");
+        die("❌ --use-manifest فعال است ولی image_manifest.json پیدا نشد\n   ابتدا روی لوکال: php download_images_local.php\n");
     }
-    if (!is_dir($cacheDir)) {
-        die("❌ پوشه import_cache پیدا نشد: $cacheDir\n");
+    if (!is_dir($manifestCacheDir)) {
+        die("❌ --use-manifest فعال است ولی پوشه import_cache_images/ وجود ندارد\n");
     }
     $manifestData = json_decode(file_get_contents($manifestFile), true);
     if (!is_array($manifestData)) {
-        die("❌ ساختار image_manifest.json معتبر نیست\n");
+        die("❌ ساختار image_manifest.json نامعتبر است\n");
     }
-    echo "ℹ️ حالت مانیفست فعال شد — استفاده از کش محلی عکس‌ها\n\n";
+    echo "🗂️  حالت Manifest فعال شد. " . count($manifestData) . " تصویر در کش موجود است.\n";
 }
 
 echo "╔══════════════════════════════════════════════════════════╗\n";
@@ -98,11 +99,9 @@ try {
 
         $avatarLocal = '';
         if (!empty($u['avatar'])) {
-            if ($useManifest && isset($manifestData['users'][$idx]) && $manifestData['users'][$idx]) {
-                $cachedFile = $cacheDir . '/' . $manifestData['users'][$idx];
-                if (file_exists($cachedFile)) {
-                    $avatarLocal = importCachedFile($cachedFile, 'avatars');
-                }
+            global $useManifest, $manifestData;
+            if ($useManifest && isset($manifestData['users'][$idx])) {
+                $avatarLocal = copyFromManifest($manifestData['users'][$idx], 'avatars');
             }
             if (!$avatarLocal) {
                 $avatarLocal = downloadExternalImage($u['avatar'], 'avatars');
@@ -233,18 +232,14 @@ try {
             foreach ($images as $imgIdx => $imgUrl) {
                 $url = trim($imgUrl, " \t\n\r\0\x0B`\"'");
                 if (!$url) continue;
-
+                global $useManifest, $manifestData;
                 $savedAs = '';
-                if ($useManifest && isset($manifestData['ads'][$idx][$imgIdx]) && $manifestData['ads'][$idx][$imgIdx]) {
-                    $cachedFile = $cacheDir . '/' . $manifestData['ads'][$idx][$imgIdx];
-                    if (file_exists($cachedFile)) {
-                        $savedAs = importCachedFile($cachedFile, "listings/$listingId");
-                    }
+                if ($useManifest && isset($manifestData['ads'][$line][$imgIdx])) {
+                    $savedAs = copyFromManifest($manifestData['ads'][$line][$imgIdx], "listings/$listingId");
                 }
                 if (!$savedAs) {
                     $savedAs = downloadExternalImage($url, "listings/$listingId");
                 }
-
                 if ($savedAs) {
                     DB::insert('listing_images', [
                         'listing_id' => $listingId,
@@ -348,31 +343,25 @@ function createPlaceholderImage(string $dir, string $fname): string {
     return $sub . '/' . $fname;
 }
 
-function importCachedFile(string $sourcePath, string $subDir): string {
+// وقتی --use-manifest فعال است: عکس را از کش لوکال کپی می‌کند به جای دانلود از Unsplash
+function copyFromManifest(?string $cacheFileName, string $subDir): string {
+    global $manifestCacheDir;
+    if (!$cacheFileName) return '';
+    $srcPath = rtrim($manifestCacheDir, '/') . '/' . $cacheFileName;
+    if (!file_exists($srcPath) || filesize($srcPath) < 500) return '';
+
     $baseDir = UPLOAD_DIR;
     $targetDir = $baseDir . '/' . rtrim($subDir, '/');
     if (!is_dir($targetDir)) @mkdir($targetDir, 0755, true);
     if (!is_dir($targetDir) || !is_writable($targetDir)) return '';
 
-    $sourceSize = @filesize($sourcePath);
-    if (!$sourceSize || $sourceSize < 300) return '';
-
-    $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
-    if (!in_array($ext, ['jpg','jpeg','png','webp','gif'], true)) $ext = 'jpg';
-
-    $fname = 'imp_' . substr(md5($sourcePath . microtime(true) . rand()), 0, 12) . '.' . $ext;
+    $ext = strtolower(pathinfo($cacheFileName, PATHINFO_EXTENSION));
+    if (!$ext) $ext = 'jpg';
+    $fname = 'imp_' . substr(md5($cacheFileName . microtime(true)), 0, 12) . '.' . $ext;
     $fullPath = $targetDir . '/' . $fname;
 
-    if (!@copy($sourcePath, $fullPath)) {
-        return '';
-    }
+    if (!@copy($srcPath, $fullPath)) return '';
+    if (!file_exists($fullPath) || filesize($fullPath) < 500) return '';
 
-    $finalSize = @filesize($fullPath);
-    if (!$finalSize || $finalSize < 300) {
-        @unlink($fullPath);
-        return '';
-    }
-
-    $relPath = rtrim($subDir, '/') . '/' . $fname;
-    return $relPath;
+    return rtrim($subDir, '/') . '/' . $fname;
 }

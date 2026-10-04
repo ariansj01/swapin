@@ -34,13 +34,16 @@ if (!is_array($ads) || !is_array($users)) die("❌ ساختار JSON معتبر 
 echo "📋 " . count($ads) . " آگهی | " . count($users) . " کاربر\n\n";
 
 $manifest = [
-    'ads'   => [],
-    'users' => [],
+    'ads'   => [],   // adIndex => [savedName1, savedName2, ...]
+    'users' => [],   // userIndex => savedName or ""
 ];
 
 $ok = 0;
 $fail = 0;
 
+// --------------------
+// دانلود عکس‌های آگهی‌ها
+// --------------------
 echo "━━━ دانلود عکس‌های آگهی‌ها ━━━\n";
 foreach ($ads as $idx => $ad) {
     $images = $ad['images'] ?? [];
@@ -64,16 +67,7 @@ foreach ($ads as $idx => $ad) {
             continue;
         }
 
-        $data = null;
-        for ($attempt = 1; $attempt <= 3; $attempt++) {
-            $data = fetchUrl($url);
-            if ($data && strlen($data) > 1000) break;
-            if ($attempt < 3) {
-                echo "  [" . ($idx + 1) . "][$i] تلاش $attempt ناموفق — تلاش مجدد...\n";
-                usleep(500000);
-            }
-        }
-
+        $data = fetchUrl($url);
         if ($data && strlen($data) > 1000) {
             file_put_contents($targetPath, $data);
             $saved[] = $targetName;
@@ -81,19 +75,51 @@ foreach ($ads as $idx => $ad) {
             echo "  [" . ($idx + 1) . "][$i] ✓ دانلود شد: $targetName (" . round(strlen($data) / 1024, 1) . "KB)\n";
         } else {
             $fail++;
-            echo "  [" . ($idx + 1) . "][$i] ✗ دانلود ناموفق (آدرس ممکن است 404 باشد)\n";
+            echo "  [" . ($idx + 1) . "][$i] ✗ دانلود ناموفق: $url\n";
         }
     }
     $manifest['ads'][$idx] = $saved;
 }
 echo "\n";
 
-echo "━━━ آواتار کاربران ━━━\n";
-echo "  ℹ️ طبق تنظیمات فعلی، آواتار دانلود نمی‌شود.\n\n";
+// --------------------
+// دانلود آواتار کاربران
+// --------------------
+echo "━━━ دانلود آواتار کاربران ━━━\n";
 foreach ($users as $idx => $u) {
-    $manifest['users'][$idx] = '';
-}
+    $url = $u['avatar'] ?? '';
+    if (!$url) {
+        $manifest['users'][$idx] = '';
+        echo "  [" . ($idx + 1) . "] آواتاری ثبت نشد\n";
+        continue;
+    }
+    $targetName = 'avatar_' . $idx . '.' . detectExt($url);
+    $targetPath = $cacheDir . '/' . $targetName;
 
+    if (file_exists($targetPath) && filesize($targetPath) > 300) {
+        $manifest['users'][$idx] = $targetName;
+        $ok++;
+        echo "  [" . ($idx + 1) . "] کَش موجود: $targetName\n";
+        continue;
+    }
+
+    $data = fetchUrl($url);
+    if ($data && strlen($data) > 300) {
+        file_put_contents($targetPath, $data);
+        $manifest['users'][$idx] = $targetName;
+        $ok++;
+        echo "  [" . ($idx + 1) . "] ✓ آواتار دانلود شد: $targetName (" . round(strlen($data) / 1024, 1) . "KB)\n";
+    } else {
+        $fail++;
+        $manifest['users'][$idx] = '';
+        echo "  [" . ($idx + 1) . "] ✗ دانلود آواتار ناموفق\n";
+    }
+}
+echo "\n";
+
+// --------------------
+// ذخیره مانیفست
+// --------------------
 file_put_contents(
     $manifestFile,
     json_encode($manifest, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
@@ -113,6 +139,7 @@ echo "   5. فایل  import_ads.php\n";
 echo "\n سپس در سرور اجرا کن:  php import_ads.php --use-manifest\n";
 
 
+// ---------- توابع کمکی ----------
 function detectExt(string $url): string {
     $path = parse_url($url, PHP_URL_PATH);
     $ext = $path ? strtolower(pathinfo($path, PATHINFO_EXTENSION)) : '';
@@ -132,14 +159,10 @@ function fetchUrl(string $url): string|false {
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36',
+        CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
         CURLOPT_HTTPHEADER     => [
             'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-            'Accept-Language: en-US,en;q=0.9,fa;q=0.8',
-            'Referer: https://unsplash.com/',
-            'Sec-Fetch-Dest: image',
-            'Sec-Fetch-Mode: no-cors',
-            'Sec-Fetch-Site: cross-site',
+            'Accept-Language: en-US,en;q=0.9',
         ],
     ]);
     $out = curl_exec($ch);
