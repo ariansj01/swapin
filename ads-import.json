@@ -334,22 +334,6 @@
         ]
     },
     {
-        "title": "مک بوک ایر M3 ۱۳ اینچ ۵۱۲ گیگ",
-        "description": "نو باز نشده، گارانتی اپل یک سال. رنگ نیمه شب. مناسب دانشجویان و طراحان.",
-        "category_id": 12,
-        "sell_price": 78000000,
-        "estimated_value": 75000000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "لپ تاپ گیمینگ ریزر یا نقدی",
-        "want_type": "any",
-        "city": "تهران",
-        "user_id": 5,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1541807084-5c52b6b3adef?w=800&q=80"
-        ]
-    },
-    {
         "title": "ایسوس روگ STRIX G15 گیمینگ",
         "description": "رایزن ۹ 7940HX، رم ۳۲ DDR5، گرافیک RTX 4070 ۸ گیگ، اس اس دی یک ترابایت. مناسب بازی‌های سنگین.",
         "category_id": 12,
@@ -432,22 +416,6 @@
         ]
     },
     {
-        "title": "مک بوک ۱۲ اینچ ۲۰۱۷ ۵۱۲ گیگ",
-        "description": "روزی، سبک و زیبا. مناسب گردش و کارهای ساده و مرور. نمایشگر Retina، کیبورد پرونده‌ای.",
-        "category_id": 12,
-        "sell_price": 18000000,
-        "estimated_value": 16500000,
-        "condition": "fair",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "شیراز",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1618424181497-157f25b6ddd5?w=800&q=80"
-        ]
-    },
-    {
         "title": "لنوو Legion 5 پرو گیمینگ",
         "description": "رایزن ۷ 6800H، گرافیک RTX 3070 8GB، رم ۱۶ DDR5، نمایشگر 165Hz QHD. مناسب بازی حرفه‌ای.",
         "category_id": 12,
@@ -496,24 +464,6 @@
         ]
     },
     {
-        "title": "سونی آلفا 7 IV بدنه",
-        "description": "شاتر ۳ هزار، کمتر از یک سال استفاده. گارانتی سرما. لوازم کامل داخل جعبه اصلی.",
-        "category_id": 13,
-        "sell_price": 92000000,
-        "estimated_value": 89000000,
-        "condition": "like_new",
-        "listing_mode": "both",
-        "want_in_return": "کانن R5 یا نقدی",
-        "want_type": "any",
-        "city": "تهران",
-        "user_id": 5,
-        "subscription_plan": "featured",
-        "promotion_hours": 168,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1502920917128-1aa500764cbd?w=800&q=80"
-        ]
-    },
-    {
         "title": "دوربین فوجی فیلم X-T5 همراه با ۱۸-۵۵",
         "description": "شاتر کمتر از ۲ هزار. رنگ نقره‌ای فوق العاده زیبا. مناسب عکاسی خیابانی و پرتره.",
         "category_id": 13,
@@ -527,24 +477,6 @@
         "user_id": 6,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1507003211169-0a1dd7228f2d?w=800&q=80"
-        ]
-    },
-    {
-        "title": "دوربین کانن R5 همراه با عدسی RF 24-70",
-        "description": "شاتر ۶ هزار، کاملا سالم. پرتره و عکاسی عروسی. ۸K video. گارانتی معتبر.",
-        "category_id": 13,
-        "sell_price": 220000000,
-        "estimated_value": 210000000,
-        "condition": "like_new",
-        "listing_mode": "both",
-        "want_in_return": "سونی A7R5 یا نقدی و سونی A1",
-        "want_type": "any",
-        "city": "مشهد",
-        "user_id": 7,
-        "subscription_plan": "gold",
-        "promotion_hours": 720,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1606986628025-35d57e735ae0?w=800&q=80"
         ]
     },
     {
@@ -593,22 +525,6 @@
         "user_id": 10,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1526170375885-4d8ecf77b99f?w=800&q=80"
-        ]
-    },
-    {
-        "title": "عدسی کانن RF 70-200 f\/4",
-        "description": "عدسی سفری فوق العاده، سبک و تیز. بدون خط و خش، هود و جعبه اصلی همراه.",
-        "category_id": 13,
-        "sell_price": 48000000,
-        "estimated_value": 46000000,
-        "condition": "like_new",
-        "listing_mode": "swap",
-        "want_in_return": "عدسی RF 24-70 f\/2.8 یا RF 85 f\/1.2",
-        "want_type": "item",
-        "city": "کرج",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1516035069371-29a1b244cc32?w=800&q=80"
         ]
     },
     {
@@ -707,22 +623,6 @@
         "user_id": 7,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1546435770-a3e426bf472b?w=800&q=80"
-        ]
-    },
-    {
-        "title": "جی بی ال Charge 5 اسپیکر قابل حمل",
-        "description": "ضد آب و ضد گرد و غبار IP67. ۲۰ ساعت باتری، پاوربانک ۱۰ هزار هدیه.",
-        "category_id": 14,
-        "sell_price": 14500000,
-        "estimated_value": 13500000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "هدفون سونی WF-1000XM5 یا نقدی",
-        "want_type": "any",
-        "city": "تبریز",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1608043152269-423dbba4e7e1?w=800&q=80"
         ]
     },
     {
@@ -840,22 +740,6 @@
         ]
     },
     {
-        "title": "پلی استیشن ۵ نسل دیجیتال",
-        "description": "بدون درایو دیسک. ۲ دسته دوآلسنس، پایه شارژر دسته. حدود ۸ ماه استفاده.",
-        "category_id": 15,
-        "sell_price": 45000000,
-        "estimated_value": 43000000,
-        "condition": "good",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اصفهان",
-        "user_id": 6,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1606813907291-d86efa9b94db?w=800&q=80"
-        ]
-    },
-    {
         "title": "Steam Deck OLED ۱ ترابایت",
         "description": "مدل جدید OLED با نمایشگر فوق العاده. دسته قابل حمل برای استیم بازی‌ها. دوس تماس.",
         "category_id": 15,
@@ -871,22 +755,6 @@
         "promotion_hours": 336,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1661133944949-7cc48cf6b8d3?w=800&q=80"
-        ]
-    },
-    {
-        "title": "دسته دوآلسنس اج آبی کاسمیک",
-        "description": "سالم و کم استفاده، استیک بدون درفت. رنگ کاسمیک آبی فوق العاده نادر.",
-        "category_id": 15,
-        "sell_price": 8500000,
-        "estimated_value": 8000000,
-        "condition": "good",
-        "listing_mode": "both",
-        "want_in_return": "بازی PS5 یا نقدی",
-        "want_type": "any",
-        "city": "تبریز",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1578303512597-81e6cc155b3e?w=800&q=80"
         ]
     },
     {
@@ -1314,22 +1182,6 @@
         ]
     },
     {
-        "title": "کفش راحتی مردانه",
-        "description": "کفش راحتی مردانه پارچه‌ای، سایز 41، مشکی، روزمره و پیاده‌روی",
-        "category_id": 18,
-        "sell_price": 750000,
-        "estimated_value": 727500,
-        "condition": "good",
-        "listing_mode": "both",
-        "want_in_return": "جوراب یا کلاه",
-        "want_type": "item",
-        "city": "تبریز",
-        "user_id": 9,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1549298916-b41d501d3772?w=800&q=80"
-        ]
-    },
-    {
         "title": "بوت زنانه بارانی",
         "description": "بوت زنانه بارانی مشکی، سایز 39، کفی بلند، ضدآب",
         "category_id": 18,
@@ -1753,38 +1605,6 @@
         ]
     },
     {
-        "title": "مجموعه ابزار باغبانی",
-        "description": "مجموعه ابزار باغبانی 12 عددی، شامل بیل، چکش، قیچی شاخه و...",
-        "category_id": 21,
-        "sell_price": 1200000,
-        "estimated_value": 1164000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "گیاه یا گلدان",
-        "want_type": "item",
-        "city": "قم",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1416879595882-3373a0480b5b?w=800&q=80"
-        ]
-    },
-    {
-        "title": "ساکولنت و کاکتوس مجموعه",
-        "description": "مجموعه 6 عددی کاکتوس و ساکولنت در گلدان کوچک سرامیکی، مناسب میز کار",
-        "category_id": 21,
-        "sell_price": 550000,
-        "estimated_value": 533500,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "تهران",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1459411552884-841db9b3cc2a?w=800&q=80"
-        ]
-    },
-    {
         "title": "آلاچیق باغچه فلزی",
         "description": "آلاچیق باغچه فلزی 4 نفره، همراه سایبان، قابل جمع شدن، نو",
         "category_id": 21,
@@ -1899,22 +1719,6 @@
         ]
     },
     {
-        "title": "مجموعه کتاب کودک 5 جلدی",
-        "description": "مجموعه 5 جلدی کتاب کودک داستانی تصویری، مناسب رده سنی 4 تا 8 سال",
-        "category_id": 22,
-        "sell_price": 380000,
-        "estimated_value": 368600,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "تهران",
-        "user_id": 6,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1512820790803-83ca734da794?w=800&q=80"
-        ]
-    },
-    {
         "title": "کتاب تاریخ معاصر ایران",
         "description": "کتاب تاریخ معاصر ایران از مشروطه تا انقلاب، دکتر عباس میلباخش، دانشگاهی",
         "category_id": 22,
@@ -1928,22 +1732,6 @@
         "user_id": 7,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1457369804613-52c61a468e7d?w=800&q=80"
-        ]
-    },
-    {
-        "title": "مجموعه فیلم فست اند فیوروس",
-        "description": "مجموعه دی وی دی فیلم فست اند فیوروس 1 تا 9، کیفیت بالا، دوبله فارسی",
-        "category_id": 23,
-        "sell_price": 850000,
-        "estimated_value": 824500,
-        "condition": "like_new",
-        "listing_mode": "swap",
-        "want_in_return": "مجموعه فیلم مارول یا جنگل‌های ماداگاسکار",
-        "want_type": "item",
-        "city": "اصفهان",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1489599849927-2ee91cede3ba?w=800&q=80"
         ]
     },
     {
@@ -2044,22 +1832,6 @@
         ]
     },
     {
-        "title": "کالکشن فیلم حماسی",
-        "description": "مجموعه فیلم‌های حماسی و تاریخی، گلیادیاتور، تروا، ملت و... 10 عدد",
-        "category_id": 23,
-        "sell_price": 1100000,
-        "estimated_value": 1067000,
-        "condition": "like_new",
-        "listing_mode": "both",
-        "want_in_return": "مجموعه فیلم اکشن یا علمی تخیلی",
-        "want_type": "item",
-        "city": "کرج",
-        "user_id": 2,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1489599849927-2ee91cede3ba?w=800&q=80"
-        ]
-    },
-    {
         "title": "گیتار آکوستیک یاماها",
         "description": "گیتار آکوستیک یاماها مدل f310، نو، همراه کیس، سیم زده شده",
         "category_id": 24,
@@ -2142,22 +1914,6 @@
         ]
     },
     {
-        "title": "ست طبل دستی سنتی",
-        "description": "ست طبل دستی سنتی، شامل تنبک و ضرب، چوب جوز، دست ساز",
-        "category_id": 24,
-        "sell_price": 2800000,
-        "estimated_value": 2716000,
-        "condition": "good",
-        "listing_mode": "both",
-        "want_in_return": "سنتور یا دف",
-        "want_type": "item",
-        "city": "قم",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1507838153414-b4b713384a76?w=800&q=80"
-        ]
-    },
-    {
         "title": "میکروفون کاندنسر استودیو",
         "description": "میکروفون کاندنسر بی‌ام‌جی مدل bm-800، همراه فیلتر و استند، نو",
         "category_id": 24,
@@ -2171,22 +1927,6 @@
         "user_id": 9,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1511367461989-f85a21fda167?w=800&q=80"
-        ]
-    },
-    {
-        "title": "مجموعه آلبوم‌های پاپ ایرانی",
-        "description": "مجموعه 20 سی دی پاپ ایرانی معاصر، فرهاد مهراد، ابی، داریوش و...",
-        "category_id": 24,
-        "sell_price": 1800000,
-        "estimated_value": 1746000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "آلبوم‌های سنتی یا رادیکال",
-        "want_type": "any",
-        "city": "کرج",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1459749411175-04bf5292ceea?w=800&q=80"
         ]
     },
     {
@@ -2289,22 +2029,6 @@
         ]
     },
     {
-        "title": "آپارتمان ۲ خوابه آبشار",
-        "description": "۶۵ متر، طبقه دوم بدون آسانسور، روشن و دلباز، در کوچه پس‌کوچه آرام، سند تک‌برگ.",
-        "category_id": 30,
-        "sell_price": 5500000000,
-        "estimated_value": 5335000000,
-        "condition": "fair",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "شیراز",
-        "user_id": 7,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1554995207-c18c203602cb?w=800&q=80"
-        ]
-    },
-    {
         "title": "آپارتمان اداری تجریش",
         "description": "۹۰ متر مناسب دفتر کار یا کلینیک، ورودی مجزا، پارکینگ، نزدیک بزرگراه، اجاره حقوقی.",
         "category_id": 30,
@@ -2399,22 +2123,6 @@
         "user_id": 13,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1600566753086-00f18fe6ba68?w=800&q=80"
-        ]
-    },
-    {
-        "title": "ویلا ۴ خوابه تنکابن",
-        "description": "۲۸۰ متر، زمین ۵۵۰ متر، سه اتاق مستر، آشپزخانه صنعتی، سیستم گرمایش از کف، ویو جنگل.",
-        "category_id": 31,
-        "sell_price": 28000000000,
-        "estimated_value": 27160000000,
-        "condition": "good",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "تبریز",
-        "user_id": 14,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1600585154340-be6161a56a0c?w=800&q=80"
         ]
     },
     {
@@ -3016,22 +2724,6 @@
         ]
     },
     {
-        "title": "بازی پازل ۱۰۰۰ تکه مناظر اصفهان",
-        "description": "پازل ۱۰۰۰ تکه تصویر میدان نقش جهان اصفهان، جنس مقوای ضخیم، رنگ‌های ثابت، کامل دسته بندی.",
-        "category_id": 38,
-        "sell_price": 950000,
-        "estimated_value": 921500,
-        "condition": "like_new",
-        "listing_mode": "both",
-        "want_in_return": "پازل دیگر یا پول",
-        "want_type": "any",
-        "city": "اصفهان",
-        "user_id": 13,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1606503153255-59d8b8b82176?w=800&q=80"
-        ]
-    },
-    {
         "title": "پازل سه بعدی برج میلاد",
         "description": "پازل سه بعدی برج میلاد ۱۵۰ قطعه، فوم مقوایی، ساخت واش، بدون چسب، ابعاد ۴۵ سانتی، دکوری زیبا.",
         "category_id": 38,
@@ -3175,22 +2867,6 @@
         "user_id": 9,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1566140967404-b8b3932483f5?w=800&q=80"
-        ]
-    },
-    {
-        "title": "پنگوئن پلاشی موزیکال",
-        "description": "پنگوئن پلاشی موزیکال ۳۰ سانتی، چشم نورانی، آواز می‌خواند و می‌رقصد، کودک را سرگرم می‌کند.",
-        "category_id": 39,
-        "sell_price": 850000,
-        "estimated_value": 824500,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "تبریز",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1562040506-a9b32cb51b94?w=800&q=80"
         ]
     },
     {
@@ -3356,22 +3032,6 @@
         ]
     },
     {
-        "title": "لگو کلاسیک خلاقیت ۱۵۰۰ قطعه",
-        "description": "لگو کلاسیک خلاقیت ۱۵۰۰ قطعه رنگی، چرخ و بلوک‌های متنوع، خانه و ماشین بساز، تخیل کودک را باز کن.",
-        "category_id": 41,
-        "sell_price": 4500000,
-        "estimated_value": 4365000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "لگو دایناسور",
-        "want_type": "item",
-        "city": "قم",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1560961911-ba7ef651a56c?w=800&q=80"
-        ]
-    },
-    {
         "title": "ست لگو دایناسور تی‌رکس ۷۶۹۴۸",
         "description": "لگو جوراسیک پارک تی‌رکس ۷۶۹۴۸، تی‌رکس غول پیکر، جیپ و کمپ، ۳ فیگور، تعقیب هیجان‌انگیز.",
         "category_id": 41,
@@ -3437,103 +3097,6 @@
         ]
     },
     {
-        "title": "پژو 207 دستی مدل ۱۳۹۸",
-        "description": "پژو 207 هچبک، رنگ سفید، ۸۵ هزار کیلومتر، یک بار رنگ شدگی جزئی در در عقب. تمامی فیلترها عوض شده، کلاچ و گیربکس عالی.",
-        "category_id": 42,
-        "sell_price": 210000000,
-        "estimated_value": 203000000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "پراید ۱۱۱ یا سایپا تیبا",
-        "want_type": "item",
-        "city": "کرج",
-        "user_id": 3,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1503376780353-7e6692767b70?w=800&q=80"
-        ]
-    },
-    {
-        "title": "پراید ۱۱۱ مدل ۱۴۰۲ صفر کیلومتر",
-        "description": "پراید ۱۱۱ جدید، فابریک باز نشده، رنگ نقره‌ای، گارانتی ۳ ساله سایپا. تحویل فوری با کارت معتبر.",
-        "category_id": 42,
-        "sell_price": 220000000,
-        "estimated_value": 213000000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اصفهان",
-        "user_id": 4,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1549399542-7e3f8b79c341?w=800&q=80"
-        ]
-    },
-    {
-        "title": "سمند EF7 دوگانه سوز ۱۴۰۰",
-        "description": "سمند سورن EF7، CNG کارخانه‌ای، ۵۵ هزار کیلومتر، رنگ سفید آرژانتین. موتور و گیربکس کاملا سالم، بدون تعمیر.",
-        "category_id": 42,
-        "sell_price": 320000000,
-        "estimated_value": 310000000,
-        "condition": "like_new",
-        "listing_mode": "both",
-        "want_in_return": "پژو پارس یا وجه نقد",
-        "want_type": "any",
-        "city": "مشهد",
-        "user_id": 5,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1552519507-da3b142c6e3d?w=800&q=80",
-            "https:\/\/images.unsplash.com\/photo-1503376780353-7e6692767b70?w=800&q=80"
-        ]
-    },
-    {
-        "title": "سمند LX مدل ۱۳۹۶",
-        "description": "سمند LX، ۱۲۰ هزار کیلومتر، رنگ مشکی. تعویض زمابند و تسمه تایم انجام شده. مناسب مسافت طولانی.",
-        "category_id": 42,
-        "sell_price": 180000000,
-        "estimated_value": 174000000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "موتورسیکلت ۲۵۰ سی‌سی یا لپ‌تاپ",
-        "want_type": "item",
-        "city": "تبریز",
-        "user_id": 6,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1552519507-da3b142c6e3d?w=800&q=80"
-        ]
-    },
-    {
-        "title": "هوندا سیویک ۱.۸ اتوماتیک ۱۳۹۷",
-        "description": "هوندا سیویک EX، ۹۰ هزار کیلومتر، رنگ خاکستری معدنی. گیربکس اتوماتیک سالم، چراغ‌های ال ای دی، نمایشگر لمسی.",
-        "category_id": 42,
-        "sell_price": 680000000,
-        "estimated_value": 659000000,
-        "condition": "good",
-        "listing_mode": "both",
-        "want_in_return": "توئیوتا کارولا یا نقدی و وسیله",
-        "want_type": "any",
-        "city": "شیراز",
-        "user_id": 7,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1503376780353-7e6692767b70?w=800&q=80"
-        ]
-    },
-    {
-        "title": "سایپا رنو L90 مدل ۱۳۹۹",
-        "description": "سایپا رنو L90، دستی، رنگ آبی، ۶۰ هزار کیلومتر. بدون تصادف، تمام لوازم یدکی همراه. مناسب خانواده.",
-        "category_id": 42,
-        "sell_price": 200000000,
-        "estimated_value": 194000000,
-        "condition": "like_new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اهواز",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1549399542-7e3f8b79c341?w=800&q=80"
-        ]
-    },
-    {
         "title": "موتورسیکلت هوندا CB150R مدل ۱۴۰۱",
         "description": "هوندا CB150R، ۸ هزار کیلومتر، رنگ مشکی قرمز. کاملا فابریک، بدون تصادف. روغن موتور به موقع عوض شده.",
         "category_id": 43,
@@ -3548,86 +3111,6 @@
         "images": [
             "https:\/\/images.unsplash.com\/photo-1558981806-ec527fa84c39?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1568772585407-9361f9bf3a87?w=800&q=80"
-        ]
-    },
-    {
-        "title": "موتورسیکلت کاوازاکی نینجا ۲۵۰",
-        "description": "کاوازاکی نینجا ۲۵۰، ۱۵ هزار کیلومتر، رنگ سبز کاوازاکی. اسپرت و سریع، لاستیک جدید، ترمز دیسک عالی.",
-        "category_id": 43,
-        "sell_price": 380000000,
-        "estimated_value": 368000000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "خودرو متوسط یا موتور بزرگتر",
-        "want_type": "item",
-        "city": "تهران",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1558981806-ec527fa84c39?w=800&q=80"
-        ]
-    },
-    {
-        "title": "موتورسیکلت سوزوکی اینترودر ۱۲۵",
-        "description": "سوزوکی اینترودر، ۳۰ هزار کیلومتر، رنگ آبی. بسیار اقتصادی، مناسب شهری. تعمیرات جزئی داشت، کارکرد عالی.",
-        "category_id": 43,
-        "sell_price": 42000000,
-        "estimated_value": 40000000,
-        "condition": "fair",
-        "listing_mode": "both",
-        "want_in_return": "دوچرخه کوهستان یا نقدی",
-        "want_type": "any",
-        "city": "کرج",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1568772585407-9361f9bf3a87?w=800&q=80"
-        ]
-    },
-    {
-        "title": "موتورسیکلت یاماها FZFi ۱۵۰ مدل ۱۴۰۰",
-        "description": "یاماها FZFi، ۱۲ هزار کیلومتر، رنگ مشکی مات. سوخت‌سنج دیجیتال، انژکتور. بسیار تمیز و سالم.",
-        "category_id": 43,
-        "sell_price": 76000000,
-        "estimated_value": 73500000,
-        "condition": "like_new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اصفهان",
-        "user_id": 12,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1558981806-ec527fa84c39?w=800&q=80"
-        ]
-    },
-    {
-        "title": "موتورسیکلت بنلی TRK ۵۰۲ X آفرود",
-        "description": "بنلی TRK502X، ۲۰ هزار کیلومتر، رنگ زرد مشکی. مناسب مسافت طولانی و آفرود. سه کیسه کناری هدیه.",
-        "category_id": 43,
-        "sell_price": 320000000,
-        "estimated_value": 310000000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "خودرو سمند یا نقدی و اعتبار",
-        "want_type": "any",
-        "city": "مشهد",
-        "user_id": 13,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1568772585407-9361f9bf3a87?w=800&q=80"
-        ]
-    },
-    {
-        "title": "موتورسیکلت راوسر NS ۲۰۰ فای‌در",
-        "description": "باجاج راوسر NS200، ۲۵ هزار کیلومتر، رنگ قرمز. قدرت بالا، ظاهر اسپرت. تعویض روغن منظم.",
-        "category_id": 43,
-        "sell_price": 58000000,
-        "estimated_value": 56000000,
-        "condition": "good",
-        "listing_mode": "both",
-        "want_in_return": "لپ تاپ گیمینگ یا موتور ۱۵۰ نو",
-        "want_type": "any",
-        "city": "تبریز",
-        "user_id": 14,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1558981806-ec527fa84c39?w=800&q=80"
         ]
     },
     {
@@ -3648,102 +3131,6 @@
         ]
     },
     {
-        "title": "اسکوتر برقی شوای می مدل ۴ پرو",
-        "description": "اسکوتر برقی حرفه‌ای، سرعت ۴۵ کیلومتر، برد ۶۰ کیلومتر، سیستم تعلیق عالی. مناسب مسافت‌های طولانی‌تر.",
-        "category_id": 44,
-        "sell_price": 48000000,
-        "estimated_value": 46500000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "دوچرخه برقی یا نقدی",
-        "want_type": "any",
-        "city": "اهواز",
-        "user_id": 3,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1594955235792-2e75d787e42e?w=800&q=80"
-        ]
-    },
-    {
-        "title": "اسکوتر برقی اقتصادی سیتک",
-        "description": "اسکوتر برقی سیتک، سرعت ۲۰ کیلومتر، برد ۲۵ کیلومتر. مناسب رفت و آمد شهری کوتاه. سبک و جمع و جور.",
-        "category_id": 44,
-        "sell_price": 12000000,
-        "estimated_value": 11500000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "هدفون بی‌سیم یا تبلت قدیمی",
-        "want_type": "item",
-        "city": "قم",
-        "user_id": 4,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1571068316344-75bc76f77890?w=800&q=80"
-        ]
-    },
-    {
-        "title": "اسکوتر برقی با صندلی کودک",
-        "description": "اسکوتر برقی با صندلی پشتی برای کودک، سرعت ۱۵ کیلومتر، برد ۲۰ کیلومتر. بسیار امن و کاربردی.",
-        "category_id": 44,
-        "sell_price": 18500000,
-        "estimated_value": 17800000,
-        "condition": "like_new",
-        "listing_mode": "both",
-        "want_in_return": "هر وسیله بچه یا نقدی",
-        "want_type": "any",
-        "city": "تهران",
-        "user_id": 5,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1594955235792-2e75d787e42e?w=800&q=80"
-        ]
-    },
-    {
-        "title": "اسکوتر برقی دابل‌درایو A8",
-        "description": "اسکوتر برقی موتور دوگانه، سرعت ۵۵ کیلومتر، برد ۷۰ کیلومتر، چرخ‌های ۱۰ اینچ بادی. مناسب جاده‌های ناهموار.",
-        "category_id": 44,
-        "sell_price": 65000000,
-        "estimated_value": 63000000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "موتورسیکلت ۱۲۵ یا نقدی و اعتبار",
-        "want_type": "any",
-        "city": "کرج",
-        "user_id": 6,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1571068316344-75bc76f77890?w=800&q=80"
-        ]
-    },
-    {
-        "title": "اسکوتر برقی قابل حمل مینی",
-        "description": "اسکوتر برقی مینی و قابل جمع شدن، وزن فقط ۱۲ کیلوگرم، برد ۱۵ کیلومتر. برای دانشگاه و محل کار عالی است.",
-        "category_id": 44,
-        "sell_price": 9500000,
-        "estimated_value": 9000000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اصفهان",
-        "user_id": 7,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1594955235792-2e75d787e42e?w=800&q=80"
-        ]
-    },
-    {
-        "title": "شمع موتور پژو و سمند چهار عدد",
-        "description": "شمع موتور ایریدیوم نقره‌ای، مناسب پژو 206\/207 و سمند EF7. کاملا نو، در بسته‌بندی اصلی.",
-        "category_id": 45,
-        "sell_price": 1800000,
-        "estimated_value": 1700000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "فیلتر روغن یا کابل شارژ موبایل",
-        "want_type": "any",
-        "city": "مشهد",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1486262715619-67b85e0b08d3?w=800&q=80"
-        ]
-    },
-    {
         "title": "لاستیک خودرو ۲۰۵\/۵۵ R16 سایون",
         "description": "چهار عدد لاستیک سایون ۲۰۵\/۵۵ R16، حدود ۷۰ درصد عمر باقی مانده، بدون خرابی و پچ. مناسب پژو و سمند.",
         "category_id": 45,
@@ -3758,70 +3145,6 @@
         "images": [
             "https:\/\/images.unsplash.com\/photo-1492144534655-ae79c964c9d7?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1486262715619-67b85e0b08d3?w=800&q=80"
-        ]
-    },
-    {
-        "title": "باتری خودرو ۶۰ آمپر آتابلو",
-        "description": "باتری آتابلو ۶۰ آمپر، ۸ ماه استفاده، گارانتی ۱۸ ماهه. مناسب خودروهای ایرانی. شارژ کامل.",
-        "category_id": 45,
-        "sell_price": 3200000,
-        "estimated_value": 3100000,
-        "condition": "like_new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "شیراز",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1492144534655-ae79c964c9d7?w=800&q=80"
-        ]
-    },
-    {
-        "title": "کفشدوزکی جلو پژو 206 دست دوم سالم",
-        "description": "کفشدوزکی جلو پژو 206، کاملا سالم، بدون ترک. رنگ مشکی آماده رنگ‌کاری. جمع آوری از محل.",
-        "category_id": 45,
-        "sell_price": 2800000,
-        "estimated_value": 2700000,
-        "condition": "good",
-        "listing_mode": "both",
-        "want_in_return": "قطعه پلاستیکی دیگر یا نقدی",
-        "want_type": "any",
-        "city": "اهواز",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1492144534655-ae79c964c9d7?w=800&q=80"
-        ]
-    },
-    {
-        "title": "رینگ آلیاژی ۱۵ اینچ چهار عدد",
-        "description": "چهار عدد رینگ آلیاژی ۱۵ اینچ، طرح اسپرت، بدون خم و ترک. مناسب پراید و پژو 206. درپوش رینگ هدیه.",
-        "category_id": 45,
-        "sell_price": 9800000,
-        "estimated_value": 9500000,
-        "condition": "like_new",
-        "listing_mode": "swap",
-        "want_in_return": "رینگ ۱۴ اینچ یا نقدی",
-        "want_type": "any",
-        "city": "قم",
-        "user_id": 12,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1486262715619-67b85e0b08d3?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تسمه تایم و تسمه بامبد سمند EF7",
-        "description": "ست کامل تسمه تایم و بامبد سمند EF7، برند اصلی آلمانی. کاملا نو، مناسب ۹۰ هزار کیلومتر.",
-        "category_id": 45,
-        "sell_price": 5500000,
-        "estimated_value": 5300000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "تهران",
-        "user_id": 13,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1492144534655-ae79c964c9d7?w=800&q=80"
         ]
     },
     {
@@ -3842,86 +3165,6 @@
         ]
     },
     {
-        "title": "تدریس آنلاین زبان انگلیسی مکالمه",
-        "description": "کلاس آنلاین انگلیسی مکالمه، سطح مقدماتی تا پیشرفته. مدرس با مدرک آیلتس ۷.۵ و ۵ سال تجربه تدریس. ۲۴ جلسه ۹۰ دقیقه‌ای.",
-        "category_id": 25,
-        "sell_price": 12000000,
-        "estimated_value": 11600000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "هندزفری خوب یا نقدی",
-        "want_type": "any",
-        "city": "اصفهان",
-        "user_id": 2,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1509062522246-3755977927d7?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تدریس فیزیک پایه دبیرستان",
-        "description": "فیزیک مقطع دبیرستان، درس ۱۰، ۱۱ و ۱۲. تدریس با مثال‌های روزمره و حل سوالات کنکور. مدرس کارشناس فیزیک.",
-        "category_id": 25,
-        "sell_price": 6000000,
-        "estimated_value": 5800000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "مشهد",
-        "user_id": 3,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1580582932707-520aed937b7b?w=800&q=80"
-        ]
-    },
-    {
-        "title": "آمادگی آزمون آیلتس آکادمیک",
-        "description": "دوره ۳ ماهه آمادگی آیلتس، ۴ مهارت ریدینگ، رایتینگ، لیسنینگ و اسپیکینگ. آزمون ماک هر ماه، تست ۸۰۰۰ لغت.",
-        "category_id": 25,
-        "sell_price": 25000000,
-        "estimated_value": 24000000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "دوره برنامه نویسی یا نقدی",
-        "want_type": "any",
-        "city": "تبریز",
-        "user_id": 4,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1509062522246-3755977927d7?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تدریس خصوصی ریاضی پایه چهارم راهنمایی",
-        "description": "معلم خصوصی ریاضی، تقویت مفاهیم پایه، حل تمرین کتاب و کمک آموزشی. تضمین نمره خوب در امتحان.",
-        "category_id": 25,
-        "sell_price": 4500000,
-        "estimated_value": 4300000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "کتاب‌های کمک آموزشی یا هدیه کوچک",
-        "want_type": "any",
-        "city": "شیراز",
-        "user_id": 5,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1580582932707-520aed937b7b?w=800&q=80"
-        ]
-    },
-    {
-        "title": "دوره فشرده شیمی کنکور تجربی",
-        "description": "دوره فشرده شیمی کنکور رشته تجربی، خلاصه دروس، حل ۳ هزار تست کنکورهای گذشته. مدرس دکترای شیمی.",
-        "category_id": 25,
-        "sell_price": 9500000,
-        "estimated_value": 9200000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اهواز",
-        "user_id": 6,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1509062522246-3755977927d7?w=800&q=80"
-        ]
-    },
-    {
         "title": "تعمیرات لپ‌تاپ و کامپیوتر در محل",
         "description": "تعمیرات لپ‌تاپ و کامپیوتر رومیزی در محل تهران و کرج. مشکل‌سنجی رایگان، فرمت و نصب ویندوز، تعویض هارد و رم، تعمیر مادربرد.",
         "category_id": 26,
@@ -3935,102 +3178,6 @@
         "user_id": 7,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1581092580497-e0d23cbdf1dc?w=800&q=80",
-            "https:\/\/images.unsplash.com\/photo-1581092918056-0c4c3acd3789?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تعمیر موبایل و تعویض نمایشگر",
-        "description": "تعمیرکار موبایل با ۱۰ سال سابقه، تعویض نمایشگر اصلی، باتری، لامپ و چی شارژر. گارانتی ۶ ماهه.",
-        "category_id": 26,
-        "sell_price": 2500000,
-        "estimated_value": 2400000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "هر قطعه کارکردی یا نقدی",
-        "want_type": "any",
-        "city": "تهران",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1581092918056-0c4c3acd3789?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تعمیر یخچال و لباسشویی برندهای ایرانی و خارجی",
-        "description": "تعمیرات تخصصی یخچال فریزر، لباسشویی و ماشین ظرفشویی. دورکاری در تهران، مفت هزینه سفر، گارانتی تعمیرات.",
-        "category_id": 26,
-        "sell_price": 3500000,
-        "estimated_value": 3400000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "وسایل خانه بلااستفاده یا نقدی",
-        "want_type": "any",
-        "city": "کرج",
-        "user_id": 9,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1581092580497-e0d23cbdf1dc?w=800&q=80"
-        ]
-    },
-    {
-        "title": "نصب و تعمیر اینورتر کولر گازی",
-        "description": "متخصص کولر گازی و اینورتر، نصب، سرویس و تعمیر انواع کولر گازی‌های ایرانی و خارجی. شارژ گاز R410A و R32.",
-        "category_id": 26,
-        "sell_price": 2000000,
-        "estimated_value": 1900000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اصفهان",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1581092580497-e0d23cbdf1dc?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تعمیر تلویزیون ال‌سی‌دی و ال‌ای‌دی",
-        "description": "تعمیر تخصصی تلویزیون‌های ال‌ای‌دی و هوشمند، تعویض پنل، منبع تغذیه و برد اصلی. مشکل‌یابی رایگان در محل.",
-        "category_id": 26,
-        "sell_price": 4000000,
-        "estimated_value": 3800000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "تلویزیون قدیمی یا نقدی",
-        "want_type": "any",
-        "city": "مشهد",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1581092918056-0c4c3acd3789?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تعمیر و سرویس دوربین‌های مداربسته",
-        "description": "نصب، تعمیر و پشتیبانی سیستم‌های مداربسته آنالوگ و آی‌پی. راه‌اندازی ریموت ویو و ذخیره‌سازی روی کلاد.",
-        "category_id": 26,
-        "sell_price": 3000000,
-        "estimated_value": 2900000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "دوربین قدیمی یا تجهیزات شبکه",
-        "want_type": "item",
-        "city": "تبریز",
-        "user_id": 12,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1581092580497-e0d23cbdf1dc?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تعمیر سرگرمی و کنسول بازی",
-        "description": "تعمیر تخصصی پلی‌استیشن ۴ و ۵، ایکس باکس، نینتندو سوییچ. حل مشکل خطای خاموشی، تعویض هارد و درایو دیسک.",
-        "category_id": 26,
-        "sell_price": 1800000,
-        "estimated_value": 1700000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "شیراز",
-        "user_id": 13,
-        "images": [
             "https:\/\/images.unsplash.com\/photo-1581092918056-0c4c3acd3789?w=800&q=80"
         ]
     },
@@ -4052,86 +3199,6 @@
         ]
     },
     {
-        "title": "طراحی بنر و پوستر تبلیغاتی",
-        "description": "طراحی بنر اینستاگرام، استوری، پوستر چاپی و بنر سایت. تحویل در کمتر از ۴۸ ساعت با ۳ بار اصلاح.",
-        "category_id": 27,
-        "sell_price": 3500000,
-        "estimated_value": 3400000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "هر هدیه یا نقدی",
-        "want_type": "any",
-        "city": "قم",
-        "user_id": 2,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1561070791-2526d30994b8?w=800&q=80"
-        ]
-    },
-    {
-        "title": "طراحی رابط کاربری اپلیکیشن موبایل",
-        "description": "طراحی UI\/UX اپلیکیشن اندروید و iOS، شامل دیزاین سیستم، پروتوتایپ تعاملی و فایل‌های آماده تحویل برنامه‌نویس.",
-        "category_id": 27,
-        "sell_price": 35000000,
-        "estimated_value": 33800000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "مک بوک ایر یا نقدی و وسیله",
-        "want_type": "any",
-        "city": "تهران",
-        "user_id": 3,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1558655146-9f40138edfeb?w=800&q=80"
-        ]
-    },
-    {
-        "title": "محتوا تولید و عکاسی محصول فروشگاه",
-        "description": "عکاسی حرفه‌ای محصول برای فروشگاه اینترنتی، رتوش و ادیت عکس، ساخت ویدیوی کوتاه تبلیغاتی برای اینستاگرام.",
-        "category_id": 27,
-        "sell_price": 8000000,
-        "estimated_value": 7700000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "کالای فروشگاه یا نقدی",
-        "want_type": "any",
-        "city": "کرج",
-        "user_id": 4,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1561070791-2526d30994b8?w=800&q=80"
-        ]
-    },
-    {
-        "title": "طراحی سایت وردپرس و فروشگاهی",
-        "description": "طراحی سایت حرفه‌ای با وردپرس و ووکامرس، پاسخگو موبایل، سرعت بالا، سئو اولیه و آموزش مدیریت سایت.",
-        "category_id": 27,
-        "sell_price": 22000000,
-        "estimated_value": 21300000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اصفهان",
-        "user_id": 5,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1558655146-9f40138edfeb?w=800&q=80"
-        ]
-    },
-    {
-        "title": "انیمیشن دو بعدی و موشن گرافیک",
-        "description": "ساخت انیمیشن موشن گرافیک برای آگهی و توضیح محصول، انیمیشن لوگو، ویدیو معرفی برند. صداپیشگی هم امکان‌پذیر.",
-        "category_id": 27,
-        "sell_price": 18000000,
-        "estimated_value": 17400000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "کامپیوتر یا لپ تاپ مونتاژ",
-        "want_type": "item",
-        "city": "مشهد",
-        "user_id": 6,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1561070791-2526d30994b8?w=800&q=80"
-        ]
-    },
-    {
         "title": "خدمات انتقال منزل و دفتر با کامیون",
         "description": "انتقال اسباب‌کشی منزل، دفتر کار و فروشگاه با کامیون‌های ۶ تنی و ۱۰ تنی. تیم حرفه‌ای بسته‌بندی و حمل، بیمه کالا.",
         "category_id": 28,
@@ -4146,86 +3213,6 @@
         "images": [
             "https:\/\/images.unsplash.com\/photo-1586528116311-ad8dd3c8310d?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1600585154340-be6161a56a0c?w=800&q=80"
-        ]
-    },
-    {
-        "title": "حمل و نقل بار بین شهری تهران-اصفهان",
-        "description": "حمل بار جزئی و عمده بین تهران، کرج، قم و اصفهان. تحویل درب به درب، ۲۴ ساعته، پیگیری آنلاین مرسوله.",
-        "category_id": 28,
-        "sell_price": 7000000,
-        "estimated_value": 6800000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "هر پیشنهاد معقول یا نقدی",
-        "want_type": "any",
-        "city": "شیراز",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1586528116311-ad8dd3c8310d?w=800&q=80"
-        ]
-    },
-    {
-        "title": "اجاره کامیونت و وانت برای خرید روزانه",
-        "description": "اجاره وانت و کامیونت ساعتی و روزانه برای خرید از بازار و فروشگاه. راننده حرفه‌ای، کمک بار نیز موجود است.",
-        "category_id": 28,
-        "sell_price": 2500000,
-        "estimated_value": 2400000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اهواز",
-        "user_id": 9,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1600585154340-be6161a56a0c?w=800&q=80"
-        ]
-    },
-    {
-        "title": "انتقال محوطه و دکوراسیون اداری",
-        "description": "مجموعه تخصصی انتقال دفاتر کار و شرکت‌ها، حمل میز، صندلی، کابینت و تجهیزات اداری. بسته‌بندی با کیسه هوا.",
-        "category_id": 28,
-        "sell_price": 25000000,
-        "estimated_value": 24200000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "مبلمان اداری یا نقدی و خدمات",
-        "want_type": "any",
-        "city": "قم",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1586528116311-ad8dd3c8310d?w=800&q=80"
-        ]
-    },
-    {
-        "title": "خدمات پیک موتوری فوری شهر",
-        "description": "پیک موتوری فوری برای ارسال بسته، داکیومنت و خرید از داروخانه و فروشگاه. تحویل کمتر از ۱ ساعت در شهر تهران.",
-        "category_id": 28,
-        "sell_price": 800000,
-        "estimated_value": 770000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "ارسال برگشتی یا نقدی",
-        "want_type": "any",
-        "city": "تهران",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1600585154340-be6161a56a0c?w=800&q=80"
-        ]
-    },
-    {
-        "title": "حمل خودرو بین شهری با تریلی",
-        "description": "حمل خودرو و وانت روی تریلی مخصوص بین شهرهای مختلف ایران. بیمه کامل، تحویل درب به درب، کمپانی معتبر.",
-        "category_id": 28,
-        "sell_price": 12000000,
-        "estimated_value": 11600000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "خدمات شستشو یا نگهداری خودرو",
-        "want_type": "any",
-        "city": "کرج",
-        "user_id": 12,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1586528116311-ad8dd3c8310d?w=800&q=80"
         ]
     },
     {
@@ -4246,22 +3233,6 @@
         ]
     },
     {
-        "title": "ماشین قهوه خانگی دلونگی مگنتیکا",
-        "description": "دلونگی مگنتیکا S، خودکار، اسپرسو و کاپوچینو، شیرفوم ساز داخلی. یک سال استفاده، خیلی کم.",
-        "category_id": 46,
-        "sell_price": 28000000,
-        "estimated_value": 27000000,
-        "condition": "like_new",
-        "listing_mode": "swap",
-        "want_in_return": "آبمیوه‌گیری صنعتی یا نقدی",
-        "want_type": "any",
-        "city": "مشهد",
-        "user_id": 14,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1510707577719-ae7c14805e3a?w=800&q=80"
-        ]
-    },
-    {
         "title": "قهوه دانه کلجه عربیکا ۱ کیلو تازه برشته شده",
         "description": "قهوه کلجه ۱۰۰ درصد عربیکا برزیل، تازه برشته شده، عطر و طعم عالی مناسب اسپرسو و فیلتر قهوه.",
         "category_id": 46,
@@ -4275,54 +3246,6 @@
         "user_id": 2,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1447933601403-0c6688de566e?w=800&q=80"
-        ]
-    },
-    {
-        "title": "ماشین قهوه مخصوص سفر و کمپینگ",
-        "description": "ماشین قهوه پرتابل استینلس استیل، مناسب سفر و کمپینگ، ۶ فنجان، روی گاز و اجاق گاز کار می‌کند. کاملا نو.",
-        "category_id": 46,
-        "sell_price": 2200000,
-        "estimated_value": 2100000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "تابلوی کمپینگ یا هدیه کوچک",
-        "want_type": "any",
-        "city": "شیراز",
-        "user_id": 3,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1495474458703-4d71bcdd2085?w=800&q=80"
-        ]
-    },
-    {
-        "title": "فیلتر قهوه دراپ V60 سرامیکی و کاغذ فیلتر",
-        "description": "سرامیک قهوه‌گیری دراپ V60 اندازه متوسط، همراه با ۲۰۰ عدد کاغذ فیلتر سفید. فابریک در جعبه اصلی.",
-        "category_id": 46,
-        "sell_price": 1500000,
-        "estimated_value": 1450000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "چای یا شیرینی خانگی یا نقدی",
-        "want_type": "any",
-        "city": "اهواز",
-        "user_id": 4,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1447933601403-0c6688de566e?w=800&q=80"
-        ]
-    },
-    {
-        "title": "آسیاب قهوه دستی استیل ضد زنگ",
-        "description": "آسیاب قهوه دستی با سنگ‌سنگ‌های سرامیکی، تنظیم درجه آسیاب، مناسب سفر. اسپرت و سبک، همراه با کیف.",
-        "category_id": 46,
-        "sell_price": 3200000,
-        "estimated_value": 3100000,
-        "condition": "like_new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "قم",
-        "user_id": 5,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1495474458703-4d71bcdd2085?w=800&q=80"
         ]
     },
     {
@@ -4343,86 +3266,6 @@
         ]
     },
     {
-        "title": "کمی بودل ۲ لیتری شیشه ای ۶ عدد",
-        "description": "۶ عدد شیشه ۲ لیتری کمربودل برای نوشیدنی سرد و داغ، درپوش استیل، ضد حرارت، در جعبه هدیه.",
-        "category_id": 47,
-        "sell_price": 2800000,
-        "estimated_value": 2700000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "لیوان سرامیکی ست یا نقدی",
-        "want_type": "item",
-        "city": "کرج",
-        "user_id": 7,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1554866585-cd94860890b7?w=800&q=80"
-        ]
-    },
-    {
-        "title": "انرژی زا ۲۵۰ میلی‌لیتری ۱۲ عددی",
-        "description": "۱۲ عدد نوشیدنی انرژی‌زا، مناسب ورزشکاران، ویتامین B گروه و کافئین متوسط. تاریخ مصرف تازه.",
-        "category_id": 47,
-        "sell_price": 1100000,
-        "estimated_value": 1060000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اصفهان",
-        "user_id": 8,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1622483767028-3f66f32aef97?w=800&q=80"
-        ]
-    },
-    {
-        "title": "آب میوه معدنی گازدار لیمو و نعنا ۲۰ عدد",
-        "description": "۲۰ شیشه آبمیوه گازدار طبیعی لیمو و نعنا، بدون شکر و نگهدارنده، کاملا طبیعی و ارگانیک.",
-        "category_id": 47,
-        "sell_price": 1800000,
-        "estimated_value": 1740000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "ترشی یا مربای خانگی یا نقدی",
-        "want_type": "any",
-        "city": "مشهد",
-        "user_id": 9,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1554866585-cd94860890b7?w=800&q=80"
-        ]
-    },
-    {
-        "title": "سرویس نوشیدنی چوبی ۱۲ نفره مدرن",
-        "description": "سرویس لیوان چوبی ۱۲ نفره با پایه چوبی بلوط، طراحی مدرن، مناسب مهمانی و هدیه. فابریک.",
-        "category_id": 47,
-        "sell_price": 8500000,
-        "estimated_value": 8200000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "سرویس قهوه سرامیکی یا نقدی",
-        "want_type": "item",
-        "city": "تبریز",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1622483767028-3f66f32aef97?w=800&q=80"
-        ]
-    },
-    {
-        "title": "آب معدنی گازدار طعم دار ۴۰ شیشه",
-        "description": "بسته ۴۰ شیشه‌ای آب معدنی گازدار با طعم‌های توت فرنگی، هلو، انگور فرنگی و سیب. ارگانیک.",
-        "category_id": 47,
-        "sell_price": 2500000,
-        "estimated_value": 2400000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "شیراز",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1554866585-cd94860890b7?w=800&q=80"
-        ]
-    },
-    {
         "title": "آبمیوه پرتقال تازه فشرده یک لیتری ۶ عدد",
         "description": "۶ شیشه یک لیتری آبمیوه پرتقال تازه فشرده، ۱۰۰ درصد طبیعی، بدون شکر و نگهدارنده، فشرده همان روز ارسال.",
         "category_id": 48,
@@ -4436,22 +3279,6 @@
         "user_id": 12,
         "images": [
             "https:\/\/images.unsplash.com\/photo-1600271886742-f049cd451bba?w=800&q=80",
-            "https:\/\/images.unsplash.com\/photo-1613478223719-2ab802602423?w=800&q=80"
-        ]
-    },
-    {
-        "title": "آبمیوه گیلاس و انگور قرمز ترکیبی",
-        "description": "آبمیوه ترکیبی گیلاس و انگور قرمز، ۳ شیشه ۱.۵ لیتری، غنی از آنتی‌اکسیدان، کاملا طبیعی.",
-        "category_id": 48,
-        "sell_price": 2200000,
-        "estimated_value": 2130000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "ترشی خانگی یا مربا",
-        "want_type": "item",
-        "city": "قم",
-        "user_id": 13,
-        "images": [
             "https:\/\/images.unsplash.com\/photo-1613478223719-2ab802602423?w=800&q=80"
         ]
     },
@@ -4473,70 +3300,6 @@
         ]
     },
     {
-        "title": "آبمیوه‌گیری آهسته خانگی فیلیپس",
-        "description": "آبمیوه‌گیری آهسته فیلیپس، ۲۰۰ وات، ۸۰ درصد بازدهی آبمیوه، کم صدا، ۶ ماه استفاده گارانتی فعال.",
-        "category_id": 48,
-        "sell_price": 9500000,
-        "estimated_value": 9200000,
-        "condition": "like_new",
-        "listing_mode": "both",
-        "want_in_return": "همزن برقی یا نقدی",
-        "want_type": "any",
-        "city": "کرج",
-        "user_id": 2,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1570222094114-d054a817e56b?w=800&q=80"
-        ]
-    },
-    {
-        "title": "آبمیوه انار تازه ۱۰۰٪ طبیعی ۵ لیتر",
-        "description": "۵ لیتر آبمیوه انار فشرده تازه، ۱۰۰ درصد طبیعی، فشرده در فروشگاه، بدون هیچ افزودنی و شکر.",
-        "category_id": 48,
-        "sell_price": 1800000,
-        "estimated_value": 1740000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "ادویه جات یا نقدی",
-        "want_type": "any",
-        "city": "اصفهان",
-        "user_id": 3,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1600271886742-f049cd451bba?w=800&q=80"
-        ]
-    },
-    {
-        "title": "آبمیوه هویج و زعفران خانگی ۴ عدد",
-        "description": "۴ شیشه آبمیوه هویج و زعفران خانگی، تقویت قوه بینایی و خون‌سازی، کاملا سالم و طبیعی. مناسب پیشگیری از سرماخوردگی.",
-        "category_id": 48,
-        "sell_price": 1200000,
-        "estimated_value": 1150000,
-        "condition": "new",
-        "listing_mode": "both",
-        "want_in_return": "شیرینی خانگی یا نقدی",
-        "want_type": "any",
-        "city": "مشهد",
-        "user_id": 4,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1613478223719-2ab802602423?w=800&q=80"
-        ]
-    },
-    {
-        "title": "آبمیوه هندوانه و نعنا ۲ لیتری ۴ عدد",
-        "description": "۴ شیشه آبمیوه هندوانه و نعنا، خنک و گوارا، بدون یخ اضافه. تازه فشرده همان روز، تحویل فوری در مشهد.",
-        "category_id": 48,
-        "sell_price": 900000,
-        "estimated_value": 870000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "تبریز",
-        "user_id": 5,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1600271886742-f049cd451bba?w=800&q=80"
-        ]
-    },
-    {
         "title": "ست کاسه و تابه چدنی لوژیته ۶ پارچه",
         "description": "ست آشپزخانه چدنی ۶ پارچه، شامل تابه ۲۴ و ۲۸ سانتی، کاسه ۲۰ و ۲۴، پان کیک و سس‌پان. مینای ضدچسب. ۳ ماه استفاده.",
         "category_id": 49,
@@ -4551,22 +3314,6 @@
         "images": [
             "https:\/\/images.unsplash.com\/photo-1585515320310-2598148333e62?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1590800923330-acfe91ae419f?w=800&q=80"
-        ]
-    },
-    {
-        "title": "تابه چدنی ۳۲ سانتی متر گرانیتا",
-        "description": "تابه چدنی ۳۲ سانتی متری مینای گرانیتا، ضدچسب با دو دسته، مناسب پخت کباب و استیک و ماهی. فابریک.",
-        "category_id": 49,
-        "sell_price": 5800000,
-        "estimated_value": 5600000,
-        "condition": "new",
-        "listing_mode": "swap",
-        "want_in_return": "سینی فرز یا قابلمه کوچک",
-        "want_type": "item",
-        "city": "اهواز",
-        "user_id": 7,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1585515320310-2598148333e62?w=800&q=80"
         ]
     },
     {
@@ -4600,38 +3347,6 @@
         "images": [
             "https:\/\/images.unsplash.com\/photo-1514362545857-3bc16c4c7d1b?w=800&q=80",
             "https:\/\/images.unsplash.com\/photo-1470337458703-46ad1756a187?w=800&q=80"
-        ]
-    },
-    {
-        "title": "فر کوچک توکار ۴۵ لیتری صنعتی",
-        "description": "فر توکو کوچک ۴۵ لیتری با گریل، فن و کنترل دمای دیجیتال، مناسب کافه و نانوایی کوچک. ۷ ماه استفاده.",
-        "category_id": 49,
-        "sell_price": 22000000,
-        "estimated_value": 21300000,
-        "condition": "good",
-        "listing_mode": "swap",
-        "want_in_return": "یخساز کوچک یا نقدی و اعتبار",
-        "want_type": "any",
-        "city": "کرج",
-        "user_id": 10,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1590800923330-acfe91ae419f?w=800&q=80"
-        ]
-    },
-    {
-        "title": "چاقوی سرآشپز ۸ اینچ استیل آلمانی",
-        "description": "چاقوی سرآشپز ۸ اینچ از استیل آلمانی، تیز ماندگاری بالا، دسته چوبی بند. مناسب رستوران و منزل. همراه با تیزکن هدیه.",
-        "category_id": 49,
-        "sell_price": 3200000,
-        "estimated_value": 3100000,
-        "condition": "new",
-        "listing_mode": "sell",
-        "want_in_return": "",
-        "want_type": "credit",
-        "city": "اصفهان",
-        "user_id": 11,
-        "images": [
-            "https:\/\/images.unsplash.com\/photo-1585515320310-2598148333e62?w=800&q=80"
         ]
     }
 ]
