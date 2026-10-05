@@ -3,7 +3,7 @@ define('SKIP_SESSION', true);
 define('CLI_MODE', true);
 
 require_once __DIR__ . '/includes/config.php';
-
+ 
 $args = array_slice($argv, 1);
 $dryRun      = in_array('--dry-run', $args, true);
 $useManifest = in_array('--use-manifest', $args, true);
