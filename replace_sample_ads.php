@@ -160,22 +160,125 @@ echo "━━━ مرحله ۳: حذف آگهی‌های قدیمی نمونه و
 $pdo->beginTransaction();
 
 try {
-    // ۴-الف) حذف وابسته‌ها و خود آگهی‌ها (چون ممکنه FK ها RESTRICT باشه)
+    // ۴-الف) پیدا کردن داینامیک تمام جدول‌های وابسته به listings.id از INFORMATION_SCHEMA
+    //        و حذف به ترتیب وابستگی (جدول‌های فرزند اول، جدول listings آخر)
     if (count($toDelete) > 0) {
         $phDel = implode(',', array_fill(0, count($toDelete), '?'));
-        $deletedImages = DB::query(
-            "DELETE FROM listing_images WHERE listing_id IN ($phDel)",
-            $toDelete
-        )->rowCount();
-        $deletedPromos = DB::query(
-            "DELETE FROM listing_promotions WHERE listing_id IN ($phDel)",
-            $toDelete
-        )->rowCount();
+
+        $fkRows = DB::fetchAll("
+            SELECT TABLE_NAME AS tbl, COLUMN_NAME AS col
+            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND REFERENCED_TABLE_NAME = 'listings'
+              AND REFERENCED_COLUMN_NAME = 'id'
+              AND TABLE_NAME != 'listings'
+        ");
+
+        // جدول‌هایی که ممکنه listing داشته باشن ولی FK رسمی نداشته باشن (col name like %listing_id%)
+        $colRows = DB::fetchAll("
+            SELECT DISTINCT TABLE_NAME AS tbl, COLUMN_NAME AS col
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND (COLUMN_NAME = 'listing_id' OR COLUMN_NAME = 'source_listing_id' OR COLUMN_NAME = 'suggested_listing_id' OR COLUMN_NAME = 'offer_listing_id')
+              AND TABLE_NAME != 'listings'
+              AND TABLE_NAME NOT IN (SELECT TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                                     WHERE TABLE_SCHEMA = DATABASE()
+                                       AND REFERENCED_TABLE_NAME = 'listings'
+                                       AND REFERENCED_COLUMN_NAME = 'id')
+        ");
+
+        $allDeps = [];
+        foreach (array_merge($fkRows, $colRows) as $r) {
+            $t = $r['tbl']; $c = $r['col'];
+            if (!isset($allDeps[$t])) $allDeps[$t] = [];
+            if (!in_array($c, $allDeps[$t], true)) $allDeps[$t][] = $c;
+        }
+
+        // جدول‌هایی که به listingهای هدف رفرنس می‌دن (و خودشون هم ممکن جدول‌های فرزند دیگه داشته باشن)
+        // اول ترتیب امن: tables با عمیق‌ترین وابستگی اول حذف بشن (level-ordered)
+        // ساده‌تر: چند پاس DELETE بزن؛ جدول‌هایی که FK به جدولِ‌تازه-حذف‌شده دارند خطا میدن → دوباره تلاش کن تا همه پاک بشن
+        // ولی بهتر: اول listing های فرزند هر جدول وابسته رو پیدا می‌کنیم و حذف می‌کنیم و بیرون می‌کشیم.
+
+        echo "  📋 جداول وابسته شناسایی‌شده: " . implode(', ', array_keys($allDeps)) . "\n";
+
+        // helper تابع حذف طبقه‌ای
+        $cascadeDelete = function (array $listingIds) use (&$cascadeDelete, $allDeps, $phDel) {
+            $ph = implode(',', array_fill(0, count($listingIds), '?'));
+            $deleted = [];
+            foreach ($allDeps as $tbl => $cols) {
+                foreach ($cols as $col) {
+                    $stmt = DB::query("SELECT COUNT(*) AS c FROM `$tbl` WHERE `$col` IN ($ph)", $listingIds);
+                    $c = (int)($stmt->fetch()['c'] ?? 0);
+                    if ($c === 0) continue;
+                    // اگر جدول خودش وابسته به FK های جدولِ‌فرزند باشه، بازگشتی فراخوانی کن
+                    // برای رفع وابستگی‌های cross، تعداد تلاش‌ها رو محدود کن
+                    for ($attempt = 1; $attempt <= 4; $attempt++) {
+                        try {
+                            $affected = DB::query("DELETE FROM `$tbl` WHERE `$col` IN ($ph)", $listingIds)->rowCount();
+                            if ($affected > 0) {
+                                $deleted["$tbl.$col"] = ($deleted["$tbl.$col"] ?? 0) + $affected;
+                            }
+                            break;
+                        } catch (Throwable $e) {
+                            // وابستگی هست، جدول‌های فرزند خود این جدول رو بپرس
+                            $childFks = DB::fetchAll("
+                                SELECT TABLE_NAME AS tbl, COLUMN_NAME AS col
+                                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                                WHERE TABLE_SCHEMA = DATABASE()
+                                  AND REFERENCED_TABLE_NAME = ?
+                                  AND REFERENCED_COLUMN_NAME = 'id'
+                            ", [$tbl]);
+                            if (count($childFks) === 0 || $attempt === 4) {
+                                if ($attempt === 4) throw $e;
+                                break;
+                            }
+                            // ردیف‌های وابسته در جداول فرزند این جدول رو پیدا و حذف کن
+                            foreach ($childFks as $cfk) {
+                                $pksTbl = DB::fetchAll("SELECT id FROM `$tbl` WHERE `$col` IN ($ph)", $listingIds);
+                                $pkIds = array_map(fn($r) => (int)$r['id'], $pksTbl);
+                                if (count($pkIds) === 0) continue;
+                                $ph2 = implode(',', array_fill(0, count($pkIds), '?'));
+                                for ($a2 = 1; $a2 <= 3; $a2++) {
+                                    try {
+                                        $aff2 = DB::query("DELETE FROM `{$cfk['tbl']}` WHERE `{$cfk['col']}` IN ($ph2)", $pkIds)->rowCount();
+                                        if ($aff2 > 0) $deleted["{$cfk['tbl']}.{$cfk['col']}"] = ($deleted["{$cfk['tbl']}.{$cfk['col']}"] ?? 0) + $aff2;
+                                        break;
+                                    } catch (Throwable $e2) {
+                                        if ($a2 === 3) throw $e2;
+                                        usleep(20000);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // در آخر listing_images و listing_promotions هم (که FK با CASCADE هست ولی اطمینان)
+            foreach (['listing_images','listing_promotions','listing_views','listing_favorites','listing_reports','listing_bumps'] as $t) {
+                if (db_has_table($t) && db_has_column($t, 'listing_id')) {
+                    $exists = (int)(DB::fetch("SELECT COUNT(*) AS c FROM `$t` WHERE listing_id IN ($ph)", $listingIds)['c'] ?? 0);
+                    if ($exists > 0) {
+                        $deleted["$t.listing_id"] = ($deleted["$t.listing_id"] ?? 0)
+                            + DB::query("DELETE FROM `$t` WHERE listing_id IN ($ph)", $listingIds)->rowCount();
+                    }
+                }
+            }
+            return $deleted;
+        };
+
+        $depDeleted = $cascadeDelete($toDelete);
+
+        // حالا خود listing ها
         $deletedListings = DB::query(
             "DELETE FROM listings WHERE id IN ($phDel)",
             $toDelete
         )->rowCount();
-        echo "  🗑️  حذف شد:  $deletedListings listing ، $deletedImages تصویر ، $deletedPromos پلن تبلیغاتی\n";
+
+        echo "  🗑️  حذف listing: $deletedListings مورد\n";
+        foreach ($depDeleted as $key => $n) {
+            echo "       + $n ردیف از جدول $key\n";
+        }
+        echo "\n";
     } else {
         echo "  ℹ️  آگهی قدیمی برای حذف نبود.\n";
     }
