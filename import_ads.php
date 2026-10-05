@@ -235,8 +235,8 @@ try {
                 if (!$url) continue;
                 global $useManifest, $manifestData;
                 $savedAs = '';
-                if ($useManifest && isset($manifestData['ads'][$line][$imgIdx])) {
-                    $savedAs = copyFromManifest($manifestData['ads'][$line][$imgIdx], "listings/$listingId");
+                if ($useManifest && isset($manifestData['ads'][$idx][$imgIdx])) {
+                    $savedAs = copyFromManifest($manifestData['ads'][$idx][$imgIdx], "listings/$listingId");
                 }
                 if (!$savedAs) {
                     $savedAs = downloadExternalImage($url, "listings/$listingId");
