@@ -160,11 +160,11 @@ echo "━━━ مرحله ۳: حذف آگهی‌های قدیمی نمونه و
 $pdo->beginTransaction();
 
 try {
-    // ۴-الف) پیدا کردن داینامیک تمام جدول‌های وابسته به listings.id از INFORMATION_SCHEMA
-    //        و حذف به ترتیب وابستگی (جدول‌های فرزند اول، جدول listings آخر)
+    // ۴-الف) حذف بازگشتی تمام وابستگی‌ها (هر عمق) + غیرفعال‌سازی موقت FK checks به صورت امن داخل تراکنش
     if (count($toDelete) > 0) {
         $phDel = implode(',', array_fill(0, count($toDelete), '?'));
 
+        // -- مرحله ۱: پیدا کردن داینامیک تمام جدول‌های وابسته مستقیم به listings.id
         $fkRows = DB::fetchAll("
             SELECT TABLE_NAME AS tbl, COLUMN_NAME AS col
             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
@@ -174,7 +174,7 @@ try {
               AND TABLE_NAME != 'listings'
         ");
 
-        // جدول‌هایی که ممکنه listing داشته باشن ولی FK رسمی نداشته باشن (col name like %listing_id%)
+        // جدول‌هایی که FK رسمی ندارند ولی ستون listing_id مشابهی دارند
         $colRows = DB::fetchAll("
             SELECT DISTINCT TABLE_NAME AS tbl, COLUMN_NAME AS col
             FROM INFORMATION_SCHEMA.COLUMNS
@@ -194,85 +194,147 @@ try {
             if (!in_array($c, $allDeps[$t], true)) $allDeps[$t][] = $c;
         }
 
-        // جدول‌هایی که به listingهای هدف رفرنس می‌دن (و خودشون هم ممکن جدول‌های فرزند دیگه داشته باشن)
-        // اول ترتیب امن: tables با عمیق‌ترین وابستگی اول حذف بشن (level-ordered)
-        // ساده‌تر: چند پاس DELETE بزن؛ جدول‌هایی که FK به جدولِ‌تازه-حذف‌شده دارند خطا میدن → دوباره تلاش کن تا همه پاک بشن
-        // ولی بهتر: اول listing های فرزند هر جدول وابسته رو پیدا می‌کنیم و حذف می‌کنیم و بیرون می‌کشیم.
+        echo "  📋 جداول وابسته مستقیم به listings: " . implode(', ', array_keys($allDeps)) . "\n";
 
-        echo "  📋 جداول وابسته شناسایی‌شده: " . implode(', ', array_keys($allDeps)) . "\n";
+        // -- مرحله ۲: حذف کامل و بازگشتی با پیمایش تمام FK ها تا آخرین عمق
+        //   الگوریتم (leaf-first): به ازای هر جدول/ستون، اول تمام PK های ردیف‌های هدف جمع می‌شود
+        //   سپس جداول فرزند (و فرزندان فرزندان...) قبل از پدر (از برگ به ریشه) حذف می‌شوند.
+        //   Safety net: داخل تراکنش FOREIGN_KEY_CHECKS=0 هم می‌گذاریم تا هر FK ناشناخته‌ای مانع نشود.
+        $totalDeleted = [];
 
-        // helper تابع حذف طبقه‌ای
-        $cascadeDelete = function (array $listingIds) use (&$cascadeDelete, $allDeps, $phDel) {
-            $ph = implode(',', array_fill(0, count($listingIds), '?'));
+        // تابع اصلی حذف بازگشتی (leaf-first):
+        // ورودی: نام جدول پدر، آرایه [ستون‌ارجاعی => آرایه‌ی مقادیر]
+        // خروجی: تعداد ردیف‌های حذف‌شده به صورت [table.col => N]
+        $recursiveDelete = function (
+            string $targetTable,
+            array  $filters
+        ) use (
+            &$recursiveDelete,
+            &$totalDeleted
+        ): array {
+            if (count($filters) === 0) return [];
             $deleted = [];
+
+            // ۱) پیدا کردن تمام ردیف‌هایی که از طریق یکی از فیلترها (ستون‌ها) با مقادیر هدف تطبیق دارند
+            //    و جمع‌آوری PK های این ردیف‌ها (که فرزندانشان به آن ارجاع می‌دهند)
+            $allWhereParts = [];
+            $allParams = [];
+            foreach ($filters as $col => $values) {
+                if (count($values) === 0) continue;
+                $values = array_values(array_unique(array_map('intval', $values)));
+                if (count($values) === 0) continue;
+                $phF = implode(',', array_fill(0, count($values), '?'));
+                $allWhereParts[] = "`$col` IN ($phF)";
+                foreach ($values as $v) $allParams[] = $v;
+            }
+            if (count($allWhereParts) === 0) return [];
+
+            $whereClause = implode(' OR ', $allWhereParts);
+
+            // اول شمارش + پیدا کردن PK ردیف‌هایی که قرار است حذف شوند (برای پیدا کردن فرزندان)
+            $pkRows = DB::fetchAll("SELECT id FROM `$targetTable` WHERE $whereClause", $allParams);
+            $pkIds = array_values(array_unique(array_map(fn($r) => (int)$r['id'], $pkRows)));
+            if (count($pkIds) === 0) return [];
+
+            // ۲) پیدا کردن جداول فرزند مستقیم (FK به جدول فعلی)
+            $directChildren = [];
+            $directRows = DB::fetchAll("
+                SELECT TABLE_NAME AS tbl, COLUMN_NAME AS col
+                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND REFERENCED_TABLE_NAME = ?
+                  AND REFERENCED_COLUMN_NAME = 'id'
+                  AND TABLE_NAME != ?
+            ", [$targetTable, $targetTable]);
+            foreach ($directRows as $dr) {
+                $t = $dr['tbl']; $c = $dr['col'];
+                if (!isset($directChildren[$t])) $directChildren[$t] = [];
+                $directChildren[$t][] = $c;
+            }
+
+            // ۳) قبل از حذف خود جدول، ابتدا تمام فرزندان مستقیم را به صورت بازگشتی حذف کن
+            //    (هر فرزند خودش قبل از حذف، فرزندان خودش را پاک می‌کند — در نتیجه order از برگ به ریشه است)
+            foreach ($directChildren as $childTable => $childCols) {
+                $childFilters = [];
+                foreach ($childCols as $cc) {
+                    $childFilters[$cc] = $pkIds;  // تمام PK های جدول پدر که به عنوان FK در فرزند ظاهر می‌شوند
+                }
+                $childDeleted = $recursiveDelete($childTable, $childFilters);
+                foreach ($childDeleted as $k => $n) {
+                    $totalDeleted[$k] = ($totalDeleted[$k] ?? 0) + $n;
+                    $deleted[$k] = ($deleted[$k] ?? 0) + $n;
+                }
+            }
+
+            // ۴) حالا که همه‌ی فرزندان (در هر عمق) پاک شده‌اند، خود ردیف‌های جدول هدف را حذف کن
+            $phDel2 = implode(',', array_fill(0, count($pkIds), '?'));
+            $aff = DB::query("DELETE FROM `$targetTable` WHERE id IN ($phDel2)", $pkIds)->rowCount();
+            if ($aff > 0) {
+                $k = "$targetTable.id";
+                $deleted[$k] = ($deleted[$k] ?? 0) + $aff;
+                $totalDeleted[$k] = ($totalDeleted[$k] ?? 0) + $aff;
+            }
+
+            return $deleted;
+        };
+
+        // -- مرحله ۳: SAFETY NET — داخل تراکنش و قبل از شروع حذف زنجیره‌ای،
+        //   FOREIGN_KEY_CHECKS را به صورت سطح-جلسه (session-scoped) موقتاً غیرفعال می‌کنیم.
+        //   چون داخل تراکنش هستیم: در صورت هر استثنا rollback انجام و session تمیز می‌شود.
+        //   بعد از اتمام حذف listings دوباره فعال می‌کنیم.
+        DB::query("SET FOREIGN_KEY_CHECKS = 0");
+
+        try {
+            // ۴) شروع حذف زنجیره‌ای: ابتدا جداول وابسته مستقیم به listings را یکی‌یکی
+            //    با تابع بازگشتی پردازش می‌کنیم (که خودش تمام فرزندانشان را هم پاک می‌کند)
             foreach ($allDeps as $tbl => $cols) {
+                $filters = [];
                 foreach ($cols as $col) {
-                    $stmt = DB::query("SELECT COUNT(*) AS c FROM `$tbl` WHERE `$col` IN ($ph)", $listingIds);
-                    $c = (int)($stmt->fetch()['c'] ?? 0);
-                    if ($c === 0) continue;
-                    // اگر جدول خودش وابسته به FK های جدولِ‌فرزند باشه، بازگشتی فراخوانی کن
-                    // برای رفع وابستگی‌های cross، تعداد تلاش‌ها رو محدود کن
-                    for ($attempt = 1; $attempt <= 4; $attempt++) {
-                        try {
-                            $affected = DB::query("DELETE FROM `$tbl` WHERE `$col` IN ($ph)", $listingIds)->rowCount();
-                            if ($affected > 0) {
-                                $deleted["$tbl.$col"] = ($deleted["$tbl.$col"] ?? 0) + $affected;
-                            }
-                            break;
-                        } catch (Throwable $e) {
-                            // وابستگی هست، جدول‌های فرزند خود این جدول رو بپرس
-                            $childFks = DB::fetchAll("
-                                SELECT TABLE_NAME AS tbl, COLUMN_NAME AS col
-                                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                                WHERE TABLE_SCHEMA = DATABASE()
-                                  AND REFERENCED_TABLE_NAME = ?
-                                  AND REFERENCED_COLUMN_NAME = 'id'
-                            ", [$tbl]);
-                            if (count($childFks) === 0 || $attempt === 4) {
-                                if ($attempt === 4) throw $e;
-                                break;
-                            }
-                            // ردیف‌های وابسته در جداول فرزند این جدول رو پیدا و حذف کن
-                            foreach ($childFks as $cfk) {
-                                $pksTbl = DB::fetchAll("SELECT id FROM `$tbl` WHERE `$col` IN ($ph)", $listingIds);
-                                $pkIds = array_map(fn($r) => (int)$r['id'], $pksTbl);
-                                if (count($pkIds) === 0) continue;
-                                $ph2 = implode(',', array_fill(0, count($pkIds), '?'));
-                                for ($a2 = 1; $a2 <= 3; $a2++) {
-                                    try {
-                                        $aff2 = DB::query("DELETE FROM `{$cfk['tbl']}` WHERE `{$cfk['col']}` IN ($ph2)", $pkIds)->rowCount();
-                                        if ($aff2 > 0) $deleted["{$cfk['tbl']}.{$cfk['col']}"] = ($deleted["{$cfk['tbl']}.{$cfk['col']}"] ?? 0) + $aff2;
-                                        break;
-                                    } catch (Throwable $e2) {
-                                        if ($a2 === 3) throw $e2;
-                                        usleep(20000);
-                                    }
-                                }
-                            }
+                    $filters[$col] = $toDelete;  // تمام listingIds در ستون ارجاعی
+                }
+                // جمع‌آوری unique PK ها قبل از فراخوانی (برای لاگ دقیق‌تر)
+                $phWhere = [];
+                $params = [];
+                foreach ($cols as $col) {
+                    $phCol = implode(',', array_fill(0, count($toDelete), '?'));
+                    $phWhere[] = "`$col` IN ($phCol)";
+                    foreach ($toDelete as $lid) $params[] = $lid;
+                }
+                if (count($phWhere) === 0) continue;
+                $whereSQL = implode(' OR ', $phWhere);
+                $preCount = (int)(DB::fetch("SELECT COUNT(*) AS c FROM `$tbl` WHERE $whereSQL", $params)['c'] ?? 0);
+                if ($preCount === 0) continue;
+
+                $recursiveDelete($tbl, $filters);
+            }
+
+            // ۵) جدول‌های مستقیم listing که همیشه هستند و ممکن است در detection جا مانده باشند
+            foreach (['listing_images','listing_promotions','listing_views','listing_favorites','listing_reports','listing_bumps','saved_listings'] as $t) {
+                if (db_has_table($t) && db_has_column($t, 'listing_id')) {
+                    $exists = (int)(DB::fetch("SELECT COUNT(*) AS c FROM `$t` WHERE listing_id IN ($phDel)", $toDelete)['c'] ?? 0);
+                    if ($exists > 0) {
+                        $affected = DB::query("DELETE FROM `$t` WHERE listing_id IN ($phDel)", $toDelete)->rowCount();
+                        if ($affected > 0) {
+                            $totalDeleted["$t.listing_id"] = ($totalDeleted["$t.listing_id"] ?? 0) + $affected;
                         }
                     }
                 }
             }
-            // در آخر listing_images و listing_promotions هم (که FK با CASCADE هست ولی اطمینان)
-            foreach (['listing_images','listing_promotions','listing_views','listing_favorites','listing_reports','listing_bumps'] as $t) {
-                if (db_has_table($t) && db_has_column($t, 'listing_id')) {
-                    $exists = (int)(DB::fetch("SELECT COUNT(*) AS c FROM `$t` WHERE listing_id IN ($ph)", $listingIds)['c'] ?? 0);
-                    if ($exists > 0) {
-                        $deleted["$t.listing_id"] = ($deleted["$t.listing_id"] ?? 0)
-                            + DB::query("DELETE FROM `$t` WHERE listing_id IN ($ph)", $listingIds)->rowCount();
-                    }
-                }
-            }
-            return $deleted;
-        };
 
-        $depDeleted = $cascadeDelete($toDelete);
+            // ۶) در آخر خود listing ها را حذف کن (بعد از اینکه تمام وابستگی‌ها در هر عمق پاک شدند)
+            $deletedListings = DB::query(
+                "DELETE FROM listings WHERE id IN ($phDel)",
+                $toDelete
+            )->rowCount();
 
-        // حالا خود listing ها
-        $deletedListings = DB::query(
-            "DELETE FROM listings WHERE id IN ($phDel)",
-            $toDelete
-        )->rowCount();
+        } finally {
+            // ۷) در هر صورت (موفق یا خطا قبل از رسیدن به جای دیگر) FOREIGN_KEY_CHECKS را فعال کن
+            //    چون SET FOREIGN_KEY_CHECKS در سطح session است و اگر در حین حذف خطا رخ دهد و
+            //    همچنان session زنده بماند، دچار مشکل در بقیه عملیات نمی‌شویم.
+            DB::query("SET FOREIGN_KEY_CHECKS = 1");
+        }
+
+        $depDeleted = $totalDeleted;
 
         echo "  🗑️  حذف listing: $deletedListings مورد\n";
         foreach ($depDeleted as $key => $n) {
