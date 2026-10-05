@@ -52,16 +52,23 @@ foreach ($ads as $idx => $ad) {
         echo "  [" . ($idx + 1) . "] عکسی ثبت نشده — رد\n";
         continue;
     }
-    $saved = [];
+    // ✅ حل مشکل جابجایی ایندکس:
+    //    آرایه $saved را با همان تعداد عکس‌ها مقداردهی اولیه می‌کنیم
+    //    و هر عکس را دقیقاً در کلید $i (همان imgIdx اصلی JSON) ذخیره می‌کنیم.
+    //    اگر دانلود شکست خورد → کلید $i = "" (رشته خالی) تا جای آیه‌ای بعدی‌ها جابجا نشود.
+    $saved = array_fill(0, count($images), '');
     foreach ($images as $i => $img) {
         $url = trim($img, " \t\n\r\0\x0B`\"'");
-        if (!$url) continue;
+        if (!$url) {
+            $saved[$i] = '';
+            continue;
+        }
 
         $targetName = 'listing_' . $idx . '_' . $i . '.' . detectExt($url);
         $targetPath = $cacheDir . '/' . $targetName;
 
         if (file_exists($targetPath) && filesize($targetPath) > 1000) {
-            $saved[] = $targetName;
+            $saved[$i] = $targetName;
             $ok++;
             echo "  [" . ($idx + 1) . "][$i] کَش موجود: $targetName\n";
             continue;
@@ -70,15 +77,18 @@ foreach ($ads as $idx => $ad) {
         $data = fetchUrl($url);
         if ($data && strlen($data) > 1000) {
             file_put_contents($targetPath, $data);
-            $saved[] = $targetName;
+            $saved[$i] = $targetName;
             $ok++;
             echo "  [" . ($idx + 1) . "][$i] ✓ دانلود شد: $targetName (" . round(strlen($data) / 1024, 1) . "KB)\n";
         } else {
             $fail++;
+            $saved[$i] = '';   // ✅ کلید $i خالی بماند (نه حذف شود)
             echo "  [" . ($idx + 1) . "][$i] ✗ دانلود ناموفق: $url\n";
         }
     }
-    $manifest['ads'][$idx] = $saved;
+    // برای اطمینان: خالی‌ها را نگه می‌داریم (جای خودشان) و بعد آرایه را با ksort مرتب می‌کنیم
+    ksort($saved, SORT_NUMERIC);
+    $manifest['ads'][$idx] = array_values($saved);
 }
 echo "\n";
 
