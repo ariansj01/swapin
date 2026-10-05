@@ -202,43 +202,101 @@ try {
         //   Safety net: داخل تراکنش FOREIGN_KEY_CHECKS=0 هم می‌گذاریم تا هر FK ناشناخته‌ای مانع نشود.
         $totalDeleted = [];
 
-        // تابع کمکی: پیدا کردن ستون‌های PK جدول (مرتب‌شده بر اساس SEQ_IN_INDEX)
+        // تابع کمکی: پیدا کردن ستون‌های PK جدول
         //   خروجی: آرایه‌ای از نام ستون‌ها (مثل ['id'] یا ['user_id','listing_id']) یا آرایه خالی اگر PK نباشد
         $getPrimaryKeyCols = function (string $table): array {
-            $rows = DB::fetchAll("
-                SELECT COLUMN_NAME AS col
-                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                WHERE TABLE_SCHEMA = DATABASE()
-                  AND TABLE_NAME = ?
-                  AND CONSTRAINT_NAME = 'PRIMARY'
-                ORDER BY SEQ_IN_INDEX
-            ", [$table]);
-            return array_map(fn($r) => $r['col'], $rows);
+            static $colMapCache = [];
+            if (isset($colMapCache[$table])) return $colMapCache[$table];
+
+            $cols = [];
+
+            // تلاش اول: INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+            try {
+                $rows = DB::fetchAll("
+                    SELECT COLUMN_NAME AS col
+                    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = ?
+                      AND CONSTRAINT_NAME = 'PRIMARY'
+                ", [$table]);
+                if (is_array($rows)) {
+                    foreach ($rows as $r) {
+                        if (!empty($r['col'])) $cols[] = $r['col'];
+                    }
+                    $cols = array_values(array_unique($cols));
+                }
+            } catch (Throwable $e) {
+                $cols = [];
+            }
+
+            // تلاش دوم: INFORMATION_SCHEMA.STATISTICS
+            if (count($cols) === 0) {
+                try {
+                    $rows2 = DB::fetchAll("
+                        SELECT DISTINCT COLUMN_NAME AS col
+                        FROM INFORMATION_SCHEMA.STATISTICS
+                        WHERE TABLE_SCHEMA = DATABASE()
+                          AND TABLE_NAME = ?
+                          AND INDEX_NAME = 'PRIMARY'
+                    ", [$table]);
+                    if (is_array($rows2)) {
+                        foreach ($rows2 as $r) {
+                            if (!empty($r['col']) && !in_array($r['col'], $cols, true)) {
+                                $cols[] = $r['col'];
+                            }
+                        }
+                    }
+                } catch (Throwable $e2) {
+                    // نادیده بگیر، در آخر fallback انجام می‌شود
+                }
+            }
+
+            // Fallback نهایی: اگر هیچ INFORMATION_SCHEMA جواب نداد، حدس بزن ستون id تک PK است
+            // (سپس در تابع recursiveDelete با query واقعی وجودش را چک می‌کنیم)
+            if (count($cols) === 0) {
+                try {
+                    $chk = DB::fetch("SHOW COLUMNS FROM `$table` LIKE 'id'");
+                    if ($chk && isset($chk['Key']) && $chk['Key'] === 'PRI') {
+                        $cols = ['id'];
+                    }
+                } catch (Throwable $e3) { /* nada */ }
+            }
+
+            $colMapCache[$table] = $cols;
+            return $cols;
         };
 
         // تابع کمکی: پیدا کردن جداول فرزند مستقیم که FK به یکی از ستون‌های PK جدول فعلی دارند
         //   خروجی: [childTable => [childCol => referencedPkCol, ...], ...]
         $getReferencingChildren = function (string $parentTable, array $pkCols) use (&$getReferencingChildren): array {
             if (count($pkCols) === 0) return [];
-            $placeholders = implode(',', array_fill(0, count($pkCols), '?'));
-            $params = array_merge([$parentTable], $pkCols);
-            $rows = DB::fetchAll("
-                SELECT TABLE_NAME AS tbl,
-                       COLUMN_NAME AS col,
-                       REFERENCED_COLUMN_NAME AS refcol
-                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                WHERE TABLE_SCHEMA = DATABASE()
-                  AND REFERENCED_TABLE_NAME = ?
-                  AND REFERENCED_COLUMN_NAME IN ($placeholders)
-                  AND TABLE_NAME != ?
-            ", array_merge($params, [$parentTable]));
-            $result = [];
-            foreach ($rows as $r) {
-                $t = $r['tbl']; $c = $r['col'];
-                if (!isset($result[$t])) $result[$t] = [];
-                $result[$t][$c] = $r['refcol'];
+            try {
+                $placeholders = implode(',', array_fill(0, count($pkCols), '?'));
+                $params = array_merge([$parentTable], $pkCols);
+                $rows = DB::fetchAll("
+                    SELECT TABLE_NAME AS tbl,
+                           COLUMN_NAME AS col,
+                           REFERENCED_COLUMN_NAME AS refcol
+                    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND REFERENCED_TABLE_NAME = ?
+                      AND REFERENCED_COLUMN_NAME IN ($placeholders)
+                      AND TABLE_NAME != ?
+                ", array_merge($params, [$parentTable]));
+                $result = [];
+                if (is_array($rows)) {
+                    foreach ($rows as $r) {
+                        $t = $r['tbl'] ?? '';
+                        $c = $r['col'] ?? '';
+                        if ($t === '' || $c === '') continue;
+                        if (!isset($result[$t])) $result[$t] = [];
+                        $result[$t][$c] = $r['refcol'] ?? '';
+                    }
+                }
+                return $result;
+            } catch (Throwable $e) {
+                return [];  // هر مشکلی بود، ادعا کن فرزند نداره تا حذف ساده انجام شود
             }
-            return $result;
         };
 
         // تابع اصلی حذف بازگشتی (leaf-first):
@@ -271,47 +329,61 @@ try {
 
             $whereClause = implode(' OR ', $allWhereParts);
 
-            // ۲) پیدا کردن ستون‌های PK جدول هدف (داینامیک) — ممکن است تک‌ستونه (id) یا مرکب (user_id,listing_id) باشد
-            $pkCols = $getPrimaryKeyCols($targetTable);
-            $hasSingleIntPk = (count($pkCols) === 1 && $pkCols[0] !== '');
+            // ۲-۳-۴) تلاش برای حذف بازگشتی پیشرفته (PK + فرزندان).
+            //    کل این بلوک در try/catch — اگر هر مرحله‌ای خطا داد، در نهایت DELETE ساده fallback انجام می‌شود.
+            try {
+                $pkCols = $getPrimaryKeyCols($targetTable);
+                $hasSingleIntPk = (count($pkCols) === 1 && !empty($pkCols[0]));
 
-            // ۳) پیدا کردن جداول فرزند (کسانی که FK به PK این جدول دارند)
-            $directChildren = $hasSingleIntPk
-                ? $getReferencingChildren($targetTable, $pkCols)
-                : [];  // برای pivot با PK مرکب، معمولاً جدولی به PK آنها ارجاع نمی‌دهد (ساده‌تر: پردازش نمی‌کنیم)
+                $directChildren = $hasSingleIntPk
+                    ? $getReferencingChildren($targetTable, $pkCols)
+                    : [];
 
-            // ۴) اگر PK تک‌ستونه داریم و فرزندان مستقیم وجود دارند:
-            //    اول PK های ردیف‌های هدف را پیدا کن، بعد به صورت بازگشتی فرزندان را حذف کن
-            if ($hasSingleIntPk && count($directChildren) > 0) {
-                $pkCol = $pkCols[0];
-                $pkRows = DB::fetchAll("SELECT `$pkCol` AS pk FROM `$targetTable` WHERE $whereClause", $allParams);
-                $pkIds = array_values(array_unique(array_map(fn($r) => (int)$r['pk'], $pkRows)));
+                if ($hasSingleIntPk && count($directChildren) > 0) {
+                    $pkCol = $pkCols[0];
 
-                if (count($pkIds) > 0) {
-                    // قبل از حذف خود جدول، تمام فرزندان مستقیم را به صورت بازگشتی حذف کن
-                    foreach ($directChildren as $childTable => $childColMap) {
-                        $childFilters = [];
-                        foreach ($childColMap as $childCol => $refPkCol) {
-                            // تمام PK های جدول پدر که به عنوان FK در ستون childCol جدول فرزند ظاهر می‌شوند
-                            $childFilters[$childCol] = $pkIds;
+                    // قبل از هر کاری، وجود ستون PK را با query چک کن (مطمئن شویم تشخیص PK درست بوده)
+                    // اگر ستون واقعاً وجود داشت، ادامه بده؛ وگرنه خطا بده تا برود fallback
+                    $pkRows = DB::fetchAll("SELECT `$pkCol` AS pk FROM `$targetTable` WHERE $whereClause LIMIT 1", $allParams);
+                    if (!is_array($pkRows)) throw new Exception("PK query failed");
+
+                    // حالا همه‌ی ردیف‌ها را بگیر
+                    $pkRowsAll = DB::fetchAll("SELECT `$pkCol` AS pk FROM `$targetTable` WHERE $whereClause", $allParams);
+                    $pkIds = array_values(array_unique(array_map(
+                        fn($r) => (int)(($r['pk'] ?? 0)),
+                        is_array($pkRowsAll) ? $pkRowsAll : []
+                    )));
+
+                    if (count($pkIds) > 0) {
+                        // قبل از حذف خود جدول، تمام فرزندان مستقیم را به صورت بازگشتی حذف کن
+                        foreach ($directChildren as $childTable => $childColMap) {
+                            $childFilters = [];
+                            foreach ($childColMap as $childCol => $refPkCol) {
+                                if ($childCol === '') continue;
+                                $childFilters[$childCol] = $pkIds;
+                            }
+                            if (count($childFilters) > 0) {
+                                $childDeleted = $recursiveDelete($childTable, $childFilters);
+                                foreach ($childDeleted as $k => $n) {
+                                    $totalDeleted[$k] = ($totalDeleted[$k] ?? 0) + $n;
+                                    $deleted[$k] = ($deleted[$k] ?? 0) + $n;
+                                }
+                            }
                         }
-                        $childDeleted = $recursiveDelete($childTable, $childFilters);
-                        foreach ($childDeleted as $k => $n) {
-                            $totalDeleted[$k] = ($totalDeleted[$k] ?? 0) + $n;
-                            $deleted[$k] = ($deleted[$k] ?? 0) + $n;
-                        }
-                    }
 
-                    // حالا که فرزندان پاک شدند، خود ردیف‌ها را بر اساس PK حذف کن
-                    $phDel2 = implode(',', array_fill(0, count($pkIds), '?'));
-                    $aff = DB::query("DELETE FROM `$targetTable` WHERE `$pkCol` IN ($phDel2)", $pkIds)->rowCount();
-                    if ($aff > 0) {
-                        $k = "$targetTable.$pkCol";
-                        $deleted[$k] = ($deleted[$k] ?? 0) + $aff;
-                        $totalDeleted[$k] = ($totalDeleted[$k] ?? 0) + $aff;
+                        // حالا که فرزندان پاک شدند، خود ردیف‌ها را بر اساس PK حذف کن
+                        $phDel2 = implode(',', array_fill(0, count($pkIds), '?'));
+                        $aff = DB::query("DELETE FROM `$targetTable` WHERE `$pkCol` IN ($phDel2)", $pkIds)->rowCount();
+                        if ($aff > 0) {
+                            $k = "$targetTable.$pkCol";
+                            $deleted[$k] = ($deleted[$k] ?? 0) + $aff;
+                            $totalDeleted[$k] = ($totalDeleted[$k] ?? 0) + $aff;
+                        }
+                        return $deleted;
                     }
-                    return $deleted;
                 }
+            } catch (Throwable $e) {
+                // هرگونه خطا در تشخیص PK، پیدا کردن فرزند، یا حذف بازگشتی → بی‌خیال شو، fallback ساده را ادامه بده
             }
 
             // ۵) حالت‌های دیگر:
