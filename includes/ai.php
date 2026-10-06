@@ -890,7 +890,9 @@ function ai_price_listing(array $listing, array $similarItems = []): ?array {
         $min = (int) round($max * 0.88 / 100_000) * 100_000;
     }
 
-    $value      = (int) round(($min + $max) / 2 / 100_000) * 100_000;
+    $inflationMul = 1.07;
+    $weightedRaw  = (0.40 * $min + 0.60 * $max) * $inflationMul;
+    $value        = (int) round($weightedRaw / 100_000) * 100_000;
     $uncertain  = $confidence < 0.6;
     $confidencePct = (int) round(max(0, min(1, $confidence)) * 100);
 
@@ -924,8 +926,8 @@ function ai_price_listing_fallback(array $listing): array {
     $condition   = $listing['condition'] ?? 'good';
     $categoryId  = (int) ($listing['category_id'] ?? 0);
 
-    $condMul = ['new' => 1.0, 'like_new' => 0.88, 'good' => 0.72, 'fair' => 0.58, 'poor' => 0.42];
-    $mul       = $condMul[$condition] ?? 0.72;
+    $condMul = ['new' => 1.07, 'like_new' => 0.95, 'good' => 0.82, 'fair' => 0.67, 'poor' => 0.52];
+    $mul       = $condMul[$condition] ?? 0.82;
     $seed      = abs(crc32($title . $description . $condition));
     $seedBase  = 3_500_000 + ($seed % 42_000_000);
 

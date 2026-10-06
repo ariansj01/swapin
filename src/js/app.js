@@ -220,7 +220,8 @@ function swaapinNormalisePricingFromAi(parsed) {
   max = Math.min(500000000000, max);
   if (min > max) min = Math.round(max * 0.88 / 100000) * 100000;
 
-  const value = Math.round((min + max) / 2 / 100000) * 100000;
+  const inflationMul = 1.07;
+  const value = Math.round(((0.40 * min) + (0.60 * max)) * inflationMul / 100000) * 100000;
   let conf = parsed.confidence ?? parsed.certainty ?? 0.55;
   if (typeof conf === 'string') conf = swaapinNormaliseNumber(conf) / 100;
   if (conf > 1) conf = conf / 100;

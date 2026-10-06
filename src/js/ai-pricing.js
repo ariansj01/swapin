@@ -101,8 +101,8 @@
   }
 
   function buildValuationFallback(title, desc, cond) {
-    const condMul = { new: 1.0, like_new: 0.88, good: 0.72, fair: 0.58, poor: 0.42 };
-    const mul = condMul[cond] ?? 0.72;
+    const condMul = { new: 1.07, like_new: 0.95, good: 0.82, fair: 0.67, poor: 0.52 };
+    const mul = condMul[cond] ?? 0.82;
     let hash = 0;
     const src = title + '|' + desc + '|' + cond;
     for (let i = 0; i < src.length; i++) {
@@ -162,7 +162,8 @@
     max = Math.min(500000000000, max);
     if (min > max) min = Math.round(max * 0.88 / 100000) * 100000;
 
-    const value = Math.round((min + max) / 2 / 100000) * 100000;
+    const inflationMul = 1.07;
+    const value = Math.round(((0.40 * min) + (0.60 * max)) * inflationMul / 100000) * 100000;
     let conf = parsed.confidence ?? parsed.certainty ?? 0.55;
     if (typeof conf === 'string') conf = normaliseNumber(conf) / 100;
     if (conf > 1) conf = conf / 100;
