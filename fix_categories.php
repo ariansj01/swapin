@@ -103,9 +103,9 @@ $rules = [
 
 // گرفتن همه آگهی‌ها
 $ads = $pdo->query("SELECT id, title, description, category_id FROM listings ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
-$cats = $pdo->query("SELECT id, name, parent_id FROM categories")->fetchAll(PDO::FETCH_KEY_PAIR | PDO::FETCH_UNIQUE);
+$cats = $pdo->query("SELECT id, name, parent_id FROM categories")->fetchAll(PDO::FETCH_ASSOC);
 $catNames = [];
-foreach ($cats as $cid => $r) $catNames[$cid] = $r['name'];
+foreach ($cats as $r) $catNames[(int)$r['id']] = $r['name'];
 
 echo "🔍 بررسی " . count($ads) . " آگهی...\n\n";
 
