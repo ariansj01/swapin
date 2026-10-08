@@ -361,15 +361,13 @@ render_navbar($user);
             <?= render_city_options($city) ?>
           </select>
 
-          <div class="mb-4" style="margin-top: 15px;">
-            <div class="filter-chip-group">
-              <span class="filter-chip-group__label"><i class="bi bi-arrow-left-right"></i> نوع معامله:</span>
-              <button type="button" class="filter-chip <?= $wantType === '' ? 'is-active' : '' ?>" data-filter="want" data-value="">همه</button>
-              <button type="button" class="filter-chip <?= $wantType === 'item' ? 'is-active' : '' ?>" data-filter="want" data-value="item">کالا با کالا</button>
-              <button type="button" class="filter-chip <?= $wantType === 'service' ? 'is-active' : '' ?>" data-filter="want" data-value="service">خدمات</button>
-              <button type="button" class="filter-chip <?= $wantType === 'credit' ? 'is-active' : '' ?>" data-filter="want" data-value="credit">اعتبار</button>
-            </div>
-          </div>
+          <label class="fs-xs" for="want">نوع معامله</label>
+          <select id="want" name="want" class="form-control">
+            <option value="">همه</option>
+            <option value="item"    <?= $wantType === 'item' ? 'selected' : '' ?>>کالا با کالا</option>
+            <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
+            <option value="credit"  <?= $wantType === 'credit' ? 'selected' : '' ?>>اعتبار</option>
+          </select>
 
           <div class="mb-4" style="margin-top: 10px;">
             <div class="filter-chip-group">

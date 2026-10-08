@@ -291,8 +291,9 @@ render_navbar($user);
 
   <div class="container">
  
-    <!-- Filter bar -->
-    <form class="filter-bar home-filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false" style="margin-top: 25px;">
+    <!-- Filter bar — همه فیلترها در یک خط (flex) -->
+    <form class="filter-bar home-filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false"
+          style="margin-top: 25px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
       <div class="home-filter-search">
         <label for="search-input" class="visually-hidden">جستجوی آگهی‌ها</label>
         <i class="bi bi-search home-filter-search__icon" aria-hidden="true"></i>
@@ -302,42 +303,37 @@ render_navbar($user);
       </div>
 
       <label for="city-filter" class="visually-hidden">شهر</label>
-      <select class="form-control home-filter-control" id="city-filter" name="city">
+      <select class="form-control home-filter-control" id="city-filter" name="city" style="flex: 1 1 160px; min-width: 140px;">
         <option value="">همه شهرها</option>
         <?= render_city_options($city) ?>
       </select>
 
+      <label for="want-filter" class="visually-hidden">نوع معامله</label>
+      <select class="form-control home-filter-control" id="want-filter" name="want" style="flex: 1 1 180px; min-width: 160px;">
+        <option value=""    <?= $wantType === '' ? 'selected' : '' ?>>همه انواع معامله</option>
+        <option value="item"    <?= $wantType === 'item' ? 'selected' : '' ?>>کالا با کالا</option>
+        <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
+        <option value="credit"  <?= $wantType === 'credit' ? 'selected' : '' ?>>اعتبار</option>
+      </select>
+
       <label for="sort-filter" class="visually-hidden">مرتب‌سازی</label>
-      <select class="form-control home-filter-control" id="sort-filter" name="sort">
+      <select class="form-control home-filter-control" id="sort-filter" name="sort" style="flex: 1 1 160px; min-width: 140px;">
         <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
         <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
         <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
       </select>
-    </form>
 
-    <!-- نوع معامله - دکمه‌ای کنار هم -->
-    <div class="mb-4" style="margin-top: 15px;">
-      <div class="filter-chip-group">
-        <span class="filter-chip-group__label"><i class="bi bi-arrow-left-right"></i> نوع معامله:</span>
-        <button type="button" class="filter-chip <?= $wantType === '' ? 'is-active' : '' ?>" data-filter="want" data-value="">همه</button>
-        <button type="button" class="filter-chip <?= $wantType === 'item' ? 'is-active' : '' ?>" data-filter="want" data-value="item">کالا با کالا</button>
-        <button type="button" class="filter-chip <?= $wantType === 'service' ? 'is-active' : '' ?>" data-filter="want" data-value="service">خدمات</button>
-        <button type="button" class="filter-chip <?= $wantType === 'credit' ? 'is-active' : '' ?>" data-filter="want" data-value="credit">اعتبار</button>
-      </div>
-    </div>
-
-    <!-- زمان انتشار آگهی - دکمه‌ای کنار هم -->
-    <div class="mb-4" style="margin-top: 10px;">
-      <div class="filter-chip-group">
-        <span class="filter-chip-group__label"><i class="bi bi-clock"></i> زمان انتشار آگهی:</span>
+      <!-- زمان انتشار آگهی - دکمه‌ای کنار هم (در همان خط با بقیه) -->
+      <div class="filter-chip-group" style="margin-inline-start: auto; flex: 1 1 auto; justify-content: flex-start;">
+        <span class="filter-chip-group__label"><i class="bi bi-clock"></i> زمان:</span>
         <button type="button" class="filter-chip <?= $timeAgo === '' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="">همه</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '3h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3h">۳ ساعت</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '12h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="12h">۱۲ ساعت</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '1d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1d">۱ روز</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '3d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3d">۳ روز</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '1w' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1w">یک هفته</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '3h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3h">۳ساعته</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '12h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="12h">۱۲ساعته</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '1d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1d">۱روزه</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '3d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3d">۳روزه</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '1w' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1w">۱هفته</button>
       </div>
-    </div>
+    </form>
 
     <?php if ($category): ?>
     <header class="home-results-header d-flex align-center gap-3 mb-5">
