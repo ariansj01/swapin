@@ -2160,3 +2160,65 @@ document.addEventListener('click', (e) => {
     if (btn) btn.setAttribute('aria-expanded', 'false');
   }
 });
+
+/* ── Filter Chips & Filter Bar Redirect ────────────────────────────── */
+(function () {
+  function applyFilterAndRedirect(name, value, baseHref) {
+    const url = new URL(window.location.href);
+    if (value === '' || value == null) {
+      url.searchParams.delete(name);
+    } else {
+      url.searchParams.set(name, value);
+    }
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+  }
+
+  document.addEventListener('click', function (e) {
+    const chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    const name = chip.getAttribute('data-filter');
+    const value = chip.getAttribute('data-value') ?? '';
+    if (!name) return;
+    applyFilterAndRedirect(name, value);
+  });
+
+  function bindAutoSubmitFilterForm() {
+    const forms = document.querySelectorAll('form.filter-bar, .home-filter-bar');
+    forms.forEach((form) => {
+      if (form.dataset.autobound === '1') return;
+      form.dataset.autobound = '1';
+
+      const selects = form.querySelectorAll('select');
+      selects.forEach((sel) => {
+        sel.addEventListener('change', () => {
+          const name = sel.name;
+          const value = sel.value;
+          if (!name) return;
+          applyFilterAndRedirect(name, value);
+        });
+      });
+
+      const searchInputs = form.querySelectorAll('input[type="search"], input[name="q"]');
+      searchInputs.forEach((inp) => {
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            applyFilterAndRedirect('q', inp.value);
+          }
+        });
+        if (inp.type === 'search') {
+          inp.addEventListener('search', () => {
+            applyFilterAndRedirect('q', inp.value);
+          });
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindAutoSubmitFilterForm);
+  } else {
+    bindAutoSubmitFilterForm();
+  }
+})();

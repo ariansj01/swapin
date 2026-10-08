@@ -15,12 +15,13 @@ if (function_exists('swapin_debug_log')) {
 $user = auth_user();
 
 // ─── Filters ─────────────────────────────────────────────────────────────────
-$search   = clean($_GET['q']     ?? '');
-$catSlug  = clean($_GET['cat']   ?? '');
-$city     = clean($_GET['city']  ?? '');
-$wantType = clean($_GET['want']  ?? '');
-$sort     = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
-$page     = max(1, (int)($_GET['page'] ?? 1));
+$search    = clean($_GET['q']         ?? '');
+$catSlug   = clean($_GET['cat']       ?? '');
+$city      = clean($_GET['city']      ?? '');
+$wantType  = clean($_GET['want']      ?? '');
+$sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
+$page      = max(1, (int)($_GET['page'] ?? 1));
+$timeAgo   = in_array($_GET['time_ago'] ?? '', ['3h','12h','1d','3d','1w']) ? $_GET['time_ago'] : '';
 
 // resolve category
 $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [$catSlug]) : null;
@@ -52,6 +53,17 @@ if ($city) {
 if ($wantType) {
     $whereClauses[] = 'l.want_type = ?';
     $params[] = $wantType;
+}
+if ($timeAgo) {
+    $intervalMap = [
+        '3h'  => '3 HOUR',
+        '12h' => '12 HOUR',
+        '1d'  => '1 DAY',
+        '3d'  => '3 DAY',
+        '1w'  => '7 DAY',
+    ];
+    $interval = $intervalMap[$timeAgo] ?? '3 HOUR';
+    $whereClauses[] = "l.created_at >= DATE_SUB(NOW(), INTERVAL {$interval})";
 }
 
 $where   = 'WHERE ' . implode(' AND ', $whereClauses);
@@ -295,13 +307,6 @@ render_navbar($user);
         <?= render_city_options($city) ?>
       </select>
 
-      <label for="want-filter" class="visually-hidden">نوع مبادله</label>
-      <select class="form-control home-filter-control" id="want-filter" name="want">
-        <option value="item"    <?= $wantType === 'item'    ? 'selected' : '' ?>>کالا با کالا</option>
-        <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
-        <option value="credit"  <?= $wantType === 'credit'  ? 'selected' : '' ?>>اعتبار</option>
-      </select>
-
       <label for="sort-filter" class="visually-hidden">مرتب‌سازی</label>
       <select class="form-control home-filter-control" id="sort-filter" name="sort">
         <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
@@ -309,6 +314,30 @@ render_navbar($user);
         <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
       </select>
     </form>
+
+    <!-- نوع معامله - دکمه‌ای کنار هم -->
+    <div class="mb-4" style="margin-top: 15px;">
+      <div class="filter-chip-group">
+        <span class="filter-chip-group__label"><i class="bi bi-arrow-left-right"></i> نوع معامله:</span>
+        <button type="button" class="filter-chip <?= $wantType === '' ? 'is-active' : '' ?>" data-filter="want" data-value="">همه</button>
+        <button type="button" class="filter-chip <?= $wantType === 'item' ? 'is-active' : '' ?>" data-filter="want" data-value="item">کالا با کالا</button>
+        <button type="button" class="filter-chip <?= $wantType === 'service' ? 'is-active' : '' ?>" data-filter="want" data-value="service">خدمات</button>
+        <button type="button" class="filter-chip <?= $wantType === 'credit' ? 'is-active' : '' ?>" data-filter="want" data-value="credit">اعتبار</button>
+      </div>
+    </div>
+
+    <!-- زمان انتشار آگهی - دکمه‌ای کنار هم -->
+    <div class="mb-4" style="margin-top: 10px;">
+      <div class="filter-chip-group">
+        <span class="filter-chip-group__label"><i class="bi bi-clock"></i> زمان انتشار آگهی:</span>
+        <button type="button" class="filter-chip <?= $timeAgo === '' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="">همه</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '3h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3h">۳ ساعت</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '12h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="12h">۱۲ ساعت</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '1d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1d">۱ روز</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '3d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3d">۳ روز</button>
+        <button type="button" class="filter-chip <?= $timeAgo === '1w' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1w">یک هفته</button>
+      </div>
+    </div>
 
     <?php if ($category): ?>
     <header class="home-results-header d-flex align-center gap-3 mb-5">

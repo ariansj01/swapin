@@ -31,6 +31,7 @@ $pmin      = (int)($_GET['price_min']  ?? 0);
 $pmax      = (int)($_GET['price_max']  ?? 0);
 $sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
 $page      = max(1, (int)($_GET['page'] ?? 1));
+$timeAgo   = in_array($_GET['time_ago'] ?? '', ['3h','12h','1d','3d','1w']) ? $_GET['time_ago'] : '';
 
 if ($locMode === 'nearby' && $nearbyCitiesList === []) {
     $locMode = '';
@@ -85,6 +86,17 @@ if ($pmin > 0) {
 if ($pmax > 0 && $pmax >= $pmin) {
     $whereClauses[] = 'l.estimated_value <= ?';
     $params[] = $pmax;
+}
+if ($timeAgo) {
+    $intervalMap = [
+        '3h'  => '3 HOUR',
+        '12h' => '12 HOUR',
+        '1d'  => '1 DAY',
+        '3d'  => '3 DAY',
+        '1w'  => '7 DAY',
+    ];
+    $interval = $intervalMap[$timeAgo] ?? '3 HOUR';
+    $whereClauses[] = "l.created_at >= DATE_SUB(NOW(), INTERVAL {$interval})";
 }
 
 $where   = 'WHERE ' . implode(' AND ', $whereClauses);
@@ -176,7 +188,7 @@ if (mb_strlen($desc) > 160) {
 
 // Canonical: بدون فیلترهای اضافی و صفحه اول، به URL دسته‌بندی سلسله‌مراتبی اشاره می‌کند
 $canonical = APP_URL . '/listings/';
-$hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $page !== 1;
+$hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $page !== 1 || $timeAgo !== '';
 if ($category && !$hasOtherFilters) {
     $canonical = category_url($category['slug']);
 }
@@ -224,6 +236,7 @@ render_navbar($user);
             <input type="hidden" name="price_min" value="<?= $pmin > 0 ? (int)$pmin : '' ?>">
             <input type="hidden" name="price_max" value="<?= $pmax > 0 ? (int)$pmax : '' ?>">
             <input type="hidden" name="sort" value="<?= h($sort) ?>">
+            <input type="hidden" name="time_ago" value="<?= h($timeAgo) ?>">
             <div class="flex-1 position-relative">
               <input type="search" id="q" name="q" class="form-control" value="<?= h($search) ?>" placeholder="جستجوی کالا..." dir="rtl">
             </div>
@@ -251,9 +264,9 @@ render_navbar($user);
                 $up = $pid;
             }
         }
-        $buildFilterLink = function (string $slug) use ($catSlug, $search, $city, $locMode, $nearbyCitiesRaw, $wantType, $condition, $pmin, $pmax, $sort): string {
+        $buildFilterLink = function (string $slug) use ($catSlug, $search, $city, $locMode, $nearbyCitiesRaw, $wantType, $condition, $pmin, $pmax, $sort, $timeAgo): string {
             $baseCatUrl = category_url($slug);
-            $hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new';
+            $hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $timeAgo !== '';
             if ($hasOtherFilters) {
                 $qs = http_build_query(array_filter([
                     'cat' => $slug,
@@ -266,6 +279,7 @@ render_navbar($user);
                     'price_min' => $pmin > 0 ? $pmin : null,
                     'price_max' => $pmax > 0 ? $pmax : null,
                     'sort' => $sort !== 'new' ? $sort : null,
+                    'time_ago' => $timeAgo !== '' ? $timeAgo : null,
                 ]));
                 return APP_URL . '/listings/all.php?' . $qs;
             }
@@ -326,6 +340,7 @@ render_navbar($user);
           <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
           <?php if ($search): ?><input type="hidden" name="q" value="<?= h($search) ?>"><?php endif; ?>
           <input type="hidden" name="nearby_cities" id="nearby-cities" value="<?= h($nearbyCitiesRaw) ?>">
+          <input type="hidden" name="time_ago" value="<?= h($timeAgo) ?>">
 
           <label class="fs-xs" for="loc-mode">مکان</label>
           <select id="loc-mode" name="loc" class="form-control">
@@ -346,13 +361,27 @@ render_navbar($user);
             <?= render_city_options($city) ?>
           </select>
 
-          <label class="fs-xs" for="want">نوع معامله</label>
-          <select id="want" name="want" class="form-control">
-            <option value="">همه</option>
-            <option value="item"    <?= $wantType === 'item' ? 'selected' : '' ?>>کالا</option>
-            <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
-            <option value="credit"  <?= $wantType === 'credit' ? 'selected' : '' ?>>اعتبار</option>
-          </select>
+          <div class="mb-4" style="margin-top: 15px;">
+            <div class="filter-chip-group">
+              <span class="filter-chip-group__label"><i class="bi bi-arrow-left-right"></i> نوع معامله:</span>
+              <button type="button" class="filter-chip <?= $wantType === '' ? 'is-active' : '' ?>" data-filter="want" data-value="">همه</button>
+              <button type="button" class="filter-chip <?= $wantType === 'item' ? 'is-active' : '' ?>" data-filter="want" data-value="item">کالا با کالا</button>
+              <button type="button" class="filter-chip <?= $wantType === 'service' ? 'is-active' : '' ?>" data-filter="want" data-value="service">خدمات</button>
+              <button type="button" class="filter-chip <?= $wantType === 'credit' ? 'is-active' : '' ?>" data-filter="want" data-value="credit">اعتبار</button>
+            </div>
+          </div>
+
+          <div class="mb-4" style="margin-top: 10px;">
+            <div class="filter-chip-group">
+              <span class="filter-chip-group__label"><i class="bi bi-clock"></i> زمان انتشار:</span>
+              <button type="button" class="filter-chip <?= $timeAgo === '' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="">همه</button>
+              <button type="button" class="filter-chip <?= $timeAgo === '3h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3h">۳ ساعت</button>
+              <button type="button" class="filter-chip <?= $timeAgo === '12h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="12h">۱۲ ساعت</button>
+              <button type="button" class="filter-chip <?= $timeAgo === '1d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1d">۱ روز</button>
+              <button type="button" class="filter-chip <?= $timeAgo === '3d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3d">۳ روز</button>
+              <button type="button" class="filter-chip <?= $timeAgo === '1w' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1w">یک هفته</button>
+            </div>
+          </div>
 
           <label class="fs-xs" for="condition">وضعیت کالا</label>
           <select id="condition" name="condition" class="form-control">
