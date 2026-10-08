@@ -23,7 +23,7 @@ android {
         localProperties.load(FileInputStream(localFile))
     }
 
-    val flutterVersionCode = (localProperties.getProperty("flutter.versionCode") ?: "3").toInt()
+    val flutterVersionCode = (localProperties.getProperty("flutter.versionCode") ?: "5").toInt()
     val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0.2"
 
     defaultConfig {
