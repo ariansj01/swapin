@@ -237,6 +237,49 @@ render_navbar($user);
 
   <div class="container">
 
+      <!-- 4 Steps Cards — چطور معامله کنیم (عرض کامل) -->
+    <section class="home-steps home-steps--compact mb-8" id="home-steps" aria-label="چطور معامله کنیم">
+      <div class="steps-grid steps-grid--compact">
+        <?php
+        $steps = [
+          ['۱', 'ثبت آگهی', 'عکس بگیرید و ثبت کنید.', 'bi-camera'],
+          ['۲', 'دریافت پیشنهاد', 'پیشنهادهای معامله بگیرید.', 'bi-send'],
+          ['۳', 'توافق با طرف مقابل', 'درباره شرایط توافق کنید.', 'bi-heart'],
+          ['۴', 'انجام معامله', 'در مکان امن معامله کنید.', 'bi-shield-check'],
+        ];
+        foreach ($steps as $index => [$stepNo, $title, $desc, $icon]):
+        ?>
+        <article class="step-card step-card--compact" style="--step-delay: <?= $index ?>;">
+          <span class="step-card__number step-card__number--compact"><?= $stepNo ?></span>
+          <div class="step-card__content step-card__content--compact">
+            <div class="step-card__icon-wrap">
+              <div class="step-card__icon step-card__icon--compact">
+                <i class="bi <?= $icon ?>"></i>
+              </div>
+            </div>
+            <div class="step-card__text step-card__text--compact">
+              <h3><?= $title ?></h3>
+              <p><?= $desc ?></p>
+            </div>
+          </div>
+        </article>
+        <?php endforeach; ?>
+      </div>
+    </section>
+
+    <?php if ($category): ?>
+    <header class="home-results-header d-flex align-center gap-3 mb-5">
+      <h2 class="home-results-header__title"><?= h(category_label($category['slug'], $category['name'])) ?></h2>
+      <span class="badge badge-primary"><?= $total ?> آگهی</span>
+      <a href="<?= APP_URL ?>/" class="home-results-header__clear"><i class="bi bi-x"></i> پاک کردن</a>
+    </header>
+    <?php elseif ($search): ?>
+    <header class="home-results-header d-flex align-center gap-3 mb-5">
+      <h2 class="home-results-header__title">نتایج برای «<?= h($search) ?>»</h2>
+      <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
+    </header>
+    <?php endif; ?>
+
     <!-- ===== Listings & Stores ===== -->
     <div class="home-main-layout" id="home-sliders-area">
 
@@ -448,49 +491,6 @@ render_navbar($user);
 
       <!-- ===== Main Content (Only Sliders: Listings + Stores) ===== -->
       <div class="home-main-content">
-
-        <?php if ($category): ?>
-        <header class="home-results-header d-flex align-center gap-3 mb-5">
-          <h2 class="home-results-header__title"><?= h(category_label($category['slug'], $category['name'])) ?></h2>
-          <span class="badge badge-primary"><?= $total ?> آگهی</span>
-          <a href="<?= APP_URL ?>/" class="home-results-header__clear"><i class="bi bi-x"></i> پاک کردن</a>
-        </header>
-        <?php elseif ($search): ?>
-        <header class="home-results-header d-flex align-center gap-3 mb-5">
-          <h2 class="home-results-header__title">نتایج برای «<?= h($search) ?>»</h2>
-          <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
-        </header>
-        <?php endif; ?>
-
-        <!-- 4 Steps Cards — چطور معامله کنیم -->
-        <section class="home-steps home-steps--compact mb-8" id="home-steps" aria-label="چطور معامله کنیم">
-          <div class="steps-grid steps-grid--compact">
-            <?php
-            $steps = [
-              ['۱', 'ثبت آگهی', 'عکس بگیرید و ثبت کنید.', 'bi-camera'],
-              ['۲', 'دریافت پیشنهاد', 'پیشنهادهای معامله بگیرید.', 'bi-send'],
-              ['۳', 'توافق با طرف مقابل', 'درباره شرایط توافق کنید.', 'bi-heart'],
-              ['۴', 'انجام معامله', 'در مکان امن معامله کنید.', 'bi-shield-check'],
-            ];
-            foreach ($steps as $index => [$stepNo, $title, $desc, $icon]):
-            ?>
-            <article class="step-card step-card--compact" style="--step-delay: <?= $index ?>;">
-              <span class="step-card__number step-card__number--compact"><?= $stepNo ?></span>
-              <div class="step-card__content step-card__content--compact">
-                <div class="step-card__icon-wrap">
-                  <div class="step-card__icon step-card__icon--compact">
-                    <i class="bi <?= $icon ?>"></i>
-                  </div>
-                </div>
-                <div class="step-card__text step-card__text--compact">
-                  <h3><?= $title ?></h3>
-                  <p><?= $desc ?></p>
-                </div>
-              </div>
-            </article>
-            <?php endforeach; ?>
-          </div>
-        </section>
 
         <!-- Premium Listings Section (Active promotion plans) -->
         <?php if (!empty($premiumListings)): ?>
