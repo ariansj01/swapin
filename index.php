@@ -244,271 +244,408 @@ render_navbar($user);
   </section>
 
   <div class="container">
- 
-    <!-- Filter bar — همه فیلترها در یک خط (flex) -->
-    <form class="filter-bar home-filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false"
-          style="margin-top: 25px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
-      <div class="home-filter-search">
-        <label for="search-input" class="visually-hidden">جستجوی آگهی‌ها</label>
-        <i class="bi bi-search home-filter-search__icon" aria-hidden="true"></i>
-        <input type="search" class="form-control home-filter-control home-filter-control--search"
-               id="search-input" name="q" placeholder="جستجوی کالا"
-               value="<?= h($search) ?>">
-      </div>
 
-      <label for="city-filter" class="visually-hidden">شهر</label>
-      <select class="form-control home-filter-control" id="city-filter" name="city" style="flex: 1 1 160px; min-width: 140px;">
-        <option value="">همه شهرها</option>
-        <?= render_city_options($city) ?>
-      </select>
+    <div class="home-main-layout">
+      <!-- ===== Sidebar ===== -->
+      <aside class="home-sidebar card" aria-label="دسته‌بندی‌ها، فیلترها و منوها">
+        <div class="home-sidebar__inner">
 
-      <label for="want-filter" class="visually-hidden">نوع معامله</label>
-      <select class="form-control home-filter-control" id="want-filter" name="want" style="flex: 1 1 180px; min-width: 160px;">
-        <option value=""    <?= $wantType === '' ? 'selected' : '' ?>>همه انواع معامله</option>
-        <option value="item"    <?= $wantType === 'item' ? 'selected' : '' ?>>کالا با کالا</option>
-        <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
-        <option value="credit"  <?= $wantType === 'credit' ? 'selected' : '' ?>>اعتبار</option>
-      </select>
-
-      <label for="sort-filter" class="visually-hidden">مرتب‌سازی</label>
-      <select class="form-control home-filter-control" id="sort-filter" name="sort" style="flex: 1 1 160px; min-width: 140px;">
-        <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
-        <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
-        <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
-      </select>
-
-      <!-- زمان انتشار آگهی - دکمه‌ای کنار هم (در همان خط با بقیه) -->
-      <div class="filter-chip-group" style="margin-inline-start: auto; flex: 1 1 auto; justify-content: flex-start;">
-        <span class="filter-chip-group__label"><i class="bi bi-clock"></i> زمان:</span>
-        <button type="button" class="filter-chip <?= $timeAgo === '' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="">همه</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '3h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3h">۳ساعته</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '12h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="12h">۱۲ساعته</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '1d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1d">۱روزه</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '3d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3d">۳روزه</button>
-        <button type="button" class="filter-chip <?= $timeAgo === '1w' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1w">۱هفته</button>
-      </div>
-    </form>
-
-    <?php if ($category): ?>
-    <header class="home-results-header d-flex align-center gap-3 mb-5">
-      <h2 class="home-results-header__title"><?= h(category_label($category['slug'], $category['name'])) ?></h2>
-      <span class="badge badge-primary"><?= $total ?> آگهی</span>
-      <a href="<?= APP_URL ?>/" class="home-results-header__clear"><i class="bi bi-x"></i> پاک کردن</a>
-    </header>
-    <?php elseif ($search): ?>
-    <header class="home-results-header d-flex align-center gap-3 mb-5">
-      <h2 class="home-results-header__title">نتایج برای «<?= h($search) ?>»</h2>
-      <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
-    </header>
-    <?php endif; ?>
-
-    <!-- New Listings Section -->
-    <section class="home-steps home-steps--compact" id="home-steps">
-      <div class="container">
-        <div class="steps-grid steps-grid--compact" aria-label="مراحل معامله در سواَپین">
-          <?php
-          $steps = [
-            ['۱', 'ثبت آگهی', 'عکس بگیرید و ثبت کنید.', 'bi-camera'],
-            ['۲', 'دریافت پیشنهاد', 'پیشنهادهای معامله بگیرید.', 'bi-send'],
-            ['۳', 'توافق با طرف مقابل', 'درباره شرایط توافق کنید.', 'bi-heart'],
-            ['۴', 'انجام معامله', 'در مکان امن معامله کنید.', 'bi-shield-check'],
-          ];
-          foreach ($steps as $index => [$stepNo, $title, $desc, $icon]):
-          ?>
-          <article class="step-card step-card--compact" style="--step-delay: <?= $index ?>;">
-            <span class="step-card__number step-card__number--compact"><?= $stepNo ?></span>
-            <div class="step-card__content step-card__content--compact">
-              <div class="step-card__icon-wrap">
-                <div class="step-card__icon step-card__icon--compact">
-                  <i class="bi <?= $icon ?>"></i>
-                </div>
-              </div>
-              <div class="step-card__text step-card__text--compact">
-                <h3><?= $title ?></h3>
-                <p><?= $desc ?></p>
-              </div>
-            </div>
-          </article>
-          <?php endforeach; ?>
-        </div>
-      </div>
-    </section>
-
-    <!-- Premium Listings Section (Active promotion plans) -->
-    <?php if (!empty($premiumListings)): ?>
-    <section class="home-listings-section" aria-label="اگهی‌های ویژه">
-      <div class="home-section-heading home-section-heading--large mb-5">
-        <h2>اگهی‌های ویژه</h2>
-        <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
-          مشاهده همه آگهی‌ها
-        </a>
-      </div>
-      <div class="listings-rows-container">
-        <div class="listings-row-wrapper">
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-premium" aria-label="آگهی بعدی">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-          <div class="listings-scroll-row" id="listings-row-premium">
-            <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
-            <div class="listings-scroll-card">
-              <?php include __DIR__ . '/includes/listing_card.php'; ?>
-            </div>
-            <?php endforeach; ?>
+          <!-- Title + Count -->
+          <div class="home-sidebar__header">
+            <h3 class="home-sidebar__title">دسته‌بندی‌های محبوب</h3>
+            <span class="home-sidebar__count"><?= fmt_num($total) ?> دسته</span>
           </div>
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-premium" aria-label="آگهی قبلی">
-            <i class="bi bi-chevron-left"></i>
-          </button>
-        </div>
-      </div>
-    </section>
-    <?php endif; ?>
-    
-    <!-- New Listings Section -->
-    <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
-      <div class="home-section-heading home-section-heading--large mb-5">
-        <h2>جدیدترین آگهی‌ها</h2>
-        <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
-          مشاهده همه
-        </a>
-      </div>
-      <?php if (empty($listings)): ?>
-      <div class="empty-state">
-        <i class="bi bi-search"></i>
-        <h3>آگهی‌ای یافت نشد</h3>
-        <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
-        <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
-      </div>
-      <?php else: ?>
-      <?php
-      $showcaseListings = array_slice($listings, 0, 20);
-      ?>
-      <div class="listings-rows-container">
-        <!-- Single Row with 20 Listings (4 visible at a time) -->
-        <div class="listings-row-wrapper">
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-1" aria-label="آگهی بعدی">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-          <div class="listings-scroll-row" id="listings-row-1">
-            <?php foreach ($showcaseListings as $l): ?>
-            <div class="listings-scroll-card">
-              <?php include __DIR__ . '/includes/listing_card.php'; ?>
-            </div>
-            <?php endforeach; ?>
-          </div>
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
-            <i class="bi bi-chevron-left"></i>
-          </button>
-        </div>
-      </div>
-      <?php endif; ?>
-    </section>
 
-    <!-- Stores Section -->
-    <?php if (!empty($featuredStores)): ?>
-    <link rel="stylesheet" href="<?= APP_URL ?>/src/css/shops.css?v=<?= @filemtime(__DIR__ . '/src/css/shops.css') ?: time() ?>">
-    <style>
-      .home-stores-scroll {
-        display: flex;
-        gap: 1.25rem;
-        overflow-x: auto;
-        overflow-y: hidden;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-        padding: 4px 8px 16px 8px;
-        scrollbar-width: none;
-      }
-      .home-stores-scroll::-webkit-scrollbar { height: 8px; }
-      .home-stores-scroll::-webkit-scrollbar-track { background: transparent; }
-      .home-stores-scroll::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
-      .home-stores-scroll::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
-      .home-stores-card {
-        flex: 0 0 auto;
-        width: 320px;
-      }
-      @media (max-width: 768px) {
-        .home-stores-card { width: calc(100% - 48px); }
-      }
-    </style>
-    <section class="home-listings-section" aria-label="فروشگاه‌ها" style="margin-top:48px">
-      <div class="home-section-heading home-section-heading--large mb-5">
-        <h2>فروشگاه‌ها</h2>
-        <a href="<?= APP_URL ?>/shops" class="home-section-heading__link">
-          مشاهده همه
-        </a>
-      </div>
-      <div class="listings-rows-container">
-        <div class="listings-row-wrapper">
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="home-stores-row" aria-label="فروشگاه بعدی">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-          <div class="home-stores-scroll" id="home-stores-row">
-            <?php foreach ($featuredStores as $store):
-              $name = $store['store_name'] ?: $store['name'];
-              $slug = $store['store_slug'];
-              $storeCity = $hStoresCityCol ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
-              $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
-              $storeTypeValue = $hStoresTypeCol ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
-              $shopUrl = APP_URL . '/shop/' . ($storeTypeValue === 'both' ? 'both' : $storeTypeValue) . '/' . h($slug);
-              $storeTypeLabels = store_type_labels();
-              $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
-              $storeTypeBadgeClass = match($storeTypeValue) {
-                  'online'   => 'badge badge-info',
-                  'physical' => 'badge badge-warning',
-                  default    => 'badge badge-secondary',
-              };
-              $storeTypeIcon = match($storeTypeValue) {
-                  'online'   => 'bi-globe2',
-                  'physical' => 'bi-building-check',
-                  default    => 'bi-shop',
-              };
+          <!-- Categories List -->
+          <nav class="home-sidebar-cats" aria-label="دسته‌بندی‌ها">
+            <?php
+            // دسته‌بندی‌ها مطابق عکس با آیکون مشخص
+            $sidebarCats = [
+                ['slug' => 'real-estate',         'name' => 'املاک',              'icon' => 'bi-house',          'img'  => 'real-estate.png'],
+                ['slug' => 'vehicles',            'name' => 'وسایل نقلیه',        'icon' => 'bi-car-front',      'img'  => 'vehicles.png'],
+                ['slug' => 'electronics',         'name' => 'کالای دیجیتال',      'icon' => 'bi-phone',          'img'  => 'electronic-devices.png'],
+                ['slug' => 'home-garden',         'name' => 'خانه و آشپزخانه',    'icon' => 'bi-chef-hat',       'img'  => 'home-kitchen.png'],
+                ['slug' => 'services',            'name' => 'خدمات',              'icon' => 'bi-cursor',         'img'  => 'services.png'],
+                ['slug' => 'clothing',            'name' => 'پوشاک',              'icon' => 'bi-t-shirt',        'img'  => 'personal.png'],
+                ['slug' => 'sports',              'name' => 'ورزش و سرگرمی',     'icon' => 'bi-soccer',         'img'  => 'leisure-hobbies.png'],
+                ['slug' => 'jobs',                'name' => 'استخدام و کاریابی',  'icon' => 'bi-briefcase',      'img'  => 'jobs.png'],
+                ['slug' => 'jobs-2',              'name' => 'استخدام و کاریابی',  'icon' => 'bi-briefcase',      'img'  => 'jobs.png'],
+            ];
+            $catImgBase = APP_URL . '/src/img/category/';
             ?>
-            <div class="home-stores-card">
-              <article class="shop-card card">
-                <a href="<?= $shopUrl ?>" class="shop-card__banner-wrap">
-                  <img src="<?= h($bannerUrl) ?>" alt="<?= h($name) ?>" class="shop-card__banner" loading="lazy">
-                </a>
-                <div class="shop-card__body">
-                  <div class="shop-card__profile">
-                    <?= avatar_html(null, $name, 'md') ?>
-                    <div>
-                      <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
-                      <div class="shop-card__tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-                        <?php if ($storeTypeLabel !== ''): ?>
-                        <span class="<?= $storeTypeBadgeClass ?>"><i class="bi <?= $storeTypeIcon ?>"></i> <?= h($storeTypeLabel) ?></span>
-                        <?php endif; ?>
-                        <?php if ($storeCity): ?>
-                        <span class="shop-card__city" style="display:inline-flex;align-items:center;gap:4px"><i class="bi bi-geo-alt"></i> <?= h($storeCity) ?></span>
-                        <?php endif; ?>
-                      </div>
+            <?php foreach ($sidebarCats as $sc): ?>
+              <a href="<?= APP_URL ?>/listings?cat=<?= h($sc['slug']) ?>" class="home-sidebar-cats__item">
+                <span class="home-sidebar-cats__icon">
+                  <img src="<?= $catImgBase . $sc['img'] ?>" alt="<?= h($sc['name']) ?>" class="home-sidebar-cats__icon-img"
+                       onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+                  <i class="bi <?= $sc['icon'] ?> home-sidebar-cats__icon-fallback" style="display:none"></i>
+                </span>
+                <span class="home-sidebar-cats__label"><?= h($sc['name']) ?></span>
+              </a>
+            <?php endforeach; ?>
+          </nav>
+
+          <!-- Filters (Simple buttons) -->
+          <div class="home-sidebar-filters">
+            <a href="#" class="home-sidebar-filters__btn">
+              <i class="bi bi-geo-alt"></i>
+              <span>همه شهرها</span>
+            </a>
+            <a href="#" class="home-sidebar-filters__btn">
+              <i class="bi bi-arrow-left-right"></i>
+              <span>همه انواع معامله</span>
+            </a>
+            <a href="#" class="home-sidebar-filters__btn">
+              <i class="bi bi-sort-down-alt"></i>
+              <span>جدیدترین</span>
+            </a>
+            <a href="#" class="home-sidebar-filters__btn">
+              <i class="bi bi-search"></i>
+              <span>جستجوی کالا</span>
+            </a>
+          </div>
+
+          <!-- Time Chips -->
+          <div class="home-sidebar-time">
+            <div class="home-sidebar-time__header">
+              <i class="bi bi-question-circle"></i>
+              <h4>زمان انتشار آگهی:</h4>
+            </div>
+            <div class="home-sidebar-time__chips">
+              <span class="time-chip time-chip--active">همه</span>
+              <span class="time-chip time-chip--active">اروزه</span>
+              <span class="time-chip time-chip--active">۳ساعته</span>
+              <span class="time-chip">۱۲ساعته</span>
+              <span class="time-chip">اهفته</span>
+              <span class="time-chip">۳روزه</span>
+            </div>
+          </div>
+
+          <!-- Price Range -->
+          <div class="home-sidebar-price">
+            <h4 class="home-sidebar-price__title">محدوده قیمت</h4>
+            <div class="home-sidebar-price__row">
+              <div class="home-sidebar-price__field">
+                <label>از</label>
+                <input type="text" placeholder="">
+              </div>
+              <div class="home-sidebar-price__field">
+                <label>تا</label>
+                <input type="text" placeholder="">
+              </div>
+            </div>
+          </div>
+
+          <!-- Menus -->
+          <div class="home-sidebar-menu">
+            <a href="<?= APP_URL ?>/about.php">درباره ما</a>
+            <span class="home-sidebar-menu__dot"></span>
+            <a href="<?= APP_URL ?>/contact.php">تماس با ما</a>
+            <span class="home-sidebar-menu__dot"></span>
+            <a href="<?= APP_URL ?>/faq.php">سوالات متداول</a>
+          </div>
+          <div class="home-sidebar-menu">
+            <a href="#">نصب اپلیکیشن</a>
+            <span class="home-sidebar-menu__dot"></span>
+            <a href="#">بلاگ</a>
+            <span class="home-sidebar-menu__dot"></span>
+            <a href="<?= APP_URL ?>/ai/chat">جستجوی هوشمند</a>
+          </div>
+
+          <!-- Social Networks -->
+          <div class="home-sidebar-social">
+            <a href="#" class="social-btn" aria-label="LinkedIn">
+              <i class="bi bi-linkedin"></i>
+            </a>
+            <a href="#" class="social-btn" aria-label="WhatsApp">
+              <i class="bi bi-whatsapp"></i>
+            </a>
+            <a href="#" class="social-btn" aria-label="Telegram">
+              <i class="bi bi-telegram"></i>
+            </a>
+            <a href="#" class="social-btn" aria-label="Instagram">
+              <i class="bi bi-instagram"></i>
+            </a>
+          </div>
+
+          <!-- Enamad -->
+          <a href="#" class="home-sidebar-enamad">
+            <img src="<?= APP_URL ?>/src/img/enamad.png" alt="نماد اعتماد اینماد">
+          </a>
+
+        </div>
+      </aside>
+
+      <!-- ===== Main Content (Listings + Stores) ===== -->
+      <div class="home-main-content">
+
+        <!-- Filter bar — همه فیلترها در یک خط (flex) -->
+        <form class="filter-bar home-filter-bar mb-6" role="search" aria-label="جستجو و فیلتر آگهی‌ها" onsubmit="return false"
+              style="margin-top: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
+          <div class="home-filter-search">
+            <label for="search-input" class="visually-hidden">جستجوی آگهی‌ها</label>
+            <i class="bi bi-search home-filter-search__icon" aria-hidden="true"></i>
+            <input type="search" class="form-control home-filter-control home-filter-control--search"
+                   id="search-input" name="q" placeholder="جستجوی کالا"
+                   value="<?= h($search) ?>">
+          </div>
+
+          <label for="city-filter" class="visually-hidden">شهر</label>
+          <select class="form-control home-filter-control" id="city-filter" name="city" style="flex: 1 1 160px; min-width: 140px;">
+            <option value="">همه شهرها</option>
+            <?= render_city_options($city) ?>
+          </select>
+
+          <label for="want-filter" class="visually-hidden">نوع معامله</label>
+          <select class="form-control home-filter-control" id="want-filter" name="want" style="flex: 1 1 180px; min-width: 160px;">
+            <option value=""    <?= $wantType === '' ? 'selected' : '' ?>>همه انواع معامله</option>
+            <option value="item"    <?= $wantType === 'item' ? 'selected' : '' ?>>کالا با کالا</option>
+            <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
+            <option value="credit"  <?= $wantType === 'credit' ? 'selected' : '' ?>>اعتبار</option>
+          </select>
+
+          <label for="sort-filter" class="visually-hidden">مرتب‌سازی</label>
+          <select class="form-control home-filter-control" id="sort-filter" name="sort" style="flex: 1 1 160px; min-width: 140px;">
+            <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
+            <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
+            <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
+          </select>
+
+          <!-- زمان انتشار آگهی - دکمه‌ای کنار هم (در همان خط با بقیه) -->
+          <div class="filter-chip-group" style="margin-inline-start: auto; flex: 1 1 auto; justify-content: flex-start;">
+            <span class="filter-chip-group__label"><i class="bi bi-clock"></i> زمان:</span>
+            <button type="button" class="filter-chip <?= $timeAgo === '' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="">همه</button>
+            <button type="button" class="filter-chip <?= $timeAgo === '3h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3h">۳ساعته</button>
+            <button type="button" class="filter-chip <?= $timeAgo === '12h' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="12h">۱۲ساعته</button>
+            <button type="button" class="filter-chip <?= $timeAgo === '1d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1d">۱روزه</button>
+            <button type="button" class="filter-chip <?= $timeAgo === '3d' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="3d">۳روزه</button>
+            <button type="button" class="filter-chip <?= $timeAgo === '1w' ? 'is-active' : '' ?>" data-filter="time_ago" data-value="1w">۱هفته</button>
+          </div>
+        </form>
+
+        <?php if ($category): ?>
+        <header class="home-results-header d-flex align-center gap-3 mb-5">
+          <h2 class="home-results-header__title"><?= h(category_label($category['slug'], $category['name'])) ?></h2>
+          <span class="badge badge-primary"><?= $total ?> آگهی</span>
+          <a href="<?= APP_URL ?>/" class="home-results-header__clear"><i class="bi bi-x"></i> پاک کردن</a>
+        </header>
+        <?php elseif ($search): ?>
+        <header class="home-results-header d-flex align-center gap-3 mb-5">
+          <h2 class="home-results-header__title">نتایج برای «<?= h($search) ?>»</h2>
+          <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
+        </header>
+        <?php endif; ?>
+
+        <!-- New Listings Section -->
+        <section class="home-steps home-steps--compact" id="home-steps">
+          <div class="container">
+            <div class="steps-grid steps-grid--compact" aria-label="مراحل معامله در سواَپین">
+              <?php
+              $steps = [
+                ['۱', 'ثبت آگهی', 'عکس بگیرید و ثبت کنید.', 'bi-camera'],
+                ['۲', 'دریافت پیشنهاد', 'پیشنهادهای معامله بگیرید.', 'bi-send'],
+                ['۳', 'توافق با طرف مقابل', 'درباره شرایط توافق کنید.', 'bi-heart'],
+                ['۴', 'انجام معامله', 'در مکان امن معامله کنید.', 'bi-shield-check'],
+              ];
+              foreach ($steps as $index => [$stepNo, $title, $desc, $icon]):
+              ?>
+              <article class="step-card step-card--compact" style="--step-delay: <?= $index ?>;">
+                <span class="step-card__number step-card__number--compact"><?= $stepNo ?></span>
+                <div class="step-card__content step-card__content--compact">
+                  <div class="step-card__icon-wrap">
+                    <div class="step-card__icon step-card__icon--compact">
+                      <i class="bi <?= $icon ?>"></i>
                     </div>
                   </div>
-                  <p class="shop-card__desc"><?php
-                    $desc = trim((string)($store['store_description'] ?? ''));
-                    if ($desc !== '') {
-                        echo h(mb_strimwidth($desc, 0, 100, '…'));
-                    } else {
-                        echo '...';
-                    }
-                    ?></p>
-                  <div class="shop-card__meta">
-                    <span><i class="bi bi-box-seam"></i> <?= fmt_num((int)$store['listings_count']) ?> محصول</span>
-                    <?php if ((float)($store['rating'] ?? 0) > 0): ?>
-                    <span><i class="bi bi-star-fill"></i> <?= number_format((float)$store['rating'], 1) ?></span>
-                    <?php endif; ?>
+                  <div class="step-card__text step-card__text--compact">
+                    <h3><?= $title ?></h3>
+                    <p><?= $desc ?></p>
                   </div>
-                  <a href="<?= $shopUrl ?>" class="btn btn-primary btn-sm w-100">مشاهده فروشگاه</a>
                 </div>
               </article>
+              <?php endforeach; ?>
             </div>
-            <?php endforeach; ?>
           </div>
-          <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="home-stores-row" aria-label="فروشگاه قبلی">
-            <i class="bi bi-chevron-left"></i>
-          </button>
-        </div>
-      </div>
-    </section>
-    <?php endif; ?>
+        </section>
+
+        <!-- Premium Listings Section (Active promotion plans) -->
+        <?php if (!empty($premiumListings)): ?>
+        <section class="home-listings-section" aria-label="اگهی‌های ویژه">
+          <div class="home-section-heading home-section-heading--large mb-5">
+            <h2>اگهی‌های ویژه</h2>
+            <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
+              مشاهده همه آگهی‌ها
+            </a>
+          </div>
+          <div class="listings-rows-container">
+            <div class="listings-row-wrapper">
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-premium" aria-label="آگهی بعدی">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              <div class="listings-scroll-row" id="listings-row-premium">
+                <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
+                <div class="listings-scroll-card">
+                  <?php include __DIR__ . '/includes/listing_card.php'; ?>
+                </div>
+                <?php endforeach; ?>
+              </div>
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-premium" aria-label="آگهی قبلی">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+        <?php endif; ?>
+        
+        <!-- New Listings Section -->
+        <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
+          <div class="home-section-heading home-section-heading--large mb-5">
+            <h2>جدیدترین آگهی‌ها</h2>
+            <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
+              مشاهده همه
+            </a>
+          </div>
+          <?php if (empty($listings)): ?>
+          <div class="empty-state">
+            <i class="bi bi-search"></i>
+            <h3>آگهی‌ای یافت نشد</h3>
+            <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
+            <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
+          </div>
+          <?php else: ?>
+          <?php
+          $showcaseListings = array_slice($listings, 0, 20);
+          ?>
+          <div class="listings-rows-container">
+            <!-- Single Row with 20 Listings (4 visible at a time) -->
+            <div class="listings-row-wrapper">
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-1" aria-label="آگهی بعدی">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              <div class="listings-scroll-row" id="listings-row-1">
+                <?php foreach ($showcaseListings as $l): ?>
+                <div class="listings-scroll-card">
+                  <?php include __DIR__ . '/includes/listing_card.php'; ?>
+                </div>
+                <?php endforeach; ?>
+              </div>
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </div>
+          </div>
+          <?php endif; ?>
+        </section>
+
+        <!-- Stores Section -->
+        <?php if (!empty($featuredStores)): ?>
+        <link rel="stylesheet" href="<?= APP_URL ?>/src/css/shops.css?v=<?= @filemtime(__DIR__ . '/src/css/shops.css') ?: time() ?>">
+        <style>
+          .home-stores-scroll {
+            display: flex;
+            gap: 1.25rem;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            padding: 4px 8px 16px 8px;
+            scrollbar-width: none;
+          }
+          .home-stores-scroll::-webkit-scrollbar { height: 8px; }
+          .home-stores-scroll::-webkit-scrollbar-track { background: transparent; }
+          .home-stores-scroll::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
+          .home-stores-scroll::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+          .home-stores-card {
+            flex: 0 0 auto;
+            width: 320px;
+          }
+          @media (max-width: 768px) {
+            .home-stores-card { width: calc(100% - 48px); }
+          }
+        </style>
+        <section class="home-listings-section" aria-label="فروشگاه‌ها" style="margin-top:48px">
+          <div class="home-section-heading home-section-heading--large mb-5">
+            <h2>فروشگاه‌ها</h2>
+            <a href="<?= APP_URL ?>/shops" class="home-section-heading__link">
+              مشاهده همه
+            </a>
+          </div>
+          <div class="listings-rows-container">
+            <div class="listings-row-wrapper">
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="home-stores-row" aria-label="فروشگاه بعدی">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              <div class="home-stores-scroll" id="home-stores-row">
+                <?php foreach ($featuredStores as $store):
+                  $name = $store['store_name'] ?: $store['name'];
+                  $slug = $store['store_slug'];
+                  $storeCity = $hStoresCityCol ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
+                  $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
+                  $storeTypeValue = $hStoresTypeCol ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
+                  $shopUrl = APP_URL . '/shop/' . ($storeTypeValue === 'both' ? 'both' : $storeTypeValue) . '/' . h($slug);
+                  $storeTypeLabels = store_type_labels();
+                  $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
+                  $storeTypeBadgeClass = match($storeTypeValue) {
+                      'online'   => 'badge badge-info',
+                      'physical' => 'badge badge-warning',
+                      default    => 'badge badge-secondary',
+                  };
+                  $storeTypeIcon = match($storeTypeValue) {
+                      'online'   => 'bi-globe2',
+                      'physical' => 'bi-building-check',
+                      default    => 'bi-shop',
+                  };
+                ?>
+                <div class="home-stores-card">
+                  <article class="shop-card card">
+                    <a href="<?= $shopUrl ?>" class="shop-card__banner-wrap">
+                      <img src="<?= h($bannerUrl) ?>" alt="<?= h($name) ?>" class="shop-card__banner" loading="lazy">
+                    </a>
+                    <div class="shop-card__body">
+                      <div class="shop-card__profile">
+                        <?= avatar_html(null, $name, 'md') ?>
+                        <div>
+                          <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
+                          <div class="shop-card__tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                            <?php if ($storeTypeLabel !== ''): ?>
+                            <span class="<?= $storeTypeBadgeClass ?>"><i class="bi <?= $storeTypeIcon ?>"></i> <?= h($storeTypeLabel) ?></span>
+                            <?php endif; ?>
+                            <?php if ($storeCity): ?>
+                            <span class="shop-card__city" style="display:inline-flex;align-items:center;gap:4px"><i class="bi bi-geo-alt"></i> <?= h($storeCity) ?></span>
+                            <?php endif; ?>
+                          </div>
+                        </div>
+                      </div>
+                      <p class="shop-card__desc"><?php
+                        $desc = trim((string)($store['store_description'] ?? ''));
+                        if ($desc !== '') {
+                            echo h(mb_strimwidth($desc, 0, 100, '…'));
+                        } else {
+                            echo '...';
+                        }
+                        ?></p>
+                      <div class="shop-card__meta">
+                        <span><i class="bi bi-box-seam"></i> <?= fmt_num((int)$store['listings_count']) ?> محصول</span>
+                        <?php if ((float)($store['rating'] ?? 0) > 0): ?>
+                        <span><i class="bi bi-star-fill"></i> <?= number_format((float)$store['rating'], 1) ?></span>
+                        <?php endif; ?>
+                      </div>
+                      <a href="<?= $shopUrl ?>" class="btn btn-primary btn-sm w-100">مشاهده فروشگاه</a>
+                    </div>
+                  </article>
+                </div>
+                <?php endforeach; ?>
+              </div>
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="home-stores-row" aria-label="فروشگاه قبلی">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+        <?php endif; ?>
+
+      </div><!-- /home-main-content -->
+    </div><!-- /home-main-layout -->
 
   </div>
 </main>

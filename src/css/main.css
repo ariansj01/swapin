@@ -7128,7 +7128,7 @@ body.is-offline::after {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 3 1 0;
+  flex: 25 1 0;
   max-width: 820px;
   margin-inline: 10px 16px;
 }
@@ -7572,4 +7572,369 @@ body.is-offline::after {
 }
 .site-footer__stats {
   display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Home Main Layout — Sidebar + Content
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.home-main-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 1199px) {
+  .home-main-layout {
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 991px) {
+  .home-main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Sidebar Container ────────────────────────────────────────────────── */
+.home-sidebar {
+  position: sticky;
+  top: calc(var(--navbar-h) + 16px);
+  max-height: calc(100vh - var(--navbar-h) - 32px);
+  overflow-y: auto;
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(7, 26, 51, 0.08), 0 4px 12px rgba(7, 26, 51, 0.04);
+  background: #ffffff;
+  border: 1px solid rgba(7, 26, 51, 0.06);
+  scrollbar-width: thin;
+  scrollbar-color: #D1D5DB transparent;
+}
+
+.home-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.home-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+.home-sidebar::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 999px;
+}
+
+.home-sidebar__inner {
+  padding: 24px 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 991px) {
+  .home-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* ── Sidebar Header ───────────────────────────────────────────────────── */
+.home-sidebar__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+.home-sidebar__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+}
+.home-sidebar__count {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  direction: rtl;
+}
+
+/* ── Sidebar Categories ──────────────────────────────────────────────── */
+.home-sidebar-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.home-sidebar-cats__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #111827;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.home-sidebar-cats__item:hover {
+  background: rgba(37, 99, 235, 0.06);
+  color: var(--primary);
+}
+.home-sidebar-cats__icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.09);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+.home-sidebar-cats__icon-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+.home-sidebar-cats__icon-fallback {
+  font-size: 1.125rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.home-sidebar-cats__label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* ── Sidebar Filters Buttons ─────────────────────────────────────────── */
+.home-sidebar-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 2px;
+}
+.home-sidebar-filters__btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.home-sidebar-filters__btn i {
+  color: #374151;
+  font-size: 1.05rem;
+  min-width: 20px;
+}
+.home-sidebar-filters__btn:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.03);
+}
+.home-sidebar-filters__btn:hover i {
+  color: #2563eb;
+}
+
+/* ── Sidebar Time Chips ──────────────────────────────────────────────── */
+.home-sidebar-time {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.home-sidebar-time__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.home-sidebar-time__header i {
+  color: #111827;
+  font-size: 1.1rem;
+}
+.home-sidebar-time__header h4 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+.home-sidebar-time__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
+.time-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.time-chip:hover {
+  border-color: #cbd5e1;
+  color: #111827;
+}
+.time-chip--active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+.time-chip--active:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+/* ── Sidebar Price Range ──────────────────────────────────────────────── */
+.home-sidebar-price {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(229, 231, 235, 0.7);
+}
+.home-sidebar-price__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+.home-sidebar-price__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.home-sidebar-price__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.home-sidebar-price__field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0 4px;
+}
+.home-sidebar-price__field input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.home-sidebar-price__field input::placeholder {
+  color: #9ca3af;
+}
+.home-sidebar-price__field input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ── Sidebar Menus ───────────────────────────────────────────────────── */
+.home-sidebar-menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 0;
+}
+.home-sidebar-menu a {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  text-decoration: none;
+  padding: 4px 6px;
+  transition: color 0.15s ease;
+}
+.home-sidebar-menu a:hover {
+  color: #2563eb;
+}
+.home-sidebar-menu__dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #2563eb;
+  margin: 0 8px;
+}
+
+/* ── Sidebar Social ──────────────────────────────────────────────────── */
+.home-sidebar-social {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.social-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #2563eb;
+  color: #2563eb;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  font-size: 1.2rem;
+}
+.social-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* ── Sidebar Enamad ──────────────────────────────────────────────────── */
+.home-sidebar-enamad {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(239, 246, 255, 0.7);
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+.home-sidebar-enamad:hover {
+  background: rgba(219, 234, 254, 0.9);
+}
+.home-sidebar-enamad img {
+  max-height: 90px;
+  object-fit: contain;
+}
+
+/* Make sure home container padding works with the sidebar grid */
+#main-content .container {
+  padding-top: 2px;
+}
+#main-content .home-main-content {
+  min-width: 0;
+}
+@media (max-width: 991px) {
+  .home-sidebar-enamad img { max-height: 80px; }
+  .home-sidebar-social { gap: 12px; }
+  .social-btn { width: 44px; height: 44px; min-width: 44px; font-size: 1.1rem; }
 }
