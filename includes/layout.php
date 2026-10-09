@@ -247,7 +247,10 @@ function render_navbar(?array $user = null): void {
     $navAvatar  = $user ? avatar_html($user['avatar'] ?? null, $user['name'], 'sm') : '';
     $loggedIn   = $user !== null;
     $GLOBALS['_nav_user'] = $user;
-    
+
+    $city      = clean($_GET['city']      ?? '');
+    $search    = clean($_GET['q']         ?? '');
+
     // Build full hierarchical category tree for multi-level dropdown
     $_allCats = DB::fetchAll('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order, name');
     $_byParent = [];
@@ -288,6 +291,17 @@ function render_navbar(?array $user = null): void {
         // ['/contact', 'تماس با ما', 'bi-envelope', ''],
     ];
 
+    $cityDisplay = $city ? h($city) : 'انتخاب شهر';
+    $cityHiddenInput = $city ? '<input type="hidden" name="city" value="' . h($city) . '">' : '';
+
+    $cities_list = iran_cities();
+    $cityOptionsHtml = '';
+    foreach ($cities_list as $c) {
+        $cname = h($c);
+        $active = ($city === $c) ? 'active' : '';
+        $cityOptionsHtml .= "<a href=\"{$url}/?city=" . urlencode($c) . "\" class=\"dropdown-item navbar-city-select__item {$active}\" data-city=\"{$cname}\">{$cname}</a>";
+    }
+
     echo <<<HTML
 <header class="site-header" role="banner">
 <nav class="navbar" aria-label="ناوبری اصلی">
@@ -295,6 +309,28 @@ function render_navbar(?array $user = null): void {
     <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
       <i class="bi bi-list"></i>
     </button>
+
+    <div class="navbar-city-search-wrapper hide-mobile">
+      <div class="navbar-city-select">
+        <i class="bi bi-geo-alt navbar-city-select__icon"></i>
+        <button type="button" class="navbar-city-select__btn" id="city-select-btn">
+          <span class="navbar-city-select__label">{$cityDisplay}</span>
+          <i class="bi bi-chevron-down navbar-city-select__chev"></i>
+        </button>
+        <div class="dropdown-menu navbar-city-select__menu" id="city-select-menu">
+          <a href="{$url}/" class="dropdown-item navbar-city-select__item" data-city="">همه شهرها</a>
+          {$cityOptionsHtml}
+        </div>
+      </div>
+
+      <form class="navbar-searchbar-form" action="{$url}/" method="get">
+        <i class="bi bi-search navbar-searchbar-form__icon"></i>
+        <input type="search" class="navbar-searchbar-form__input"
+               name="q" placeholder="جستجوی کالا..."
+               value="{$search}">
+        {$cityHiddenInput}
+      </form>
+    </div>
 
     <a href="{$url}/" class="navbar-brand">
       <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">
@@ -322,7 +358,7 @@ HTML;
         <div class="dropdown-menu" id="ai-dropdown">
           <a href="{$url}/search/ai" class="dropdown-item"><i class="bi bi-search-heart"></i> جستجوی هوشمند</a>
           <a href="{$url}/ai/chat" class="dropdown-item"><i class="bi bi-chat-dots-fill"></i> چت با دستیار</a>
-          <a href="{$url}/ai-lab" class="dropdown-item"><i class="bi bi-cpu"></i> آزمایشگاه AI</a>
+          <!-- <a href="{$url}/ai-lab" class="dropdown-item"><i class="bi bi-cpu"></i> آزمایشگاه AI</a> -->
           <a href="{$url}/ai-assistant" class="dropdown-item"><i class="bi bi-info-circle-fill"></i> دستیار هوشمند چیست؟</a>
         </div>
       </div>
@@ -569,10 +605,10 @@ function render_mobile_bottom_nav(?array $user = null): void {
         <i class="bi bi-info-circle-fill"></i>
         <span>آشنایی با دستیار</span>
       </a>
-      <a href="{$url}/ai-lab" class="mobile-ai-submenu__item" role="menuitem">
+      <!-- <a href="{$url}/ai-lab" class="mobile-ai-submenu__item" role="menuitem">
         <i class="bi bi-cpu"></i>
         <span>آزمایشگاه AI</span>
-      </a>
+      </a> -->
       <a href="{$url}/search/ai" class="mobile-ai-submenu__item" role="menuitem">
         <i class="bi bi-search-heart"></i>
         <span>جستجوی هوشمند</span>
@@ -602,162 +638,41 @@ HTML;
 function render_footer(): void {
     $url      = APP_URL;
     $appName  = APP_NAME;
-    $logoUrl  = $url . '/src/img/swapin-light-png.png';
-    $enamadUrl = $url . '/src/img/enamad.png';
-    $tagline = h(swapin_content_get('footer_brand_tagline'));
-    $footerCopy = h(swapin_content_get('footer_copy'));
     $user     = $GLOBALS['_nav_user'] ?? null;
     render_mobile_bottom_nav($user);
     $contentPageFooterLinks = content_page_footer_links_html();
 
-    $isHomePage = false;
-    if (isset($_SERVER['REQUEST_URI'])) {
-        $uriPath    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $scriptName = basename($_SERVER['SCRIPT_NAME']     ?? '');
-        $redirectUrl= $_SERVER['REDIRECT_URL'] ?? '';
-        $basePath   = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/');
-        if ($basePath === '\\' || $basePath === '.') $basePath = '';
-
-        $candidates   = [$uriPath, $redirectUrl];
-        $allowedRoots = [$basePath . '/', $basePath . '', $basePath . '/index.php', '/', '/index.php', '', 'swaapin/', 'swaapin/index.php'];
-
-        foreach ($candidates as $c) {
-            if ($c !== null && in_array($c, $allowedRoots, true)) {
-                $isHomePage = true;
-                break;
-            }
-        }
-        if (!$isHomePage && ($scriptName === 'index.php')) {
-            $isHomePage = true;
-        }
-    }
-
-    $statsHtml = '';
-    if ($isHomePage) {
-        $_stats = get_site_stats();
-        $_vTrades   = fmt_num((int)($_stats['trades']   ?? 0)) . '+';
-        $_vListings = fmt_num((int)($_stats['listings'] ?? 0)) . '+';
-        $_vUsers    = fmt_num((int)($_stats['users']    ?? 0)) . '+';
-        $_vStores   = fmt_num((int)($_stats['stores']   ?? 0)) . '+';
-        $statsHtml = <<<HTMLSTATS
-    <dl class="site-footer__stats">
-      <div class="site-footer__stat">
-        <i class="bi bi-people site-footer__stat-icon" aria-hidden="true"></i>
-        <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">کاربران ثبت‌شده</dt>
-          <dd class="site-footer__stat-value">{$_vUsers}</dd>
-        </div>
-      </div>
-      <div class="site-footer__stat">
-        <i class="bi bi-arrow-left-right site-footer__stat-icon" aria-hidden="true"></i>
-        <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">معامله‌های موفق</dt>
-          <dd class="site-footer__stat-value">{$_vTrades}</dd>
-        </div>
-      </div>
-      <div class="site-footer__stat">
-        <i class="bi bi-box-seam site-footer__stat-icon" aria-hidden="true"></i>
-        <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">کالاهای ثبت‌شده</dt>
-          <dd class="site-footer__stat-value">{$_vListings}</dd>
-        </div>
-      </div>
-      <div class="site-footer__stat">
-        <i class="bi bi-shop site-footer__stat-icon" aria-hidden="true"></i>
-        <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-label">فروشگاه‌های فعال</dt>
-          <dd class="site-footer__stat-value">{$_vStores}</dd>
-        </div>
-      </div>
-    </dl>
-HTMLSTATS;
-    }
-
     echo <<<HTML
-<footer class="site-footer">
+<footer class="site-footer site-footer--compact">
   <div class="container">
-    {$statsHtml}
-    <div class="site-footer__main">
-      <div class="site-footer__col site-footer__col--brand">
-        <a href="{$url}/" class="site-footer__brand">
-          <img src="{$logoUrl}" alt="{$appName}" class="site-footer__logo">
-        </a>
-        <p class="site-footer__tagline">{$tagline}</p>
+    <div class="site-footer__compact-row">
+      <div class="site-footer__compact-col site-footer__compact-col--text">
+        <p>سواپین بستری امن و آسان برای معاوضه‌ی کالاها و خدمات در سراسر ایران</p>
       </div>
-
-      <div class="site-footer__col site-footer__col--links-grid">
-        <div class="footer-links-group footer-accordion">
-          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">فروشگاه</button>
-          <ul class="site-footer__links">
-            <li><a href="{$url}/store/request">ثبت فروشگاه</a></li>
-            <li><a href="{$url}/auth/store-login">پنل فروشگاه</a></li>
-            <li><a href="{$url}/shops">لیست فروشگاه‌ها</a></li>
-          </ul>
-        </div>
-        <div class="footer-links-group footer-accordion">
-          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">راهنما و قوانین</button>
-          <ul class="site-footer__links">
-            <li><a href="{$url}/about">درباره ما</a></li>
-            <li><a href="{$url}/contact">تماس با ما</a></li>
-            <li><a href="{$url}/faq">سوالات متداول</a></li>
-            <li><a href="{$url}/fraud-prevention">راهنمای امنیت</a></li>
-            <li><a href="{$url}/privacy">حریم خصوصی</a></li>
-            <li><a href="{$url}/terms">قوانین و مقررات</a></li>
-          </ul>
-        </div>
-        <div class="footer-links-group footer-accordion">
-          <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">سواَپین</button>
-          <ul class="site-footer__links">
-            <li><a href="{$url}/pwa"><i class="bi bi-download"></i> نصب اپلیکیشن</a></li>
-            <li><a href="{$url}/search/ai">جستجوی هوشمند</a></li>
-            <li><a href="{$url}/blog">بلاگ سواَپین</a></li>
-          </ul>
-        </div>
+      <div class="site-footer__compact-col site-footer__compact-col--links">
+        <a href="{$url}/fraud-prevention">راهنمای امنیت</a>
+        <span>|</span>
+        <a href="{$url}/terms">قوانین و مقررات</a>
+        <span>|</span>
+        <a href="{$url}/privacy">حریم خصوصی</a>
+        <span>|</span>
+        <a href="{$url}/faq">سوالات متداول</a>
+        <span>|</span>
+        <a href="{$url}/support/index.php">پشتیبانی</a>
       </div>
-
-      <div class="site-footer__col site-footer__col--trust">
-        <h3 class="site-footer__heading">نمادهای اعتماد</h3>
-        <div class="site-footer__trust">
-          <?php if (app_is_production()): ?>
-          <a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=755927&amp;Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM" alt="نماد اعتماد الکترونیکی" style="cursor:pointer" code="Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM"></a>
-          <?php else: ?>
-          <!-- <div class="site-footer__trust-placeholder" style="opacity:.5;font-size:.85rem;padding:.75rem;border:1px dashed var(--border);border-radius:12px;text-align:center;">
-            نماد اعتماد — فقط در Production فعال است
-          </div> -->
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <div class="site-footer__col site-footer__col--contact footer-accordion">
-        <button type="button" class="site-footer__heading site-footer__toggle" aria-expanded="false">راه های ارتباطی</button>
-        <ul class="site-footer__contact-list">
-          <li>
-            <i class="bi bi-telephone" aria-hidden="true"></i>
-            <span dir="ltr">+98 998 153 4269</span>
-          </li>
-          <li>
-            <i class="bi bi-envelope" aria-hidden="true"></i>
-            <a href="mailto:info@swaapin.ir">info@swaapin.ir</a>
-          </li>
-          <li>
-            <i class="bi bi-geo-alt" aria-hidden="true"></i>
-            <span>مرکز نواوری اکباتان</span>
-          </li>
-        </ul>
-        <div class="site-footer__social">
-          <a href="https://www.instagram.com/swaapin_official" class="site-footer__social-link" aria-label="اینستاگرام"><i class="bi bi-instagram"></i></a>
-          <a href="#" class="site-footer__social-link" aria-label="تلگرام"><i class="bi bi-telegram"></i></a>
-          <a href="#" class="site-footer__social-link" aria-label="توییتر"><i class="bi bi-twitter-x"></i></a>
-          <a href="https://www.linkedin.com/company/swaapin" class="site-footer__social-link" aria-label="لینکدین"><i class="bi bi-linkedin"></i></a>
-        </div>
+      <div class="site-footer__compact-col site-footer__compact-col--links site-footer__compact-col--links-left">
+        <a href="{$url}/store/request">ثبت فروشگاه</a>
+        <span>|</span>
+        <a href="{$url}/auth/store-login">پنل فروشگاه</a>
+        <span>|</span>
+        <a href="{$url}/shops">لیست فروشگاه‌ها</a>
       </div>
     </div>
-
-    <p class="site-footer__copy" style="display: flex;justify-content: space-around;">
-      {$footerCopy}
+    <p class="site-footer__compact-copy">
+      2026 | تمامی حقوق این وبسایت متعلق به سواپین می‌باشد.
     </p>
   </div>
-    {$contentPageFooterLinks}
+  {$contentPageFooterLinks}
 </footer>
 HTML;
     render_support_widget($user);
@@ -809,6 +724,23 @@ HTML;
         setState(nextState);
       });
     });
+
+    var cityBtn = document.getElementById('city-select-btn');
+    var cityMenu = document.getElementById('city-select-menu');
+    if (cityBtn && cityMenu) {
+      cityMenu.style.display = 'none';
+      cityBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var isHidden = cityMenu.style.display === 'none';
+        cityMenu.style.display = isHidden ? 'block' : 'none';
+      });
+      document.addEventListener('click', function () {
+        cityMenu.style.display = 'none';
+      });
+      cityMenu.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    }
   });
 </script>
 </body>

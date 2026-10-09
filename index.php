@@ -199,7 +199,7 @@ render_navbar($user);
 <?php endif; ?>
 
 <?php if (!$search && !$catSlug && $page === 1): ?>
-<section class="hero">
+<section class="hero hero--compact">
   <div class="container hero__inner">
     <div class="hero__visual">
       <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
@@ -218,53 +218,7 @@ render_navbar($user);
           <i class="bi bi-search"></i> <?= h(swapin_content_get('hero_secondary_cta')) ?>
         </a>
       </div>
-      <div class="hero__stats">
-        <div class="hero__stat">
-          <div class="hero__stat-value"><?= fmt_num($total) ?>+</div>
-          <div class="hero__stat-label">آگهی فعال</div>
-        </div>
-        <div class="hero__stat">
-          <div class="hero__stat-value"><?= fmt_num((int)(DB::fetch('SELECT COUNT(*) AS c FROM trades WHERE status="completed"')['c'] ?? 0)) ?>+</div>
-          <div class="hero__stat-label">مبادله انجام‌شده</div>
-        </div>
-        <div class="hero__stat">
-          <div class="hero__stat-value"><?= fmt_num((int)(DB::fetch('SELECT COUNT(*) AS c FROM users WHERE is_active=1')['c'] ?? 0)) ?>+</div>
-          <div class="hero__stat-label">عضو</div>
-        </div>
-      </div>
     </div>
-  </div>
-  <div class="container home-assurance">
-    <dl class="site-footer__stats home-assurance__stats">
-      <div class="site-footer__stat">
-        <i class="bi bi-shield-lock site-footer__stat-icon" aria-hidden="true"></i>
-        <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-value">اتاق امن معامله</dt>
-          <dd class="site-footer__stat-lable">معامله مطمئن و امن</dd>
-        </div>
-      </div>
-      <div class="site-footer__stat">
-        <i class="bi bi-person-check site-footer__stat-icon" aria-hidden="true"></i>
-        <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-value">احراز هویت کاربران</dt>
-          <dd class="site-footer__stat-lable">برای تجربه ای امن و ایمن</dd>
-        </div>
-      </div>
-      <div class="site-footer__stat">
-        <i class="bi bi-chat-dots site-footer__stat-icon" aria-hidden="true"></i>
-        <div class="site-footer__stat-body">
-          <dt class="site-footer__stat-value">پشتیبانی آنلاین</dt>
-          <dd class="site-footer__stat-lable">همراه شما در هر مرحله</dd>
-        </div>
-      </div>
-      <div class="site-footer__stat">
-        <i class="bi bi-trophy site-footer__stat-icon" aria-hidden="true"></i>
-        <div class="site-footer__stat-body">
-          <dd class="site-footer__stat-value">توسط کاربران سواَپین</dd>
-          <dt class="site-footer__stat-lable">هزاران معامله موفق</dt>
-        </div>
-      </div>
-    </dl>
   </div>
 </section>
 <?php endif; ?>
@@ -349,40 +303,33 @@ render_navbar($user);
     <?php endif; ?>
 
     <!-- New Listings Section -->
-    <section class="home-steps" id="home-steps" style="padding: 10px 0;">
+    <section class="home-steps home-steps--compact" id="home-steps">
       <div class="container">
-        <div class="home-section__header home-steps__header">
-          <span class="home-steps__eyebrow">مسیر ساده معامله</span>
-          <h2>چطور در سواَپین معامله کنیم؟</h2>
-          <p>فقط در چهار مرحله ساده کالای خود را با دیگران معامله کنید.</p>
-        </div>
-        <div class="listings-rows-container">
-          <div class="steps-grid" aria-label="مراحل معامله در سواَپین">
-            <?php
-            $steps = [
-              ['۱', 'ثبت آگهی', 'عکس بگیرید و ثبت کنید.', 'bi-camera'],
-              ['۲', 'دریافت پیشنهاد', 'پیشنهادهای معامله بگیرید.', 'bi-send'],
-              ['۳', 'توافق با طرف مقابل', 'درباره شرایط توافق کنید.', 'bi-heart'],
-              ['۴', 'انجام معامله', 'در مکان امن معامله کنید.', 'bi-shield-check'],
-            ];
-            foreach ($steps as $index => [$stepNo, $title, $desc, $icon]):
-            ?>
-            <article class="step-card" style="--step-delay: <?= $index ?>;">
-              <span class="step-card__number"><?= $stepNo ?></span>
-              <div class="step-card__content">
-                <div class="step-card__icon-wrap">
-                  <div class="step-card__icon">
-                    <i class="bi <?= $icon ?>"></i>
-                  </div>
-                </div>
-                <div class="step-card__text">
-                  <h3><?= $title ?></h3>
-                  <p><?= $desc ?></p>
+        <div class="steps-grid steps-grid--compact" aria-label="مراحل معامله در سواَپین">
+          <?php
+          $steps = [
+            ['۱', 'ثبت آگهی', 'عکس بگیرید و ثبت کنید.', 'bi-camera'],
+            ['۲', 'دریافت پیشنهاد', 'پیشنهادهای معامله بگیرید.', 'bi-send'],
+            ['۳', 'توافق با طرف مقابل', 'درباره شرایط توافق کنید.', 'bi-heart'],
+            ['۴', 'انجام معامله', 'در مکان امن معامله کنید.', 'bi-shield-check'],
+          ];
+          foreach ($steps as $index => [$stepNo, $title, $desc, $icon]):
+          ?>
+          <article class="step-card step-card--compact" style="--step-delay: <?= $index ?>;">
+            <span class="step-card__number step-card__number--compact"><?= $stepNo ?></span>
+            <div class="step-card__content step-card__content--compact">
+              <div class="step-card__icon-wrap">
+                <div class="step-card__icon step-card__icon--compact">
+                  <i class="bi <?= $icon ?>"></i>
                 </div>
               </div>
-            </article>
-            <?php endforeach; ?>
-          </div>
+              <div class="step-card__text step-card__text--compact">
+                <h3><?= $title ?></h3>
+                <p><?= $desc ?></p>
+              </div>
+            </div>
+          </article>
+          <?php endforeach; ?>
         </div>
       </div>
     </section>
@@ -597,13 +544,9 @@ render_navbar($user);
   </div>
 </section>
 
-<section class="home-section home-trust">
+<section class="home-section home-trust home-trust--compact">
   <div class="container">
-    <div class="home-section__header">
-      <h2>اعتماد و اعتبار کاربران</h2>
-      <p>زیرساخت‌هایی که معامله امن و شفاف را ممکن می‌کنند</p>
-    </div>
-    <div class="trust-grid">
+    <div class="trust-grid trust-grid--compact">
       <?php
       $trust = [
           ['bi-star-fill',        'امتیاز و نظرات',    'بعد از هر مبادله، طرفین به هم امتیاز می‌دهند و پروفایل اعتماد ساخته می‌شود.'],
@@ -613,81 +556,17 @@ render_navbar($user);
       ];
       foreach ($trust as [$icon, $title, $desc]):
       ?>
-      <article class="trust-card">
-        <div class="trust-card__icon"><i class="bi <?= $icon ?>"></i></div>
-        <h3><?= $title ?></h3>
-        <p><?= $desc ?></p>
+      <article class="trust-card trust-card--compact">
+        <div class="trust-card__icon trust-card__icon--compact"><i class="bi <?= $icon ?>"></i></div>
+        <div class="trust-card__body">
+          <h3 class="trust-card__title"><?= $title ?></h3>
+          <p class="trust-card__desc"><?= $desc ?></p>
+        </div>
       </article>
       <?php endforeach; ?>
     </div>
   </div>
 </section>
-<?php endif; ?>
-
-<?php if (!$search && !$catSlug && !$city && $page === 1): ?>
-<style>
-.home-stats-pre-footer {
-  background: linear-gradient(135deg, rgba(0,102,255,.06) 0%, rgba(255,102,0,.05) 100%);
-  border-top: 1px solid var(--border, #eef0f4);
-  border-bottom: 1px solid var(--border, #eef0f4);
-  padding: 2.5rem 0;
-}
-.home-stats-pre-footer .home-stats-pre-footer { }
-.home-stats-pre-footer .container > div {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
-}
-.home-stat-card {
-  background: var(--bg-card, #fff);
-  border-radius: 16px;
-  padding: 1.5rem 1.25rem;
-  text-align: center;
-  box-shadow: 0 4px 16px -8px rgba(10,37,64,.08);
-  border: 1px solid var(--border, #eef0f4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-.home-stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -10px rgba(0,102,255,.22); }
-.home-stat-card__icon {
-  width: 48px; height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--primary, #0066ff) 0%, rgba(255,102,0,.9) 100%);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem;
-  margin-bottom: .35rem;
-}
-.home-stat-card__value {
-  font-size: 1.7rem;
-  font-weight: 800;
-  color: var(--primary-text, #0A2540);
-  line-height: 1.15;
-}
-.home-stat-card__label {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-@media (max-width: 900px) {
-  .home-stats-pre-footer { padding: 2rem 0; }
-  .home-stats-pre-footer .container > div {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 520px) {
-  .home-stats-pre-footer { padding: 1.5rem 0; }
-  .home-stats-pre-footer .container > div {
-    grid-template-columns: 1fr 1fr;
-    gap: .75rem;
-  }
-  .home-stat-card { padding: 1rem .75rem; }
-  .home-stat-card__value { font-size: 1.35rem; }
-}
-</style>
 <?php endif; ?>
 
 <?php render_footer(); ?>
