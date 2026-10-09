@@ -22,6 +22,8 @@ $wantType  = clean($_GET['want']      ?? '');
 $sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
 $page      = max(1, (int)($_GET['page'] ?? 1));
 $timeAgo   = in_array($_GET['time_ago'] ?? '', ['3h','12h','1d','3d','1w']) ? $_GET['time_ago'] : '';
+$pmin      = isset($_GET['price_min']) ? (float)$_GET['price_min'] : 0;
+$pmax      = isset($_GET['price_max']) ? (float)$_GET['price_max'] : 0;
 
 // resolve category
 $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [$catSlug]) : null;
@@ -64,6 +66,14 @@ if ($timeAgo) {
     ];
     $interval = $intervalMap[$timeAgo] ?? '3 HOUR';
     $whereClauses[] = "l.created_at >= DATE_SUB(NOW(), INTERVAL {$interval})";
+}
+if ($pmin > 0) {
+    $whereClauses[] = 'l.estimated_value >= ?';
+    $params[] = $pmin;
+}
+if ($pmax > 0) {
+    $whereClauses[] = 'l.estimated_value <= ?';
+    $params[] = $pmax;
 }
 
 $where   = 'WHERE ' . implode(' AND ', $whereClauses);
@@ -227,17 +237,6 @@ render_navbar($user);
 
   <div class="container">
 
-    <form id="home-filters-form" method="GET" action="<?= APP_URL ?>/" style="display:none">
-      <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
-      <input type="hidden" name="q" value="<?= h($search) ?>">
-      <input type="hidden" name="city" value="<?= h($city) ?>">
-      <input type="hidden" name="want" value="<?= h($wantType) ?>">
-      <input type="hidden" name="sort" value="<?= h($sort) ?>">
-      <input type="hidden" name="time_ago" value="<?= h($timeAgo) ?>">
-      <input type="hidden" name="price_min" value="<?= $pmin > 0 ? (int)$pmin : '' ?>">
-      <input type="hidden" name="price_max" value="<?= $pmax > 0 ? (int)$pmax : '' ?>">
-    </form>
-
     <!-- ===== Listings & Stores ===== -->
     <div class="home-main-layout" id="home-sliders-area">
 
@@ -294,30 +293,37 @@ render_navbar($user);
             <?php endforeach; ?>
           </nav>
 
-          <!-- Filter Buttons (Real Links) -->
-          <div class="home-sidebar-filters">
-            <a href="#" id="sidebar-city-btn" class="home-sidebar-filters__btn" data-toggle="true" data-target="sidebar-city-select-wrap">
-              <i class="bi bi-geo-alt"></i>
-              <span><?= $city ? h($city) : 'همه شهرها' ?></span>
-            </a>
-            <div id="sidebar-city-select-wrap" class="home-sidebar-select-wrap" style="display:none">
-              <select id="sidebar-city" class="form-control" name="city">
+          <!-- Filters: Real Dropdowns (همه شهرها، انواع معامله، جدیدترین) + جستجو -->
+          <form id="sidebar-filters-form" method="GET" action="<?= APP_URL ?>/" class="home-sidebar-filters-form">
+            <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
+            <input type="hidden" name="time_ago" value="<?= h($timeAgo) ?>">
+
+            <!-- جستجو -->
+            <div class="home-sidebar-field">
+              <label class="home-sidebar-field__label" for="sidebar-search-input">
+                <i class="bi bi-search"></i> جستجوی کالا
+              </label>
+              <input type="search" id="sidebar-search-input" name="q" class="form-control"
+                     value="<?= h($search) ?>" placeholder="دنبال چه کالایی هستید؟">
+            </div>
+
+            <!-- همه شهرها -->
+            <div class="home-sidebar-field">
+              <label class="home-sidebar-field__label" for="sidebar-city-select">
+                <i class="bi bi-geo-alt"></i> همه شهرها
+              </label>
+              <select id="sidebar-city-select" name="city" class="form-control">
                 <option value="">همه شهرها</option>
                 <?= render_city_options($city) ?>
               </select>
             </div>
 
-            <a href="#" id="sidebar-want-btn" class="home-sidebar-filters__btn" data-toggle="true" data-target="sidebar-want-select-wrap">
-              <i class="bi bi-arrow-left-right"></i>
-              <span>
-                <?php
-                  $wantMap = ['' => 'همه انواع معامله', 'item' => 'کالا با کالا', 'service' => 'خدمات', 'credit' => 'اعتبار'];
-                  echo $wantMap[$wantType] ?? 'همه انواع معامله';
-                ?>
-              </span>
-            </a>
-            <div id="sidebar-want-select-wrap" class="home-sidebar-select-wrap" style="display:none">
-              <select id="sidebar-want" class="form-control" name="want">
+            <!-- انواع معامله -->
+            <div class="home-sidebar-field">
+              <label class="home-sidebar-field__label" for="sidebar-want-select">
+                <i class="bi bi-arrow-left-right"></i> انواع معامله
+              </label>
+              <select id="sidebar-want-select" name="want" class="form-control">
                 <option value=""    <?= $wantType === '' ? 'selected' : '' ?>>همه انواع معامله</option>
                 <option value="item"    <?= $wantType === 'item' ? 'selected' : '' ?>>کالا با کالا</option>
                 <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
@@ -325,33 +331,44 @@ render_navbar($user);
               </select>
             </div>
 
-            <a href="#" id="sidebar-sort-btn" class="home-sidebar-filters__btn" data-toggle="true" data-target="sidebar-sort-select-wrap">
-              <i class="bi bi-sort-down-alt"></i>
-              <span>
-                <?php
-                  $sortMap = ['new' => 'جدیدترین', 'old' => 'قدیمی‌ترین', 'value' => 'بالاترین ارزش'];
-                  echo $sortMap[$sort] ?? 'جدیدترین';
-                ?>
-              </span>
-            </a>
-            <div id="sidebar-sort-select-wrap" class="home-sidebar-select-wrap" style="display:none">
-              <select id="sidebar-sort" class="form-control" name="sort">
+            <!-- مرتب‌سازی -->
+            <div class="home-sidebar-field">
+              <label class="home-sidebar-field__label" for="sidebar-sort-select">
+                <i class="bi bi-sort-down-alt"></i> مرتب‌سازی
+              </label>
+              <select id="sidebar-sort-select" name="sort" class="form-control">
                 <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
                 <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
                 <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
               </select>
             </div>
 
-            <a href="#" id="sidebar-search-btn" class="home-sidebar-filters__btn" data-toggle="true" data-target="sidebar-search-wrap">
-              <i class="bi bi-search"></i>
-              <span><?= $search ? '«' . h(mb_strimwidth($search, 0, 18, '…')) . '»' : 'جستجوی کالا' ?></span>
-            </a>
-            <div id="sidebar-search-wrap" class="home-sidebar-select-wrap" style="display:none">
-              <input type="search" id="sidebar-search" class="form-control" name="q" value="<?= h($search) ?>" placeholder="جستجوی کالا...">
+            <!-- Price Min/Max -->
+            <div class="home-sidebar-field">
+              <label class="home-sidebar-field__label">
+                <i class="bi bi-tag"></i> محدوده قیمت
+              </label>
+              <div class="home-sidebar-field__row">
+                <div class="home-sidebar-field__col">
+                  <span class="home-sidebar-field__sub">از</span>
+                  <input type="number" name="price_min" class="form-control" min="0" step="1000"
+                         value="<?= $pmin > 0 ? (int)$pmin : '' ?>" placeholder="قیمت کمینه">
+                </div>
+                <div class="home-sidebar-field__col">
+                  <span class="home-sidebar-field__sub">تا</span>
+                  <input type="number" name="price_max" class="form-control" min="0" step="1000"
+                         value="<?= $pmax > 0 ? (int)$pmax : '' ?>" placeholder="قیمت بیشینه">
+                </div>
+              </div>
             </div>
-          </div>
 
-          <!-- Time Chips (Real Links) -->
+            <!-- Apply Filter Button -->
+            <button type="submit" class="btn btn-primary w-100 home-sidebar-apply-btn">
+              <i class="bi bi-funnel"></i> اعمال فیلترها
+            </button>
+          </form>
+
+          <!-- Time Chips -->
           <div class="home-sidebar-time">
             <div class="home-sidebar-time__header">
               <i class="bi bi-question-circle"></i>
@@ -369,33 +386,24 @@ render_navbar($user);
               ];
               foreach ($timeChipList as $tc):
                 $isActive = ($timeAgo === $tc['value']);
+                $chipQuery = [
+                  'cat'       => $catSlug,
+                  'q'         => $search,
+                  'city'      => $city,
+                  'want'      => $wantType,
+                  'sort'      => $sort,
+                  'time_ago'  => $tc['value'],
+                  'price_min' => $pmin > 0 ? (int)$pmin : null,
+                  'price_max' => $pmax > 0 ? (int)$pmax : null,
+                ];
+                $chipQuery = array_filter($chipQuery);
+                $chipUrl = APP_URL . '/' . ($chipQuery ? '?' . http_build_query($chipQuery) : '');
               ?>
-                <a href="<?= APP_URL ?>/<?= $buildSidebarQuery(['time_ago' => $tc['value']]) ?>"
-                   class="time-chip <?= $isActive ? 'time-chip--active' : '' ?>">
+                <a href="<?= $chipUrl ?>" class="time-chip <?= $isActive ? 'time-chip--active' : '' ?>">
                   <?= $tc['label'] ?>
                 </a>
               <?php endforeach; ?>
             </div>
-          </div>
-
-          <!-- Price Range (Working Filter) -->
-          <div class="home-sidebar-price">
-            <h4 class="home-sidebar-price__title">محدوده قیمت</h4>
-            <div class="home-sidebar-price__row">
-              <div class="home-sidebar-price__field">
-                <label>از</label>
-                <input type="number" id="sidebar-pricemin" name="price_min" min="0" step="1000" placeholder=""
-                       value="<?= $pmin > 0 ? (int)$pmin : '' ?>">
-              </div>
-              <div class="home-sidebar-price__field">
-                <label>تا</label>
-                <input type="number" id="sidebar-pricemax" name="price_max" min="0" step="1000" placeholder=""
-                       value="<?= $pmax > 0 ? (int)$pmax : '' ?>">
-              </div>
-            </div>
-            <button type="button" id="apply-price-filter" class="btn btn-primary btn-sm w-100" style="margin-top:10px">
-              <i class="bi bi-funnel"></i> اعمال قیمت
-            </button>
           </div>
 
           <!-- Menus -->
@@ -453,6 +461,36 @@ render_navbar($user);
           <span class="badge badge-primary"><?= $total ?> مورد یافت شد</span>
         </header>
         <?php endif; ?>
+
+        <!-- 4 Steps Cards — چطور معامله کنیم -->
+        <section class="home-steps home-steps--compact mb-8" id="home-steps" aria-label="چطور معامله کنیم">
+          <div class="steps-grid steps-grid--compact">
+            <?php
+            $steps = [
+              ['۱', 'ثبت آگهی', 'عکس بگیرید و ثبت کنید.', 'bi-camera'],
+              ['۲', 'دریافت پیشنهاد', 'پیشنهادهای معامله بگیرید.', 'bi-send'],
+              ['۳', 'توافق با طرف مقابل', 'درباره شرایط توافق کنید.', 'bi-heart'],
+              ['۴', 'انجام معامله', 'در مکان امن معامله کنید.', 'bi-shield-check'],
+            ];
+            foreach ($steps as $index => [$stepNo, $title, $desc, $icon]):
+            ?>
+            <article class="step-card step-card--compact" style="--step-delay: <?= $index ?>;">
+              <span class="step-card__number step-card__number--compact"><?= $stepNo ?></span>
+              <div class="step-card__content step-card__content--compact">
+                <div class="step-card__icon-wrap">
+                  <div class="step-card__icon step-card__icon--compact">
+                    <i class="bi <?= $icon ?>"></i>
+                  </div>
+                </div>
+                <div class="step-card__text step-card__text--compact">
+                  <h3><?= $title ?></h3>
+                  <p><?= $desc ?></p>
+                </div>
+              </div>
+            </article>
+            <?php endforeach; ?>
+          </div>
+        </section>
 
         <!-- Premium Listings Section (Active promotion plans) -->
         <?php if (!empty($premiumListings)): ?>
@@ -637,77 +675,22 @@ render_navbar($user);
 
 <script>
 (function () {
-  var baseUrl = '<?= APP_URL ?>/';
-  var currentParams = {
-    cat:       '<?= h($catSlug) ?>',
-    q:         '<?= h($search) ?>',
-    city:      '<?= h($city) ?>',
-    want:      '<?= h($wantType) ?>',
-    sort:      '<?= h($sort) ?>',
-    time_ago:  '<?= h($timeAgo) ?>',
-    price_min: '<?= $pmin > 0 ? (int)$pmin : '' ?>',
-    price_max: '<?= $pmax > 0 ? (int)$pmax : '' ?>',
-  };
-  function buildUrl(overrides) {
-    var p = Object.assign({}, currentParams, overrides || {});
-    var clean = {};
-    Object.keys(p).forEach(function(k){ if (p[k] !== '' && p[k] !== null && p[k] !== undefined) clean[k] = p[k]; });
-    var qs = new URLSearchParams(clean).toString();
-    return baseUrl + (qs ? '?' + qs : '');
-  }
-  function go(overrides) { window.location.href = buildUrl(overrides); }
+  // Auto-submit sidebar filter form when select changes
+  var form = document.getElementById('sidebar-filters-form');
+  if (!form) return;
 
-  // Toggle filter button selects
-  document.querySelectorAll('[data-toggle="true"]').forEach(function (btn) {
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      var targetId = btn.getAttribute('data-target');
-      var target = document.getElementById(targetId);
-      if (!target) return;
-      // close others
-      document.querySelectorAll('.home-sidebar-select-wrap').forEach(function (w) {
-        if (w !== target) w.style.display = 'none';
-      });
-      target.style.display = (target.style.display === 'none') ? 'block' : 'none';
-    });
+  var selects = form.querySelectorAll('select');
+  selects.forEach(function (sel) {
+    sel.addEventListener('change', function () { form.submit(); });
   });
 
-  // Select element -> apply
-  ['sidebar-city','sidebar-want','sidebar-sort'].forEach(function (id) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
-    sel.addEventListener('change', function () {
-      var key = id === 'sidebar-city' ? 'city' : (id === 'sidebar-want' ? 'want' : 'sort');
-      go({ [key]: sel.value });
+  // Auto-submit when user presses Enter in search or price inputs
+  var inputs = form.querySelectorAll('input[type="search"], input[name="price_min"], input[name="price_max"]');
+  inputs.forEach(function (inp) {
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); form.submit(); }
     });
   });
-
-  // Search input (enter or blur after short delay)
-  var searchInput = document.getElementById('sidebar-search');
-  if (searchInput) {
-    var searchTimer = null;
-    function applySearch() { go({ q: searchInput.value.trim() }); }
-    searchInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); applySearch(); }
-    });
-    searchInput.addEventListener('blur', function () {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(applySearch, 400);
-    });
-  }
-
-  // Price filter button
-  var priceBtn = document.getElementById('apply-price-filter');
-  if (priceBtn) {
-    priceBtn.addEventListener('click', function () {
-      var mn = document.getElementById('sidebar-pricemin');
-      var mx = document.getElementById('sidebar-pricemax');
-      go({
-        price_min: mn ? mn.value.trim() : '',
-        price_max: mx ? mx.value.trim() : ''
-      });
-    });
-  }
 })();
 </script>
 

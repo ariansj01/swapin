@@ -8038,10 +8038,106 @@ body.is-offline::after {
   overscroll-behavior: contain;
 }
 
-/* ── Hide any remaining old filter bar & category sections ───────────── */
+/* ── Sidebar Real Filter Fields (Dropdowns + Search + Price) ─────────── */
+.home-sidebar-filters-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+.home-sidebar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.home-sidebar-field__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1f2937;
+  padding: 0 4px;
+}
+.home-sidebar-field__label i {
+  color: #2563eb;
+  font-size: 0.95rem;
+}
+.home-sidebar-field .form-control {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  direction: rtl;
+}
+.home-sidebar-field select.form-control {
+  cursor: pointer;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #6b7280 50%),
+    linear-gradient(135deg, #6b7280 50%, transparent 50%);
+  background-position:
+    calc(14px + 2px) calc(50% - 3px),
+    calc(14px + 10px) calc(50% - 3px);
+  background-size: 8px 8px, 8px 8px;
+  background-repeat: no-repeat;
+  padding-inline-end: 14px;
+  padding-inline-start: 40px;
+}
+.home-sidebar-field .form-control::placeholder {
+  color: #9ca3af;
+}
+.home-sidebar-field .form-control:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.home-sidebar-field__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.home-sidebar-field__col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.home-sidebar-field__sub {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0 4px;
+}
+.home-sidebar-apply-btn {
+  font-weight: 700 !important;
+  border-radius: 14px !important;
+  padding: 11px 16px !important;
+  font-size: 0.9rem !important;
+  gap: 8px;
+  display: inline-flex !important;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.18);
+  transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  margin-top: 2px;
+}
+.home-sidebar-apply-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+  filter: brightness(1.03);
+}
+.home-sidebar-apply-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Hide any remaining old filter bar & old category strip ─────────── */
 .home-categories-section,
 .home-categories-heading,
-.home-filter-bar,
-.home-steps {
+.home-filter-bar {
   display: none !important;
 }
