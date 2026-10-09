@@ -655,10 +655,6 @@ function render_footer(): void {
         <a href="{$url}/terms">قوانین و مقررات</a>
         <span>|</span>
         <a href="{$url}/privacy">حریم خصوصی</a>
-        <span>|</span>
-        <a href="{$url}/faq">سوالات متداول</a>
-        <span>|</span>
-        <a href="{$url}/support/index.php">پشتیبانی</a>
       </div>
       <div class="site-footer__compact-col site-footer__compact-col--links site-footer__compact-col--links-left">
         <a href="{$url}/store/request">ثبت فروشگاه</a>
