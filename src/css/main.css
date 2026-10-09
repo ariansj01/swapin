@@ -8033,7 +8033,8 @@ body.is-offline::after {
 }
 .home-sidebar {
   top: calc(var(--navbar-h, 72px) + 12px);
-  max-height: calc(100vh - var(--navbar-h, 72px) - 32px);
+  /* max-height: calc(100vh - var(--navbar-h, 72px) - 32px); */
+  height: 94%;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -8099,7 +8100,7 @@ body.is-offline::after {
   background-size: 8px 8px, 8px 8px;
   background-repeat: no-repeat;
   padding-inline-end: 14px;
-  padding-inline-start: 40px;
+  /* padding-inline-start: 40px; */
 }
 .home-sidebar-field .form-control::placeholder {
   color: #9ca3af;
