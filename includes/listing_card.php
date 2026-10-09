@@ -121,8 +121,8 @@ $hasPromo = $promotionMeta !== null;
     <!-- Value / Price Row -->
     <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
     <div class="lc-value-row">
-      <span class="lc-value-amount"><?= fmt_credit((float)$l['estimated_value']) ?></span>
       <span class="lc-value-label">:ارزش تقریبی</span>
+      <span class="lc-value-amount" style="font-size: 1rem;"><?= fmt_credit((float)$l['estimated_value']) ?></span>
     </div>
     <?php endif; ?>
 
@@ -150,7 +150,7 @@ $hasPromo = $promotionMeta !== null;
       <?php endif; ?>
       <span><i class="bi bi-eye"></i> بازدید: <?= number_format((int)($l['views'] ?? 0)) ?></span>
       <?php if (!empty($l['condition'])): ?>
-      <span>وضعیت: <?= condition_label($l['condition'] ?? '') ?></span>
+      <!-- <span>وضعیت: <?= condition_label($l['condition'] ?? '') ?></span> -->
       <?php endif; ?>
       <?php if (!empty($l['city'])): ?>
       <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? '، ' . h($l['neighborhood']) : '' ?></span>
@@ -203,25 +203,39 @@ $hasPromo = $promotionMeta !== null;
 .lc-media-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  height: 240px;
+  min-height: 240px;
+  max-height: 240px;
+  flex-shrink: 0;
   background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
   overflow: hidden;
   border-bottom-left-radius: 18px;
   border-bottom-right-radius: 18px;
 }
+@supports (aspect-ratio: 1 / 1) {
+  .lc-media-wrapper {
+    height: auto;
+    min-height: 220px;
+    max-height: none;
+    aspect-ratio: 4 / 3;
+  }
+}
 .listing-card__media-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
 }
 .listing-card__media-placeholder {
   width: 100%;
   height: 100%;
+  min-height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #9ca3af;
+  flex-shrink: 0;
 }
 .listing-card__media-placeholder i { font-size: 3rem; }
 
@@ -238,7 +252,9 @@ $hasPromo = $promotionMeta !== null;
   border: none;
   color: #071A33;
   font-size: 1.15rem;
-  display: inline-flex;
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -259,13 +275,17 @@ $hasPromo = $promotionMeta !== null;
   position: absolute;
   top: 12px;
   right: 12px;
-  display: flex;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   align-items: center;
   gap: 8px;
   z-index: 3;
 }
 .lc-badge {
-  display: inline-flex;
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   align-items: center;
   gap: 5px;
   padding: 6px 14px;

@@ -1840,7 +1840,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 .listings-scroll-card {
   flex: 0 0 clamp(240px, 24vw, 360px);
-  max-width: clamp(240px, 24vw, 265px);
+  max-width: clamp(240px, 24vw, 290px);
   scroll-snap-align: start;
 }
 
