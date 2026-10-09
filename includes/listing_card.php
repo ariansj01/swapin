@@ -199,38 +199,33 @@ $hasPromo = $promotionMeta !== null;
   border-color: #d1d5db;
 }
 
-/* ---------- Media / Image ---------- */
+/* ---------- Media / Image - Fixed height for ALL cards ---------- */
 .lc-media-wrapper {
   position: relative;
   width: 100%;
-  height: 240px;
-  min-height: 240px;
-  max-height: 240px;
-  flex-shrink: 0;
+  height: 240px !important;
+  min-height: 240px !important;
+  max-height: 240px !important;
+  flex: 0 0 240px !important;
   background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
   overflow: hidden;
   border-bottom-left-radius: 18px;
   border-bottom-right-radius: 18px;
 }
-@supports (aspect-ratio: 1 / 1) {
-  .lc-media-wrapper {
-    height: auto;
-    min-height: 220px;
-    max-height: none;
-    aspect-ratio: 4 / 3;
-  }
-}
 .listing-card__media-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  display: block;
+  width: 100% !important;
+  height: 240px !important;
+  min-height: 240px !important;
+  max-height: 240px !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
 }
 .listing-card__media-placeholder {
   width: 100%;
-  height: 100%;
-  min-height: 220px;
+  height: 240px !important;
+  min-height: 240px !important;
+  max-height: 240px !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -252,9 +247,7 @@ $hasPromo = $promotionMeta !== null;
   border: none;
   color: #071A33;
   font-size: 1.15rem;
-  display: inline-flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -262,6 +255,15 @@ $hasPromo = $promotionMeta !== null;
   z-index: 3;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+}
+.listing-card--v2:hover .lc-fav-btn,
+.lc-fav-btn.is-saved {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 .lc-fav-btn:hover {
   background: #fff;
@@ -270,22 +272,27 @@ $hasPromo = $promotionMeta !== null;
 }
 .lc-fav-btn.is-saved { color: #ef4444; }
 
-/* ---------- Badges Row (Top Right/Center) ---------- */
+/* ---------- Badges Row (Top Right/Center) - Hover ONLY ---------- */
 .lc-badges-row {
   position: absolute;
   top: 12px;
   right: 12px;
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  display: flex;
   align-items: center;
   gap: 8px;
   z-index: 3;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 200ms ease, visibility 200ms ease, transform 200ms ease;
+}
+.listing-card--v2:hover .lc-badges-row {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 .lc-badge {
-  display: inline-flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 6px 14px;
@@ -294,6 +301,10 @@ $hasPromo = $promotionMeta !== null;
   font-weight: 800;
   line-height: 1.2;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.listing-card--v2:hover .lc-badge {
+  transform: translateY(0);
 }
 .lc-badge i { font-size: .9rem; }
 

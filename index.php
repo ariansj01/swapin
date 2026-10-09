@@ -606,6 +606,9 @@ render_navbar($user);
           @media (max-width: 768px) {
             .home-stores-card { width: calc(100% - 48px); }
           }
+          /* Ensure arrows show correctly for store slider */
+          .listings-row-wrapper:has(#home-stores-row) .listings-slider-arrow--next { right: 0; }
+          .listings-row-wrapper:has(#home-stores-row) .listings-slider-arrow--prev { left: 0; }
         </style>
         <section class="home-listings-section" aria-label="فروشگاه‌ها" style="margin-top:48px">
           <div class="home-section-heading home-section-heading--large mb-5">
@@ -619,7 +622,7 @@ render_navbar($user);
               <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="home-stores-row" aria-label="فروشگاه بعدی">
                 <i class="bi bi-chevron-right"></i>
               </button>
-              <div class="home-stores-scroll" id="home-stores-row">
+              <div class="listings-scroll-row home-stores-scroll" id="home-stores-row">
                 <?php foreach ($featuredStores as $store):
                   $name = $store['store_name'] ?: $store['name'];
                   $slug = $store['store_slug'];
