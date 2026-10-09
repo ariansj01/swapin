@@ -7938,3 +7938,110 @@ body.is-offline::after {
   .home-sidebar-social { gap: 12px; }
   .social-btn { width: 44px; height: 44px; min-width: 44px; font-size: 1.1rem; }
 }
+
+/* ── Sidebar Collapsible Filter Select Wraps ─────────────────────────── */
+.home-sidebar-select-wrap {
+  margin-top: 6px;
+  margin-bottom: 4px;
+  padding: 0 4px;
+  animation: sidebarSelectFade 0.2s ease;
+}
+@keyframes sidebarSelectFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.home-sidebar-select-wrap .form-control {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.home-sidebar-select-wrap .form-control:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.home-sidebar-select-wrap input[type="search"],
+.home-sidebar-select-wrap input[type="number"] {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  direction: rtl;
+}
+.home-sidebar-select-wrap input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* ── Sidebar Category Active State ───────────────────────────────────── */
+.home-sidebar-cats__item.is-active {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  padding: 9px 11px;
+}
+.home-sidebar-cats__item.is-active .home-sidebar-cats__icon {
+  background: #2563eb;
+  color: #ffffff;
+}
+.home-sidebar-cats__item.is-active .home-sidebar-cats__label {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+/* ── Sidebar Time Chip as <a> tag ────────────────────────────────────── */
+.home-sidebar-time__chips a.time-chip {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* ── Sidebar Price Apply Button ──────────────────────────────────────── */
+#apply-price-filter {
+  font-weight: 700 !important;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  font-size: 0.9rem !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.18);
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+#apply-price-filter:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+#apply-price-filter:active {
+  transform: translateY(0);
+}
+
+/* ── Make sure sidebar sticky stops exactly at end of sliders area ───── */
+/* Sticky element is bounded by its parent (home-main-layout) which ends
+   right after Stores section → no extra sticky beyond stores */
+#home-sliders-area {
+  position: relative;
+}
+.home-sidebar {
+  top: calc(var(--navbar-h, 72px) + 12px);
+  max-height: calc(100vh - var(--navbar-h, 72px) - 32px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+/* ── Hide any remaining old filter bar & category sections ───────────── */
+.home-categories-section,
+.home-categories-heading,
+.home-filter-bar,
+.home-steps {
+  display: none !important;
+}
