@@ -361,30 +361,34 @@ render_navbar($user);
               </select>
             </div>
 
-            <!-- انواع معامله -->
-            <div class="home-sidebar-field">
-              <label class="home-sidebar-field__label" for="sidebar-want-select">
-                <i class="bi bi-arrow-left-right"></i> انواع معامله
-              </label>
-              <select id="sidebar-want-select" name="want" class="form-control">
-                <option value=""    <?= $wantType === '' ? 'selected' : '' ?>>همه انواع معامله</option>
-                <option value="item"    <?= $wantType === 'item' ? 'selected' : '' ?>>کالا با کالا</option>
-                <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
-                <option value="credit"  <?= $wantType === 'credit' ? 'selected' : '' ?>>اعتبار</option>
-              </select>
+            <!-- انواع معامله + مرتب‌سازی کنار هم -->
+            <div class="home-sidebar-field-row">
+              <!-- انواع معامله -->
+              <div class="home-sidebar-field">
+                <label class="home-sidebar-field__label" for="sidebar-want-select">
+                  <i class="bi bi-arrow-left-right"></i> انواع معامله
+                </label>
+                <select id="sidebar-want-select" name="want" class="form-control">
+                  <option value=""    <?= $wantType === '' ? 'selected' : '' ?>>همه انواع معامله</option>
+                  <option value="item"    <?= $wantType === 'item' ? 'selected' : '' ?>>کالا با کالا</option>
+                  <option value="service" <?= $wantType === 'service' ? 'selected' : '' ?>>خدمات</option>
+                  <option value="credit"  <?= $wantType === 'credit' ? 'selected' : '' ?>>اعتبار</option>
+                </select>
+              </div>
+
+              <!-- مرتب‌سازی -->
+              <div class="home-sidebar-field">
+                <label class="home-sidebar-field__label" for="sidebar-sort-select">
+                  <i class="bi bi-sort-down-alt"></i> مرتب‌سازی
+                </label>
+                <select id="sidebar-sort-select" name="sort" class="form-control">
+                  <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
+                  <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
+                  <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
+                </select>
+              </div>
             </div>
 
-            <!-- مرتب‌سازی -->
-            <div class="home-sidebar-field">
-              <label class="home-sidebar-field__label" for="sidebar-sort-select">
-                <i class="bi bi-sort-down-alt"></i> مرتب‌سازی
-              </label>
-              <select id="sidebar-sort-select" name="sort" class="form-control">
-                <option value="new"   <?= $sort === 'new'   ? 'selected' : '' ?>>جدیدترین</option>
-                <option value="old"   <?= $sort === 'old'   ? 'selected' : '' ?>>قدیمی‌ترین</option>
-                <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>بالاترین ارزش</option>
-              </select>
-            </div>
 
             <!-- Price Min/Max -->
             <div class="home-sidebar-field">
