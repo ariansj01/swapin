@@ -1399,8 +1399,24 @@ function ai_search_listings_by_need(string $needText, ?string $city = null, int 
     $params = [];
 
     if (!empty($filters['city'])) {
-        $whereClauses[] = 'l.city LIKE ?';
-        $params[] = '%' . $filters['city'] . '%';
+        $cityFilter = $filters['city'];
+        $provinces = iran_provinces();
+        if (in_array($cityFilter, $provinces, true)) {
+            $provinceCities = iran_cities_by_province($cityFilter);
+            if (!empty($provinceCities)) {
+                $placeholders = implode(',', array_fill(0, count($provinceCities), '?'));
+                $whereClauses[] = "l.city IN ($placeholders)";
+                foreach ($provinceCities as $pc) {
+                    $params[] = $pc;
+                }
+            } else {
+                $whereClauses[] = 'l.city LIKE ?';
+                $params[] = '%' . $cityFilter . '%';
+            }
+        } else {
+            $whereClauses[] = 'l.city LIKE ?';
+            $params[] = '%' . $cityFilter . '%';
+        }
     }
     if (!empty($filters['category_id'])) {
         $whereClauses[] = '(l.category_id = ? OR c.parent_id = ?)';

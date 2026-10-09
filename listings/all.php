@@ -21,7 +21,7 @@ try {
 // فیلترها
 $search    = clean($_GET['q']          ?? '');
 $catSlug   = clean($_GET['cat']        ?? '');
-$city      = clean($_GET['city']       ?? '');
+$city      = clean($_GET['city']       ?? '') ?: 'تهران';
 $locMode   = clean($_GET['loc']        ?? '');
 $nearbyCitiesRaw = clean($_GET['nearby_cities'] ?? '');
 $nearbyCitiesList = ($locMode === 'nearby') ? parse_nearby_cities_param($nearbyCitiesRaw) : [];
@@ -68,8 +68,23 @@ if ($locMode === 'nearby' && $nearbyCitiesList !== []) {
         $params[] = $nearbyCity;
     }
 } elseif ($city) {
-    $whereClauses[] = 'l.city LIKE ?';
-    $params[] = "%{$city}%";
+    $provinces = iran_provinces();
+    if (in_array($city, $provinces, true)) {
+        $provinceCities = iran_cities_by_province($city);
+        if (!empty($provinceCities)) {
+            $placeholders = implode(',', array_fill(0, count($provinceCities), '?'));
+            $whereClauses[] = "l.city IN ($placeholders)";
+            foreach ($provinceCities as $pc) {
+                $params[] = $pc;
+            }
+        } else {
+            $whereClauses[] = 'l.city LIKE ?';
+            $params[] = "%{$city}%";
+        }
+    } else {
+        $whereClauses[] = 'l.city LIKE ?';
+        $params[] = "%{$city}%";
+    }
 }
 if ($wantType) {
     $whereClauses[] = 'l.want_type = ?';

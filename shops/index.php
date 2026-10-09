@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $user = auth_user();
 $search = clean($_GET['q'] ?? '');
-$city   = clean($_GET['city'] ?? '');
+$city   = clean($_GET['city'] ?? '') ?: 'تهران';
 $type   = in_array($_GET['type'] ?? '', ['online', 'physical'], true) ? (string)$_GET['type'] : '';
 $page   = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 18;
@@ -123,7 +123,7 @@ render_navbar($user);
     </nav>
 
     <form method="GET" class="shops-filter-bar card mb-6">
-      <div class="card-body shops-filter-bar__inner">
+      <div class="card-body shops-filter-bar__inner" style="width: 55%;">
         <div class="shops-filter-field">
           <label for="shops-q">جستجوی فروشگاه</label>
           <input type="search" id="shops-q" name="q" class="form-control" value="<?= h($search) ?>" placeholder="نام فروشگاه…">

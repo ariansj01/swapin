@@ -248,7 +248,7 @@ function render_navbar(?array $user = null): void {
     $loggedIn   = $user !== null;
     $GLOBALS['_nav_user'] = $user;
 
-    $city      = clean($_GET['city']      ?? '');
+    $city      = clean($_GET['city']      ?? '') ?: 'تهران';
     $search    = clean($_GET['q']         ?? '');
 
     // Build full hierarchical category tree for multi-level dropdown
@@ -294,7 +294,7 @@ function render_navbar(?array $user = null): void {
     $cityDisplay = $city ? h($city) : 'انتخاب شهر';
     $cityHiddenInput = $city ? '<input type="hidden" name="city" value="' . h($city) . '">' : '';
 
-    $cities_list = iran_cities();
+    $cities_list = iran_provinces();
     $cityOptionsHtml = '';
     foreach ($cities_list as $c) {
         $cname = h($c);
@@ -647,7 +647,7 @@ function render_footer(): void {
   <div class="container">
     <div class="site-footer__compact-row">
       <div class="site-footer__compact-col site-footer__compact-col--text">
-        <p>سواپین بستری امن و آسان برای معاوضه‌ی کالاها و خدمات در سراسر ایران</p>
+        <p>سواَپین بستری امن و آسان برای معاوضه‌ی کالاها و خدمات در سراسر ایران</p>
       </div>
       <div class="site-footer__compact-col site-footer__compact-col--links">
         <a href="{$url}/fraud-prevention">راهنمای امنیت</a>
@@ -665,7 +665,7 @@ function render_footer(): void {
       </div>
     </div>
     <p class="site-footer__compact-copy">
-      2026 | تمامی حقوق این وبسایت متعلق به سواپین می‌باشد.
+      2026 | تمامی حقوق این وبسایت متعلق به سواَپین می‌باشد.
     </p>
   </div>
   {$contentPageFooterLinks}

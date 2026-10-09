@@ -50,42 +50,35 @@ if ((!$storeName || !$storeSlug) && !empty($l['user_id'])) {
 }
 $hasStore = $storeName && $storeSlug;
 
-$isSwap   = empty($l['listing_mode']) || $l['listing_mode'] === 'swap' || $l['listing_mode'] === 'both';
 $listingMode = trim((string)($l['listing_mode'] ?? ''));
 if ($listingMode === '') {
     $listingMode = 'swap';
 }
-$hasSellCta = $hasStore && in_array($listingMode, ['sell', 'both'], true);
 $hasSwapCta = in_array($listingMode, ['swap', 'both'], true);
+$hasSellCta = $hasStore && in_array($listingMode, ['sell', 'both'], true);
 $isSaved  = isset($l['id']) && in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
 $promotionMeta = function_exists('listing_active_promotion_meta') ? listing_active_promotion_meta($l) : null;
 $promotionClass = $promotionMeta['card_class'] ?? '';
+$hasPromo = $promotionMeta !== null;
 ?>
-<article class="listing-card <?= h($promotionClass) ?>" style="height: 100%; cursor: pointer;" data-navigate="<?= $cardHref ?>">
-  <div class="listing-card__header">
-    <div class="listing-card__header-start">
-      <?php if (!empty($l['want_in_return'])): ?>
-      <span class="listing-card__badge listing-card__swap-badge">
-        <i class="bi bi-arrow-left-right"></i>
-        <!-- معاوضه با: <?= h(mb_strimwidth($l['want_in_return'], 0, 36, '…')) ?> -->
-        معاوضه
-      </span>
-      <?php elseif ($isSwap): ?>
-      <span class="listing-card__badge">
-        <i class="bi bi-arrow-left-right"></i> معاوضه
-      </span>
-      <?php else: ?>
-      <span class="listing-card__badge">
-        <i class="bi bi-tag"></i> <?= h(listing_mode_label($l['listing_mode'])) ?>
-      </span>
-      <?php endif; ?>
-      <?= listing_promotion_badges_html($l) ?>
+<article class="listing-card listing-card--v2 <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
+
+  <!-- ========== IMAGE SECTION (TOP) ========== -->
+  <div class="listing-card__media-wrapper">
+    <?php if (!empty($l['thumb'])): ?>
+    <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>" class="listing-card__media-img" loading="lazy">
+    <?php else: ?>
+    <div class="listing-card__media-placeholder">
+      <i class="bi bi-image"></i>
     </div>
+    <?php endif; ?>
+
+    <!-- Favorite Button - Top Left -->
     <?php $currentUser = $currentUser ?? auth_user(); ?>
     <?php if (!empty($currentUser['id'])): ?>
     <button type="button"
-            class="listing-card__favorite<?= $isSaved ? ' is-saved' : '' ?>"
+            class="lc-fav-btn<?= $isSaved ? ' is-saved' : '' ?>"
             data-save-toggle="<?= $isSaved ? 'true' : 'false' ?>"
             data-listing-id="<?= (int)$l['id'] ?>"
             aria-label="<?= $isSaved ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها' ?>"
@@ -95,161 +88,371 @@ $promotionClass = $promotionMeta['card_class'] ?? '';
     </button>
     <?php else: ?>
     <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode('/listings/view?id=' . $l['id']) ?>"
-       class="listing-card__favorite"
+       class="lc-fav-btn"
        aria-label="ورود برای ذخیره"
        onclick="event.stopPropagation()">
       <i class="bi bi-heart"></i>
     </a>
     <?php endif; ?>
+
+    <!-- Badges Row on Image - Top Right/Center -->
+    <div class="lc-badges-row">
+      <?php if ($hasPromo): ?>
+      <span class="lc-badge lc-badge--promo <?= $promotionMeta['badge_class'] ?? '' ?>">
+        <i class="bi <?= $promotionMeta['icon'] ?? 'bi-star-fill' ?>"></i>
+        <?= h($promotionMeta['label'] ?? 'پلن ویژه') ?>
+      </span>
+      <?php endif; ?>
+      <?php if ($hasSwapCta): ?>
+      <span class="lc-badge lc-badge--swap">
+        معاوضه
+        <i class="bi bi-arrow-left-right"></i>
+      </span>
+      <?php endif; ?>
+    </div>
   </div>
 
-  <div class="listing-card__link">
-    <div class="listing-card__product">
-      <div class="listing-card__details">
-        <h3 class="listing-card__title"><?= h($l['title']) ?></h3>
-        <?php if ($hasStore && $hasSellCta && $hasSwapCta): ?>
-        <span class="listing-card__badge listing-card__badge--both" style="display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;color:var(--accent,#2563eb);background:rgba(37,99,235,.1);padding:2px 8px;border-radius:999px;margin-bottom:4px"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
-        <?php endif; ?>
-        <?php if (!empty($l['cat_name'])): ?>
-        <span class="listing-card__cat">دسته: <?= h(category_label($l['cat_slug'] ?? '', $l['cat_name'] ?? '')) ?></span>
-        <?php endif; ?>
-        <?php if ($hasStore): ?>
-        <a href="<?= APP_URL ?>/shop/<?= h($storeSlug) ?>" class="listing-card__store-link" onclick="event.stopPropagation()" style="width: 65%;display:inline-flex;align-items:center;gap:3px;font-size:.75rem;color:var(--dash-navy);text-decoration:none;margin-top:2px;padding:2px 8px;background:rgba(59,130,246,.1);border-radius:999px;">
-          <i class="bi bi-shop"></i> <?= h($storeName) ?>
-        </a>
-        <?php endif; ?>
+  <!-- ========== CONTENT SECTION (BELOW IMAGE) ========== -->
+  <div class="lc-content">
 
-        <!-- <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
-        <div class="listing-card__value">
-          <span class="listing-card__value-label">ارزش تقریبی:</span>
-          <span class="listing-card__value-amount"><?= fmt_credit((float)$l['estimated_value']) ?></span>
-        </div>
-        <?php endif; ?> -->
-      </div>
+    <!-- Title -->
+    <h3 class="lc-title"><?= h($l['title']) ?></h3>
 
-      <div class="listing-card__media">
-        <?php if (!empty($l['thumb'])): ?>
-        <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>" class="listing-card__img" loading="lazy">
-        <?php else: ?>
-        <div class="listing-card__img-placeholder">
-          <i class="bi bi-image"></i>
-        </div>
-        <?php endif; ?>
-      </div>
-    </div>
-
-    <div class="listing-card__exchange">
-      <div class="listing-card__exchange-heading">نیازمند:</div>
-      <div class="listing-card__exchange-items">
-        <?php if (!empty($l['want_in_return'])): ?>
-          <i class="bi bi-arrow-left-right"></i><?= h($l['want_in_return']) ?>
-        <?php else: ?>
-          ...
-        <?php endif; ?>
-      </div>
-    </div>
-
+    <!-- Value / Price Row -->
     <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
-      <div class="listing-card__value" style="margin: 6px 16px;">
-        <span class="listing-card__value-label">ارزش تقریبی:</span>
-        <span class="listing-card__value-amount"><?= fmt_credit((float)$l['estimated_value']) ?></span>
-      </div>
+    <div class="lc-value-row">
+      <span class="lc-value-amount"><?= fmt_credit((float)$l['estimated_value']) ?></span>
+      <span class="lc-value-label">:ارزش تقریبی</span>
+    </div>
     <?php endif; ?>
 
-    <div class="listing-card__meta">
+    <!-- Want in Return Box -->
+    <?php if (!empty($l['want_in_return'])): ?>
+    <div class="lc-want-box">
+      <span class="lc-want-arrow"><i class="bi bi-arrow-left-right"></i></span>
+      <span class="lc-want-text">مبادله با <?= h($l['want_in_return']) ?></span>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($hasStore && $hasSellCta && $hasSwapCta): ?>
+    <span class="lc-store-badge lc-store-badge--both"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
+    <?php endif; ?>
+    <?php if ($hasStore): ?>
+    <a href="<?= APP_URL ?>/shop/<?= h($storeSlug) ?>" class="lc-store-link" onclick="event.stopPropagation()">
+      <i class="bi bi-shop"></i> <?= h($storeName) ?>
+    </a>
+    <?php endif; ?>
+
+    <!-- Meta Row -->
+    <div class="lc-meta">
       <?php if (!empty($l['created_at'])): ?>
       <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
       <?php endif; ?>
       <span><i class="bi bi-eye"></i> بازدید: <?= number_format((int)($l['views'] ?? 0)) ?></span>
+      <?php if (!empty($l['condition'])): ?>
       <span>وضعیت: <?= condition_label($l['condition'] ?? '') ?></span>
+      <?php endif; ?>
       <?php if (!empty($l['city'])): ?>
       <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? '، ' . h($l['neighborhood']) : '' ?></span>
       <?php endif; ?>
     </div>
 
-    <div class="listing-card__cta-container">
-        <div class="listing-card__cta-flex">
-            <?php
-            $buyUrl = APP_URL . '/orders/checkout.php?listing_id=' . $l['id'];
-            $swapUrl = APP_URL . '/listings/view?id=' . $l['id'];
-
-            $swapBtnDisabled = !$hasSwapCta;
-            $swapToast = $swapBtnDisabled ? 'امکان معاوضه برای این کالا وجود ندارد.' : '';
-
-            if ($hasSellCta):
-            ?>
-            <a href="<?= $buyUrl ?>"
-               class="btn-new btn-new--buy"
-               onclick="handleCardClick(event, this)">
-                <i class="bi bi-cart-check" style="color: #FBBF24;"></i>
-                <span>خرید کالا</span>
-            </a>
-            <?php endif; ?>
-            <a href="<?= !$swapBtnDisabled ? $swapUrl : '#' ?>"
-               class="btn-new btn-new--swap <?= $swapBtnDisabled ? 'is-disabled' : '' ?>"
-               <?= $swapBtnDisabled ? 'data-toast="' . $swapToast . '"' : '' ?>
-               onclick="handleCardClick(event, this)">
-                <i class="bi bi-arrow-left-right" style="color: #FBBF24;"></i>
-                <span>پیشنهاد معاوضه</span>
-            </a>
-        </div>
+    <!-- CTA Button -->
+    <div class="lc-cta">
+      <?php if ($hasSwapCta): ?>
+      <a href="<?= $cardHref ?>"
+         class="lc-btn lc-btn--swap"
+         onclick="handleCardV2Click(event, this)">
+        <i class="bi bi-arrow-left-right"></i>
+        <span>پیشنهاد معاوضه</span>
+      </a>
+      <?php else: ?>
+      <a href="<?= $cardHref ?>"
+         class="lc-btn lc-btn--view"
+         onclick="handleCardV2Click(event, this)">
+        <i class="bi bi-eye"></i>
+        <span>مشاهده آگهی</span>
+      </a>
+      <?php endif; ?>
     </div>
+
   </div>
 </article>
 
 <style>
-.btn-new {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex: 1;
-    padding: 10px;
-    border-radius: 12px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: all 0.2s ease;
+/* =========================================================
+   NEW LISTING CARD (V2) — Image-Top Layout
+   ========================================================= */
+.listing-card--v2 {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  height: 100%;
 }
-.btn-new.is-disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.listing-card--v2:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px -12px rgba(7, 26, 51, 0.25);
+  border-color: #d1d5db;
 }
-.btn-new--buy {
-    background-color: #071A33; /* navy */
-    color: white;
+
+/* ---------- Media / Image ---------- */
+.lc-media-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  overflow: hidden;
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
 }
-.btn-new--buy:not(.is-disabled):hover {
-    background-color: #1c3478;
+.listing-card__media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-.btn-new--swap {
-    background-color: transparent;
-    border: 2px solid #FBBF24; /* yellow */
-    color: #071A33; /* navy */
+.listing-card__media-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
 }
-.btn-new--swap:not(.is-disabled):hover {
-    background-color: rgba(251, 191, 36, 0.1);
+.listing-card__media-placeholder i { font-size: 3rem; }
+
+/* ---------- Favorite Button (Top-Left, white round) ---------- */
+.lc-fav-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border: none;
+  color: #071A33;
+  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  z-index: 3;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
-.listing-card__cta-container {
-    padding: 8px 16px 16px;
+.lc-fav-btn:hover {
+  background: #fff;
+  transform: scale(1.08);
+  color: #ef4444;
 }
-.listing-card__cta-flex {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.lc-fav-btn.is-saved { color: #ef4444; }
+
+/* ---------- Badges Row (Top Right/Center) ---------- */
+.lc-badges-row {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 3;
+}
+.lc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 800;
+  line-height: 1.2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.lc-badge i { font-size: .9rem; }
+
+/* VIP/Plan Badge — cream/yellow with star */
+.lc-badge--promo {
+  background: #FFF5D1;
+  color: #92400e;
+  border: 1px solid #FDE68A;
+}
+.lc-badge--promo i { color: #F59E0B; }
+
+/* Swap Badge — navy background */
+.lc-badge--swap {
+  background: #071A33;
+  color: #ffffff;
+}
+.lc-badge--swap i { color: #FBBF24; }
+
+/* ---------- Content ---------- */
+.lc-content {
+  padding: 18px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.lc-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #071A33;
+  line-height: 1.55;
+  text-align: center;
+}
+
+/* Value row */
+.lc-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+.lc-value-label {
+  font-size: .9rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+.lc-value-amount {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #F59E0B;
+  line-height: 1.2;
+}
+
+/* Want Box */
+.lc-want-box {
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+.lc-want-arrow {
+  color: #F59E0B;
+  display: inline-flex;
+  align-items: center;
+}
+.lc-want-arrow i { font-size: 1.05rem; }
+.lc-want-text {
+  flex: 1;
+  color: #071A33;
+  font-size: .95rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Store badges */
+.lc-store-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  align-self: flex-start;
+}
+.lc-store-badge--both {
+  color: #2563eb;
+  background: rgba(37,99,235,.1);
+}
+.lc-store-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: #071A33;
+  text-decoration: none;
+  padding: 4px 10px;
+  background: rgba(59,130,246,.08);
+  border-radius: 999px;
+  align-self: flex-start;
+}
+
+/* Meta row */
+.lc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 8px 0 4px;
+  color: #6b7280;
+  font-size: .82rem;
+  font-weight: 600;
+  line-height: 1.8;
+  margin-top: 4px;
+}
+.lc-meta i {
+  font-size: .82rem;
+  opacity: .8;
+  margin-left: 2px;
+}
+
+/* CTA */
+.lc-cta {
+  margin-top: auto;
+  padding-top: 8px;
+}
+.lc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 14px;
+  font-size: 1.02rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.lc-btn i { font-size: 1.1rem; }
+
+/* Swap button — yellow/orange border, navy text */
+.lc-btn--swap {
+  background: transparent;
+  border-color: #FBBF24;
+  color: #071A33;
+}
+.lc-btn--swap i { color: #F59E0B; }
+.lc-btn--swap:hover {
+  background: rgba(251, 191, 36, 0.12);
+  transform: scale(1.01);
+}
+
+/* View button (non-swap mode) */
+.lc-btn--view {
+  background: #071A33;
+  border-color: #071A33;
+  color: #ffffff;
+}
+.lc-btn--view:hover {
+  background: #14305e;
+  transform: scale(1.01);
 }
 </style>
 
 <script>
-function handleCardClick(event, element) {
+function handleCardV2Click(event, element) {
     event.stopPropagation();
-    if (element.classList.contains('is-disabled')) {
-        event.preventDefault();
-        const message = element.getAttribute('data-toast');
-        if (message && typeof showToast === 'function') {
-            showToast(message, 'info');
-        }
-    } else {
-        window.location.href = element.href;
-    }
+    window.location.href = element.href;
 }
 </script>

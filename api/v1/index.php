@@ -180,8 +180,21 @@ if ($path === 'listings' && $method === 'GET') {
             $params = array_merge($params, $cities);
         }
     } elseif ($city) {
-        $where[] = 'l.city LIKE ?';
-        $params[] = "%{$city}%";
+        $provinces = iran_provinces();
+        if (in_array($city, $provinces, true)) {
+            $provinceCities = iran_cities_by_province($city);
+            if (!empty($provinceCities)) {
+                $ph = implode(',', array_fill(0, count($provinceCities), '?'));
+                $where[] = "l.city IN ($ph)";
+                $params = array_merge($params, $provinceCities);
+            } else {
+                $where[] = 'l.city LIKE ?';
+                $params[] = "%{$city}%";
+            }
+        } else {
+            $where[] = 'l.city LIKE ?';
+            $params[] = "%{$city}%";
+        }
     }
     $sqlWhere = 'WHERE ' . implode(' AND ', $where);
     $total = (int)(DB::fetch(

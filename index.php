@@ -17,7 +17,7 @@ $user = auth_user();
 // ─── Filters ─────────────────────────────────────────────────────────────────
 $search    = clean($_GET['q']         ?? '');
 $catSlug   = clean($_GET['cat']       ?? '');
-$city      = clean($_GET['city']      ?? '');
+$city      = clean($_GET['city']      ?? '') ?: 'تهران';
 $wantType  = clean($_GET['want']      ?? '');
 $sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
 $page      = max(1, (int)($_GET['page'] ?? 1));
@@ -49,8 +49,23 @@ if ($catId) {
     $params[] = $catId;
 }
 if ($city) {
-    $whereClauses[] = 'l.city LIKE ?';
-    $params[] = "%{$city}%";
+    $provinces = iran_provinces();
+    if (in_array($city, $provinces, true)) {
+        $provinceCities = iran_cities_by_province($city);
+        if (!empty($provinceCities)) {
+            $placeholders = implode(',', array_fill(0, count($provinceCities), '?'));
+            $whereClauses[] = "l.city IN ($placeholders)";
+            foreach ($provinceCities as $pc) {
+                $params[] = $pc;
+            }
+        } else {
+            $whereClauses[] = 'l.city LIKE ?';
+            $params[] = "%{$city}%";
+        }
+    } else {
+        $whereClauses[] = 'l.city LIKE ?';
+        $params[] = "%{$city}%";
+    }
 }
 if ($wantType) {
     $whereClauses[] = 'l.want_type = ?';
@@ -210,7 +225,7 @@ render_navbar($user);
 
 <?php if (!$search && !$catSlug && $page === 1): ?>
 <section class="hero hero--compact">
-  <div class="container hero__inner">
+  <div class="container hero__inner" style="background: var(--gradient-brand);border-radius: 10px;margin-top: 13px;">
     <div class="hero__visual">
       <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
     </div>
@@ -284,13 +299,13 @@ render_navbar($user);
     <div class="home-main-layout" id="home-sliders-area">
 
       <!-- ===== Sidebar (Beside Sliders) ===== -->
-      <aside class="home-sidebar card" aria-label="دسته‌بندی‌ها، فیلترها و منوها">
+      <aside class="home-sidebar card" aria-label="دسته‌بندی‌ها، فیلترها و منوها" style="background: transparent;border: none;box-shadow: none;">
         <div class="home-sidebar__inner">
 
           <!-- Title + Count -->
           <div class="home-sidebar__header">
             <h3 class="home-sidebar__title">دسته‌بندی‌های محبوب</h3>
-            <span class="home-sidebar__count"><?= fmt_num($total) ?> دسته</span>
+            <!-- <span class="home-sidebar__count"><?= fmt_num($total) ?> دسته</span> -->
           </div>
 
           <!-- Categories List (Real Filter Links) -->
@@ -353,11 +368,13 @@ render_navbar($user);
             <!-- همه شهرها -->
             <div class="home-sidebar-field">
               <label class="home-sidebar-field__label" for="sidebar-city-select">
-                <i class="bi bi-geo-alt"></i> همه شهرها
+                <i class="bi bi-geo-alt"></i> همه استان‌ها
               </label>
               <select id="sidebar-city-select" name="city" class="form-control">
-                <option value="">همه شهرها</option>
-                <?= render_city_options($city) ?>
+                <option value="">همه استان‌ها</option>
+                <?php foreach (iran_provinces() as $prov): ?>
+                  <option value="<?= h($prov) ?>" <?= $city === $prov ? 'selected' : '' ?>><?= h($prov) ?></option>
+                <?php endforeach; ?>
               </select>
             </div>
 
@@ -630,7 +647,7 @@ render_navbar($user);
                     </a>
                     <div class="shop-card__body">
                       <div class="shop-card__profile">
-                        <?= avatar_html(null, $name, 'md') ?>
+                        <!-- <?= avatar_html(null, $name, 'md') ?> -->
                         <div>
                           <h2 class="shop-card__name"><a href="<?= $shopUrl ?>"><?= h($name) ?></a></h2>
                           <div class="shop-card__tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
