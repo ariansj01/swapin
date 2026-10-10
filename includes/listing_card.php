@@ -363,6 +363,12 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   color: #071A33;
   line-height: 1.55;
   text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: calc(1.12rem * 1.55 * 2);
 }
 
 /* Value row */
@@ -465,8 +471,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 
 /* CTA */
 .lc-cta {
-  margin-top: auto;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 .lc-btn {
   display: flex;

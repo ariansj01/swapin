@@ -97,7 +97,7 @@
   --ease:        cubic-bezier(.4,0,.2,1);
 
   /* Layout */
-  --navbar-h:    64px;
+  --navbar-h:    110px;
   --container:   1200px;
   --container-md: 1100px;
   --container-sm: 520px;
@@ -118,6 +118,7 @@ body {
   direction: rtl;
   text-align: right;
   overflow-x: hidden;
+  padding-top: var(--navbar-h);
 }
 
 a { color: var(--primary); text-decoration: none; transition: color var(--duration) var(--ease); }
@@ -186,8 +187,10 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
 /* ── 5. Navbar ─────────────────────────────────────────────────────────── */
 .navbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
   z-index: 200;
   background: var(--primary);
   border-bottom: 1px solid rgba(255,255,255,.08);
@@ -670,6 +673,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
   }
 }
 @media (max-width: 768px) {
+  :root { --navbar-h: 72px; }
   body { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
 
   .navbar-inner {
@@ -7618,7 +7622,7 @@ body.is-offline::after {
 .home-sidebar {
   position: sticky;
   top: calc(var(--navbar-h) + 16px);
-  max-height: calc(100vh - var(--navbar-h) - 32px);
+  max-height: 100%;
   height: fit-content;
   overflow-y: auto;
   border-radius: 24px;
