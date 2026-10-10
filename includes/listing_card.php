@@ -404,11 +404,15 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 .lc-want-arrow i { font-size: 1.05rem; }
 .lc-want-text {
   flex: 1;
+  min-width: 0;
   color: #071A33;
   font-size: .95rem;
   font-weight: 700;
   text-align: center;
   line-height: 1.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Store badges */
@@ -468,9 +472,9 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  /* gap: 10px; */
   width: 100%;
-  padding: 17px 10px;
+  padding: 7px 5px;
   border-radius: 14px;
   font-size: 1rem;
   font-weight: 800;
