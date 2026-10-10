@@ -4172,10 +4172,6 @@ html body .categories-dropdown {
 }
 
 .home-ai {
-  background:
-    radial-gradient(1200px 620px at 110% -10%, rgba(255,201,40,.10), transparent 60%),
-    radial-gradient(1000px 520px at -15% 120%, rgba(59,130,246,.18), transparent 55%),
-    linear-gradient(135deg, #06101f 0%, #0B2550 40%, var(--primary) 100%);
   color: #fff;
   padding: 15px 0 0px;
   position: relative;
@@ -5760,7 +5756,7 @@ html body .categories-dropdown {
     min-width: 86% !important;
     scroll-snap-align: start !important;
     scroll-snap-stop: always !important;
-    padding: 68px 20px 24px 20px !important;
+    /* padding: 68px 20px 24px 20px !important; */
     display: flex !important;
     flex-direction: column !important;
     position: relative !important;
@@ -5780,6 +5776,7 @@ html body .categories-dropdown {
   }
 
   .home-steps .step-card__number {
+    display: none !important;
     position: absolute !important;
     top: 20px !important;
     right: 20px !important;
@@ -5799,9 +5796,13 @@ html body .categories-dropdown {
 
   .home-steps .step-card__content {
     display: flex !important;
-    flex-direction: column !important;
+    /* flex-direction: column !important; */
     gap: 14px !important;
     text-align: right !important;
+  }
+  .listings-row-wrapper {
+    width: 100%;
+    margin-right: -5%;
   }
 
   .home-steps .step-card__icon-wrap {

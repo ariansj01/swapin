@@ -335,8 +335,22 @@ render_navbar($user);
     <div class="home-main-layout" id="home-sliders-area">
 
       <!-- ===== Sidebar (Beside Sliders) ===== -->
-      <aside class="home-sidebar card" aria-label="دسته‌بندی‌ها، فیلترها و منوها" style="background: transparent;border: none;box-shadow: none;">
-        <div class="home-sidebar__inner">
+      <aside class="home-sidebar card home-sidebar--mobile-collapsible" id="home-mobile-sidebar"
+             aria-label="دسته‌بندی‌ها، فیلترها و منوها"
+             style="background: transparent;border: none;box-shadow: none;">
+
+        <!-- دکمه باز/بسته سایدبار (فقط در موبایل) -->
+        <button type="button"
+                class="home-sidebar__mobile-toggle"
+                id="home-sidebar-mobile-toggle"
+                aria-expanded="false"
+                aria-controls="home-mobile-sidebar">
+          <span class="home-sidebar__mobile-toggle-icon"><i class="bi bi-sliders2"></i></span>
+          <span class="home-sidebar__mobile-toggle-label">فیلترها و دسته‌بندی‌ها</span>
+          <span class="home-sidebar__mobile-toggle-caret"><i class="bi bi-chevron-down"></i></span>
+        </button>
+
+        <div class="home-sidebar__inner home-sidebar__inner--collapsible">
 
           <!-- Title + Count -->
           <div class="home-sidebar__header">
@@ -545,6 +559,138 @@ render_navbar($user);
 
         </div>
       </aside>
+
+      <!-- Sidebar Mobile Collapsible Styles -->
+      <style>
+        @media (max-width: 768px) {
+          .home-sidebar--mobile-collapsible {
+            position: relative;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+          .home-sidebar__mobile-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            border-radius: 14px;
+            border: 1.5px solid #e5e7eb;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            cursor: pointer;
+            transition: all .2s ease;
+            box-shadow: 0 6px 20px -14px rgba(7,26,51,.25);
+            font-weight: 700;
+          }
+          .home-sidebar__mobile-toggle:hover {
+            border-color: #3b82f6;
+            background: #ffffff;
+          }
+          .home-sidebar__mobile-toggle:active {
+            transform: scale(.99);
+          }
+          .home-sidebar__mobile-toggle-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #ffffff;
+            font-size: .95rem;
+            flex-shrink: 0;
+          }
+          .home-sidebar__mobile-toggle-label {
+            flex: 1;
+            text-align: right;
+            font-size: .95rem;
+            color: #071A33;
+          }
+          .home-sidebar__mobile-toggle-caret {
+            display: inline-flex;
+            align-items: center;
+            color: #64748b;
+            font-size: .9rem;
+            transition: transform .25s ease;
+            flex-shrink: 0;
+          }
+          .home-sidebar--mobile-collapsible.is-open
+          .home-sidebar__mobile-toggle-caret {
+            transform: rotate(180deg);
+            color: #1d4ed8;
+          }
+          .home-sidebar--mobile-collapsible.is-open
+          .home-sidebar__mobile-toggle {
+            border-color: rgba(59,130,246,.5);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.08);
+          }
+          .home-sidebar__inner--collapsible {
+            display: none;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity .3s ease, transform .3s ease;
+          }
+          .home-sidebar--mobile-collapsible.is-open
+          .home-sidebar__inner--collapsible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            animation: homeSidebarFadeIn .35s ease both;
+          }
+          @keyframes homeSidebarFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+        }
+        @media (min-width: 769px) {
+          .home-sidebar__mobile-toggle { display: none !important; }
+        }
+      </style>
+
+      <script>
+      (function () {
+        var sidebar = document.getElementById('home-mobile-sidebar');
+        var toggle  = document.getElementById('home-sidebar-mobile-toggle');
+        if (!sidebar || !toggle) return;
+        var MOBILE_MQ = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
+        function sync() {
+          if (MOBILE_MQ && MOBILE_MQ.matches) {
+            // در موبایل، پیش‌فرض بسته مگر که کاربر باز کرده
+            if (!sidebar.dataset.userToggled) {
+              sidebar.classList.remove('is-open');
+              toggle.setAttribute('aria-expanded', 'false');
+            }
+          } else {
+            // در دسکتاپ، همیشه باز (CSS خودش display: normal می‌دهد)
+            sidebar.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
+          }
+        }
+        toggle.addEventListener('click', function () {
+          var isOpen = sidebar.classList.toggle('is-open');
+          toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          sidebar.dataset.userToggled = '1';
+          if (isOpen) {
+            try {
+              var inner = sidebar.querySelector('.home-sidebar__inner--collapsible');
+              if (inner) {
+                inner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            } catch (e) {}
+          }
+        });
+        sync();
+        if (MOBILE_MQ && MOBILE_MQ.addEventListener) {
+          MOBILE_MQ.addEventListener('change', sync);
+        } else if (MOBILE_MQ && MOBILE_MQ.addListener) {
+          MOBILE_MQ.addListener(sync);
+        }
+      })();
+      </script>
 
       <!-- ===== Main Content (Only Sliders: Listings + Stores) ===== -->
       <div class="home-main-content">
@@ -940,10 +1086,7 @@ render_navbar($user);
   font-size: 1.6rem;
   font-weight: 900;
   color: #FFFFFF;
-  background: linear-gradient(135deg, #071A33, #1e3a8a);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+
   line-height: 1.35;
 }
 @media (max-width: 720px) { .home-ai-form__title { font-size: 1.35rem; } }
@@ -954,7 +1097,6 @@ render_navbar($user);
   margin-bottom: 8px;
   font-size: .88rem;
   font-weight: 700;
-  color: #071A33;
 }
 .home-ai-form__field .form-control,
 .home-ai-form__field textarea.form-control {
@@ -1033,7 +1175,7 @@ render_navbar($user);
   margin-top: 8px;
   padding-top: var(--sp-3);
   border-top: 1px dashed rgba(7,26,51,.12);
-  color: #475569;
+
   font-size: .78rem;
   font-weight: 700;
 }
@@ -1396,7 +1538,7 @@ render_navbar($user);
 
 <section class="home-section home-trust home-trust--compact">
   <div class="container">
-    <div class="trust-grid trust-grid--compact">
+    <div class="trust-grid trust-grid--compact" id="home-trust-slider" data-role="trust-slider">
       <?php
       $trust = [
           ['bi-star-fill',        'امتیاز و نظرات',    'بعد از هر مبادله، طرفین به هم امتیاز می‌دهند و پروفایل اعتماد ساخته می‌شود.'],
@@ -1404,9 +1546,11 @@ render_navbar($user);
           ['bi-clock-history',    'تاریخچه معاملات',   'سوابق مبادلات انجام‌شده برای شفافیت در پروفایل قابل مشاهده است.'],
           ['bi-shield-lock',      'پیام‌رسانی امن',     'گفتگوی مستقیم داخل پلتفرم قبل از نهایی کردن معامله.'],
       ];
+      $trustIdx = 0;
       foreach ($trust as [$icon, $title, $desc]):
+        $trustIdx++;
       ?>
-      <article class="trust-card trust-card--compact">
+      <article class="trust-card trust-card--compact trust-slider__item" data-trust-index="<?= $trustIdx ?>">
         <div class="trust-card__icon trust-card__icon--compact"><i class="bi <?= $icon ?>"></i></div>
         <div class="trust-card__body">
           <h3 class="trust-card__title"><?= $title ?></h3>
@@ -1415,6 +1559,97 @@ render_navbar($user);
       </article>
       <?php endforeach; ?>
     </div>
+    <style>
+      @media (max-width: 768px) {
+        .trust-grid--compact[data-role="trust-slider"] {
+          display: flex !important;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          padding-bottom: 8px;
+          margin-bottom: -8px;
+          gap: 14px;
+        }
+        .trust-grid--compact[data-role="trust-slider"]::-webkit-scrollbar {
+          display: none;
+        }
+        .trust-slider__item {
+          flex: 0 0 82% !important;
+          max-width: 82% !important;
+          scroll-snap-align: center;
+          scroll-snap-stop: always;
+          min-height: 160px;
+          margin-bottom: 0 !important;
+        }
+        .trust-slider__item:first-child { margin-right: 4px; }
+        .trust-slider__item:last-child  { margin-left: 4px; }
+      }
+      @media (max-width: 420px) {
+        .trust-slider__item { flex-basis: 86% !important; max-width: 86% !important; }
+      }
+    </style>
+    <script>
+    (function () {
+      const sliders = document.querySelectorAll('.trust-grid--compact[data-role="trust-slider"]');
+      sliders.forEach(function (grid) {
+        const wrap = grid.parentElement;
+        const scroller = grid;
+        let autoscrollTimer = null;
+        let startX = null;
+        let isDown = false;
+
+        function goTo(idx) {
+          const items = scroller.querySelectorAll('.trust-slider__item');
+          if (!items.length) return;
+          const real = Math.max(0, Math.min(idx - 1, items.length - 1));
+          const it = items[real];
+          const gap = parseInt(getComputedStyle(scroller).columnGap || 14, 10);
+          const scrollerRect = scroller.getBoundingClientRect();
+          const itemRect = it.getBoundingClientRect();
+          const target = scroller.scrollLeft + (itemRect.left - scrollerRect.left) - (scrollerRect.width - itemRect.width) / 2;
+          scroller.scrollTo({ left: target, behavior: 'smooth' });
+        }
+
+        function next() {
+          const items = scroller.querySelectorAll('.trust-slider__item');
+          const rect = scroller.getBoundingClientRect();
+          let nextIdx = 1;
+          items.forEach((it, i) => {
+            const r = it.getBoundingClientRect();
+            const center = r.left + r.width / 2;
+            const rel = center - (rect.left + rect.width / 2);
+            if (Math.abs(rel) < 1) nextIdx = i + 2;
+          });
+          if (nextIdx > items.length) nextIdx = 1;
+          goTo(nextIdx);
+        }
+
+        function start() {
+          stop();
+          autoscrollTimer = setInterval(next, 3800);
+        }
+        function stop() {
+          if (autoscrollTimer) { clearInterval(autoscrollTimer); autoscrollTimer = null; }
+        }
+        function reset() {
+          stop(); start();
+        }
+        if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+          scroller.addEventListener('mouseenter', stop);
+          scroller.addEventListener('mouseleave', start);
+          scroller.addEventListener('touchstart', stop, { passive: true });
+          scroller.addEventListener('touchend', reset, { passive: true });
+          start();
+          const first = scroller.querySelector('.trust-slider__item');
+          if (first) {
+            setTimeout(function () { scroller.scrollLeft = 0; }, 250);
+          }
+        }
+      });
+    })();
+    </script>
   </div>
 </section>
 <?php endif; ?>
