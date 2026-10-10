@@ -1776,11 +1776,11 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  max-width: 100%;
-  width: 98%;
+  max-width: 106%;
+  width: 106%;
   min-width: 0;
   overflow: hidden;
-  margin-right: 2%;
+  margin-right: -6%;
 }
 
 /* Utility classes for search box in all.php */
@@ -7646,6 +7646,7 @@ body.is-offline::after {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 93%;
 }
 
 @media (max-width: 991px) {

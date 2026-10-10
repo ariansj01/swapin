@@ -112,11 +112,11 @@ $hasPromo = !empty($allPromotions);
         <?php endforeach; ?>
       <?php endif; ?>
       <?php if ($hasSwapCta): ?>
-      <span class="lc-badge lc-badge--swap"
+      <!-- <span class="lc-badge lc-badge--swap"
             style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
         معاوضه
         <i class="bi bi-arrow-left-right"></i>
-      </span>
+      </span> -->
       <?php endif; ?>
     </div>
   </div>
@@ -470,16 +470,16 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   justify-content: center;
   gap: 10px;
   width: 100%;
-  padding: 13px 20px;
+  padding: 17px 10px;
   border-radius: 14px;
-  font-size: 1.02rem;
+  font-size: 1rem;
   font-weight: 800;
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
   border: 2px solid transparent;
 }
-.lc-btn i { font-size: 1.1rem; }
+.lc-btn i { font-size: 1rem; }
 
 /* Swap button — yellow/orange border, navy text */
 .lc-btn--swap {

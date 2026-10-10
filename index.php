@@ -337,7 +337,7 @@ render_navbar($user);
       <!-- ===== Sidebar (Beside Sliders) ===== -->
       <aside class="home-sidebar card home-sidebar--mobile-collapsible" id="home-mobile-sidebar"
              aria-label="دسته‌بندی‌ها، فیلترها و منوها"
-             style="background: transparent;border: none;box-shadow: none;">
+             style="background: transparent;border: none;box-shadow: none;width: 93%;">
 
         <!-- دکمه باز/بسته سایدبار (فقط در موبایل) -->
         <button type="button"
