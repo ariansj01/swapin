@@ -261,7 +261,7 @@ render_navbar($user);
 
 <?php if (!$search && !$catSlug && $page === 1): ?>
 <section class="hero hero--compact">
-  <div class="container hero__inner" style="background: var(--gradient-brand);border-radius: 10px;margin-top: 13px;">
+  <div class="container hero__inner" style="background: var(--gradient-brand);border-radius: 10px;margin-top: 13px;padding-bottom: 15px;">
     <div class="hero__visual">
       <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
     </div>
@@ -1003,7 +1003,7 @@ render_navbar($user);
 
 <style>
 /* ---------- Home AI: Triple Column Layout ---------- */
-.home-ai--triple { padding: var(--sp-8) 0 var(--sp-7); background: linear-gradient(180deg, #FFFFFF 0%, #EEF2FF 50%, #FFFFFF 100%); }
+.home-ai--triple { padding: var(--sp-8) 0 var(--sp-7); background: #071A33; }
 .home-ai__inner--triple {
   display: grid;
   grid-template-columns: 1.05fr 1fr 1.15fr;
@@ -1580,7 +1580,6 @@ render_navbar($user);
           max-width: 82% !important;
           scroll-snap-align: center;
           scroll-snap-stop: always;
-          min-height: 160px;
           margin-bottom: 0 !important;
         }
         .trust-slider__item:first-child { margin-right: 4px; }

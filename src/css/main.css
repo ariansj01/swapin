@@ -5789,7 +5789,6 @@ html body .categories-dropdown {
     font-size: 0.9375rem !important;
     font-weight: 900 !important;
     box-shadow: 0 5px 14px rgba(255,201,40,.32) !important;
-    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
   }
@@ -7578,6 +7577,9 @@ body.is-offline::after {
     font-size: 0.72rem;
     padding: 10px 16px 0;
   }
+  .home-sidebar-menu {
+    margin-top: 20px;
+  }
 }
 
 /* ── Override existing home-assurance & site-footer stats visibility ──── */
@@ -7769,7 +7771,6 @@ body.is-offline::after {
   display: flex;
   align-items: center;
   gap: 10px;
-  justify-content: flex-end;
 }
 .home-sidebar-time__header i {
   color: #111827;
