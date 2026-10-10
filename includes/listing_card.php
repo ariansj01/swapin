@@ -65,7 +65,7 @@ $hasPromo = $promotionMeta !== null;
 <article class="listing-card listing-card--v2 <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
 
   <!-- ========== IMAGE SECTION (TOP) ========== -->
-  <div class="listing-card__media-wrapper">
+  <div class="lc-media-wrapper">
     <?php if (!empty($l['thumb'])): ?>
     <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>" class="listing-card__media-img" loading="lazy">
     <?php else: ?>
@@ -74,11 +74,12 @@ $hasPromo = $promotionMeta !== null;
     </div>
     <?php endif; ?>
 
-    <!-- Favorite Button - Top Left -->
+    <!-- Favorite Button - Top Left (ALWAYS VISIBLE via inline style) -->
     <?php $currentUser = $currentUser ?? auth_user(); ?>
     <?php if (!empty($currentUser['id'])): ?>
     <button type="button"
             class="lc-fav-btn<?= $isSaved ? ' is-saved' : '' ?>"
+            style="display:inline-flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;"
             data-save-toggle="<?= $isSaved ? 'true' : 'false' ?>"
             data-listing-id="<?= (int)$l['id'] ?>"
             aria-label="<?= $isSaved ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها' ?>"
@@ -89,22 +90,26 @@ $hasPromo = $promotionMeta !== null;
     <?php else: ?>
     <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode('/listings/view?id=' . $l['id']) ?>"
        class="lc-fav-btn"
+       style="display:inline-flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;"
        aria-label="ورود برای ذخیره"
        onclick="event.stopPropagation()">
       <i class="bi bi-heart"></i>
     </a>
     <?php endif; ?>
 
-    <!-- Badges Row on Image - Top Right/Center -->
-    <div class="lc-badges-row">
+    <!-- Badges Row on Image - Top Right (ALWAYS VISIBLE via inline style) -->
+    <div class="lc-badges-row"
+         style="display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
       <?php if ($hasPromo): ?>
-      <span class="lc-badge lc-badge--promo <?= $promotionMeta['badge_class'] ?? '' ?>">
+      <span class="lc-badge lc-badge--promo <?= $promotionMeta['badge_class'] ?? '' ?>"
+            style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
         <i class="bi <?= $promotionMeta['icon'] ?? 'bi-star-fill' ?>"></i>
         <?= h($promotionMeta['label'] ?? 'پلن ویژه') ?>
       </span>
       <?php endif; ?>
       <?php if ($hasSwapCta): ?>
-      <span class="lc-badge lc-badge--swap">
+      <span class="lc-badge lc-badge--swap"
+            style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
         معاوضه
         <i class="bi bi-arrow-left-right"></i>
       </span>
@@ -235,6 +240,7 @@ $hasPromo = $promotionMeta !== null;
 .listing-card__media-placeholder i { font-size: 3rem; }
 
 /* ---------- Favorite Button (Top-Left, white round) - ALWAYS VISIBLE ---------- */
+html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-fav-btn,
 .lc-fav-btn {
   position: absolute;
   top: 12px;
@@ -247,40 +253,48 @@ $hasPromo = $promotionMeta !== null;
   border: none;
   color: #071A33;
   font-size: 1.15rem;
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   text-decoration: none;
-  z-index: 3;
+  z-index: 10;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   opacity: 1 !important;
   visibility: visible !important;
-  transform: translateY(0) !important;
+  transform: translateY(0) scale(1) !important;
+  pointer-events: auto !important;
 }
+html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-fav-btn:hover,
 .lc-fav-btn:hover {
   background: #fff;
   transform: scale(1.08) !important;
   color: #ef4444;
 }
+html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-fav-btn.is-saved,
 .lc-fav-btn.is-saved { color: #ef4444; }
 
 /* ---------- Badges Row (Top Right/Center) - ALWAYS VISIBLE ---------- */
+html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row,
 .lc-badges-row {
   position: absolute;
   top: 12px;
   right: 12px;
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 8px;
-  z-index: 3;
+  z-index: 10;
   opacity: 1 !important;
   visibility: visible !important;
-  transform: translateY(0) !important;
+  transform: translateY(0) translateX(0) scale(1) !important;
+  pointer-events: auto !important;
+  filter: none !important;
+  will-change: auto !important;
 }
+html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .lc-badge,
 .lc-badge {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   gap: 5px;
   padding: 6px 14px;
@@ -291,7 +305,8 @@ $hasPromo = $promotionMeta !== null;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   opacity: 1 !important;
   visibility: visible !important;
-  transform: translateY(0) !important;
+  transform: translateY(0) scale(1) !important;
+  filter: none !important;
 }
 .lc-badge i { font-size: .9rem; }
 
