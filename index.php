@@ -157,37 +157,73 @@ if (!$search && !$catSlug && $page === 1) {
 
 $cities = iran_cities();
 
-// ─── Featured Stores (homepage, page 1, no filters) ────────────────────────
+// ─── Featured Stores (homepage, page 1, no text/category filters) ───────────────
 $featuredStores = [];
-if (!$search && !$catSlug && !$city && $page === 1) {
+$hStoresTypeCol = false;
+$hStoresCityCol = false;
+if (!$search && !$catSlug && $page === 1) {
     $hSellerType = db_has_column('users', 'seller_type');
-    $hStoreCity  = db_has_column('users', 'store_city');
-    $hStoreType  = db_has_column('users', 'store_type');
-
-    $hWhereParts = ['is_active = 1'];
-    if ($hSellerType) {
-        $hWhereParts[] = '(seller_type = "store" OR (store_name IS NOT NULL AND store_name != ""))';
-    } else {
-        $hWhereParts[] = '(store_name IS NOT NULL AND store_name != "")';
-    }
-    $hWhereParts[] = 'store_slug IS NOT NULL AND store_slug != ""';
-    $hWhere = 'WHERE ' . implode(' AND ', $hWhereParts);
-
+    $hStoresCity  = db_has_column('users', 'store_city');
+    $hStoresType  = db_has_column('users', 'store_type');
     $hCols = "id, name, store_name, store_slug, store_description, store_banner, avatar, rating, created_at";
-    if ($hStoreType) $hCols .= ", store_type";
-    if ($hStoreCity) $hCols .= ", store_city, city";
+    if ($hStoresType) $hCols .= ", store_type";
+    if ($hStoresCity) $hCols .= ", store_city, city";
     else $hCols .= ", city";
 
+    // Looser fallback query: always include stores with non-empty store_name/store_slug,
+    // plus OR active vendor users even if their seller_type isn't set.
+    $hWhereParts = ['is_active = 1'];
+    $storePredicate = [];
+    if ($hSellerType) {
+        $storePredicate[] = 'seller_type = "store"';
+    }
+    $storePredicate[] = '(store_name IS NOT NULL AND store_name != "")';
+    $storePredicate[] = '(store_slug IS NOT NULL AND store_slug != "")';
+    $hWhereParts[] = '(' . implode(' OR ', $storePredicate) . ')';
+
+    $hWhere = 'WHERE ' . implode(' AND ', $hWhereParts);
     $featuredStores = DB::fetchAll(
         "SELECT {$hCols},
                 (SELECT COUNT(*) FROM listings WHERE user_id = users.id AND status = 'active' AND review_status = 'approved') AS listings_count
          FROM users
          {$hWhere}
          ORDER BY listings_count DESC, rating DESC, created_at DESC
-         LIMIT 8"
+         LIMIT 10"
     );
-    $hStoresTypeCol = $hStoreType;
-    $hStoresCityCol = $hStoreCity;
+    $hStoresTypeCol = $hStoresType;
+    $hStoresCityCol = $hStoresCity;
+
+    // Fallback: if no dedicated stores, pick top users with listings to never leave slider empty.
+    if (empty($featuredStores)) {
+        $fallbackCols = "id, name, store_name, store_slug, store_description, store_banner, avatar, rating, created_at";
+        if ($hStoresType) $fallbackCols .= ", store_type";
+        if ($hStoresCity) $fallbackCols .= ", store_city, city";
+        else $fallbackCols .= ", city";
+        $featuredStores = DB::fetchAll(
+            "SELECT {$fallbackCols},
+                    (SELECT COUNT(*) FROM listings WHERE user_id = users.id AND status = 'active' AND review_status = 'approved') AS listings_count
+             FROM users
+             WHERE is_active = 1
+             ORDER BY listings_count DESC, rating DESC, created_at DESC
+             LIMIT 6"
+        );
+        // Generate safe slug & name for users that don't have store fields filled.
+        foreach ($featuredStores as &$s) {
+            if (empty($s['store_name'])) {
+                $s['store_name'] = trim($s['name'] ?? 'فروشگاه');
+            }
+            if (empty($s['store_slug'])) {
+                $s['store_slug'] = 'store-' . (int)$s['id'];
+            }
+            if (empty($s['store_banner'])) {
+                $s['store_banner'] = null;
+            }
+            if ($hStoresType && empty($s['store_type'])) {
+                $s['store_type'] = 'both';
+            }
+        }
+        unset($s);
+    }
 }
 
 $homeMetaTitle = swapin_content_get('home_meta_title');

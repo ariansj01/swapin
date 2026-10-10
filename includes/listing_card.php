@@ -58,9 +58,10 @@ $hasSwapCta = in_array($listingMode, ['swap', 'both'], true);
 $hasSellCta = $hasStore && in_array($listingMode, ['sell', 'both'], true);
 $isSaved  = isset($l['id']) && in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
-$promotionMeta = function_exists('listing_active_promotion_meta') ? listing_active_promotion_meta($l) : null;
+$allPromotions = function_exists('listing_all_promotions_meta') ? listing_all_promotions_meta($l) : [];
+$promotionMeta = $allPromotions[0] ?? null;
 $promotionClass = $promotionMeta['card_class'] ?? '';
-$hasPromo = $promotionMeta !== null;
+$hasPromo = !empty($allPromotions);
 ?>
 <article class="listing-card listing-card--v2 <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
 
@@ -101,11 +102,14 @@ $hasPromo = $promotionMeta !== null;
     <div class="lc-badges-row"
          style="display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
       <?php if ($hasPromo): ?>
-      <span class="lc-badge lc-badge--promo <?= $promotionMeta['badge_class'] ?? '' ?>"
+        <?php foreach ($allPromotions as $p): ?>
+      <span class="lc-badge lc-badge--promo <?= $p['badge_class'] ?? '' ?>"
+            title="<?= h($p['tooltip'] ?? '') ?>"
             style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
-        <i class="bi <?= $promotionMeta['icon'] ?? 'bi-star-fill' ?>"></i>
-        <?= h($promotionMeta['label'] ?? 'پلن ویژه') ?>
+        <i class="bi <?= $p['icon'] ?? 'bi-star-fill' ?>"></i>
+        <?= h($p['label'] ?? 'پلن ویژه') ?>
       </span>
+        <?php endforeach; ?>
       <?php endif; ?>
       <?php if ($hasSwapCta): ?>
       <span class="lc-badge lc-badge--swap"
@@ -317,6 +321,24 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   border: 1px solid #FDE68A;
 }
 .lc-badge--promo i { color: #F59E0B; }
+.lc-badge--promo.listing-promo-badge--vip {
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  color: #ffffff;
+  border: 1px solid #6d28d9;
+}
+.lc-badge--promo.listing-promo-badge--vip i { color: #fbbf24; }
+.lc-badge--promo.listing-promo-badge--featured {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #78350f;
+  border: 1px solid #d97706;
+}
+.lc-badge--promo.listing-promo-badge--featured i { color: #78350f; }
+.lc-badge--promo.listing-promo-badge--bumped {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid #047857;
+}
+.lc-badge--promo.listing-promo-badge--bumped i { color: #ecfdf5; }
 
 /* Swap Badge — navy background */
 .lc-badge--swap {

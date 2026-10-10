@@ -109,10 +109,26 @@ function listing_is_bumped(array $l): bool {
     return !empty($l['bump_until']) && strtotime($l['bump_until']) > time();
 }
 
-function listing_active_promotion_meta(array $l): ?array {
+function listing_is_vip(array $l): bool {
+    return !empty($l['vip_until']) && strtotime($l['vip_until']) > time();
+}
+
+function listing_all_promotions_meta(array $l): array {
+    $badges = [];
+
+    if (listing_is_vip($l)) {
+        $badges[] = [
+            'label'       => 'VIP',
+            'icon'        => 'bi-crown-fill',
+            'badge_class' => 'listing-promo-badge--vip',
+            'card_class'  => 'listing-plan-vip',
+            'tooltip'     => 'آگهی ویژه و VIP با بالاترین اولویت نمایش.',
+        ];
+    }
+
     if (listing_is_featured($l)) {
-        return [
-            'label'       => 'پلن ویژه',
+        $badges[] = [
+            'label'       => 'ویژه',
             'icon'        => 'bi-star-fill',
             'badge_class' => 'listing-promo-badge--featured',
             'card_class'  => 'listing-plan-featured',
@@ -121,8 +137,8 @@ function listing_active_promotion_meta(array $l): ?array {
     }
 
     if (listing_is_bumped($l)) {
-        return [
-            'label'       => 'پلن فوری',
+        $badges[] = [
+            'label'       => 'فوری',
             'icon'        => 'bi-arrow-up-circle-fill',
             'badge_class' => 'listing-promo-badge--bumped',
             'card_class'  => 'listing-plan-bumped',
@@ -130,19 +146,28 @@ function listing_active_promotion_meta(array $l): ?array {
         ];
     }
 
-    return null;
+    return $badges;
+}
+
+function listing_active_promotion_meta(array $l): ?array {
+    $all = listing_all_promotions_meta($l);
+    return $all[0] ?? null;
 }
 
 function listing_promotion_badges_html(array $l): string {
-    $meta = listing_active_promotion_meta($l);
-    if ($meta === null) {
+    $all = listing_all_promotions_meta($l);
+    if (empty($all)) {
         return '';
     }
 
-    return '<span class="listing-promo-badge ' . $meta['badge_class'] . '" data-tooltip="' . h($meta['tooltip']) . '">'
-        . '<i class="bi ' . $meta['icon'] . '"></i> '
-        . h($meta['label'])
-        . '</span>';
+    $html = '';
+    foreach ($all as $meta) {
+        $html .= '<span class="listing-promo-badge ' . $meta['badge_class'] . '" data-tooltip="' . h($meta['tooltip']) . '">'
+            . '<i class="bi ' . $meta['icon'] . '"></i> '
+            . h($meta['label'])
+            . '</span>';
+    }
+    return $html;
 }
 
 function get_active_subscription(array $user): ?array {
