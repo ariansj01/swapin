@@ -743,22 +743,154 @@ render_navbar($user);
 </script>
 
 <?php if ($page === 1): ?>
-<section class="home-section home-ai" aria-label="ارزش‌گذاری و مشاوره معاوضه با AI">
+<section class="home-section home-ai home-ai--triple" aria-label="ارزش‌گذاری و مشاوره معاوضه با AI">
   <div class="container">
-    <div class="home-ai__inner">
-      <div class="home-ai__visual" aria-hidden="false">
-        <div class="home-ai__phone-wrap">
-          <div class="home-ai__phone-blob" aria-hidden="true"></div>
-          <!-- <img src="<?= APP_URL ?>/src/img/583fde7d-1ca3-4763-9c00-8ec1b68bfaf3.png" alt="نمایش ارزش‌گذاری هوشمند سواَپین در موبایل" class="home-ai__phone" loading="lazy"> -->
-          <img src="<?= APP_URL ?>/src/img/171277459.png" alt="نمایش ارزش‌گذاری هوشمند سواَپین در موبایل" class="home-ai__phone" loading="lazy">
+    <div class="home-ai__inner home-ai__inner--triple">
+
+      <!-- ستون سمت چپ: فرم تخمین قیمت -->
+      <div class="home-ai__form-col" id="home-price-estimate">
+        <div class="home-ai-form card" style="background: rgba(7,26,51,.03);">
+          <div class="home-ai-form__header">
+            <span class="home-ai-form__badge"><i class="bi bi-lightning-charge-fill"></i> دستیار هوشمند سواپین</span>
+            <h3 class="home-ai-form__title">کالات چقدر می‌ارزه؟</h3>
+          </div>
+
+          <form id="home-price-estimate-form" class="home-ai-form__form" method="POST" novalidate>
+            <?= csrf_input() ?>
+
+            <!-- اسم کالا -->
+            <div class="home-ai-form__field">
+              <label class="home-ai-form__label" for="estimate_title">اسم کالا</label>
+              <input type="text" id="estimate_title" name="title" class="form-control"
+                     placeholder="مثال: آیفون ۱۵ پرو مکس ۵۱۲ گیگابایت"
+                     required minlength="3" maxlength="150">
+            </div>
+
+            <!-- عکس کالا (اختیاری) -->
+            <div class="home-ai-form__field">
+              <label class="home-ai-form__label" for="estimate_image">عکس کالا <span style="font-weight:500;opacity:.7;display:inline-block;margin-right:4px">(اختیاری)</span></label>
+              <label for="estimate_image" class="home-ai-form__upload">
+                <input type="file" id="estimate_image" name="image" accept="image/*" style="display:none">
+                <i class="bi bi-cloud-arrow-up-fill"></i>
+                <span>عکس کالا رو آپلود کن</span>
+              </label>
+            </div>
+
+            <!-- توضیحات کالا -->
+            <div class="home-ai-form__field">
+              <label class="home-ai-form__label" for="estimate_description">توضیحات کالا</label>
+              <textarea id="estimate_description" name="description" class="form-control" rows="3"
+                        placeholder="مثال: گوشی دست اول، شارژر و جعبه کامل"
+                        maxlength="500"></textarea>
+            </div>
+
+            <!-- وضعیت کالا -->
+            <div class="home-ai-form__field">
+              <label class="home-ai-form__label">وضعیت کالا</label>
+              <div class="home-ai-form__conditions">
+                <?php
+                $condList = [
+                    'new'      => ['label' => 'نو',        'icon' => 'bi-gift-fill'],
+                    'like_new' => ['label' => 'در حد نو', 'icon' => 'bi-stars'],
+                    'good'     => ['label' => 'خوب',       'icon' => 'bi-hand-thumbs-up-fill'],
+                    'fair'     => ['label' => 'متوسط',     'icon' => 'bi-dash-circle-fill'],
+                    'poor'     => ['label' => 'خراب',      'icon' => 'bi-exclamation-triangle-fill'],
+                ];
+                $firstCond = true;
+                foreach ($condList as $cVal => $cInfo):
+                ?>
+                <label class="home-ai-form__cond">
+                  <input type="radio" name="condition" value="<?= $cVal ?>" <?= $firstCond ? 'checked' : '' ?>>
+                  <span><i class="bi <?= $cInfo['icon'] ?>"></i> <?= $cInfo['label'] ?></span>
+                </label>
+                <?php $firstCond = false; endforeach; ?>
+              </div>
+            </div>
+
+            <!-- نتیجه (مخفی تا زمانی که نتیجه برسد) -->
+            <div id="estimate-result" class="home-ai-form__result" style="display:none">
+              <div class="home-ai-form__result-header">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>نتیجه تخمین قیمت:</span>
+              </div>
+              <div id="estimate-result-body" class="home-ai-form__result-body">
+                <div class="home-ai-form__price-minmax">
+                  <div class="home-ai-form__price-tag home-ai-form__price-tag--low">
+                    <span>کمترین ارزش</span>
+                    <strong id="est-min">—</strong>
+                  </div>
+                  <div class="home-ai-form__price-arrow"><i class="bi bi-arrow-left-right"></i></div>
+                  <div class="home-ai-form__price-tag home-ai-form__price-tag--high">
+                    <span>بیشترین ارزش</span>
+                    <strong id="est-max">—</strong>
+                  </div>
+                </div>
+                <div class="home-ai-form__price-mid">
+                  <span>ارزش پیشنهادی بازار:</span>
+                  <strong id="est-mid">—</strong>
+                </div>
+                <p id="est-note" class="home-ai-form__note"></p>
+              </div>
+            </div>
+
+            <!-- خطا -->
+            <div id="estimate-error" class="home-ai-form__error" style="display:none"></div>
+
+            <!-- دکمه ارسال -->
+            <button type="submit" id="estimate-submit-btn" class="btn home-ai-form__submit w-100">
+              <i class="bi bi-cpu"></i> قیمت کالا رو ببین
+            </button>
+
+            <div class="home-ai-form__tags">
+              <span><i class="bi bi-lightning-charge"></i> سریع</span>
+              <span><i class="bi bi-shield-check"></i> دقیق</span>
+              <span><i class="bi bi-emoji-smile"></i> بدون ثبت‌نام</span>
+            </div>
+          </form>
         </div>
       </div>
-      <div class="home-ai__content">
+
+      <!-- ستون وسط: تصویر ربات AI -->
+      <div class="home-ai__visual home-ai__visual--center" aria-hidden="false">
+        <div class="home-ai__phone-wrap home-ai__phone-wrap--center">
+          <div class="home-ai__phone-blob" aria-hidden="true"></div>
+          <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=3D%20render%20cute%20friendly%20white%20blue%20AI%20robot%20character%20S%20logo%20magnifying%20glass%20smartphone%20product%20scan%20neon%20frame%20various%20products%20headphones%20shoes%20camera%20gamepad%20watch%20Persian%20UI%20transparent%20bg&image_size=square_hd" alt="ربات هوش مصنوعی سواپین برای تخمین قیمت کالا" class="home-ai__phone home-ai__phone--center" loading="lazy">
+        </div>
+      </div>
+
+      <!-- ستون راست: توضیحات و CTA -->
+      <div class="home-ai__content home-ai__content--right">
         <span class="home-ai__badge">
           <i class="bi bi-stars"></i> هوش مصنوعی
         </span>
         <h2 class="home-ai__title">ارزش‌گذاری و مشاوره معاوضه با <span class="home-ai__title-accent">AI</span></h2>
         <p class="home-ai__desc">سواَپین AI کالا، شرایط فیزیکی و بازار معاوضه را تحلیل می‌کند، تخمین قیمت دقیق می‌دهد و بهترین پیشنهادهای معاوضه را متناسب با بودجه و سلایق شما پیدا می‌کند.</p>
+
+        <!-- ویژگی‌ها -->
+        <div class="home-ai__features">
+          <div class="home-ai__feature">
+            <div class="home-ai__feature-icon home-ai__feature-icon--blue"><i class="bi bi-search"></i></div>
+            <div>
+              <h4 class="home-ai__feature-title">تحلیل بازار لحظه‌ای</h4>
+              <p class="home-ai__feature-sub">بررسی قیمت در دیوار، دیجی‌کالا و بازار معاوضه</p>
+            </div>
+          </div>
+          <div class="home-ai__feature">
+            <div class="home-ai__feature-icon home-ai__feature-icon--alt"><i class="bi bi-cpu"></i></div>
+            <div>
+              <h4 class="home-ai__feature-title">هوش مصنوعی OpenRouter</h4>
+              <p class="home-ai__feature-sub">دقت بالا با بهترین مدل‌های زبان باز</p>
+            </div>
+          </div>
+          <div class="home-ai__feature">
+            <div class="home-ai__feature-icon"><i class="bi bi-arrow-left-right"></i></div>
+            <div>
+              <h4 class="home-ai__feature-title">پیشنهاد معاوضه هوشمند</h4>
+              <p class="home-ai__feature-sub">بهترین کالاهای جایگزین را پیشنهاد می‌دهد</p>
+            </div>
+          </div>
+        </div>
+
         <div class="home-ai__actions">
           <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-lg">
             <i class="bi bi-plus-circle"></i> ثبت کالا + دریافت قیمت AI
@@ -769,9 +901,602 @@ render_navbar($user);
         </div>
       </div>
     </div>
-
   </div>
 </section>
+
+<style>
+/* ---------- Home AI: Triple Column Layout ---------- */
+.home-ai--triple { padding: var(--sp-8) 0 var(--sp-7); background: linear-gradient(180deg, #FFFFFF 0%, #EEF2FF 50%, #FFFFFF 100%); }
+.home-ai__inner--triple {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr 1.15fr;
+  gap: var(--sp-6);
+  align-items: stretch;
+  direction: ltr;
+}
+.home-ai__inner--triple > * { direction: rtl; }
+
+@media (max-width: 1100px) {
+  .home-ai__inner--triple {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-5);
+  }
+  .home-ai__content--right { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .home-ai__inner--triple {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+  }
+  .home-ai__content--right { grid-column: auto; }
+  .home-ai__visual--center { order: -1; }
+}
+
+/* Center visual */
+.home-ai__visual--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-2);
+}
+.home-ai__phone-wrap--center {
+  max-width: 480px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  position: relative;
+}
+.home-ai__phone--center {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  animation: home-ai-phone-float 5s ease-in-out infinite;
+}
+@media (max-width: 1100px) {
+  .home-ai__phone-wrap--center { max-width: 380px; }
+}
+@media (max-width: 720px) {
+  .home-ai__phone-wrap--center { max-width: 300px; }
+}
+
+/* Right content features (compact grid) */
+.home-ai__content--right .home-ai__features {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+  margin: var(--sp-4) 0 var(--sp-5);
+  padding: 0;
+}
+@media (min-width: 1100px) {
+  .home-ai__content--right .home-ai__features { grid-template-columns: 1fr 1fr; }
+  .home-ai__content--right .home-ai__feature:last-child { grid-column: 1 / -1; }
+}
+
+/* ---------- Estimate Form ---------- */
+.home-ai-form {
+  padding: var(--sp-5) var(--sp-5) var(--sp-5);
+  border-radius: 18px;
+  border: 1px solid rgba(7,26,51,.08);
+  box-shadow: 0 12px 40px -24px rgba(7,26,51,.25);
+  backdrop-filter: blur(6px);
+}
+.home-ai-form__header {
+  text-align: center;
+  margin-bottom: var(--sp-5);
+}
+.home-ai-form__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 800;
+  margin-bottom: var(--sp-3);
+  border: 1px solid rgba(217,119,6,.3);
+  box-shadow: 0 6px 16px -8px rgba(245,158,11,.6);
+}
+.home-ai-form__title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #071A33, #1e3a8a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.35;
+}
+@media (max-width: 720px) { .home-ai-form__title { font-size: 1.35rem; } }
+
+.home-ai-form__form { display: flex; flex-direction: column; gap: var(--sp-4); }
+.home-ai-form__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: .88rem;
+  font-weight: 700;
+  color: #071A33;
+}
+.home-ai-form__field .form-control,
+.home-ai-form__field textarea.form-control {
+  width: 100%;
+  border-radius: 14px;
+  padding: 13px 16px;
+  font-size: .95rem;
+  font-weight: 600;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  transition: all .2s ease;
+  text-align: right;
+}
+.home-ai-form__field .form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  background: #ffffff;
+}
+.home-ai-form__upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 2px dashed #cbd5e1;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .2s ease;
+  color: #64748b;
+  font-weight: 600;
+  width: 100%;
+}
+.home-ai-form__upload:hover {
+  border-color: #3b82f6;
+  color: #2563eb;
+  background: rgba(59,130,246,.05);
+}
+.home-ai-form__upload i { font-size: 1.6rem; color: #3b82f6; }
+
+/* Condition pills */
+.home-ai-form__conditions {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+@media (max-width: 900px) { .home-ai-form__conditions { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 480px) { .home-ai-form__conditions { grid-template-columns: repeat(2, 1fr); } }
+.home-ai-form__cond {
+  cursor: pointer;
+  margin: 0;
+}
+.home-ai-form__cond input { display: none; }
+.home-ai-form__cond span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 6px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #475569;
+  transition: all .2s ease;
+  text-align: center;
+}
+.home-ai-form__cond span i { font-size: .85rem; }
+.home-ai-form__cond:hover span {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+.home-ai-form__cond input:checked + span {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 6px 18px -10px rgba(37,99,235,.7);
+}
+
+/* Submit button */
+.home-ai-form__submit {
+  margin-top: 4px;
+  padding: 15px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 50%, #F97316 100%);
+  color: #1c1917;
+  border: none;
+  font-size: 1.05rem;
+  font-weight: 900;
+  box-shadow: 0 10px 26px -10px rgba(245,158,11,.6);
+  transition: all .2s ease;
+  cursor: pointer;
+}
+.home-ai-form__submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px -12px rgba(245,158,11,.75);
+}
+.home-ai-form__submit:active { transform: translateY(0); }
+.home-ai-form__submit.is-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: .9;
+}
+.home-ai-form__submit.is-loading i {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Tags row */
+.home-ai-form__tags {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: var(--sp-3);
+  border-top: 1px dashed rgba(7,26,51,.12);
+  color: #475569;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.home-ai-form__tags span { display: inline-flex; align-items: center; gap: 4px; }
+.home-ai-form__tags i { color: #F59E0B; }
+
+/* Result box */
+.home-ai-form__result {
+  background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(16,185,129,.06));
+  border: 1.5px solid rgba(59,130,246,.18);
+  border-radius: 16px;
+  padding: 16px;
+  animation: fadeInUp .35s ease;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.home-ai-form__result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: #1e3a8a;
+  margin-bottom: 10px;
+  font-size: .95rem;
+}
+.home-ai-form__result-header i { color: #10b981; font-size: 1.1rem; }
+.home-ai-form__price-minmax {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 10px;
+}
+.home-ai-form__price-tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+.home-ai-form__price-tag--low  { border-color: rgba(59,130,246,.3); }
+.home-ai-form__price-tag--high { border-color: rgba(245,158,11,.4); }
+.home-ai-form__price-tag span {
+  font-size: .7rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 3px;
+}
+.home-ai-form__price-tag strong {
+  font-size: .95rem;
+  font-weight: 900;
+  color: #071A33;
+  line-height: 1.25;
+  text-align: center;
+}
+.home-ai-form__price-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 1rem;
+}
+.home-ai-form__price-mid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FDE68A, #FCD34D);
+  border: 1px solid #F59E0B;
+  color: #7c2d12;
+  font-weight: 700;
+}
+.home-ai-form__price-mid strong {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #78350f;
+}
+.home-ai-form__note {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(7,26,51,.1);
+  font-size: .82rem;
+  color: #475569;
+  font-weight: 600;
+  line-height: 1.7;
+  text-align: center;
+}
+.home-ai-form__error {
+  padding: 12px 14px;
+  background: rgba(239,68,68,.08);
+  border: 1.5px solid rgba(239,68,68,.3);
+  color: #b91c1c;
+  border-radius: 12px;
+  font-size: .85rem;
+  font-weight: 700;
+  text-align: center;
+}
+</style>
+
+<script>
+(function () {
+  const APP_URL = '<?= APP_URL ?>';
+  const CREDIT_UNIT = '<?= CREDIT_UNIT ?>';
+
+  function fmtCreditLocal(amount) {
+    const n = Math.round(Number(amount) || 0);
+    try {
+      return new Intl.NumberFormat('fa-IR').format(n) + ' ' + CREDIT_UNIT;
+    } catch {
+      return n.toLocaleString('fa-IR') + ' ' + CREDIT_UNIT;
+    }
+  }
+
+  function getCsrfToken() {
+    const inp = document.querySelector('input[name="csrf_token"]');
+    return inp ? inp.value : '';
+  }
+
+  function withCsrfHeaders() {
+    const token = getCsrfToken();
+    const out = {};
+    if (token) out['X-CSRF-Token'] = token;
+    return out;
+  }
+
+  function appendCsrf(fd) {
+    const token = getCsrfToken();
+    if (token && !fd.has('csrf_token')) fd.append('csrf_token', token);
+  }
+
+  /* Quick pricing normalizer (mirror of app.js helper) */
+  function normalizePricingFromAi(parsed) {
+    if (!parsed || typeof parsed !== 'object') return null;
+    const type = String(parsed.type || '');
+    if (type === 'chat' || type === 'error') return null;
+    let min = 0, max = 0;
+    if (parsed.value_range && typeof parsed.value_range === 'object') {
+      min = Number(parsed.value_range.min) || 0;
+      max = Number(parsed.value_range.max) || 0;
+    }
+    if (min <= 0 && max <= 0) {
+      min = Number(parsed.min) || 0;
+      max = Number(parsed.max) || 0;
+    }
+    if (min <= 0 && max <= 0) {
+      const val = Number(parsed.estimated_value ?? parsed.valuation ?? parsed.value ?? parsed.price ?? 0) || 0;
+      if (val > 0) {
+        min = Math.round(val * 0.85);
+        max = Math.round(val * 1.15);
+      }
+    }
+    if (min <= 0 && max <= 0) return null;
+    if (min > max) [min, max] = [max, min];
+    if (min <= 0) min = Math.max(500000, Math.round(max * 0.82));
+    if (max <= 0) max = Math.round(min * 1.18);
+    min = Math.round(min / 100000) * 100000;
+    max = Math.round(max / 100000) * 100000;
+    min = Math.max(500000, min);
+    if (min > max) min = Math.round(max * 0.86 / 100000) * 100000;
+    const mid = Math.round(((0.42 * min) + (0.58 * max)) * 1.06 / 100000) * 100000;
+    let conf = parsed.confidence ?? parsed.certainty ?? 0.55;
+    if (typeof conf === 'string') conf = (Number(conf) || 55) / 100;
+    if (conf > 1) conf = conf / 100;
+    const confPct = Math.round(Math.max(0, Math.min(1, Number(conf) || 0.55)) * 100);
+    const uncertain = confPct < 62;
+    const reasons = [];
+    if (Array.isArray(parsed.reasons) && parsed.reasons.length) {
+      parsed.reasons.forEach(r => { const s = String(r).trim(); if (s) reasons.push(s); });
+    }
+    const sr = String(parsed.reason ?? '').trim();
+    if (sr && !reasons.includes(sr)) reasons.push(sr);
+    return {
+      ok: true, value: mid, range_low: min, range_high: max,
+      reasons: reasons, uncertain: uncertain,
+      note: uncertain
+        ? 'ارزش‌گذاری تقریبی و بصورت راهنماست؛ برای قیمت‌گذاری دقیق‌تر اطلاعات بیشتری وارد کنید.'
+        : 'ارزش‌گذاری هوشمند بر اساس اطلاعات شما و آگهی‌های مشابه بازار معاوضه.'
+    };
+  }
+
+  function extractJsonFromText(raw) {
+    if (!raw) return null;
+    const text = String(raw).trim();
+    if (!text) return null;
+    let first = text.indexOf('{');
+    let last = text.lastIndexOf('}');
+    if (first === -1 || last === -1 || last <= first) return null;
+    const snip = text.substring(first, last + 1);
+    try { return JSON.parse(snip); } catch {}
+    const try2 = snip.replace(/,\s*([\]}])/g, '$1').replace(/\bNaN\b/g, 'null');
+    try { return JSON.parse(try2); } catch { return null; }
+  }
+
+  async function browserCompleteChat(prepare) {
+    const providers = Array.isArray(prepare.providers) ? prepare.providers : [];
+    const msgs = Array.isArray(prepare.messages) ? prepare.messages : [];
+    const temperature = typeof prepare.temperature === 'number' ? prepare.temperature : 0.15;
+    const maxTokens = Number(prepare.max_tokens) || 1200;
+    let lastErr = null;
+    for (const p of providers) {
+      try {
+        const url = p.url;
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, p.headers || {});
+        const body = Object.assign({}, p.body || {}, {
+          messages: msgs,
+          temperature: temperature,
+          max_tokens: maxTokens,
+        });
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(body),
+          signal: AbortSignal ? AbortSignal.timeout ? AbortSignal.timeout(20000) : void 0 : void 0,
+        });
+        if (!res.ok) { lastErr = new Error('http_' + res.status); continue; }
+        const j = await res.json();
+        let content = '';
+        if (j && j.choices && j.choices[0]) {
+          const c = j.choices[0];
+          if (c.message && typeof c.message.content === 'string') content = c.message.content;
+          else if (typeof c.text === 'string') content = c.text;
+          else if (c.delta && typeof c.delta.content === 'string') content = c.delta.content;
+        }
+        if (!content && j && typeof j.content === 'string') content = j.content;
+        if (!content && j && j.output && typeof j.output === 'string') content = j.output;
+        if (content && content.trim().length > 10) {
+          return { provider: p.id || 'client', content: content };
+        }
+      } catch (e) { lastErr = e; }
+    }
+    return null;
+  }
+
+  /* Main form handler */
+  const form = document.getElementById('home-price-estimate-form');
+  if (form) {
+    const btn = document.getElementById('estimate-submit-btn');
+    const btnIcon = btn.querySelector('i');
+    const btnOriginalIconClass = 'bi-cpu';
+    const resultBox = document.getElementById('estimate-result');
+    const resultBody = document.getElementById('estimate-result-body');
+    const errBox = document.getElementById('estimate-error');
+    const estMin = document.getElementById('est-min');
+    const estMax = document.getElementById('est-max');
+    const estMid = document.getElementById('est-mid');
+    const estNote = document.getElementById('est-note');
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      errBox.style.display = 'none';
+      resultBox.style.display = 'none';
+
+      const titleInput = document.getElementById('estimate_title');
+      const title = (titleInput.value || '').trim();
+      if (title.length < 3) {
+        errBox.textContent = 'نام کالا باید حداقل ۳ کاراکتر باشد.';
+        errBox.style.display = 'block';
+        titleInput.focus();
+        return;
+      }
+      const descEl = document.getElementById('estimate_description');
+      const conditionEl = form.querySelector('input[name="condition"]:checked');
+      const description = (descEl.value || '').trim();
+      const condition = conditionEl ? conditionEl.value : 'good';
+
+      const fd = new FormData();
+      fd.append('title', title);
+      fd.append('description', description);
+      fd.append('condition', condition);
+      appendCsrf(fd);
+
+      btn.classList.add('is-loading');
+      const prevHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> در حال محاسبه قیمت ...';
+
+      try {
+        const res = await fetch(APP_URL + '/api/ai_estimate_public.php', {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: withCsrfHeaders(),
+        });
+        let prepare;
+        try { prepare = await res.json(); } catch { prepare = { ok: false }; }
+
+        let result = null;
+        if (prepare && prepare.ok === true && prepare.type === 'server_result' && prepare.data) {
+          const d = prepare.data;
+          result = {
+            ok: true,
+            value: Number(d.mid) || 0,
+            range_low: Number(d.min) || 0,
+            range_high: Number(d.max) || 0,
+            note: String(d.note || '') || '',
+          };
+          if (result.value <= 0 && (result.range_low > 0 || result.range_high > 0)) {
+            result.value = Math.round(((result.range_low || 0) + (result.range_high || 0)) / 2);
+          }
+        } else if (prepare && prepare.ok === true && prepare.type === 'client_prepare') {
+          let done = null;
+          try { done = await browserCompleteChat(prepare); } catch {}
+          if (done && done.content) {
+            const parsed = extractJsonFromText(done.content);
+            const norm = normalizePricingFromAi(parsed);
+            if (norm) result = norm;
+          }
+          if (!result && prepare.fallback && typeof prepare.fallback === 'object') {
+            const fb = prepare.fallback;
+            if (Number(fb.mid) > 0 || Number(fb.min) > 0 || Number(fb.max) > 0) {
+              result = {
+                ok: true,
+                value: Number(fb.mid) || Math.round(((Number(fb.min) || 0) + (Number(fb.max) || 0)) / 2),
+                range_low: Number(fb.min) || 0,
+                range_high: Number(fb.max) || 0,
+                note: String(fb.note || '') || 'ارزش‌گذاری با مدل پایه سواپین (حالت اضطراری).',
+                uncertain: true,
+              };
+            }
+          }
+        } else if (prepare && prepare.ok === false && prepare.msg) {
+          throw new Error(String(prepare.msg));
+        } else if (prepare && prepare.error === 'rate_limited') {
+          throw new Error('درخواست‌های زیادی ارسال شده است. لطفاً کمی بعد دوباره تلاش کنید.');
+        } else if (!res.ok) {
+          throw new Error('خطا در برقراری ارتباط. کد ' + res.status);
+        }
+
+        if (!result || (!result.value && !result.range_low && !result.range_high)) {
+          throw new Error('متاسفانه تخمین قیمت برای این کالا ممکن نشد. لطفاً توضیحات بیشتری وارد کنید.');
+        }
+
+        const min = result.range_low || Math.round(result.value * 0.85);
+        const max = result.range_high || Math.round(result.value * 1.15);
+        const mid = result.value || Math.round((min + max) / 2);
+
+        estMin.textContent = fmtCreditLocal(min);
+        estMax.textContent = fmtCreditLocal(max);
+        estMid.textContent = fmtCreditLocal(mid);
+        estNote.textContent = result.note && String(result.note).trim()
+          ? String(result.note).trim()
+          : 'ارزش‌گذاری هوشمند بر اساس اطلاعات شما و بازار معاوضه سواَپین.';
+
+        resultBox.style.display = 'block';
+      } catch (err) {
+        errBox.textContent = (err && err.message) ? String(err.message) : 'خطای ناشناخته در ارزش‌گذاری.';
+        errBox.style.display = 'block';
+      } finally {
+        btn.classList.remove('is-loading');
+        btn.innerHTML = prevHtml;
+      }
+    });
+  }
+})();
+</script>
 
 <section class="home-section home-trust home-trust--compact">
   <div class="container">
