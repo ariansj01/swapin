@@ -784,29 +784,6 @@ render_navbar($user);
                         maxlength="500"></textarea>
             </div>
 
-            <!-- وضعیت کالا -->
-            <div class="home-ai-form__field">
-              <label class="home-ai-form__label">وضعیت کالا</label>
-              <div class="home-ai-form__conditions">
-                <?php
-                $condList = [
-                    'new'      => ['label' => 'نو',        'icon' => 'bi-gift-fill'],
-                    'like_new' => ['label' => 'در حد نو', 'icon' => 'bi-stars'],
-                    'good'     => ['label' => 'خوب',       'icon' => 'bi-hand-thumbs-up-fill'],
-                    'fair'     => ['label' => 'متوسط',     'icon' => 'bi-dash-circle-fill'],
-                    'poor'     => ['label' => 'خراب',      'icon' => 'bi-exclamation-triangle-fill'],
-                ];
-                $firstCond = true;
-                foreach ($condList as $cVal => $cInfo):
-                ?>
-                <label class="home-ai-form__cond">
-                  <input type="radio" name="condition" value="<?= $cVal ?>" <?= $firstCond ? 'checked' : '' ?>>
-                  <span><i class="bi <?= $cInfo['icon'] ?>"></i> <?= $cInfo['label'] ?></span>
-                </label>
-                <?php $firstCond = false; endforeach; ?>
-              </div>
-            </div>
-
             <!-- نتیجه (مخفی تا زمانی که نتیجه برسد) -->
             <div id="estimate-result" class="home-ai-form__result" style="display:none">
               <div class="home-ai-form__result-header">
@@ -854,43 +831,17 @@ render_navbar($user);
       <div class="home-ai__visual home-ai__visual--center" aria-hidden="false">
         <div class="home-ai__phone-wrap home-ai__phone-wrap--center">
           <div class="home-ai__phone-blob" aria-hidden="true"></div>
-          <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=3D%20render%20cute%20friendly%20white%20blue%20AI%20robot%20character%20S%20logo%20magnifying%20glass%20smartphone%20product%20scan%20neon%20frame%20various%20products%20headphones%20shoes%20camera%20gamepad%20watch%20Persian%20UI%20transparent%20bg&image_size=square_hd" alt="ربات هوش مصنوعی سواپین برای تخمین قیمت کالا" class="home-ai__phone home-ai__phone--center" loading="lazy">
+          <img src="<?= APP_URL ?>/91880dba-8120-4b5d-a963-7010f5abad9a.png" alt="ربات هوش مصنوعی سواپین برای تخمین قیمت کالا" class="home-ai__phone home-ai__phone--center" loading="lazy">
         </div>
       </div>
 
-      <!-- ستون راست: توضیحات و CTA -->
+      <!-- ستون راست: توضیحات و CTA (حالت اصلی - بدون ویژگی‌ها) -->
       <div class="home-ai__content home-ai__content--right">
         <span class="home-ai__badge">
           <i class="bi bi-stars"></i> هوش مصنوعی
         </span>
         <h2 class="home-ai__title">ارزش‌گذاری و مشاوره معاوضه با <span class="home-ai__title-accent">AI</span></h2>
         <p class="home-ai__desc">سواَپین AI کالا، شرایط فیزیکی و بازار معاوضه را تحلیل می‌کند، تخمین قیمت دقیق می‌دهد و بهترین پیشنهادهای معاوضه را متناسب با بودجه و سلایق شما پیدا می‌کند.</p>
-
-        <!-- ویژگی‌ها -->
-        <div class="home-ai__features">
-          <div class="home-ai__feature">
-            <div class="home-ai__feature-icon home-ai__feature-icon--blue"><i class="bi bi-search"></i></div>
-            <div>
-              <h4 class="home-ai__feature-title">تحلیل بازار لحظه‌ای</h4>
-              <p class="home-ai__feature-sub">بررسی قیمت در دیوار، دیجی‌کالا و بازار معاوضه</p>
-            </div>
-          </div>
-          <div class="home-ai__feature">
-            <div class="home-ai__feature-icon home-ai__feature-icon--alt"><i class="bi bi-cpu"></i></div>
-            <div>
-              <h4 class="home-ai__feature-title">هوش مصنوعی OpenRouter</h4>
-              <p class="home-ai__feature-sub">دقت بالا با بهترین مدل‌های زبان باز</p>
-            </div>
-          </div>
-          <div class="home-ai__feature">
-            <div class="home-ai__feature-icon"><i class="bi bi-arrow-left-right"></i></div>
-            <div>
-              <h4 class="home-ai__feature-title">پیشنهاد معاوضه هوشمند</h4>
-              <p class="home-ai__feature-sub">بهترین کالاهای جایگزین را پیشنهاد می‌دهد</p>
-            </div>
-          </div>
-        </div>
-
         <div class="home-ai__actions">
           <a href="<?= APP_URL ?>/listings/create" class="btn btn-accent btn-lg">
             <i class="bi bi-plus-circle"></i> ثبت کالا + دریافت قیمت AI
@@ -956,19 +907,6 @@ render_navbar($user);
 }
 @media (max-width: 720px) {
   .home-ai__phone-wrap--center { max-width: 300px; }
-}
-
-/* Right content features (compact grid) */
-.home-ai__content--right .home-ai__features {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-3);
-  margin: var(--sp-4) 0 var(--sp-5);
-  padding: 0;
-}
-@media (min-width: 1100px) {
-  .home-ai__content--right .home-ai__features { grid-template-columns: 1fr 1fr; }
-  .home-ai__content--right .home-ai__feature:last-child { grid-column: 1 / -1; }
 }
 
 /* ---------- Estimate Form ---------- */
@@ -1057,47 +995,6 @@ render_navbar($user);
   background: rgba(59,130,246,.05);
 }
 .home-ai-form__upload i { font-size: 1.6rem; color: #3b82f6; }
-
-/* Condition pills */
-.home-ai-form__conditions {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-}
-@media (max-width: 900px) { .home-ai-form__conditions { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 480px) { .home-ai-form__conditions { grid-template-columns: repeat(2, 1fr); } }
-.home-ai-form__cond {
-  cursor: pointer;
-  margin: 0;
-}
-.home-ai-form__cond input { display: none; }
-.home-ai-form__cond span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 100%;
-  padding: 10px 6px;
-  border-radius: 12px;
-  border: 1.5px solid #e5e7eb;
-  background: #ffffff;
-  font-size: .8rem;
-  font-weight: 700;
-  color: #475569;
-  transition: all .2s ease;
-  text-align: center;
-}
-.home-ai-form__cond span i { font-size: .85rem; }
-.home-ai-form__cond:hover span {
-  border-color: #93c5fd;
-  color: #1d4ed8;
-}
-.home-ai-form__cond input:checked + span {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: #ffffff;
-  border-color: transparent;
-  box-shadow: 0 6px 18px -10px rgba(37,99,235,.7);
-}
 
 /* Submit button */
 .home-ai-form__submit {
@@ -1404,9 +1301,8 @@ render_navbar($user);
         return;
       }
       const descEl = document.getElementById('estimate_description');
-      const conditionEl = form.querySelector('input[name="condition"]:checked');
       const description = (descEl.value || '').trim();
-      const condition = conditionEl ? conditionEl.value : 'good';
+      const condition = 'good';
 
       const fd = new FormData();
       fd.append('title', title);
