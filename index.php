@@ -585,30 +585,19 @@ render_navbar($user);
         <?php if (!empty($featuredStores)): ?>
         <link rel="stylesheet" href="<?= APP_URL ?>/src/css/shops.css?v=<?= @filemtime(__DIR__ . '/src/css/shops.css') ?: time() ?>">
         <style>
-          .home-stores-scroll {
-            display: flex;
+          /* Store slider canvas inherits listings-scroll-row base styles */
+          .home-stores-slider {
             gap: 1.25rem;
-            overflow-x: auto;
-            overflow-y: hidden;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            padding: 4px 8px 16px 8px;
-            scrollbar-width: none;
+            padding: var(--sp-2) 8px var(--sp-2) 8px;
           }
-          .home-stores-scroll::-webkit-scrollbar { height: 8px; }
-          .home-stores-scroll::-webkit-scrollbar-track { background: transparent; }
-          .home-stores-scroll::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
-          .home-stores-scroll::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
           .home-stores-card {
             flex: 0 0 auto;
             width: 320px;
+            scroll-snap-align: start;
           }
           @media (max-width: 768px) {
             .home-stores-card { width: calc(100% - 48px); }
           }
-          /* Ensure arrows show correctly for store slider */
-          .listings-row-wrapper:has(#home-stores-row) .listings-slider-arrow--next { right: 0; }
-          .listings-row-wrapper:has(#home-stores-row) .listings-slider-arrow--prev { left: 0; }
         </style>
         <section class="home-listings-section" aria-label="فروشگاه‌ها" style="margin-top:48px">
           <div class="home-section-heading home-section-heading--large mb-5">
@@ -622,7 +611,7 @@ render_navbar($user);
               <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="home-stores-row" aria-label="فروشگاه بعدی">
                 <i class="bi bi-chevron-right"></i>
               </button>
-              <div class="listings-scroll-row home-stores-scroll" id="home-stores-row">
+              <div class="listings-scroll-row home-stores-slider" id="home-stores-row">
                 <?php foreach ($featuredStores as $store):
                   $name = $store['store_name'] ?: $store['name'];
                   $slug = $store['store_slug'];

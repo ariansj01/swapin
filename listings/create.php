@@ -395,7 +395,7 @@ render_navbar($user);
               <input type="text" id="step6-suggested-price-input" class="wizard-form-input"
                      value="<?= h(number_format($suggestedValue)) ?>"
                      readonly>
-              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این مبلغ از بازار (دیوار، دیجی‌کالا و در صورت نیاز گوگل) پیشنهاد می‌شود؛ در صورت خالی گذاشتن فیلد پایین، همین مقدار ثبت می‌شود.</p>
+              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این مبلغ از بازار سواَپین پیشنهاد می‌شود؛ در صورت خالی گذاشتن فیلد پایین، همین مقدار ثبت می‌شود.</p>
             </div>
           </div>
 

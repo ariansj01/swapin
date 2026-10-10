@@ -234,7 +234,7 @@ $hasPromo = $promotionMeta !== null;
 }
 .listing-card__media-placeholder i { font-size: 3rem; }
 
-/* ---------- Favorite Button (Top-Left, white round) ---------- */
+/* ---------- Favorite Button (Top-Left, white round) - ALWAYS VISIBLE ---------- */
 .lc-fav-btn {
   position: absolute;
   top: 12px;
@@ -255,24 +255,18 @@ $hasPromo = $promotionMeta !== null;
   z-index: 3;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-}
-.listing-card--v2:hover .lc-fav-btn,
-.lc-fav-btn.is-saved {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
 }
 .lc-fav-btn:hover {
   background: #fff;
-  transform: scale(1.08);
+  transform: scale(1.08) !important;
   color: #ef4444;
 }
 .lc-fav-btn.is-saved { color: #ef4444; }
 
-/* ---------- Badges Row (Top Right/Center) - Hover ONLY ---------- */
+/* ---------- Badges Row (Top Right/Center) - ALWAYS VISIBLE ---------- */
 .lc-badges-row {
   position: absolute;
   top: 12px;
@@ -281,15 +275,9 @@ $hasPromo = $promotionMeta !== null;
   align-items: center;
   gap: 8px;
   z-index: 3;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-  transition: opacity 200ms ease, visibility 200ms ease, transform 200ms ease;
-}
-.listing-card--v2:hover .lc-badges-row {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
 }
 .lc-badge {
   display: inline-flex;
@@ -301,10 +289,9 @@ $hasPromo = $promotionMeta !== null;
   font-weight: 800;
   line-height: 1.2;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-.listing-card--v2:hover .lc-badge {
-  transform: translateY(0);
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
 }
 .lc-badge i { font-size: .9rem; }
 
