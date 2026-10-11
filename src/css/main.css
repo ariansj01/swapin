@@ -6607,6 +6607,7 @@ html body .categories-dropdown {
   flex-direction: column;
   animation: fadeInUp .2s ease;
 }
+.support-chat[hidden] { display: none !important; }
 .support-chat__header {
   display: flex;
   align-items: center;
