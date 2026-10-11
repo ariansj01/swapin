@@ -337,7 +337,7 @@ render_navbar($user);
       <!-- ===== Sidebar (Beside Sliders) ===== -->
       <aside class="home-sidebar card home-sidebar--mobile-collapsible" id="home-mobile-sidebar"
              aria-label="دسته‌بندی‌ها، فیلترها و منوها"
-             style="background: transparent;border: none;box-shadow: none;width: 93%;">
+             style="background: transparent;border: none;box-shadow: none;width: 102%;">
 
         <!-- دکمه باز/بسته سایدبار (فقط در موبایل) -->
         <button type="button"
@@ -541,7 +541,7 @@ render_navbar($user);
             <a href="https://www.linkedin.com/company/swaapin" class="social-btn" target="_blank" rel="noopener" aria-label="LinkedIn">
               <i class="bi bi-linkedin"></i>
             </a>
-            <a href="https://wa.me/989000000000?text=<?= urlencode('سلام. از سایت سواپین دیدن کردم...') ?>" class="social-btn" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <a href="https://wa.me/989000000000?text=<?= urlencode('سلام. از سایت سواَپین  دیدن کردم...') ?>" class="social-btn" target="_blank" rel="noopener" aria-label="WhatsApp">
               <i class="bi bi-whatsapp"></i>
             </a>
             <a href="https://t.me/swaapin" class="social-btn" target="_blank" rel="noopener" aria-label="Telegram">
@@ -891,13 +891,13 @@ render_navbar($user);
 <?php if ($page === 1): ?>
 <section class="home-section home-ai home-ai--triple" aria-label="ارزش‌گذاری و مشاوره معاوضه با AI">
   <div class="container">
-    <div class="home-ai__inner home-ai__inner--triple">
+    <div class="home-ai__inner home-ai__inner--triple" style="margin-bottom: 0px;">
 
       <!-- ستون سمت چپ: فرم تخمین قیمت -->
       <div class="home-ai__form-col" id="home-price-estimate">
         <div class="home-ai-form card" style="background: rgba(7,26,51,.03);">
           <div class="home-ai-form__header">
-            <span class="home-ai-form__badge"><i class="bi bi-lightning-charge-fill"></i> دستیار هوشمند سواپین</span>
+            <span class="home-ai-form__badge"><i class="bi bi-lightning-charge-fill"></i> دستیار هوشمند سواَپین </span>
             <h3 class="home-ai-form__title">کالات چقدر می‌ارزه؟</h3>
           </div>
 
@@ -906,21 +906,21 @@ render_navbar($user);
 
             <!-- اسم کالا -->
             <div class="home-ai-form__field">
-              <label class="home-ai-form__label" for="estimate_title">اسم کالا</label>
+              <label class="home-ai-form__label" for="estimate_title" style="margin-top: -20px;">اسم کالا</label>
               <input type="text" id="estimate_title" name="title" class="form-control"
                      placeholder="مثال: آیفون ۱۵ پرو مکس ۵۱۲ گیگابایت"
                      required minlength="3" maxlength="150">
             </div>
 
             <!-- عکس کالا (اختیاری) -->
-            <div class="home-ai-form__field">
+            <!-- <div class="home-ai-form__field">
               <label class="home-ai-form__label" for="estimate_image">عکس کالا <span style="font-weight:500;opacity:.7;display:inline-block;margin-right:4px">(اختیاری)</span></label>
               <label for="estimate_image" class="home-ai-form__upload">
                 <input type="file" id="estimate_image" name="image" accept="image/*" style="display:none">
                 <i class="bi bi-cloud-arrow-up-fill"></i>
                 <span>عکس کالا رو آپلود کن</span>
               </label>
-            </div>
+            </div> -->
 
             <!-- توضیحات کالا -->
             <div class="home-ai-form__field">
@@ -977,7 +977,7 @@ render_navbar($user);
       <div class="home-ai__visual home-ai__visual--center" aria-hidden="false">
         <div class="home-ai__phone-wrap home-ai__phone-wrap--center">
           <div class="home-ai__phone-blob" aria-hidden="true"></div>
-          <img src="<?= APP_URL ?>/91880dba-8120-4b5d-a963-7010f5abad9a.png" alt="ربات هوش مصنوعی سواپین برای تخمین قیمت کالا" class="home-ai__phone home-ai__phone--center" loading="lazy">
+          <img src="<?= APP_URL ?>/91880dba-8120-4b5d-a963-7010f5abad9a.png" alt="ربات هوش مصنوعی سواَپین  برای تخمین قیمت کالا" class="home-ai__phone home-ai__phone--center" loading="lazy">
         </div>
       </div>
 
@@ -1172,8 +1172,6 @@ render_navbar($user);
   display: flex;
   justify-content: center;
   gap: 16px;
-  margin-top: 8px;
-  padding-top: var(--sp-3);
   border-top: 1px dashed rgba(7,26,51,.12);
 
   font-size: .78rem;
@@ -1495,7 +1493,7 @@ render_navbar($user);
                 value: Number(fb.mid) || Math.round(((Number(fb.min) || 0) + (Number(fb.max) || 0)) / 2),
                 range_low: Number(fb.min) || 0,
                 range_high: Number(fb.max) || 0,
-                note: String(fb.note || '') || 'ارزش‌گذاری با مدل پایه سواپین (حالت اضطراری).',
+                note: String(fb.note || '') || 'ارزش‌گذاری با مدل پایه سواَپین  (حالت اضطراری).',
                 uncertain: true,
               };
             }

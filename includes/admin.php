@@ -76,12 +76,20 @@ function admin_pending_counts(): array {
         $storeRequests = store_request_pending_count();
     } catch (Throwable) {}
 
+    $liveChat = 0;
+    try {
+        if (db_has_table('live_chats')) {
+            $liveChat = live_chat_unread_count();
+        }
+    } catch (Throwable) {}
+
     return [
         'listings'       => $listings,
         'kyc'            => $kyc,
         'inspections'    => $inspections,
         'disputes'       => $disputes,
         'tickets'        => $tickets + $errors,
+        'live_chat'      => $liveChat,
         'store_requests' => $storeRequests,
         'users'          => $users,
     ];

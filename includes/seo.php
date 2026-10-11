@@ -196,7 +196,7 @@ function seo_listing_description(array $listing): string {
     }
     $head .= ($catName ?: 'کالا');
     if ($city)  $head .= ' در ' . $city;
-    $sentences[] = $head . ' در پلتفرم سواپین.';
+    $sentences[] = $head . ' در پلتفرم سواَپین .';
 
     if ($title && $title !== $catName) {
         $sentences[] = 'عنوان آگهی: ' . $title . '.';

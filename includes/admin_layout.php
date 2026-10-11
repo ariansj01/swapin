@@ -74,6 +74,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'inspections'    => ['/inspections.php', 'بازرسی', 'bi-search', $counts['inspections']],
         'disputes'       => ['/disputes.php', 'اختلافات', 'bi-exclamation-triangle', $counts['disputes']],
         'tickets'        => ['/tickets.php', 'پشتیبانی', 'bi-headset', $counts['tickets']],
+        'live_chat'      => ['/live_chat.php', 'چت زنده', 'bi-chat-dots', $counts['live_chat']],
         'users'          => ['/users.php', 'کاربران', 'bi-people', 0],
     ];
 

@@ -845,21 +845,49 @@ HTML;
 
 function render_support_widget(?array $user = null): void {
     $url = APP_URL;
-    $loggedIn = $user !== null;
-    $supportHref = $loggedIn ? $url . '/support/index.php' : $url . '/auth/login.php?redirect=' . urlencode('/support/index.php');
-    $reportHref  = $url . '/support/report.php';
-    $fraudHref   = $url . '/fraud-prevention.php';
+    $csrf = h(csrf_token());
 
     echo <<<HTML
 <div class="support-widget" id="support-widget">
   <button type="button" class="support-widget__toggle" id="support-widget-toggle" aria-label="پشتیبانی" aria-expanded="false">
     <i class="bi bi-headset"></i>
   </button>
-  <div class="support-widget__menu" id="support-widget-menu" hidden>
-    <div class="support-widget__title"><i class="bi bi-headset"></i> پشتیبانی</div>
-    <a href="{$supportHref}" class="support-widget__link"><i class="bi bi-ticket-perforated"></i> ثبت تیکت</a>
-    <a href="{$reportHref}" class="support-widget__link"><i class="bi bi-bug"></i> گزارش خطا</a>
-    <!-- <a href="{$fraudHref}" class="support-widget__link"><i class="bi bi-shield-exclamation"></i> راهنمای کلاهبرداری</a> -->
+  <div class="support-chat" id="support-chat" hidden>
+    <div class="support-chat__header">
+      <div class="support-chat__title">
+        <i class="bi bi-headset"></i>
+        <span>پشتیبانی آنلاین</span>
+      </div>
+      <button type="button" class="support-chat__close" id="support-chat-close" aria-label="بستن">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="support-chat__body" id="support-chat-body">
+      <div class="support-chat__welcome" id="support-chat-welcome">
+        <i class="bi bi-chat-dots-fill"></i>
+        <p>به پشتیبانی سواَپین خوش آمدید</p>
+        <p class="fs-xs" style="opacity:.7">نام و شماره خود را وارد کنید تا شروع کنیم</p>
+      </div>
+      <div class="support-chat__messages" id="support-chat-messages" hidden></div>
+    </div>
+
+    <div class="support-chat__form" id="support-chat-form">
+      <div class="support-chat__register" id="support-chat-register">
+        <input type="hidden" name="_csrf" value="{$csrf}">
+        <input type="text" class="support-chat__input" id="support-chat-name" placeholder="نام شما" autocomplete="off">
+        <input type="tel" class="support-chat__input" id="support-chat-phone" placeholder="شماره موبایل" autocomplete="off" dir="ltr">
+        <button type="button" class="support-chat__btn" id="support-chat-start">
+          <i class="bi bi-arrow-left"></i> شروع چت
+        </button>
+      </div>
+      <div class="support-chat__composer" id="support-chat-composer" hidden>
+        <input type="text" class="support-chat__input" id="support-chat-msg" placeholder="پیام خود را بنویسید…" autocomplete="off">
+        <button type="button" class="support-chat__btn" id="support-chat-send">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 HTML;

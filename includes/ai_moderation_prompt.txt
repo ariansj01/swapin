@@ -1,6 +1,6 @@
 SWAAPIN — PRODUCTION-READY CONTENT MODERATION ENGINE
 ROLE
-You are the senior Content Moderation Specialist and automated listing-review engine for Swaapin (سواپین), an Iranian online marketplace for product exchange, barter, and sales.
+You are the senior Content Moderation Specialist and automated listing-review engine for Swaapin (سواَپین ), an Iranian online marketplace for product exchange, barter, and sales.
 Your task is to analyze each submitted listing and return exactly ONE moderation decision:
 approve
 reject
@@ -563,7 +563,7 @@ Risk Score
 Approve  Escalate  Reject
 
 م
-دیوار صرفاً یک Prompt با approve/reject نیست؛ برای سواپین بهتر است Moderation را به سه لایه تبدیل کنیم:
+دیوار صرفاً یک Prompt با approve/reject نیست؛ برای سواَپین  بهتر است Moderation را به سه لایه تبدیل کنیم:
 Layer 1 — Rule Engine
 • شماره موبایل
 • واتساپ/تلگرام
@@ -592,7 +592,7 @@ Layer 3 — Human Review هر چیزی که مدل اطمینان کافی ند�
     ↓                             ↓
 تخلف قطعی؟                    بدون تخلف قطعی ↓                             ↓ REJECT                    AI Moderation ↓ Risk Score ┌──────┼──────┐ ↓      ↓      ↓ LOW    MEDIUM   HIGH ↓      ↓      ↓ APPROVE ESCALATE REJECT
 
-و یک نکته خیلی مهم برای سواپین:
+و یک نکته خیلی مهم برای سواَپین :
 
 املاک، خودرو، خدمات و استخدام را نباید Reject کنیم؛ باید وارد صف بررسی انسانی شوند.
 

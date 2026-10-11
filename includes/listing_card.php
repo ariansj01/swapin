@@ -306,7 +306,9 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   font-size: .82rem;
   font-weight: 800;
   line-height: 1.2;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
   opacity: 1 !important;
   visibility: visible !important;
   transform: translateY(0) scale(1) !important;
@@ -316,34 +318,35 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 
 /* VIP/Plan Badge — cream/yellow with star */
 .lc-badge--promo {
-  background: #FFF5D1;
+  background: rgba(255, 245, 209, 0.55);
   color: #92400e;
-  border: 1px solid #FDE68A;
+  border: 1px solid rgba(253, 230, 138, 0.6);
 }
 .lc-badge--promo i { color: #F59E0B; }
 .lc-badge--promo.listing-promo-badge--vip {
-  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.55) 0%, rgba(79, 70, 229, 0.55) 100%);
   color: #ffffff;
-  border: 1px solid #6d28d9;
+  border: 1px solid rgba(109, 40, 217, 0.5);
 }
 .lc-badge--promo.listing-promo-badge--vip i { color: #fbbf24; }
 .lc-badge--promo.listing-promo-badge--featured {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.55) 0%, rgba(245, 158, 11, 0.55) 100%);
   color: #78350f;
-  border: 1px solid #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.5);
 }
 .lc-badge--promo.listing-promo-badge--featured i { color: #78350f; }
 .lc-badge--promo.listing-promo-badge--bumped {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.55) 0%, rgba(5, 150, 105, 0.55) 100%);
   color: #ffffff;
-  border: 1px solid #047857;
+  border: 1px solid rgba(4, 120, 87, 0.5);
 }
 .lc-badge--promo.listing-promo-badge--bumped i { color: #ecfdf5; }
 
 /* Swap Badge — navy background */
 .lc-badge--swap {
-  background: #071A33;
+  background: rgba(7, 26, 51, 0.55);
   color: #ffffff;
+  border: 1px solid rgba(7, 26, 51, 0.4);
 }
 .lc-badge--swap i { color: #FBBF24; }
 
@@ -363,12 +366,13 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   color: #071A33;
   line-height: 1.55;
   text-align: center;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin-inline: auto;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: calc(1.12rem * 1.55 * 2);
 }
 
 /* Value row */
@@ -479,16 +483,16 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   justify-content: center;
   /* gap: 10px; */
   width: 100%;
-  padding: 7px 5px;
+  padding: 5px 3px;
   border-radius: 14px;
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 800;
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
   border: 2px solid transparent;
 }
-.lc-btn i { font-size: 1rem; }
+.lc-btn i { font-size: 0.8rem; }
 
 /* Swap button — yellow/orange border, navy text */
 .lc-btn--swap {

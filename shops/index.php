@@ -143,7 +143,7 @@ render_navbar($user);
             <option value="physical" <?= $type === 'physical' ? 'selected' : '' ?>>حضوری</option>
           </select>
         </div>
-        <button type="submit" style="width: 35%;" class="btn btn-primary"><i class="bi bi-search"></i> جستجو</button>
+        <button type="submit" style="width: 65%;" class="btn btn-primary"><i class="bi bi-search"></i> جستجو</button>
       </div>
     </form>
 

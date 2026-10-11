@@ -1671,27 +1671,173 @@ function initAiMatch() {
   select?.addEventListener('change', () => loadMatches(false));
 }
 
-/* ── Support floating widget ───────────────────────────────────────────── */
+/* ── Support floating widget (Live Chat) ────────────────────────────────── */
 function initSupportWidget() {
-  const toggle = document.getElementById('support-widget-toggle');
-  const menu   = document.getElementById('support-widget-menu');
-  if (!toggle || !menu) return;
+  const toggle  = document.getElementById('support-widget-toggle');
+  const chatBox = document.getElementById('support-chat');
+  if (!toggle || !chatBox) return;
+
+  const closeBtn  = document.getElementById('support-chat-close');
+  const nameInp   = document.getElementById('support-chat-name');
+  const phoneInp  = document.getElementById('support-chat-phone');
+  const startBtn  = document.getElementById('support-chat-start');
+  const register  = document.getElementById('support-chat-register');
+  const composer  = document.getElementById('support-chat-composer');
+  const msgInp    = document.getElementById('support-chat-msg');
+  const sendBtn   = document.getElementById('support-chat-send');
+  const messages  = document.getElementById('support-chat-messages');
+  const welcome   = document.getElementById('support-chat-welcome');
+  const csrfInp   = chatBox.querySelector('input[name="_csrf"]');
+
+  const TOKEN_KEY = 'swaapin_live_chat_token';
+  let pollTimer = null;
+  let lastMsgId = 0;
+
+  function openChat() {
+    chatBox.hidden = false;
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.classList.add('is-open');
+    if (localStorage.getItem(TOKEN_KEY)) {
+      showComposer();
+      pollMessages();
+    }
+  }
+
+  function closeChat() {
+    chatBox.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.classList.remove('is-open');
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function showComposer() {
+    welcome.hidden = true;
+    messages.hidden = false;
+    register.hidden = true;
+    composer.hidden = false;
+    setTimeout(() => msgInp?.focus(), 100);
+  }
+
+  function showRegister() {
+    welcome.hidden = false;
+    messages.hidden = true;
+    register.hidden = false;
+    composer.hidden = true;
+  }
+
+  function appendMsg(text, sender, time) {
+    if (!messages) return;
+    const div = document.createElement('div');
+    div.className = 'support-chat__msg support-chat__msg--' + sender;
+    div.innerHTML = (text || '').replace(/\n/g, '<br>');
+    if (time) {
+      const t = document.createElement('span');
+      t.className = 'support-chat__msg-time';
+      t.textContent = time;
+      div.appendChild(t);
+    }
+    messages.appendChild(div);
+    const body = document.getElementById('support-chat-body');
+    if (body) body.scrollTop = body.scrollHeight;
+  }
+
+  function showError(text) {
+    const existing = chatBox.querySelector('.support-chat__error');
+    if (existing) existing.remove();
+    const err = document.createElement('div');
+    err.className = 'support-chat__error';
+    err.textContent = text;
+    chatBox.querySelector('.support-chat__form').appendChild(err);
+    setTimeout(() => err.remove(), 4000);
+  }
+
+  function api(action, data) {
+    return fetch(getAppUrl() + '/api/live_chat.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfInp?.value || '' },
+      body: JSON.stringify({ action, ...(data || {}) })
+    }).then(r => r.json());
+  }
 
   toggle.addEventListener('click', (e) => {
     e.stopPropagation();
-    const open = !menu.hidden;
-    menu.hidden = open;
-    toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
-    toggle.classList.toggle('is-open', !open);
+    if (chatBox.hidden) openChat(); else closeChat();
+  });
+
+  closeBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeChat();
   });
 
   document.addEventListener('click', (e) => {
-    if (!document.getElementById('support-widget')?.contains(e.target)) {
-      menu.hidden = true;
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.classList.remove('is-open');
+    if (!document.getElementById('support-widget')?.contains(e.target)) closeChat();
+  });
+
+  startBtn?.addEventListener('click', async () => {
+    const name  = (nameInp?.value || '').trim();
+    const phone = (phoneInp?.value || '').trim();
+    if (!name) return showError('نام را وارد کنید.');
+    if (!/^09\d{9}$/.test(phone)) return showError('شماره موبایل معتبر وارد کنید.');
+
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    try {
+      const res = await api('start', { name, phone });
+      if (res.ok && res.token) {
+        localStorage.setItem(TOKEN_KEY, res.token);
+        showComposer();
+        appendMsg('سلام! به پشتیبانی سواَپین خوش آمدید. چطور می‌توانیم کمکتان کنیم؟', 'admin');
+        pollMessages();
+      } else {
+        const errs = res.errors || {};
+        showError(errs.name || errs.phone || 'خطا در شروع چت.');
+      }
+    } catch {
+      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
+    } finally {
+      startBtn.disabled = false;
+      startBtn.innerHTML = '<i class="bi bi-arrow-left"></i> شروع چت';
     }
   });
+
+  async function sendMessage() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const text  = (msgInp?.value || '').trim();
+    if (!token) { showRegister(); return; }
+    if (!text) return;
+
+    msgInp.value = '';
+    appendMsg(text, 'guest');
+    try {
+      await api('send', { token, body: text });
+    } catch {
+      showError('ارسال پیام ناموفق بود.');
+    }
+  }
+
+  sendBtn?.addEventListener('click', sendMessage);
+  msgInp?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+  });
+
+  async function pollMessages() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) { if (pollTimer) clearInterval(pollTimer); return; }
+      try {
+        const res = await api('messages', { token, after_id: lastMsgId });
+        if (res.messages) {
+          for (const m of res.messages) {
+            if (m.sender_type === 'admin') {
+              appendMsg(m.body, 'admin');
+            }
+            lastMsgId = Math.max(lastMsgId, m.id);
+          }
+        }
+      } catch {}
+    }, 5000);
+  }
 }
 
 /* ── Homepage steps reveal ─────────────────────────────────────────────── */

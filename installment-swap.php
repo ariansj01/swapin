@@ -157,7 +157,7 @@ render_navbar($user);
 
               <g filter="url(#shadow)">
                 <rect x="230" y="40" width="140" height="70" rx="14" fill="url(#gGreen)"/>
-                <text x="300" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">اسباب‌کشی سواپین</text>
+                <text x="300" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">اسباب‌کشی سواَپین </text>
                 <text x="300" y="88" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.9)">بررسی و نگهداری</text>
               </g>
 

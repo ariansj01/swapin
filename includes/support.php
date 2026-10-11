@@ -190,3 +190,157 @@ function support_open_ticket_count(): int {
 function support_new_error_count(): int {
     return (int)(DB::fetch('SELECT COUNT(*) AS c FROM error_reports WHERE status = "new"')['c'] ?? 0);
 }
+
+/* ── Live Chat helpers ──────────────────────────────────────────────────── */
+
+function live_chat_ensure_tables(): void {
+    if (!db_has_table('live_chats')) {
+        DB::query("CREATE TABLE IF NOT EXISTS `live_chats` (
+          `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+          `session_token` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+          `guest_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+          `guest_phone` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+          `status` enum('open','closed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open',
+          `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `last_message_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `idx_session_token` (`session_token`),
+          KEY `idx_status` (`status`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    }
+    if (!db_has_table('live_chat_messages')) {
+        DB::query("CREATE TABLE IF NOT EXISTS `live_chat_messages` (
+          `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+          `chat_id` int UNSIGNED NOT NULL,
+          `sender_type` enum('guest','admin') COLLATE utf8mb4_unicode_ci NOT NULL,
+          `body` text COLLATE utf8mb4_unicode_ci NOT NULL,
+          `is_read` tinyint(1) NOT NULL DEFAULT 0,
+          `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          KEY `idx_chat_id` (`chat_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    }
+}
+
+function live_chat_start(string $name, string $phone): array {
+    $name  = clean($name);
+    $phone = clean($phone);
+    $errors = [];
+    if (mb_strlen($name) < 2) $errors['name'] = 'نام را وارد کنید.';
+    if (!preg_match('/^09\d{9}$/', $phone)) $errors['phone'] = 'شماره موبایل معتبر وارد کنید.';
+    if ($errors) return ['errors' => $errors];
+
+    $token = bin2hex(random_bytes(16));
+    live_chat_ensure_tables();
+
+    $chatId = DB::insert('live_chats', [
+        'session_token' => $token,
+        'guest_name'    => $name,
+        'guest_phone'   => $phone,
+        'status'        => 'open',
+    ]);
+
+    notify_admins(
+        'چت زنده جدید: ' . $name,
+        'کاربر ' . $name . ' (' . $phone . ') شروع به چت کرد.',
+        APP_URL . '/admin/live_chat.php?id=' . $chatId
+    );
+
+    return ['chat_id' => $chatId, 'token' => $token];
+}
+
+function live_chat_send_message(string $token, string $body): array {
+    $body = clean($body);
+    if (mb_strlen($body) < 1) return ['error' => 'پیام خالی است.'];
+
+    live_chat_ensure_tables();
+    $chat = DB::fetch('SELECT * FROM live_chats WHERE session_token = ?', [$token]);
+    if (!$chat) return ['error' => 'جلسه چت یافت نشد.'];
+    if ($chat['status'] === 'closed') return ['error' => 'این چت بسته شده است.'];
+
+    DB::insert('live_chat_messages', [
+        'chat_id'     => (int)$chat['id'],
+        'sender_type' => 'guest',
+        'body'        => $body,
+        'is_read'     => 0,
+    ]);
+
+    DB::update('live_chats', [
+        'last_message_at' => date('Y-m-d H:i:s'),
+    ], 'id = ?', [(int)$chat['id']]);
+
+    return ['ok' => true];
+}
+
+function live_chat_get_messages(string $token, int $afterId = 0): array {
+    live_chat_ensure_tables();
+    $chat = DB::fetch('SELECT id FROM live_chats WHERE session_token = ?', [$token]);
+    if (!$chat) return [];
+
+    $sql = 'SELECT * FROM live_chat_messages WHERE chat_id = ?';
+    $params = [(int)$chat['id']];
+    if ($afterId > 0) {
+        $sql .= ' AND id > ?';
+        $params[] = $afterId;
+    }
+    $sql .= ' ORDER BY id ASC';
+
+    return DB::fetchAll($sql, $params);
+}
+
+function live_chat_admin_list(): array {
+    live_chat_ensure_tables();
+    return DB::fetchAll(
+        'SELECT c.*, (SELECT COUNT(*) FROM live_chat_messages m WHERE m.chat_id = c.id AND m.sender_type = "guest" AND m.is_read = 0) AS unread
+         FROM live_chats c ORDER BY c.last_message_at DESC'
+    );
+}
+
+function live_chat_admin_get(int $chatId): ?array {
+    live_chat_ensure_tables();
+    $chat = DB::fetch('SELECT * FROM live_chats WHERE id = ?', [$chatId]);
+    if (!$chat) return null;
+    $messages = DB::fetchAll(
+        'SELECT * FROM live_chat_messages WHERE chat_id = ? ORDER BY id ASC',
+        [$chatId]
+    );
+    DB::update('live_chat_messages', ['is_read' => 1], 'chat_id = ? AND sender_type = "guest"', [$chatId]);
+    return ['chat' => $chat, 'messages' => $messages];
+}
+
+function live_chat_admin_reply(int $chatId, int $adminId, string $body): array {
+    $body = clean($body);
+    if (mb_strlen($body) < 1) return ['error' => 'پیام خالی است.'];
+
+    live_chat_ensure_tables();
+    $chat = DB::fetch('SELECT * FROM live_chats WHERE id = ?', [$chatId]);
+    if (!$chat) return ['error' => 'چت یافت نشد.'];
+    if ($chat['status'] === 'closed') return ['error' => 'این چت بسته شده است.'];
+
+    DB::insert('live_chat_messages', [
+        'chat_id'     => $chatId,
+        'sender_type' => 'admin',
+        'body'        => $body,
+        'is_read'     => 1,
+    ]);
+
+    DB::update('live_chats', [
+        'last_message_at' => date('Y-m-d H:i:s'),
+    ], 'id = ?', [$chatId]);
+
+    return ['ok' => true];
+}
+
+function live_chat_admin_close(int $chatId): void {
+    live_chat_ensure_tables();
+    DB::update('live_chats', ['status' => 'closed'], 'id = ?', [$chatId]);
+}
+
+function live_chat_unread_count(): int {
+    live_chat_ensure_tables();
+    return (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM live_chat_messages m
+         JOIN live_chats c ON c.id = m.chat_id
+         WHERE m.sender_type = "guest" AND m.is_read = 0 AND c.status = "open"'
+    )['c'] ?? 0);
+}
