@@ -131,7 +131,7 @@ $hasPromo = !empty($allPromotions);
     <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
     <div class="lc-value-row">
       <span class="lc-value-label">:ارزش تقریبی</span>
-      <span class="lc-value-amount" style="font-size: 1rem;"><?= fmt_credit((float)$l['estimated_value']) ?></span>
+      <span class="lc-value-amount" style="font-size: 0.90rem;"><?= fmt_credit((float)$l['estimated_value']) ?></span>
     </div>
     <?php endif; ?>
 
@@ -222,10 +222,10 @@ $hasPromo = !empty($allPromotions);
   border-bottom-right-radius: 18px;
 }
 .listing-card__media-img {
-  width: 100% !important;
-  height: 240px !important;
-  min-height: 240px !important;
-  max-height: 240px !important;
+  width: 90% !important;
+  height: 200px !important;
+  min-height: 200px !important;
+  max-height: 200px !important;
   object-fit: cover !important;
   object-position: center center !important;
   display: block !important;
@@ -300,12 +300,12 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 .lc-badge {
   display: inline-flex !important;
   align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
+  gap: 6px;
+  padding: 7px 16px;
   border-radius: 999px;
   font-size: .82rem;
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
@@ -314,7 +314,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   transform: translateY(0) scale(1) !important;
   filter: none !important;
 }
-.lc-badge i { font-size: .9rem; }
+.lc-badge i { font-size: .9rem; line-height: 1; display: inline-flex; align-items: center; }
 
 /* VIP/Plan Badge — cream/yellow with star */
 .lc-badge--promo {
@@ -352,16 +352,17 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 
 /* ---------- Content ---------- */
 .lc-content {
-  padding: 18px 18px 20px;
+  padding: 9px 9px 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   flex: 1;
+  min-height: 250px;
 }
 
 .lc-title {
   margin: 0;
-  font-size: 1.12rem;
+  font-size: 0.90rem;
   font-weight: 800;
   color: #071A33;
   line-height: 1.55;
@@ -416,7 +417,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   flex: 1;
   min-width: 0;
   color: #071A33;
-  font-size: .95rem;
+  font-size: .70rem;
   font-weight: 700;
   text-align: center;
   line-height: 1.6;
@@ -460,7 +461,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 18px;
-  padding: 8px 0 4px;
+  /* padding: 8px 0 4px; */
   color: #6b7280;
   font-size: .82rem;
   font-weight: 600;
@@ -476,23 +477,26 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 /* CTA */
 .lc-cta {
   padding-top: 4px;
+  margin-top: auto;
 }
 .lc-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* gap: 10px; */
+  gap: 8px;
   width: 100%;
-  padding: 5px 3px;
+  padding: 14px 22px;
+  min-height: 46px;
   border-radius: 14px;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 800;
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
   border: 2px solid transparent;
+  line-height: 1.2;
 }
-.lc-btn i { font-size: 0.8rem; }
+.lc-btn i { font-size: 0.9rem; line-height: 1; }
 
 /* Swap button — yellow/orange border, navy text */
 .lc-btn--swap {

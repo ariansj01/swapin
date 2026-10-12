@@ -458,26 +458,15 @@ function initDropdowns() {
   });
 }
 
-/* ── Navbar hover dropdowns (desktop) — ensure .open on hover for JS-level compat ── */
+/* ── Navbar dropdowns (desktop) — top-level opens on CLICK only, submenus on hover ── */
 function initNavbarHoverDropdowns() {
   if (window.matchMedia('(max-width: 991px)').matches) return;
   const nav = document.querySelector('.navbar-nav');
   if (!nav) return;
 
-  // Category & other dropdowns: apply .open class while hovering so nested subs stay visible
-  nav.querySelectorAll(':scope > .dropdown').forEach(dd => {
-    const menu = dd.querySelector(':scope > .dropdown-menu');
-    if (!menu) return;
-    const show = () => {
-      document.querySelectorAll('.navbar-nav > .dropdown > .dropdown-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); });
-      menu.classList.add('open');
-    };
-    const hide = () => { menu.classList.remove('open'); };
-    dd.addEventListener('mouseenter', show);
-    dd.addEventListener('mouseleave', () => {
-      setTimeout(() => { if (!dd.matches(':hover')) hide(); }, 80);
-    });
-  });
+  // Top-level dropdowns: no mouseenter/mouseleave — open exclusively via click (initDropdowns).
+  // Closing happens on document click (initDropdowns) so the menu stays open while the user
+  // moves the mouse to submenus / links.
 
   // Apply forced inline styles to ensure submenu position & visibility (CSS override fallback)
   const forceSubmenuStyles = (sub, open) => {
@@ -531,7 +520,7 @@ function initNavbarHoverDropdowns() {
             sub.classList.remove('open');
             forceSubmenuStyles(sub, false);
           }
-        }, 60);
+        }, 220);
       });
     });
   };
@@ -654,10 +643,10 @@ function initSmoothAnchors() {
 
 /* ── Sticky navbar shadow on scroll ────────────────────────────────────── */
 function initNavbarScroll() {
-  const nav = document.querySelector('.navbar');
-  if (!nav) return;
+  const topBar = document.querySelector('.navbar-top') || document.querySelector('.navbar');
+  if (!topBar) return;
   window.addEventListener('scroll', () => {
-    nav.style.boxShadow = window.scrollY > 10 ? 'var(--shadow-md)' : 'var(--shadow-sm)';
+    topBar.style.boxShadow = window.scrollY > 10 ? 'var(--shadow-md)' : 'var(--shadow-sm)';
   }, { passive: true });
 }
 

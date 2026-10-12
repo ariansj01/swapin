@@ -303,8 +303,8 @@
 
 .lv-swap-card {
   display: flex;
-  gap: var(--sp-3, 0.75rem);
-  padding: var(--sp-4, 1rem);
+  gap: var(--sp-2, 0.5rem);
+  padding: var(--sp-3, 0.75rem);
   border: 1px solid var(--border, #e5e7eb);
   border-radius: var(--radius-md, 10px);
   background: var(--surface, #fff);
@@ -317,8 +317,8 @@
 }
 
 .lv-swap-card__thumb {
-  width: 88px;
-  height: 88px;
+  width: 64px;
+  height: 64px;
   border-radius: var(--radius-sm, 8px);
   object-fit: cover;
   flex-shrink: 0;
@@ -339,24 +339,24 @@
 
 .lv-swap-card__score {
   display: inline-block;
-  margin-bottom: 6px;
-  padding: 4px 10px;
+  margin-bottom: 4px;
+  padding: 3px 8px;
   border-radius: 999px;
   background: rgba(0, 174, 239, 0.12);
   color: var(--primary, #0096cc);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
 .lv-swap-card__title {
-  margin: 0 0 6px;
-  font-size: 0.9375rem;
+  margin: 0 0 4px;
+  font-size: 0.875rem;
   font-weight: 700;
-  line-height: 1.45;
+  line-height: 1.4;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .lv-swap-card__title a {
@@ -370,17 +370,17 @@
 
 .lv-swap-card__badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 999px;
   background: #dcfce7;
   color: #166534;
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 700;
 }
 
 .lv-swap-card__distance {
-  margin-bottom: 6px;
-  font-size: 0.8125rem;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
   color: var(--text-secondary, #475569);
 }
 
@@ -394,31 +394,31 @@
 }
 
 .lv-swap-card__summary {
-  margin: 0 0 8px;
-  font-size: 0.8125rem;
+  margin: 0 0 6px;
+  font-size: 0.75rem;
   color: var(--text-secondary, #475569);
   line-height: 1.5;
 }
 
 .lv-swap-card__reasons {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .lv-swap-card__reasons li {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--text-secondary, #475569);
 }
 
 .lv-swap-card__reasons i {
   color: #16a34a;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   flex-shrink: 0;
 }
 
@@ -426,8 +426,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 8px;
-  font-size: 0.75rem;
+  margin-bottom: 6px;
+  font-size: 0.6875rem;
   color: var(--text-muted, #64748b);
 }
 
@@ -435,7 +435,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--primary, #00aeef);
   text-decoration: none;
@@ -446,15 +446,15 @@
 }
 
 .lv-swap-feedback {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px dashed var(--border, #e5e7eb);
 }
 
 .lv-swap-feedback__label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 0.75rem;
+  margin-bottom: 4px;
+  font-size: 0.6875rem;
   color: var(--text-muted, #64748b);
 }
 
@@ -468,9 +468,9 @@
   border: 1px solid var(--border, #e5e7eb);
   background: #fff;
   color: var(--text-secondary, #475569);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
@@ -497,15 +497,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .lv-swap-feedback__reason {
   border: 1px solid var(--border, #e5e7eb);
   background: #f8fafc;
   color: var(--text-secondary, #475569);
-  font-size: 0.6875rem;
-  padding: 4px 8px;
+  font-size: 0.625rem;
+  padding: 3px 8px;
   border-radius: 999px;
   cursor: pointer;
 }
@@ -867,13 +867,13 @@ body.lv-nearby-sheet-open {
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin-top: 10px;
-  padding: 10px 14px;
+  margin-top: 8px;
+  padding: 7px 12px;
   border: none;
   border-radius: var(--radius-md, 10px);
   background: var(--primary, #00aeef);
   color: #fff;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
@@ -889,10 +889,10 @@ body.lv-nearby-sheet-open {
 }
 
 .lv-swap-offer-status {
-  margin-top: 10px;
-  padding: 8px 10px;
+  margin-top: 8px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm, 8px);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 600;
   display: flex;
   align-items: center;

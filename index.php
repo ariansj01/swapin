@@ -261,7 +261,7 @@ render_navbar($user);
 
 <?php if (!$search && !$catSlug && $page === 1): ?>
 <section class="hero hero--compact">
-  <div class="container hero__inner" style="background: var(--gradient-brand);border-radius: 10px;margin-top: 13px;padding-bottom: 15px;">
+  <div class="container hero__inner" style="background: var(--gradient-brand);border-radius: 10px;margin-top: 13px;padding: 15px;">
     <div class="hero__visual">
       <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
     </div>
@@ -529,9 +529,9 @@ render_navbar($user);
             <a href="<?= APP_URL ?>/faq.php">سوالات متداول</a>
           </div>
           <div class="home-sidebar-menu">
-            <a href="#">نصب اپلیکیشن</a>
+            <a href="<?= APP_URL ?>/pwa">نصب اپلیکیشن</a>
             <span class="home-sidebar-menu__dot"></span>
-            <a href="#">بلاگ</a>
+            <a href="<?= APP_URL ?>/blog">بلاگ</a>
             <span class="home-sidebar-menu__dot"></span>
             <a href="<?= APP_URL ?>/ai/chat">جستجوی هوشمند</a>
           </div>
@@ -541,28 +541,26 @@ render_navbar($user);
             <a href="https://www.linkedin.com/company/swaapin" class="social-btn" target="_blank" rel="noopener" aria-label="LinkedIn">
               <i class="bi bi-linkedin"></i>
             </a>
-            <a href="https://wa.me/989000000000?text=<?= urlencode('سلام. از سایت سواَپین  دیدن کردم...') ?>" class="social-btn" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <!-- <a href="https://wa.me/989000000000?text=<?= urlencode('سلام. از سایت سواَپین  دیدن کردم...') ?>" class="social-btn" target="_blank" rel="noopener" aria-label="WhatsApp">
               <i class="bi bi-whatsapp"></i>
-            </a>
-            <a href="https://t.me/swaapin" class="social-btn" target="_blank" rel="noopener" aria-label="Telegram">
+            </a> -->
+            <a href="#" class="social-btn" target="_blank" rel="noopener" aria-label="Telegram">
               <i class="bi bi-telegram"></i>
             </a>
-            <a href="https://www.instagram.com/swaapin.ir" class="social-btn" target="_blank" rel="noopener" aria-label="Instagram">
+            <a href="https://www.instagram.com/swaapin.official/" class="social-btn" target="_blank" rel="noopener" aria-label="Instagram">
               <i class="bi bi-instagram"></i>
             </a>
           </div>
 
           <!-- Enamad -->
-          <a href="https://trustseal.enamad.ir/Verify.aspx?id=12345" class="home-sidebar-enamad" target="_blank" rel="noopener">
-            <img src="<?= APP_URL ?>/src/img/enamad.png" alt="نماد اعتماد اینماد">
-          </a>
+          <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=755927&Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=755927&Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM' alt='' style='cursor:pointer' code='Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM'></a>
 
         </div>
       </aside>
 
       <!-- Sidebar Mobile Collapsible Styles -->
       <style>
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
           .home-sidebar--mobile-collapsible {
             position: relative;
             background: transparent !important;
@@ -646,7 +644,7 @@ render_navbar($user);
             to   { opacity: 1; transform: translateY(0); }
           }
         }
-        @media (min-width: 769px) {
+        @media (min-width: 1025px) {
           .home-sidebar__mobile-toggle { display: none !important; }
         }
       </style>
@@ -656,7 +654,7 @@ render_navbar($user);
         var sidebar = document.getElementById('home-mobile-sidebar');
         var toggle  = document.getElementById('home-sidebar-mobile-toggle');
         if (!sidebar || !toggle) return;
-        var MOBILE_MQ = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
+        var MOBILE_MQ = window.matchMedia ? window.matchMedia('(max-width: 1024px)') : null;
         function sync() {
           if (MOBILE_MQ && MOBILE_MQ.matches) {
             // در موبایل، پیش‌فرض بسته مگر که کاربر باز کرده
@@ -1018,7 +1016,8 @@ render_navbar($user);
     grid-template-columns: 1fr 1fr;
     gap: var(--sp-5);
   }
-  .home-ai__content--right { grid-column: 1 / -1; }
+  /* .home-ai__content--right { grid-column: 1 / -1; } */
+  .home-ai__visual--center{display: none;}
 }
 @media (max-width: 720px) {
   .home-ai__inner--triple {

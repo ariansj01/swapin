@@ -28,7 +28,7 @@ function content_page_footer_links(): array {
 function content_page_nav_links_html(): string {
     $html = '';
     foreach (content_page_nav_links() as $page) {
-        $html .= '<a href="' . APP_URL . '/page/' . h($page['slug']) . '">' . h($page['title']) . '</a>';
+        $html .= '<a href="' . APP_URL . '/page/' . h($page['slug']) . '" class="navbar-nav__link">' . h($page['title']) . '</a>';
     }
     return $html;
 }
@@ -191,6 +191,7 @@ GA;
 <link rel="stylesheet" href="{$url}/src/css/fonts.css?v={$fontsCssVer}">
 <link rel="stylesheet" href="{$url}/src/vendor/bootstrap-icons/bootstrap-icons.css?v={$biCssVer}">
 <link rel="stylesheet" href="{$url}/src/css/main.css?v={$mainCssVer}">
+<link rel="icon" type="image/svg+xml" href="{$url}/src/img/fav_icon/favicon.svg">
 <link rel="icon" type="image/x-icon" href="{$url}/src/img/fav_icon/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="{$url}/src/img/fav_icon/web-app-manifest-512x512.png">
 <link rel="icon" type="image/png" sizes="16x16" href="{$url}/src/img/fav_icon/web-app-manifest-192x192.png">
@@ -302,163 +303,166 @@ function render_navbar(?array $user = null): void {
         $cityOptionsHtml .= "<a href=\"{$url}/?city=" . urlencode($c) . "\" class=\"dropdown-item navbar-city-select__item {$active}\" data-city=\"{$cname}\">{$cname}</a>";
     }
 
+    $contentPageNavLinks = content_page_nav_links_html();
     echo <<<HTML
 <header class="site-header" role="banner">
 <nav class="navbar" aria-label="ناوبری اصلی">
-  <div class="navbar-inner">
-    <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
-      <i class="bi bi-list"></i>
-    </button>
+  <div class="navbar-top">
+    <div class="navbar-inner navbar-top-inner">
+      <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
+        <i class="bi bi-list"></i>
+      </button>
 
-    <a href="{$url}/" class="navbar-brand">
-      <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">
-    </a>
+      <a href="{$url}/" class="navbar-brand">
+        <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">
+      </a>
 
-    <div class="navbar-city-search-wrapper hide-mobile">
-      <div class="navbar-city-select">
-        <i class="bi bi-geo-alt navbar-city-select__icon"></i>
-        <button type="button" class="navbar-city-select__btn" id="city-select-btn">
-          <span class="navbar-city-select__label">{$cityDisplay}</span>
-          <i class="bi bi-chevron-down navbar-city-select__chev"></i>
-        </button>
-        <div class="dropdown-menu navbar-city-select__menu" id="city-select-menu">
-          <a href="{$url}/" class="dropdown-item navbar-city-select__item" data-city="">همه شهرها</a>
-          {$cityOptionsHtml}
+      <div class="navbar-city-search-wrapper hide-mobile">
+        <div class="navbar-city-select">
+          <i class="bi bi-geo-alt navbar-city-select__icon"></i>
+          <button type="button" class="navbar-city-select__btn" id="city-select-btn">
+            <span class="navbar-city-select__label">{$cityDisplay}</span>
+            <i class="bi bi-chevron-down navbar-city-select__chev"></i>
+          </button>
+          <div class="dropdown-menu navbar-city-select__menu" id="city-select-menu">
+            <a href="{$url}/" class="dropdown-item navbar-city-select__item" data-city="">همه شهرها</a>
+            {$cityOptionsHtml}
+          </div>
         </div>
+
+        <form class="navbar-searchbar-form" action="{$url}/" method="get">
+          <i class="bi bi-search navbar-searchbar-form__icon"></i>
+          <input type="search" class="navbar-searchbar-form__input"
+                 name="q" placeholder="دنبال چه کالایی می‌گردی؟"
+                 value="{$search}">
+          {$cityHiddenInput}
+        </form>
       </div>
 
-      <form class="navbar-searchbar-form" action="{$url}/" method="get">
-        <i class="bi bi-search navbar-searchbar-form__icon"></i>
-        <input type="search" class="navbar-searchbar-form__input"
-               name="q" placeholder="جستجوی کالا..."
-               value="{$search}">
-        {$cityHiddenInput}
-      </form>
-    </div>
-
-    <div class="navbar-nav hide-mobile">
-      <!-- Categories Dropdown -->
-      <div class="dropdown">
-        <button class="navbar-nav__link" id="categories-dropdown-btn" style="border:none;background:none;cursor:pointer">
-          <i class="bi bi-grid"></i> دسته‌بندی‌ها <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+      <div class="navbar-actions">
+HTML;
+    if ($loggedIn) {
+        $credFmt = number_format((float)$user['credit_balance'], 0);
+        echo <<<HTML
+        <div class="dropdown hide-mobile">
+          <button class="btn btn-ghost d-flex align-center gap-2" id="user-menu-btn">
+            {$navAvatar}
+            <span class="hide-mobile" style="font-size:.875rem;font-weight:600">{$credFmt} {$creditUnit}</span>
+            <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+          </button>
+          <div class="dropdown-menu" id="user-menu">
+HTML;
+        foreach (panel_nav_items($user) as [$href, $label, $icon, $badge]) {
+            echo "<a href=\"{$href}\" class=\"dropdown-item\"><i class=\"bi {$icon}\"></i> " . h($label) . "</a>";
+        }
+        echo <<<HTML
+            <div class="dropdown-divider"></div>
+HTML;
+        $logoutCsrf = csrf_field();
+        echo <<<HTML
+            <form method="POST" action="{$url}/auth/logout" style="margin:0">
+              {$logoutCsrf}
+              <button type="submit" class="dropdown-item" style="color:var(--danger);width:100%;border:0;background:none;text-align:inherit;cursor:pointer;font:inherit">
+                <i class="bi bi-box-arrow-right"></i> خروج
+              </button>
+            </form>
+          </div>
+        </div>
+HTML;
+        if (is_store_seller($user)) {
+            echo <<<HTML
+        <a href="{$url}/store" class="btn btn-outline hide-mobile">
+          <i class="bi bi-shop"></i> فروشگاه
+        </a>
+HTML;
+        }
+        echo <<<HTML
+        <button type="button" class="btn btn-ghost btn-icon navbar-notif-btn {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
+          <i class="bi bi-bell"></i>
         </button>
-        <div class="dropdown-menu categories-dropdown" id="categories-dropdown">
-          <a href="{$url}/listings/all.php" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
+        <a href="{$url}/listings/create" class="btn btn-accent hide-mobile">
+          <i class="bi bi-plus"></i> ثبت آگهی
+        </a>
+HTML;
+    } else {
+        echo <<<HTML
+        <a href="{$url}/auth/login" class="btn btn-ghost navbar-login-link hide-mobile">
+          <i class="bi bi-person"></i> ورود / ثبت‌نام
+        </a>
+        <button type="button" class="btn btn-ghost btn-icon navbar-notif-btn {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
+          <i class="bi bi-bell"></i>
+        </button>
+        <a href="{$url}/listings/create" class="btn btn-accent">
+          <i class="bi bi-plus"></i> ثبت آگهی
+        </a>
+HTML;
+    }
+    echo <<<HTML
+      </div>
+    </div>
+  </div>
+
+  <div class="navbar-bottom hide-mobile">
+    <div class="navbar-bottom-inner">
+      <div class="navbar-nav navbar-bottom__primary">
+        <div class="dropdown">
+          <button class="navbar-nav__link" id="categories-dropdown-btn" style="border:none;background:none;cursor:pointer">
+            <i class="bi bi-grid"></i> دسته‌بندی‌ها <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+          </button>
+          <div class="dropdown-menu categories-dropdown" id="categories-dropdown">
+            <a href="{$url}/listings/all.php" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
 HTML;
     echo $_renderCatLevel($categories, 0, $_renderCatLevel);
     echo <<<HTML
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="navbar-nav__link" id="shops-dropdown-btn" style="border:none;background:none;cursor:pointer">
+            <i class="bi bi-shop"></i> فروشگاه‌ها
+          </button>
+          <div class="dropdown-menu" id="shops-dropdown">
+            <a href="{$url}/shops" class="dropdown-item"><i class="bi bi-grid-fill"></i> همه فروشگاه‌ها</a>
+            <a href="{$url}/shops/physical" class="dropdown-item"><i class="bi bi-building-check"></i> فروشگاه‌های حضوری</a>
+            <a href="{$url}/shops/online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="navbar-nav__link navbar-nav__link--ai" id="ai-dropdown-btn" style="border:none;background:none;cursor:pointer">
+            <i class="bi bi-stars"></i> دستیار AI
+          </button>
+          <div class="dropdown-menu" id="ai-dropdown">
+            <a href="{$url}/search/ai" class="dropdown-item"><i class="bi bi-search-heart"></i> جستجوی هوشمند</a>
+            <a href="{$url}/ai/chat" class="dropdown-item"><i class="bi bi-chat-dots-fill"></i> چت با دستیار</a>
+            <a href="{$url}/ai-assistant" class="dropdown-item"><i class="bi bi-info-circle-fill"></i> دستیار هوشمند چیست؟</a>
+          </div>
         </div>
       </div>
 
-      <!-- AI Assistant Dropdown -->
-      <div class="dropdown">
-        <button class="navbar-nav__link navbar-nav__link--ai" id="ai-dropdown-btn" style="border:none;background:none;cursor:pointer">
-          <i class="bi bi-stars"></i> دستیار AI <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
-        </button>
-        <div class="dropdown-menu" id="ai-dropdown">
-          <a href="{$url}/search/ai" class="dropdown-item"><i class="bi bi-search-heart"></i> جستجوی هوشمند</a>
-          <a href="{$url}/ai/chat" class="dropdown-item"><i class="bi bi-chat-dots-fill"></i> چت با دستیار</a>
-          <!-- <a href="{$url}/ai-lab" class="dropdown-item"><i class="bi bi-cpu"></i> آزمایشگاه AI</a> -->
-          <a href="{$url}/ai-assistant" class="dropdown-item"><i class="bi bi-info-circle-fill"></i> دستیار هوشمند چیست؟</a>
+      <div class="navbar-nav navbar-bottom__secondary">
+        <div class="dropdown">
+          <button class="navbar-nav__link" id="how-dropdown-btn" style="border:none;background:none;cursor:pointer">
+            سواَپین چگونه کار می‌کند؟ <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
+          </button>
+          <div class="dropdown-menu" id="how-dropdown">
+            <a href="{$url}/#home-steps" class="dropdown-item"><i class="bi bi-diagram-3"></i> نحوه کار سواَپین</a>
+            <a href="{$url}/installment-swap" class="dropdown-item"><i class="bi bi-calendar-check"></i> مبادله قسطی</a>
+          </div>
         </div>
-      </div>
-
-      <!-- Stores Dropdown -->
-      <div class="dropdown">
-        <button class="navbar-nav__link" id="shops-dropdown-btn" style="border:none;background:none;cursor:pointer">
-          <i class="bi bi-shop"></i> فروشگاه‌ها <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
-        </button>
-        <div class="dropdown-menu" id="shops-dropdown">
-          <a href="{$url}/shops" class="dropdown-item"><i class="bi bi-grid-fill"></i> همه فروشگاه‌ها</a>
-          <a href="{$url}/shops/physical" class="dropdown-item"><i class="bi bi-building-check"></i> فروشگاه‌های حضوری</a>
-          <a href="{$url}/shops/online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
-        </div>
-      </div>
-
-      <!-- How It Works Dropdown -->
-      <div class="dropdown">
-        <button class="navbar-nav__link" id="how-dropdown-btn" style="border:none;background:none;cursor:pointer">
-          <i class="bi bi-lightbulb"></i> سواَپین چگونه کار می‌کند؟ <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
-        </button>
-        <div class="dropdown-menu" id="how-dropdown">
-          <a href="{$url}/#home-steps" class="dropdown-item"><i class="bi bi-diagram-3"></i> نحوه کار سواَپین</a>
-          <a href="{$url}/installment-swap" class="dropdown-item"><i class="bi bi-calendar-check"></i> مبادله قسطی</a>
-        </div>
-      </div>
 HTML;
     foreach ($navItems as [$href, $label, $icon, $extraClass]) {
         $fullHref = str_starts_with($href, '/#') ? $url . $href : $url . $href;
         $cls = 'navbar-nav__link' . ($extraClass ? ' ' . $extraClass : '');
         echo "<a href=\"{$fullHref}\" class=\"{$cls}\"><i class=\"bi {$icon}\"></i> {$label}</a>";
     }
-    echo <<<HTML
-    </div>
-
-    <!-- <div class="navbar-search hide-mobile">
-      <i class="bi bi-search search-icon"></i>
-      <input type="search" id="global-search" placeholder="جستجوی آگهی‌ها…" autocomplete="off">
-    </div> -->
-
-    <div class="navbar-actions">
-HTML;
-    if ($loggedIn) {
-        $credFmt = number_format((float)$user['credit_balance'], 0);
-        if (is_store_seller($user)) {
-            echo <<<HTML
-      <a href="{$url}/store" class="btn btn-outline hide-mobile">
-        <i class="bi bi-shop"></i> فروشگاه
-      </a>
-HTML;
-        }
-        echo <<<HTML
-      <button type="button" class="btn btn-ghost btn-icon {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
-        <i class="bi bi-bell"></i>
-      </button>
-      <a href="{$url}/listings/create" class="btn btn-accent hide-mobile">
-        <i class="bi bi-plus"></i> ثبت آگهی
-      </a>
-      <div class="dropdown hide-mobile">
-        <button class="btn btn-ghost d-flex align-center gap-2" id="user-menu-btn">
-          {$navAvatar}
-          <span class="hide-mobile" style="font-size:.875rem;font-weight:600">{$credFmt} {$creditUnit}</span>
-          <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
-        </button>
-        <div class="dropdown-menu" id="user-menu">
-HTML;
-        foreach (panel_nav_items($user) as [$href, $label, $icon, $badge]) {
-            echo "<a href=\"{$href}\" class=\"dropdown-item\"><i class=\"bi {$icon}\"></i> " . h($label) . "</a>";
-        }
-        echo <<<HTML
-          <div class="dropdown-divider"></div>
-HTML;
-        $logoutCsrf = csrf_field();
-        echo <<<HTML
-          <form method="POST" action="{$url}/auth/logout" style="margin:0">
-            {$logoutCsrf}
-            <button type="submit" class="dropdown-item" style="color:var(--danger);width:100%;border:0;background:none;text-align:inherit;cursor:pointer;font:inherit">
-              <i class="bi bi-box-arrow-right"></i> خروج
-            </button>
-          </form>
-        </div>
-      </div>
-HTML;
-    } else {
-        echo <<<HTML
-      <button type="button" class="btn btn-ghost btn-icon {$notifClass}" id="notif-bell-btn" title="اعلان‌ها" aria-label="اعلان‌ها">
-        <i class="bi bi-bell"></i>
-      </button>
-      <a href="{$url}/listings/create" class="btn btn-accent">
-        <i class="bi bi-plus"></i> ثبت کالا
-      </a>
-      <a href="{$url}/auth/login" class="btn btn-primary btn-login-custom">ورود / ثبت‌نام</a>
-HTML;
+    if ($contentPageNavLinks !== '') {
+        echo $contentPageNavLinks;
     }
-    $contentPageNavLinks = content_page_nav_links_html();
-    $searchValue = isset($_GET['q']) ? h($_GET['q']) : '';
     echo <<<HTML
+      </div>
     </div>
   </div>
-    {$contentPageNavLinks}
 </nav>
 </header>
 
