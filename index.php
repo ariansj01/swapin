@@ -552,7 +552,7 @@ render_navbar($user);
             </a>
           </div>
 
-          <!-- Enamad -->
+          <!-- Enamad --> 
           <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=755927&Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM' style="display: flex;justify-content: center;"><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=755927&Code=Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM' alt='' style='cursor:pointer' code='Io4wGYGFQ4YQdD53jiYDAKvPgKHr8sGM'></a>
 
         </div>
