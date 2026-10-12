@@ -212,9 +212,9 @@ $hasPromo = !empty($allPromotions);
 .lc-media-wrapper {
   position: relative;
   width: 100%;
-  height: 240px !important;
-  min-height: 240px !important;
-  max-height: 240px !important;
+  height: 200px !important;
+  min-height: 200px !important;
+  max-height: 200px !important;
   flex: 0 0 240px !important;
   background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
   overflow: hidden;
@@ -222,10 +222,10 @@ $hasPromo = !empty($allPromotions);
   border-bottom-right-radius: 18px;
 }
 .listing-card__media-img {
-  width: 90% !important;
-  height: 200px !important;
-  min-height: 200px !important;
-  max-height: 200px !important;
+  width: 100% !important;
+  height: 230px !important;
+  min-height: 230px !important;
+  max-height: 230px !important;
   object-fit: cover !important;
   object-position: center center !important;
   display: block !important;
@@ -476,8 +476,8 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 
 /* CTA */
 .lc-cta {
-  padding-top: 4px;
-  margin-top: auto;
+  /* padding-top: 4px; */
+  /* margin-top: auto; */
 }
 .lc-btn {
   display: flex;
