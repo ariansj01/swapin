@@ -357,7 +357,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   flex-direction: column;
   gap: 6px;
   flex: 1;
-  min-height: 250px;
+  min-height: 200px;
 }
 
 .lc-title {

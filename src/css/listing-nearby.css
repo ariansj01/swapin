@@ -303,8 +303,9 @@
 
 .lv-swap-card {
   display: flex;
+  flex-direction: column;
   gap: var(--sp-2, 0.5rem);
-  padding: var(--sp-3, 0.75rem);
+  padding: var(--sp-2, 0.5rem);
   border: 1px solid var(--border, #e5e7eb);
   border-radius: var(--radius-md, 10px);
   background: var(--surface, #fff);
@@ -317,8 +318,8 @@
 }
 
 .lv-swap-card__thumb {
-  width: 64px;
-  height: 64px;
+  width: 100%;
+  height: 110px;
   border-radius: var(--radius-sm, 8px);
   object-fit: cover;
   flex-shrink: 0;
@@ -339,29 +340,34 @@
 
 .lv-swap-card__score {
   display: inline-block;
-  margin-bottom: 4px;
-  padding: 3px 8px;
+  margin-bottom: 3px;
+  padding: 2px 7px;
   border-radius: 999px;
   background: rgba(0, 174, 239, 0.12);
   color: var(--primary, #0096cc);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
 }
 
 .lv-swap-card__title {
-  margin: 0 0 4px;
-  font-size: 0.875rem;
+  margin: 0 0 3px;
+  font-size: 0.8125rem;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.35;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .lv-swap-card__title a {
   color: var(--dash-navy, #0f172a);
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .lv-swap-card__title a:hover {
@@ -370,17 +376,17 @@
 
 .lv-swap-card__badge {
   display: inline-block;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 999px;
   background: #dcfce7;
   color: #166534;
-  font-size: 0.625rem;
+  font-size: 0.5625rem;
   font-weight: 700;
 }
 
 .lv-swap-card__distance {
-  margin-bottom: 4px;
-  font-size: 0.75rem;
+  margin-bottom: 3px;
+  font-size: 0.6875rem;
   color: var(--text-secondary, #475569);
 }
 
@@ -394,40 +400,40 @@
 }
 
 .lv-swap-card__summary {
-  margin: 0 0 6px;
-  font-size: 0.75rem;
+  margin: 0 0 5px;
+  font-size: 0.6875rem;
   color: var(--text-secondary, #475569);
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .lv-swap-card__reasons {
-  margin: 0 0 6px;
+  margin: 0 0 5px;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 3px;
+  gap: 2px;
 }
 
 .lv-swap-card__reasons li {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  gap: 5px;
+  font-size: 0.6875rem;
   color: var(--text-secondary, #475569);
 }
 
 .lv-swap-card__reasons i {
   color: #16a34a;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   flex-shrink: 0;
 }
 
 .lv-swap-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 6px;
-  font-size: 0.6875rem;
+  gap: 7px;
+  margin-bottom: 5px;
+  font-size: 0.625rem;
   color: var(--text-muted, #64748b);
 }
 
@@ -435,7 +441,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   color: var(--primary, #00aeef);
   text-decoration: none;
