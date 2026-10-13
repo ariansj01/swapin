@@ -109,7 +109,7 @@ $hasPromo = !empty($allPromotions);
         <?= h($p['label'] ?? 'پلن ویژه') ?>
         <?php if (!empty($p['tooltip'])): ?>
         <span class="lc-badge-help" aria-hidden="true"><span class="lc-badge-q"><i class="bi bi-question"></i></span></span>
-        <span class="lc-badge-tip" role="tooltip" style="transform: translateY(70px);"><?= h($p['tooltip']) ?></span>
+        <span class="lc-badge-tip" role="tooltip" style="transform: translate(-90px, 70px);"><?= h($p['tooltip']) ?></span>
         <?php endif; ?>
       </span>
         <?php endforeach; ?>
