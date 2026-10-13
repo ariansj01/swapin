@@ -152,13 +152,13 @@ if ($category) {
 
 <style>
     body {
-        background: #121212;
-        color: #fff;
+        background: #f8f9fa;
+        color: #333;
     }
     .map-view-layout {
         display: flex;
         height: calc(100vh - 70px);
-        background: #121212;
+        background: #f8f9fa;
         overflow: hidden;
     }
 
@@ -168,13 +168,19 @@ if ($category) {
         height: 100%;
     }
 
+    #map {
+        height: 100%;
+        width: 100%;
+        z-index: 1;
+    }
+
     .map-view-middle {
         width: 450px;
         height: 100%;
         overflow-y: auto;
-        border-right: 1px solid #333;
-        border-left: 1px solid #333;
-        background: #181818;
+        border-right: 1px solid #dee2e6;
+        border-left: 1px solid #dee2e6;
+        background: #fff;
         display: flex;
         flex-direction: column;
     }
@@ -184,12 +190,12 @@ if ($category) {
         height: 100%;
         overflow-y: auto;
         padding: 20px;
-        background: #121212;
+        background: #fff;
     }
 
     .map-view-header {
         padding: 20px;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid #dee2e6;
     }
 
     .map-view-listings-content {
@@ -198,13 +204,13 @@ if ($category) {
     }
 
     .listing-card-single {
-        background: #242424;
+        background: #fff;
         border-radius: 12px;
         padding: 12px;
         margin-bottom: 15px;
         display: flex;
         gap: 15px;
-        border: 1px solid #333;
+        border: 1px solid #dee2e6;
         text-decoration: none;
         color: inherit;
         transition: all 0.2s;
@@ -212,7 +218,8 @@ if ($category) {
 
     .listing-card-single:hover {
         border-color: var(--accent);
-        background: #2a2a2a;
+        background: #f8f9fa;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     .listing-card-single__thumb {
@@ -234,18 +241,18 @@ if ($category) {
         line-height: 1.4;
         font-weight: 500;
         margin-bottom: 8px;
-        color: #fff;
+        color: #333;
     }
 
     .listing-card-single__price {
-        color: #fff;
+        color: var(--accent);
         font-weight: bold;
         font-size: 1.1rem;
     }
 
     .listing-card-single__location {
         font-size: 0.8rem;
-        color: #aaa;
+        color: #777;
         margin-top: 5px;
     }
 
@@ -257,7 +264,7 @@ if ($category) {
         font-size: 0.9rem;
         font-weight: bold;
         margin-bottom: 15px;
-        color: #888;
+        color: #555;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -272,7 +279,7 @@ if ($category) {
     .map-view-subcats li a {
         display: block;
         padding: 8px 0;
-        color: #ccc;
+        color: #555;
         text-decoration: none;
         font-size: 0.9rem;
         transition: color 0.2s;
@@ -311,20 +318,20 @@ if ($category) {
 
     .map-view-pagination a {
         padding: 8px 12px;
-        background: #333;
+        background: #eee;
         border-radius: 6px;
-        color: #fff;
+        color: #333;
         text-decoration: none;
         font-size: 0.9rem;
     }
 
     .map-view-pagination a.active {
         background: var(--accent);
+        color: #fff;
     }
 
-    /* Dark Map Styles */
-    .leaflet-container { background: #1a1a1a !important; }
-    .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+    /* Map Styles */
+    .leaflet-container { background: #f0f0f0 !important; }
     
     .map-marker-popup {
         color: #333;
@@ -335,29 +342,88 @@ if ($category) {
         border-radius: 4px;
         margin-bottom: 5px;
     }
+    
+    /* Override sidebar_home styles for light theme */
+    .home-sidebar-cats__label, .home-sidebar-field__label, .home-sidebar-time h4 {
+        color: #333 !important;
+    }
+    .home-sidebar-cats__item {
+        color: #555 !important;
+    }
+    .home-sidebar-cats__item:hover, .home-sidebar-cats__item.is-active {
+        background: #f0f0f0 !important;
+        color: var(--accent) !important;
+    }
+    .form-control {
+        background: #fff !important;
+        color: #333 !important;
+        border: 1px solid #dee2e6 !important;
+    }
 </style>
 
 <div class="map-view-layout">
-    <!-- Left: Map -->
-    <div class="map-view-map-container">
-        <div id="map"></div>
-        <button class="map-view-close-btn" onclick="window.location.href='<?= APP_URL ?>/'">
-            <i class="bi bi-x-lg"></i> بستن نقشه
-        </button>
+    <!-- Right: Sidebar (First in HTML for RTL Right position) -->
+    <div class="map-view-sidebar">
+        <div class="map-view-sidebar-section">
+            <div class="map-view-sidebar-title">دسته‌ها</div>
+            <div class="mb-3">
+                <a href="<?= APP_URL ?>/listings/map_view.php" class="text-dark text-decoration-none fs-sm">
+                    <i class="bi bi-arrow-right"></i> همه‌ی آگهی‌ها
+                </a>
+            </div>
+            
+            <?php if ($category): ?>
+                <div class="mb-2 d-flex align-center gap-2">
+                    <i class="bi bi-house text-accent"></i>
+                    <span class="fw-bold text-dark"><?= h($category['name']) ?></span>
+                </div>
+                <ul class="map-view-subcats ms-3">
+                    <?php foreach ($subCategories as $sub): ?>
+                        <li><a href="?<?= http_build_query(array_merge($_GET, ['cat' => $sub['slug'], 'page' => 1])) ?>"><?= h($sub['name']) ?></a></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <!-- نمایش دسته‌های اصلی اگر دسته‌ای انتخاب نشده -->
+                <?php 
+                $topCats = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order LIMIT 10');
+                foreach ($topCats as $tc): ?>
+                    <div class="mb-2">
+                        <a href="?<?= http_build_query(['cat' => $tc['slug']]) ?>" class="text-dark text-decoration-none fs-sm">
+                            <i class="bi <?= h($tc['icon'] ?: 'bi-grid') ?> me-2"></i> <?= h($tc['name']) ?>
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
+        <div class="map-view-sidebar-section">
+            <div class="map-view-sidebar-title">محله</div>
+            <select class="form-control bg-white text-dark border-secondary fs-sm" 
+                    onchange="location.href='?'+new URLSearchParams({...Object.fromEntries(new URLSearchParams(location.search)), neighborhood: this.value, page: 1}).toString()">
+                <option value="">انتخاب محله</option>
+                <?php foreach (iran_city_neighborhood_names($city) as $n): ?>
+                    <option value="<?= h($n) ?>" <?= $neighborhood === $n ? 'selected' : '' ?>><?= h($n) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <hr class="border-light my-4">
+
+        <?php include __DIR__ . '/../includes/sidebar_home.php'; ?>
     </div>
 
     <!-- Middle: Listings -->
     <div class="map-view-middle">
         <div class="map-view-header">
             <div class="text-muted fs-xs mb-1">خرید، فروش و اجاره انواع <?= $category ? h($category['name']) : 'کالا' ?> در <?= h($city) ?></div>
-            <h1 class="fs-lg"><?= fmt_num($total) ?> آگهی در این محدوده</h1>
+            <h1 class="fs-lg text-dark"><?= fmt_num($total) ?> آگهی در این محدوده</h1>
         </div>
 
         <div class="map-view-listings-content">
             <?php if (empty($listings)): ?>
                 <div class="text-center py-8">
                     <i class="bi bi-search fs-xxl mb-3 text-muted"></i>
-                    <p>آگهی یافت نشد.</p>
+                    <p class="text-dark">آگهی یافت نشد.</p>
                 </div>
             <?php else: ?>
                 <?php foreach ($listings as $l): ?>
@@ -366,7 +432,7 @@ if ($category) {
                             <?php if ($l['thumb']): ?>
                                 <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" class="listing-card-single__thumb" alt="<?= h($l['title']) ?>">
                             <?php else: ?>
-                                <div class="listing-card-single__thumb d-flex align-center justify-center bg-dark text-muted">
+                                <div class="listing-card-single__thumb d-flex align-center justify-center bg-light text-muted">
                                     <i class="bi bi-image"></i>
                                 </div>
                             <?php endif; ?>
@@ -383,9 +449,9 @@ if ($category) {
                     </a>
                 <?php endforeach; ?>
 
-                <?php if ($pag['total_pages'] > 1): ?>
+                <?php if ($pag['pages'] > 1): ?>
                     <div class="map-view-pagination">
-                        <?php for ($i = 1; $i <= $pag['total_pages']; $i++): ?>
+                        <?php for ($i = 1; $i <= $pag['pages']; $i++): ?>
                             <a href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>" class="<?= $page === $i ? 'active' : '' ?>">
                                 <?= fmt_num($i) ?>
                             </a>
@@ -396,54 +462,12 @@ if ($category) {
         </div>
     </div>
 
-    <!-- Right: Sidebar -->
-    <div class="map-view-sidebar">
-        <div class="map-view-sidebar-section">
-            <div class="map-view-sidebar-title">دسته‌ها</div>
-            <div class="mb-3">
-                <a href="<?= APP_URL ?>/listings/map_view.php" class="text-white text-decoration-none fs-sm">
-                    <i class="bi bi-arrow-right"></i> همه‌ی آگهی‌ها
-                </a>
-            </div>
-            
-            <?php if ($category): ?>
-                <div class="mb-2 d-flex align-center gap-2">
-                    <i class="bi bi-house text-accent"></i>
-                    <span class="fw-bold"><?= h($category['name']) ?></span>
-                </div>
-                <ul class="map-view-subcats ms-3">
-                    <?php foreach ($subCategories as $sub): ?>
-                        <li><a href="?<?= http_build_query(array_merge($_GET, ['cat' => $sub['slug'], 'page' => 1])) ?>"><?= h($sub['name']) ?></a></li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php else: ?>
-                <!-- نمایش دسته‌های اصلی اگر دسته‌ای انتخاب نشده -->
-                <?php 
-                $topCats = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order LIMIT 10');
-                foreach ($topCats as $tc): ?>
-                    <div class="mb-2">
-                        <a href="?<?= http_build_query(['cat' => $tc['slug']]) ?>" class="text-white text-decoration-none fs-sm">
-                            <i class="bi <?= h($tc['icon'] ?: 'bi-grid') ?> me-2"></i> <?= h($tc['name']) ?>
-                        </a>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-
-        <div class="map-view-sidebar-section">
-            <div class="map-view-sidebar-title">محله</div>
-            <select class="form-control bg-dark text-white border-secondary fs-sm" 
-                    onchange="location.href='?'+new URLSearchParams({...Object.fromEntries(new URLSearchParams(location.search)), neighborhood: this.value, page: 1}).toString()">
-                <option value="">انتخاب محله</option>
-                <?php foreach (iran_city_neighborhood_names($city) as $n): ?>
-                    <option value="<?= h($n) ?>" <?= $neighborhood === $n ? 'selected' : '' ?>><?= h($n) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <hr class="border-secondary my-4">
-
-        <?php include __DIR__ . '/../includes/sidebar_home.php'; ?>
+    <!-- Left: Map (Last in HTML for RTL Left position) -->
+    <div class="map-view-map-container">
+        <div id="map"></div>
+        <button class="map-view-close-btn" onclick="window.location.href='<?= APP_URL ?>/'">
+            <i class="bi bi-x-lg"></i> بستن نقشه
+        </button>
     </div>
 </div>
 

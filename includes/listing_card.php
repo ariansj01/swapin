@@ -130,7 +130,7 @@ $hasPromo = !empty($allPromotions);
     <!-- Value / Price Row -->
     <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
     <div class="lc-value-row">
-      <span class="lc-value-label">:ارزش تقریبی</span>
+      <span class="lc-value-label">ارزش تقریبی:</span>
       <span class="lc-value-amount" style="font-size: 0.90rem;"><?= fmt_credit((float)$l['estimated_value']) ?></span>
     </div>
     <?php endif; ?>
