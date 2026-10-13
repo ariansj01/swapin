@@ -162,9 +162,13 @@ function listing_promotion_badges_html(array $l): string {
 
     $html = '';
     foreach ($all as $meta) {
-        $html .= '<span class="listing-promo-badge ' . $meta['badge_class'] . '" data-tooltip="' . h($meta['tooltip']) . '">'
+        $html .= '<span class="listing-promo-badge ' . $meta['badge_class'] . '">'
             . '<i class="bi ' . $meta['icon'] . '"></i> '
             . h($meta['label'])
+            . '<span class="lc-badge-help" onclick="event.stopPropagation()">'
+            . '<span class="lc-badge-q" aria-label="راهنما" tabindex="0"><i class="bi bi-question"></i></span>'
+            . '<span class="lc-badge-tip" role="tooltip">' . h($meta['tooltip']) . '</span>'
+            . '</span>'
             . '</span>';
     }
     return $html;

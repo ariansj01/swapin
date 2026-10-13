@@ -104,10 +104,15 @@ $hasPromo = !empty($allPromotions);
       <?php if ($hasPromo): ?>
         <?php foreach ($allPromotions as $p): ?>
       <span class="lc-badge lc-badge--promo <?= $p['badge_class'] ?? '' ?>"
-            title="<?= h($p['tooltip'] ?? '') ?>"
             style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
         <i class="bi <?= $p['icon'] ?? 'bi-star-fill' ?>"></i>
         <?= h($p['label'] ?? 'پلن ویژه') ?>
+        <?php if (!empty($p['tooltip'])): ?>
+        <span class="lc-badge-help" onclick="event.stopPropagation()">
+          <span class="lc-badge-q" aria-label="راهنما" tabindex="0"><i class="bi bi-question"></i></span>
+          <span class="lc-badge-tip" role="tooltip"><?= h($p['tooltip']) ?></span>
+        </span>
+        <?php endif; ?>
       </span>
         <?php endforeach; ?>
       <?php endif; ?>
@@ -298,15 +303,16 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row,
 }
 html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .lc-badge,
 .lc-badge {
+  position: relative;
   display: inline-flex !important;
   align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
+  gap: 3px;
+  padding: 3px 7px;
   border-radius: 999px;
-  font-size: .82rem;
+  font-size: .6rem;
   font-weight: 800;
   line-height: 1;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
   opacity: 1 !important;
@@ -314,7 +320,68 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   transform: translateY(0) scale(1) !important;
   filter: none !important;
 }
-.lc-badge i { font-size: .9rem; line-height: 1; display: inline-flex; align-items: center; }
+.lc-badge i { font-size: .68rem; line-height: 1; display: inline-flex; align-items: center; }
+
+.lc-badge-help {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  z-index: 12;
+  width: 11px;
+  height: 11px;
+}
+.lc-badge-q {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  color: #071A33;
+  cursor: help;
+  box-shadow: 0 1px 4px rgba(7, 26, 51, 0.18);
+}
+.lc-badge-q i {
+  font-size: 8px !important;
+  color: #071A33 !important;
+  line-height: 1;
+}
+.lc-badge-tip {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  width: max-content;
+  max-width: 112px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 20px rgba(7, 26, 51, 0.14);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  color: #071A33;
+  font-size: 0.58rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: right;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+  z-index: 20;
+}
+.lc-badge-help:hover .lc-badge-tip,
+.lc-badge-help:focus-within .lc-badge-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
 
 /* VIP/Plan Badge — cream/yellow with star */
 .lc-badge--promo {

@@ -270,23 +270,99 @@ if ($category) {
         gap: 8px;
     }
 
+    .map-view-all-cats {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        color: #374151;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #f8fafc;
+        border: 1px solid #eef2f7;
+        transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }
+    .map-view-all-cats:hover {
+        color: var(--primary);
+        background: #fff;
+        border-color: #FFC928;
+    }
+
+    .map-view-subcats-parent {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #071A33 0%, #0B1F3A 100%);
+        color: #fff;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+    .map-view-subcats-parent i {
+        color: var(--accent);
+        font-size: 1.05rem;
+    }
+
     .map-view-subcats {
         list-style: none;
         padding: 0;
-        margin: 0;
+        margin: 8px 0 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .map-view-subcats.ms-3 {
+        margin-right: 12px;
+        padding-right: 10px;
+        border-right: 2px solid #f3e7b0;
     }
 
     .map-view-subcats li a {
-        display: block;
-        padding: 8px 0;
-        color: #555;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        color: #374151;
         text-decoration: none;
-        font-size: 0.9rem;
-        transition: color 0.2s;
+        font-size: 0.86rem;
+        font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+        border-radius: 10px;
+        background: #f8fafc;
+        border: 1px solid transparent;
     }
-
+    .map-view-subcats.ms-3 li a::before {
+        content: "\F285";
+        font-family: "bootstrap-icons";
+        font-size: 0.72rem;
+        color: #9ca3af;
+        flex-shrink: 0;
+    }
     .map-view-subcats li a:hover {
-        color: var(--accent);
+        color: var(--primary);
+        background: #fff;
+        border-color: #f3e7b0;
+        transform: translateX(-3px);
+        box-shadow: 0 4px 12px rgba(7, 26, 51, 0.06);
+    }
+    .map-view-subcats.ms-3 li a:hover::before,
+    .map-view-subcats.ms-3 li a.is-active::before {
+        color: var(--accent-dark);
+    }
+    .map-view-subcats li a.is-active {
+        color: var(--primary);
+        background: var(--accent-light);
+        border-color: var(--accent);
+    }
+    .map-view-subcats li a i {
+        color: var(--accent-dark);
+        font-size: 0.95rem;
+        min-width: 18px;
     }
 
     .map-view-close-btn {
@@ -366,33 +442,43 @@ if ($category) {
     <div class="map-view-sidebar">
         <div class="map-view-sidebar-section">
             <div class="map-view-sidebar-title">دسته‌ها</div>
-            <div class="mb-3">
-                <a href="<?= APP_URL ?>/listings/map_view.php" class="text-dark text-decoration-none fs-sm">
-                    <i class="bi bi-arrow-right"></i> همه‌ی آگهی‌ها
-                </a>
-            </div>
+            <a href="<?= APP_URL ?>/listings/map_view.php" class="map-view-all-cats">
+                <i class="bi bi-arrow-right"></i> همه‌ی آگهی‌ها
+            </a>
             
             <?php if ($category): ?>
-                <div class="mb-2 d-flex align-center gap-2">
-                    <i class="bi bi-house text-accent"></i>
-                    <span class="fw-bold text-dark"><?= h($category['name']) ?></span>
+                <div class="map-view-subcats-parent">
+                    <i class="bi <?= h($category['icon'] ?: 'bi-grid') ?>"></i>
+                    <span><?= h($category['name']) ?></span>
                 </div>
+                <?php if (!empty($subCategories)): ?>
                 <ul class="map-view-subcats ms-3">
-                    <?php foreach ($subCategories as $sub): ?>
-                        <li><a href="?<?= http_build_query(array_merge($_GET, ['cat' => $sub['slug'], 'page' => 1])) ?>"><?= h($sub['name']) ?></a></li>
+                    <?php foreach ($subCategories as $sub):
+                        $isSubActive = ($catSlug === ($sub['slug'] ?? ''));
+                    ?>
+                        <li>
+                            <a href="?<?= http_build_query(array_merge($_GET, ['cat' => $sub['slug'], 'page' => 1])) ?>"
+                               class="<?= $isSubActive ? 'is-active' : '' ?>">
+                                <?= h($sub['name']) ?>
+                            </a>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
+                <?php endif; ?>
             <?php else: ?>
-                <!-- نمایش دسته‌های اصلی اگر دسته‌ای انتخاب نشده -->
                 <?php 
                 $topCats = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order LIMIT 10');
-                foreach ($topCats as $tc): ?>
-                    <div class="mb-2">
-                        <a href="?<?= http_build_query(['cat' => $tc['slug']]) ?>" class="text-dark text-decoration-none fs-sm">
-                            <i class="bi <?= h($tc['icon'] ?: 'bi-grid') ?> me-2"></i> <?= h($tc['name']) ?>
-                        </a>
-                    </div>
-                <?php endforeach; ?>
+                ?>
+                <ul class="map-view-subcats">
+                    <?php foreach ($topCats as $tc): ?>
+                        <li>
+                            <a href="?<?= http_build_query(['cat' => $tc['slug']]) ?>">
+                                <i class="bi <?= h($tc['icon'] ?: 'bi-grid') ?>"></i>
+                                <?= h($tc['name']) ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
             <?php endif; ?>
         </div>
 
@@ -476,6 +562,35 @@ if ($category) {
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        (function () {
+            var sidebar = document.getElementById('home-mobile-sidebar');
+            var toggle  = document.getElementById('home-sidebar-mobile-toggle');
+            if (!sidebar || !toggle) return;
+            var MOBILE_MQ = window.matchMedia ? window.matchMedia('(max-width: 1024px)') : null;
+            function sync() {
+                if (MOBILE_MQ && MOBILE_MQ.matches) {
+                    if (!sidebar.dataset.userToggled) {
+                        sidebar.classList.remove('is-open');
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                } else {
+                    sidebar.classList.remove('is-open');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+            toggle.addEventListener('click', function () {
+                var isOpen = sidebar.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                sidebar.dataset.userToggled = '1';
+            });
+            sync();
+            if (MOBILE_MQ && MOBILE_MQ.addEventListener) {
+                MOBILE_MQ.addEventListener('change', sync);
+            } else if (MOBILE_MQ && MOBILE_MQ.addListener) {
+                MOBILE_MQ.addListener(sync);
+            }
+        })();
+
         const mapListings = <?= json_encode($mapListings) ?>;
         const city = "<?= $city ?>";
         
