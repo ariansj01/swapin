@@ -1991,6 +1991,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   font-size: .6rem;
   font-weight: 700;
   border-radius: var(--radius-full);
+  cursor: help;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
@@ -2019,6 +2020,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   z-index: 12;
   width: 11px;
   height: 11px;
+  pointer-events: none;
 }
 .listing-promo-badge .lc-badge-q,
 .lc-badge-q {
@@ -2033,7 +2035,6 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   backdrop-filter: blur(8px) saturate(140%);
   -webkit-backdrop-filter: blur(8px) saturate(140%);
   color: #071A33;
-  cursor: help;
   box-shadow: 0 1px 4px rgba(7, 26, 51, 0.18);
 }
 .listing-promo-badge .lc-badge-q i,
@@ -2045,13 +2046,13 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .listing-promo-badge .lc-badge-tip,
 .lc-badge-tip {
   position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
+  bottom: calc(100% + 6px);
+  left: 50%;
   width: max-content;
   max-width: 112px;
   padding: 4px 6px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.32);
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: 0 8px 20px rgba(7, 26, 51, 0.14);
   backdrop-filter: blur(14px) saturate(160%);
@@ -2065,17 +2066,17 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(-3px);
+  transform: translateX(-50%) translateY(4px);
   transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
-  z-index: 20;
+  z-index: 30;
 }
-.listing-promo-badge .lc-badge-help:hover .lc-badge-tip,
-.listing-promo-badge .lc-badge-help:focus-within .lc-badge-tip,
-.lc-badge-help:hover .lc-badge-tip,
-.lc-badge-help:focus-within .lc-badge-tip {
+.listing-promo-badge:hover .lc-badge-tip,
+.listing-promo-badge:focus-within .lc-badge-tip,
+.lc-badge:hover .lc-badge-tip,
+.lc-badge:focus-within .lc-badge-tip {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
 }
 
 .listing-card__header {
