@@ -45,7 +45,7 @@ render_navbar($user);
         </div>
         <div class="ai-chat-guest__lock">
           <i class="bi bi-lock-fill"></i>
-          <h3>برای گفتگو با دستیار AI وارد شوید</h3>
+          <h3>برای گفتگو با دستیار هوشمند وارد شوید</h3>
           <p>این قابلیت فقط برای اعضای سواَپین فعال است.</p>
           <div class="ai-chat-guest__actions">
             <a href="<?= $url ?>/auth/login?redirect=<?= urlencode('/ai/chat') ?>" class="btn btn-accent btn-lg">

@@ -346,6 +346,85 @@ render_navbar($user);
             border: none !important;
             box-shadow: none !important;
           }
+          .home-sidebar__mobile-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            border-radius: 14px;
+            border: 1.5px solid #e5e7eb;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            cursor: pointer;
+            transition: all .2s ease;
+            box-shadow: 0 6px 20px -14px rgba(7,26,51,.25);
+            font-weight: 700;
+          }
+          .home-sidebar__mobile-toggle:hover {
+            border-color: #3b82f6;
+            background: #ffffff;
+          }
+          .home-sidebar__mobile-toggle:active {
+            transform: scale(.99);
+          }
+          .home-sidebar__mobile-toggle-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #ffffff;
+            font-size: .95rem;
+            flex-shrink: 0;
+          }
+          .home-sidebar__mobile-toggle-label {
+            flex: 1;
+            text-align: right;
+            font-size: .95rem;
+            color: #071A33;
+          }
+          .home-sidebar__mobile-toggle-caret {
+            display: inline-flex;
+            align-items: center;
+            color: #64748b;
+            font-size: .9rem;
+            transition: transform .25s ease;
+            flex-shrink: 0;
+          }
+          .home-sidebar--mobile-collapsible.is-open
+          .home-sidebar__mobile-toggle-caret {
+            transform: rotate(180deg);
+            color: #1d4ed8;
+          }
+          .home-sidebar--mobile-collapsible.is-open
+          .home-sidebar__mobile-toggle {
+            border-color: rgba(59,130,246,.5);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.08);
+          }
+          .home-sidebar__inner--collapsible {
+            display: none;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity .3s ease, transform .3s ease;
+          }
+          .home-sidebar--mobile-collapsible.is-open
+          .home-sidebar__inner--collapsible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            animation: homeSidebarFadeIn .35s ease both;
+          }
+          @keyframes homeSidebarFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+        }
+        @media (min-width: 1025px) {
+          .home-sidebar__mobile-toggle { display: none !important; }
         }
       </style>
 
@@ -691,7 +770,7 @@ render_navbar($user);
             <i class="bi bi-plus-circle"></i> ثبت کالا + دریافت قیمت AI
           </a>
           <a href="<?= APP_URL ?>/ai/chat" class="btn btn-hero-outline btn-lg">
-            <i class="bi bi-robot"></i> دستیار AI
+            <i class="bi bi-robot"></i> دستیار هوشمند
           </a>
         </div>
       </div>
@@ -993,8 +1072,10 @@ render_navbar($user);
   }
 
   function getCsrfToken() {
-    const inp = document.querySelector('input[name="csrf_token"]');
-    return inp ? inp.value : '';
+    const inp = document.querySelector('input[name="_csrf"]');
+    if (inp && inp.value) return inp.value;
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
   }
 
   function withCsrfHeaders() {
@@ -1006,7 +1087,7 @@ render_navbar($user);
 
   function appendCsrf(fd) {
     const token = getCsrfToken();
-    if (token && !fd.has('csrf_token')) fd.append('csrf_token', token);
+    if (token && !fd.has('_csrf')) fd.append('_csrf', token);
   }
 
   /* Quick pricing normalizer (mirror of app.js helper) */

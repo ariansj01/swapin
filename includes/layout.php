@@ -430,7 +430,7 @@ HTML;
 
         <div class="dropdown">
           <button class="navbar-nav__link navbar-nav__link--ai" id="ai-dropdown-btn" style="border:none;background:none;cursor:pointer">
-            <i class="bi bi-stars"></i> دستیار AI
+            <i class="bi bi-stars"></i> دستیار هوشمند
           </button>
           <div class="dropdown-menu" id="ai-dropdown">
             <a href="{$url}/search/ai" class="dropdown-item"><i class="bi bi-search-heart"></i> جستجوی هوشمند</a>
@@ -601,7 +601,7 @@ function render_mobile_bottom_nav(?array $user = null): void {
   <div class="mobile-bottom-nav__item mobile-bottom-nav__item--dropdown" id="mobile-ai-dropdown-wrapper">
     <button type="button" class="mobile-bottom-nav__btn" id="mobile-ai-dropdown-btn" aria-expanded="false" aria-controls="mobile-ai-submenu" onclick="toggleMobileAiDropdown()">
       <i class="bi bi-stars"></i>
-      <span>دستیار AI</span>
+      <span>دستیار هوشمند</span>
       <i class="bi bi-chevron-up mobile-ai-chevron"></i>
     </button>
     <div class="mobile-ai-submenu" id="mobile-ai-submenu" role="menu">
