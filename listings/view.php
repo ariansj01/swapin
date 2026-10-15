@@ -536,9 +536,9 @@ render_navbar($user);
   <section class="lv-related" aria-label="آگهی‌های مشابه">
     <h2 class="lv-section__title" style="padding-inline:16px">آگهی‌های مشابه</h2>
     <div class="listings-grid">
-      <?php foreach ($related as $l): ?>
+      <?php $cardLayout = 'horizontal'; foreach ($related as $l): ?>
       <?php include __DIR__ . '/../includes/listing_card.php'; ?>
-      <?php endforeach; ?>
+      <?php endforeach; unset($cardLayout); ?>
     </div>
   </section>
   <?php endif; ?>
@@ -876,9 +876,9 @@ render_navbar($user);
         <section class="lv-related-section" aria-label="آگهی‌های مشابه">
           <h3 class="lv-related-title">آگهی‌های مشابه</h3>
           <div class="listings-grid">
-            <?php foreach ($related as $l): ?>
+            <?php $cardLayout = 'horizontal'; foreach ($related as $l): ?>
             <?php include __DIR__ . '/../includes/listing_card.php'; ?>
-            <?php endforeach; ?>
+            <?php endforeach; unset($cardLayout); ?>
           </div>
         </section>
         <?php endif; ?>
@@ -1073,6 +1073,16 @@ render_navbar($user);
             اشتراک
           </button>
         </section>
+
+        <?php if (!empty($listing['city'])): ?>
+        <section class="lv-location-card" aria-label="موقعیت آگهی">
+          <h3 class="lv-location-card__title"><i class="bi bi-geo-alt-fill"></i> موقعیت آگهی</h3>
+          <p class="lv-location-card__text">
+            <i class="bi bi-geo-alt"></i>
+            <?= h($listing['city']) ?><?= !empty($listing['neighborhood']) ? ' — ' . h($listing['neighborhood']) : '' ?>
+          </p>
+        </section>
+        <?php endif; ?>
       </aside>
     </div>
   </div>

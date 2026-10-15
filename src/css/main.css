@@ -358,7 +358,8 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .navbar-bottom__primary > .dropdown + a,
 .navbar-bottom__secondary > .dropdown + .dropdown,
 .navbar-bottom__secondary > .dropdown + a,
-.navbar-bottom__secondary > a + a {
+.navbar-bottom__secondary > a + a,
+.navbar-bottom__secondary > .dropdown:first-child {
   position: relative;
 }
 
@@ -366,7 +367,8 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .navbar-bottom__primary > .dropdown + a::before,
 .navbar-bottom__secondary > .dropdown + .dropdown::before,
 .navbar-bottom__secondary > .dropdown + a::before,
-.navbar-bottom__secondary > a + a::before {
+.navbar-bottom__secondary > a + a::before,
+.navbar-bottom__secondary > .dropdown:first-child::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -2052,7 +2054,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   max-width: 112px;
   padding: 4px 6px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.769);
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: 0 8px 20px rgba(7, 26, 51, 0.14);
   backdrop-filter: blur(14px) saturate(160%);

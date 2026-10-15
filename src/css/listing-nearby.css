@@ -1,6 +1,6 @@
 .lv-related .listings-grid,
 .lv-related-section .listings-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-3, 0.75rem);
 }
 
@@ -9,23 +9,24 @@
   border-radius: 12px;
 }
 
-.lv-related .lc-media-wrapper,
-.lv-related-section .lc-media-wrapper {
+/* Only apply compact vertical styles to non-horizontal cards */
+.lv-related .listing-card:not(.listing-card--horizontal) .lc-media-wrapper,
+.lv-related-section .listing-card:not(.listing-card--horizontal) .lc-media-wrapper {
   height: 130px !important;
   min-height: 130px !important;
   max-height: 130px !important;
   flex: 0 0 130px !important;
 }
 
-.lv-related .listing-card__media-img,
-.lv-related-section .listing-card__media-img {
+.lv-related .listing-card:not(.listing-card--horizontal) .listing-card__media-img,
+.lv-related-section .listing-card:not(.listing-card--horizontal) .listing-card__media-img {
   height: 130px !important;
   min-height: 130px !important;
   max-height: 130px !important;
 }
 
-.lv-related .listing-card__media-placeholder,
-.lv-related-section .listing-card__media-placeholder {
+.lv-related .listing-card:not(.listing-card--horizontal) .listing-card__media-placeholder,
+.lv-related-section .listing-card:not(.listing-card--horizontal) .listing-card__media-placeholder {
   height: 130px !important;
   min-height: 130px !important;
   max-height: 130px !important;
@@ -38,8 +39,8 @@
   min-height: auto;
 }
 
-.lv-related .lc-title,
-.lv-related-section .lc-title {
+.lv-related .listing-card:not(.listing-card--horizontal) .lc-title,
+.lv-related-section .listing-card:not(.listing-card--horizontal) .lc-title {
   font-size: 0.78rem;
   line-height: 1.4;
 }
@@ -85,20 +86,20 @@
 @media (max-width: 767px) {
   .lv-related .listings-grid,
   .lv-related-section .listings-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: var(--sp-2, 0.5rem);
   }
-  .lv-related .lc-media-wrapper,
-  .lv-related-section .lc-media-wrapper {
+  .lv-related .listing-card:not(.listing-card--horizontal) .lc-media-wrapper,
+  .lv-related-section .listing-card:not(.listing-card--horizontal) .lc-media-wrapper {
     height: 110px !important;
     min-height: 110px !important;
     max-height: 110px !important;
     flex: 0 0 110px !important;
   }
-  .lv-related .listing-card__media-img,
-  .lv-related-section .listing-card__media-img,
-  .lv-related .listing-card__media-placeholder,
-  .lv-related-section .listing-card__media-placeholder {
+  .lv-related .listing-card:not(.listing-card--horizontal) .listing-card__media-img,
+  .lv-related-section .listing-card:not(.listing-card--horizontal) .listing-card__media-img,
+  .lv-related .listing-card:not(.listing-card--horizontal) .listing-card__media-placeholder,
+  .lv-related-section .listing-card:not(.listing-card--horizontal) .listing-card__media-placeholder {
     height: 110px !important;
     min-height: 110px !important;
     max-height: 110px !important;

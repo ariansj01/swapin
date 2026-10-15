@@ -50,9 +50,9 @@ $listing = [
 if (function_exists('ai_price_listing')) {
     $pricing = ai_price_listing($listing, $similar);
     if ($pricing && is_array($pricing)) {
-        $estMin  = (int)($pricing['min_value']       ?? $pricing['p25'] ?? 0);
-        $estMax  = (int)($pricing['max_value']       ?? $pricing['p75'] ?? 0);
-        $estMid  = (int)($pricing['estimated_value'] ?? $pricing['median_value'] ?? $pricing['avg_value'] ?? 0);
+        $estMin  = (int)($pricing['range_low']       ?? $pricing['min_value'] ?? $pricing['p25'] ?? 0);
+        $estMax  = (int)($pricing['range_high']      ?? $pricing['max_value'] ?? $pricing['p75'] ?? 0);
+        $estMid  = (int)($pricing['value']           ?? $pricing['estimated_value'] ?? $pricing['median_value'] ?? $pricing['avg_value'] ?? 0);
         if ($estMid > 0) {
             if ($estMin <= 0) $estMin = (int)round($estMid * 0.75);
             if ($estMax <= 0) $estMax = (int)round($estMid * 1.20);
@@ -70,7 +70,7 @@ if (function_exists('ai_price_listing')) {
                 'unit'  => (string)CREDIT_UNIT,
             ],
             'meta' => [
-                'provider'     => $pricing['provider'] ?? 'fallback',
+                'provider'     => $pricing['ai_source'] ?? $pricing['provider'] ?? 'fallback',
                 'category'     => $categoryLabel,
                 'demand_level' => $demandLevel,
             ],

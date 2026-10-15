@@ -62,8 +62,11 @@ $allPromotions = function_exists('listing_all_promotions_meta') ? listing_all_pr
 $promotionMeta = $allPromotions[0] ?? null;
 $promotionClass = $promotionMeta['card_class'] ?? '';
 $hasPromo = !empty($allPromotions);
+
+$cardLayout = isset($cardLayout) && $cardLayout === 'horizontal' ? 'horizontal' : 'vertical';
+$isHorizontal = $cardLayout === 'horizontal';
 ?>
-<article class="listing-card listing-card--v2 <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
+<article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
 
   <!-- ========== IMAGE SECTION (TOP) ========== -->
   <div class="lc-media-wrapper">
@@ -130,6 +133,32 @@ $hasPromo = !empty($allPromotions);
     <!-- Title -->
     <h3 class="lc-title"><?= h($l['title']) ?></h3>
 
+    <?php if ($isHorizontal): ?>
+    <!-- Horizontal layout: condition + price + time/location -->
+    <?php
+      $hPrice = 0;
+      if (!empty($l['sell_price']) && (float)$l['sell_price'] > 0) {
+          $hPrice = (float)$l['sell_price'];
+      } elseif (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0) {
+          $hPrice = (float)$l['estimated_value'];
+      }
+    ?>
+    <?php if (!empty($l['condition'])): ?>
+    <div class="lc-h-condition"><?= condition_label($l['condition']) ?></div>
+    <?php endif; ?>
+    <?php if ($hPrice > 0): ?>
+    <div class="lc-h-price"><?= fmt_credit($hPrice) ?> <span class="lc-h-unit"><?= (string)CREDIT_UNIT ?></span></div>
+    <?php endif; ?>
+    <div class="lc-h-meta">
+      <?php if (!empty($l['created_at'])): ?>
+      <span class="lc-h-time"><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
+      <?php endif; ?>
+      <?php if (!empty($l['city'])): ?>
+      <span class="lc-h-loc"><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? '، ' . h($l['neighborhood']) : '' ?></span>
+      <?php endif; ?>
+    </div>
+    <?php else: ?>
+
     <!-- Value / Price Row -->
     <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
     <div class="lc-value-row">
@@ -146,21 +175,13 @@ $hasPromo = !empty($allPromotions);
     </div>
     <?php endif; ?>
 
-    <?php if ($hasStore && $hasSellCta && $hasSwapCta): ?>
-    <span class="lc-store-badge lc-store-badge--both"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
-    <?php endif; ?>
-    <?php if ($hasStore): ?>
-    <a href="<?= APP_URL ?>/shop/<?= h($storeSlug) ?>" class="lc-store-link" onclick="event.stopPropagation()">
-      <i class="bi bi-shop"></i> <?= h($storeName) ?>
-    </a>
-    <?php endif; ?>
-
     <!-- Meta Row -->
     <div class="lc-meta">
       <?php if (!empty($l['created_at'])): ?>
-      <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
+      <span><i class="bi bi-clock"></i> <?= $isHorizontal ? persian_date($l['created_at']) : timeago($l['created_at']) ?></span>
       <?php endif; ?>
-      <span><i class="bi bi-eye"></i> بازدید: <?= number_format((int)($l['views'] ?? 0)) ?></span>
+      <?php $lcViews = (int)($l['views'] ?? 0); ?>
+      <span><i class="bi bi-eye"></i> بازدید: <?= $lcViews > 5000 ? fmt_num(5000) . '+' : fmt_num($lcViews) ?></span>
       <?php if (!empty($l['condition'])): ?>
       <!-- <span>وضعیت: <?= condition_label($l['condition'] ?? '') ?></span> -->
       <?php endif; ?>
@@ -168,6 +189,7 @@ $hasPromo = !empty($allPromotions);
       <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? '، ' . h($l['neighborhood']) : '' ?></span>
       <?php endif; ?>
     </div>
+    <?php endif; ?>
 
     <!-- CTA Button -->
     <div class="lc-cta">
@@ -589,6 +611,179 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 .lc-btn--view:hover {
   background: #14305e;
   transform: scale(1.01);
+}
+
+/* =========================================================
+   HORIZONTAL CARD VARIANT — Image Left, Content Right
+   Used for "آگهی‌های مشابه" section
+   ========================================================= */
+.listing-card.listing-card--v2.listing-card--horizontal {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.listing-card.listing-card--v2.listing-card--horizontal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px -10px rgba(7, 26, 51, 0.22);
+}
+
+/* Image on the left */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
+  width: 140px;
+  min-width: 140px;
+  height: 140px;
+  min-height: 140px;
+  max-height: none;
+  flex: 0 0 140px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+}
+.listing-card.listing-card--v2.listing-card--horizontal .listing-card__media-img {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  border-radius: 14px;
+}
+.listing-card.listing-card--v2.listing-card--horizontal .listing-card__media-placeholder {
+  width: 100%;
+  height: 100% !important;
+  min-height: 140px !important;
+  max-height: none !important;
+  border-radius: 14px;
+}
+
+/* Content on the right */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 6px 14px 6px 16px;
+  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  text-align: right;
+}
+
+/* Title — right aligned, prominent */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-title {
+  text-align: right;
+  max-width: none;
+  margin-inline: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #071A33;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+  width: 100%;
+}
+
+/* Condition badge */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-h-condition {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  line-height: 1.4;
+}
+
+/* Price */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-h-price {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #F59E0B;
+  line-height: 1.3;
+  direction: ltr;
+}
+.listing-card.listing-card--v2.listing-card--horizontal .lc-h-unit {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-right: 4px;
+}
+
+/* Meta row (time + location) */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-h-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px 14px;
+  margin-top: 2px;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.6;
+  width: 100%;
+}
+.listing-card.listing-card--v2.listing-card--horizontal .lc-h-meta i {
+  font-size: 0.78rem;
+  opacity: 0.8;
+  margin-left: 3px;
+}
+.listing-card.listing-card--v2.listing-card--horizontal .lc-h-time {
+  color: #6b7280;
+}
+.listing-card.listing-card--v2.listing-card--horizontal .lc-h-loc {
+  color: #6b7280;
+}
+
+/* Hide elements that don't fit the compact horizontal layout */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-want-box,
+.listing-card.listing-card--v2.listing-card--horizontal .lc-store-badge,
+.listing-card.listing-card--v2.listing-card--horizontal .lc-store-link,
+.listing-card.listing-card--v2.listing-card--horizontal .lc-value-row,
+.listing-card.listing-card--v2.listing-card--horizontal .lc-meta,
+.listing-card.listing-card--v2.listing-card--horizontal .lc-cta {
+  display: none !important;
+}
+
+/* Favorite & badges positioning in horizontal mode */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-fav-btn {
+  top: 16px;
+  left: 16px;
+  width: 30px;
+  height: 30px;
+  font-size: 0.85rem;
+}
+.listing-card.listing-card--v2.listing-card--horizontal .lc-badges-row {
+  top: 16px;
+  right: 16px;
+}
+
+/* Responsive: smaller image on very small screens */
+@media (max-width: 480px) {
+  .listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
+    width: 110px;
+    min-width: 110px;
+    height: 110px;
+    min-height: 110px;
+    flex: 0 0 110px;
+  }
+  .listing-card.listing-card--v2.listing-card--horizontal .lc-title {
+    font-size: 0.92rem;
+  }
+  .listing-card.listing-card--v2.listing-card--horizontal .lc-h-price {
+    font-size: 1.05rem;
+  }
 }
 </style>
 

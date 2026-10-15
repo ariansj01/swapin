@@ -459,6 +459,44 @@
   margin: 0;
 }
 
+/* Location card — sits under the save/share card and stays visible while scrolling */
+.lv-location-card {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  background: white;
+  border-radius: var(--lv-radius-lg);
+  padding: 14px 16px;
+  box-shadow: 0 6px 24px rgba(8, 27, 69, 0.08);
+  border: 1px solid var(--lv-border);
+}
+.lv-location-card__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--lv-navy);
+}
+.lv-location-card__title i {
+  color: var(--lv-gold);
+}
+.lv-location-card__text {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--lv-muted);
+  line-height: 1.7;
+}
+.lv-location-card__text i {
+  color: var(--lv-navy);
+  opacity: 0.75;
+}
+
 .lv-offer-card button.lv-btn,
 .lv-action-card button,
 .lv-offer-type {
@@ -470,6 +508,9 @@
     grid-template-columns: 1fr;
   }
   .lv-right-col {
+    position: static;
+  }
+  .lv-location-card {
     position: static;
   }
 }
