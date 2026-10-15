@@ -65,6 +65,13 @@ $hasPromo = !empty($allPromotions);
 
 $cardLayout = isset($cardLayout) && $cardLayout === 'horizontal' ? 'horizontal' : 'vertical';
 $isHorizontal = $cardLayout === 'horizontal';
+
+// Image count for badge
+$imgCount = 0;
+if ($isHorizontal) {
+    $resCount = DB::fetch('SELECT COUNT(*) as cnt FROM listing_images WHERE listing_id = ?', [(int)$l['id']]);
+    $imgCount = (int)($resCount['cnt'] ?? 0);
+}
 ?>
 <article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
 
@@ -78,8 +85,17 @@ $isHorizontal = $cardLayout === 'horizontal';
     </div>
     <?php endif; ?>
 
-    <!-- Favorite Button - Top Left (ALWAYS VISIBLE via inline style) -->
+    <!-- Image Count Badge (Minimal) -->
+    <?php if ($isHorizontal && $imgCount > 1): ?>
+    <div class="lc-img-count">
+      <i class="bi bi-camera-fill"></i>
+      <span><?= fmt_num($imgCount) ?></span>
+    </div>
+    <?php endif; ?>
+
+    <!-- Favorite Button - Top Left -->
     <?php $currentUser = $currentUser ?? auth_user(); ?>
+    <?php if (!$isHorizontal): ?>
     <?php if (!empty($currentUser['id'])): ?>
     <button type="button"
             class="lc-fav-btn<?= $isSaved ? ' is-saved' : '' ?>"
@@ -100,8 +116,10 @@ $isHorizontal = $cardLayout === 'horizontal';
       <i class="bi bi-heart"></i>
     </a>
     <?php endif; ?>
+    <?php endif; ?>
 
-    <!-- Badges Row on Image - Top Right (ALWAYS VISIBLE via inline style) -->
+    <!-- Badges Row on Image - Top Right (Only for vertical) -->
+    <?php if (!$isHorizontal): ?>
     <div class="lc-badges-row"
          style="display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
       <?php if ($hasPromo): ?>
@@ -110,54 +128,46 @@ $isHorizontal = $cardLayout === 'horizontal';
             style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
         <i class="bi <?= $p['icon'] ?? 'bi-star-fill' ?>"></i>
         <?= h($p['label'] ?? 'پلن ویژه') ?>
-        <?php if (!empty($p['tooltip'])): ?>
-        <span class="lc-badge-help" aria-hidden="true"><span class="lc-badge-q"><i class="bi bi-question"></i></span></span>
-        <span class="lc-badge-tip" role="tooltip" style="transform: translate(-90px, 70px);"><?= h($p['tooltip']) ?></span>
-        <?php endif; ?>
       </span>
         <?php endforeach; ?>
       <?php endif; ?>
-      <?php if ($hasSwapCta): ?>
-      <!-- <span class="lc-badge lc-badge--swap"
-            style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
-        معاوضه
-        <i class="bi bi-arrow-left-right"></i>
-      </span> -->
-      <?php endif; ?>
     </div>
+    <?php endif; ?>
   </div>
 
-  <!-- ========== CONTENT SECTION (BELOW IMAGE) ========== -->
+  <!-- ========== CONTENT SECTION ========== -->
   <div class="lc-content">
-
-    <!-- Title -->
-    <h3 class="lc-title"><?= h($l['title']) ?></h3>
-
     <?php if ($isHorizontal): ?>
-    <!-- Horizontal layout: condition + price + time/location -->
-    <?php
-      $hPrice = 0;
-      if (!empty($l['sell_price']) && (float)$l['sell_price'] > 0) {
-          $hPrice = (float)$l['sell_price'];
-      } elseif (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0) {
-          $hPrice = (float)$l['estimated_value'];
-      }
-    ?>
-    <?php if (!empty($l['condition'])): ?>
-    <div class="lc-h-condition"><?= condition_label($l['condition']) ?></div>
-    <?php endif; ?>
-    <?php if ($hPrice > 0): ?>
-    <div class="lc-h-price"><?= fmt_credit($hPrice) ?> <span class="lc-h-unit"><?= (string)CREDIT_UNIT ?></span></div>
-    <?php endif; ?>
-    <div class="lc-h-meta">
-      <?php if (!empty($l['created_at'])): ?>
-      <span class="lc-h-time"><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
+    <!-- Horizontal Minimal Layout (Title -> Condition -> Price -> Time/Location) -->
+    <h3 class="lc-title"><?= h($l['title']) ?></h3>
+    
+    <div class="lc-h-minimal-body">
+      <?php if (!empty($l['condition'])): ?>
+      <div class="lc-h-condition"><?= condition_label($l['condition']) ?></div>
       <?php endif; ?>
-      <?php if (!empty($l['city'])): ?>
-      <span class="lc-h-loc"><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? '، ' . h($l['neighborhood']) : '' ?></span>
+
+      <?php
+        $hPrice = 0;
+        if (!empty($l['sell_price']) && (float)$l['sell_price'] > 0) {
+            $hPrice = (float)$l['sell_price'];
+        } elseif (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0) {
+            $hPrice = (float)$l['estimated_value'];
+        }
+      ?>
+      <?php if ($hPrice > 0): ?>
+      <div class="lc-h-price"><?= fmt_credit($hPrice) ?> <span class="lc-h-unit"><?= (string)CREDIT_UNIT ?></span></div>
       <?php endif; ?>
+
+      <div class="lc-h-meta">
+        <?= timeago($l['created_at']) ?>
+        <?php if (!empty($l['city'])): ?>
+        در <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? ' (' . h($l['neighborhood']) . ')' : '' ?>
+        <?php endif; ?>
+      </div>
     </div>
     <?php else: ?>
+    <!-- Vertical Layout (Existing) -->
+    <h3 class="lc-title"><?= h($l['title']) ?></h3>
 
     <!-- Value / Price Row -->
     <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
@@ -178,38 +188,23 @@ $isHorizontal = $cardLayout === 'horizontal';
     <!-- Meta Row -->
     <div class="lc-meta">
       <?php if (!empty($l['created_at'])): ?>
-      <span><i class="bi bi-clock"></i> <?= $isHorizontal ? persian_date($l['created_at']) : timeago($l['created_at']) ?></span>
+      <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
       <?php endif; ?>
       <?php $lcViews = (int)($l['views'] ?? 0); ?>
       <span><i class="bi bi-eye"></i> بازدید: <?= $lcViews > 5000 ? fmt_num(5000) . '+' : fmt_num($lcViews) ?></span>
-      <?php if (!empty($l['condition'])): ?>
-      <!-- <span>وضعیت: <?= condition_label($l['condition'] ?? '') ?></span> -->
-      <?php endif; ?>
       <?php if (!empty($l['city'])): ?>
       <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? '، ' . h($l['neighborhood']) : '' ?></span>
       <?php endif; ?>
     </div>
-    <?php endif; ?>
 
     <!-- CTA Button -->
     <div class="lc-cta">
-      <?php if ($hasSwapCta): ?>
-      <a href="<?= $cardHref ?>"
-         class="lc-btn lc-btn--swap"
-         onclick="handleCardV2Click(event, this)">
-        <i class="bi bi-arrow-left-right"></i>
-        <span>پیشنهاد معاوضه</span>
+      <a href="<?= $cardHref ?>" class="lc-btn <?= $hasSwapCta ? 'lc-btn--swap' : 'lc-btn--view' ?>" onclick="handleCardV2Click(event, this)">
+        <i class="bi <?= $hasSwapCta ? 'bi-arrow-left-right' : 'bi-eye' ?>"></i>
+        <span><?= $hasSwapCta ? 'پیشنهاد معاوضه' : 'مشاهده آگهی' ?></span>
       </a>
-      <?php else: ?>
-      <a href="<?= $cardHref ?>"
-         class="lc-btn lc-btn--view"
-         onclick="handleCardV2Click(event, this)">
-        <i class="bi bi-eye"></i>
-        <span>مشاهده آگهی</span>
-      </a>
-      <?php endif; ?>
     </div>
-
+    <?php endif; ?>
   </div>
 </article>
 
@@ -618,18 +613,19 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
    Used for "آگهی‌های مشابه" section
    ========================================================= */
 .listing-card.listing-card--v2.listing-card--horizontal {
-  flex-direction: row;
+  flex-direction: row-reverse; /* Force image to left in RTL */
   align-items: stretch;
   gap: 0;
-  padding: 10px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
   overflow: hidden;
+  text-decoration: none;
 }
 .listing-card.listing-card--v2.listing-card--horizontal:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px -10px rgba(7, 26, 51, 0.22);
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 /* Image on the left */
@@ -640,9 +636,9 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   min-height: 140px;
   max-height: none;
   flex: 0 0 140px;
-  border-radius: 14px;
+  border-radius: 6px;
   overflow: hidden;
-  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  background: #2a2a2a;
 }
 .listing-card.listing-card--v2.listing-card--horizontal .listing-card__media-img {
   width: 100% !important;
@@ -650,14 +646,30 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   min-height: 100% !important;
   max-height: none !important;
   object-fit: cover !important;
-  border-radius: 14px;
+  border-radius: 6px;
 }
 .listing-card.listing-card--v2.listing-card--horizontal .listing-card__media-placeholder {
   width: 100%;
   height: 100% !important;
   min-height: 140px !important;
   max-height: none !important;
-  border-radius: 14px;
+  border-radius: 6px;
+}
+
+/* Image count badge */
+.lc-img-count {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 5;
 }
 
 /* Content on the right */
@@ -665,124 +677,90 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: 6px 14px 6px 16px;
-  gap: 4px;
+  padding: 0 16px 0 0; /* Content is to the right of image */
+  gap: 8px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-end;
   text-align: right;
+  background: transparent;
 }
 
-/* Title — right aligned, prominent */
+/* Title — right aligned, bold white */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-title {
   text-align: right;
   max-width: none;
-  margin-inline: 0;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #071A33;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
   white-space: normal;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.5;
+  line-height: 1.4;
   width: 100%;
 }
 
-/* Condition badge */
+.lc-h-minimal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* Condition */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-condition {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 12px;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #059669;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  line-height: 1.4;
+  font-size: 0.85rem;
+  color: #a0a0a0;
+  font-weight: 400;
 }
 
 /* Price */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-price {
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: #F59E0B;
-  line-height: 1.3;
-  direction: ltr;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+  direction: rtl;
 }
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-unit {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #6b7280;
-  margin-right: 4px;
+  font-size: 0.85rem;
+  color: #ffffff;
+  margin-right: 2px;
 }
 
 /* Meta row (time + location) */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px 14px;
-  margin-top: 2px;
-  color: #6b7280;
-  font-size: 0.78rem;
-  font-weight: 600;
-  line-height: 1.6;
+  color: #a0a0a0;
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-align: right;
   width: 100%;
 }
-.listing-card.listing-card--v2.listing-card--horizontal .lc-h-meta i {
-  font-size: 0.78rem;
-  opacity: 0.8;
-  margin-left: 3px;
-}
-.listing-card.listing-card--v2.listing-card--horizontal .lc-h-time {
-  color: #6b7280;
-}
-.listing-card.listing-card--v2.listing-card--horizontal .lc-h-loc {
-  color: #6b7280;
-}
 
-/* Hide elements that don't fit the compact horizontal layout */
-.listing-card.listing-card--v2.listing-card--horizontal .lc-want-box,
-.listing-card.listing-card--v2.listing-card--horizontal .lc-store-badge,
-.listing-card.listing-card--v2.listing-card--horizontal .lc-store-link,
-.listing-card.listing-card--v2.listing-card--horizontal .lc-value-row,
-.listing-card.listing-card--v2.listing-card--horizontal .lc-meta,
-.listing-card.listing-card--v2.listing-card--horizontal .lc-cta {
+/* Hide elements not needed in minimal layout */
+.listing-card.listing-card--v2.listing-card--horizontal .lc-cta,
+.listing-card.listing-card--v2.listing-card--horizontal .lc-fav-btn,
+.listing-card.listing-card--v2.listing-card--horizontal .lc-badges-row {
   display: none !important;
 }
 
-/* Favorite & badges positioning in horizontal mode */
-.listing-card.listing-card--v2.listing-card--horizontal .lc-fav-btn {
-  top: 16px;
-  left: 16px;
-  width: 30px;
-  height: 30px;
-  font-size: 0.85rem;
-}
-.listing-card.listing-card--v2.listing-card--horizontal .lc-badges-row {
-  top: 16px;
-  right: 16px;
-}
-
-/* Responsive: smaller image on very small screens */
+/* Responsive */
 @media (max-width: 480px) {
   .listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
-    width: 110px;
-    min-width: 110px;
-    height: 110px;
-    min-height: 110px;
-    flex: 0 0 110px;
+    width: 100px;
+    min-width: 100px;
+    height: 100px;
+    min-height: 100px;
+    flex: 0 0 100px;
   }
   .listing-card.listing-card--v2.listing-card--horizontal .lc-title {
-    font-size: 0.92rem;
-  }
-  .listing-card.listing-card--v2.listing-card--horizontal .lc-h-price {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
   }
 }
 </style>
