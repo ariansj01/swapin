@@ -283,120 +283,18 @@ render_navbar($user);
 
         if ($category):
             // جستجوی هوشمند: کلیدواژه‌های پیشنهادی هوش مصنوعی بر اساس آگهی‌های همین دسته
-            $aickState     = aick_state((int)$category['id']);
-            $aickKeywords  = $aickState['keywords'];
-            $aickStale     = $aickState['fresh'] ? '0' : '1';
-            $aickEndpoint  = APP_URL . '/api/category_keywords.php';
-            $aickBaseUrl   = APP_URL . '/listings/all.php';
-            $aickBaseQuery = http_build_query(array_filter([
-                'cat'            => $catSlug !== '' ? $catSlug : null,
-                'city'           => $city !== '' ? $city : null,
-                'loc'            => $locMode === 'nearby' ? 'nearby' : null,
-                'nearby_cities'  => $locMode === 'nearby' && $nearbyCitiesRaw !== '' ? $nearbyCitiesRaw : null,
-                'want'           => $wantType !== '' ? $wantType : null,
-                'condition'      => $condition !== '' ? $condition : null,
-                'price_min'      => $pmin > 0 ? $pmin : null,
-                'price_max'      => $pmax > 0 ? $pmax : null,
-                'sort'           => $sort !== 'new' ? $sort : null,
-                'time_ago'       => $timeAgo !== '' ? $timeAgo : null,
-            ]));
-        ?>
-        <div class="related-searches ai-cat-search" id="ai-cat-search"
-             data-cat-slug="<?= h($catSlug) ?>"
-             data-stale="<?= $aickStale ?>"
-             data-endpoint="<?= h($aickEndpoint) ?>"
-             data-base-url="<?= h($aickBaseUrl) ?>"
-             data-base-query="<?= h($aickBaseQuery) ?>">
-          <h3 class="all-listings-sidebar__subtitle" style="margin-top:0"><i class="bi bi-stars"></i> جستجوی هوشمند</h3>
-          <p class="fs-xs text-muted" style="margin:0 0 8px">پیشنهاد هوش مصنوعی بر اساس آگهی‌های همین دسته</p>
-          <div class="related-searches__chips" id="ai-cat-search-chips">
-            <?php if ($aickKeywords): ?>
-              <?php foreach ($aickKeywords as $kw): ?>
-              <a href="<?= h($buildSearchLink($kw)) ?>" class="filter-chip"><?= h($kw) ?></a>
-              <?php endforeach; ?>
-            <?php else: ?>
-              <span class="fs-xs text-muted"><i class="bi bi-arrow-repeat"></i> در حال آماده‌سازی کلیدواژه‌ها…</span>
-            <?php endif; ?>
-          </div>
-        </div>
-        <script>
-        (function () {
-          function ready(fn) {
-            if (document.readyState === 'loading') {
-              document.addEventListener('DOMContentLoaded', fn);
-            } else {
-              fn();
-            }
-          }
-
-          ready(function () {
-            var box = document.getElementById('ai-cat-search');
-            if (!box || box.getAttribute('data-stale') !== '1') { return; }
-
-            var slug      = box.getAttribute('data-cat-slug') || '';
-            var endpoint  = box.getAttribute('data-endpoint') || '';
-            var baseUrl   = box.getAttribute('data-base-url') || '';
-            var baseQuery = box.getAttribute('data-base-query') || '';
-            var chips     = document.getElementById('ai-cat-search-chips');
-            if (!slug || !endpoint || !chips) { return; }
-
-            function keywordLink(kw) {
-              var qs = baseQuery ? (baseQuery + '&q=' + encodeURIComponent(kw)) : ('q=' + encodeURIComponent(kw));
-              return baseUrl + '?' + qs;
-            }
-
-            function render(list) {
-              if (!Array.isArray(list) || !list.length) { return; }
-              chips.innerHTML = '';
-              list.forEach(function (kw) {
-                kw = String(kw || '').trim();
-                if (!kw) { return; }
-                var a = document.createElement('a');
-                a.className = 'filter-chip';
-                a.textContent = kw;
-                a.setAttribute('href', keywordLink(kw));
-                chips.appendChild(a);
-              });
-            }
-
-            function post(data) {
-              var fd = new FormData();
-              Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
-              if (typeof appendCsrf === 'function') { appendCsrf(fd); }
-              var headers = (typeof withCsrfHeaders === 'function') ? withCsrfHeaders() : {};
-              return fetch(endpoint, { method: 'POST', body: fd, credentials: 'same-origin', headers: headers })
-                .then(function (r) { return r.json(); })
-                .catch(function () { return null; });
-            }
-
-            function extractKeywords(text) {
-              if (typeof swaapinExtractJsonFromText !== 'function') { return null; }
-              var parsed = swaapinExtractJsonFromText(text);
-              return (parsed && Array.isArray(parsed.keywords)) ? parsed.keywords : null;
-            }
-
-            post({ action: 'get', cat: slug }).then(function (res) {
-              if (!res || res.ok !== true) { return; }
-              if (res.type === 'result') { render(res.keywords); return; }
-
-              if (res.type === 'client_prepare') {
-                var fallback = res.fallback_keywords;
-                if (typeof swaapinBrowserCompleteChat !== 'function') { render(fallback); return; }
-                swaapinBrowserCompleteChat(res).then(function (done) {
-                  var kws = (done && done.content) ? extractKeywords(done.content) : null;
-                  if (kws && kws.length) {
-                    render(kws);
-                    post({ action: 'save', cat: slug, keywords: JSON.stringify(kws) });
-                  } else {
-                    render(fallback);
-                  }
-                }).catch(function () { render(fallback); });
-              }
-            });
-          });
-        })();
-        </script>
-        <?php else:
+            aick_render_sidebar($category, APP_URL . '/listings', [
+                'city'          => $city,
+                'loc'           => $locMode === 'nearby' ? 'nearby' : null,
+                'nearby_cities' => $locMode === 'nearby' ? $nearbyCitiesRaw : null,
+                'want'          => $wantType,
+                'condition'     => $condition,
+                'price_min'     => $pmin > 0 ? $pmin : null,
+                'price_max'     => $pmax > 0 ? $pmax : null,
+                'sort'          => $sort !== 'new' ? $sort : null,
+                'time_ago'      => $timeAgo,
+            ]);
+        else:
             // حالت بدون دسته: جستجوهای مرتبط آماده
             $relatedKeywords = [
                 'موبایل', 'سامسونگ', 'آیفون', 'لپ تاپ', 'پلی استیشن',

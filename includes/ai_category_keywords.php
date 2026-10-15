@@ -336,3 +336,133 @@ function aick_state(int $categoryId): array {
         'has_cache'   => (bool)$cache,
     ];
 }
+
+/**
+ * رندر بخش «جستجوی هوشمند» در سایدبار صفحه دسته‌بندی.
+ * در هر صفحه‌ای که سایدبار دسته‌بندی دارد (همه‌ی آگهی‌ها، نقشه و …) قابل استفاده است.
+ *
+ * @param array<string,mixed> $category   ردیف دسته (حداقل id و slug)
+ * @param string              $baseUrl    آدرس صفحه فعلی برای ساخت لینک جستجو
+ * @param array<string,mixed> $baseParams پارامترهای فیلتر فعلی که باید در لینک حفظ شوند
+ */
+function aick_render_sidebar(array $category, string $baseUrl, array $baseParams = []): void {
+    $categoryId = (int)($category['id'] ?? 0);
+    $catSlug    = trim((string)($category['slug'] ?? ''));
+    if ($categoryId <= 0 || $catSlug === '') {
+        return;
+    }
+
+    $state    = aick_state($categoryId);
+    $keywords = $state['keywords'];
+    $stale    = $state['fresh'] ? '0' : '1';
+    $endpoint = APP_URL . '/api/category_keywords.php';
+
+    $keep = static function ($v): bool {
+        return $v !== null && $v !== '' && $v !== '0';
+    };
+    $baseQuery = http_build_query(array_filter(array_merge($baseParams, ['cat' => $catSlug]), $keep));
+
+    $buildSearchLink = static function (string $kw) use ($baseUrl, $baseQuery): string {
+        $qs = $baseQuery !== '' ? $baseQuery . '&' : '';
+        return $baseUrl . '?' . $qs . 'q=' . urlencode($kw);
+    };
+    ?>
+    <div class="related-searches ai-cat-search" id="ai-cat-search"
+         data-cat-slug="<?= h($catSlug) ?>"
+         data-stale="<?= $stale ?>"
+         data-endpoint="<?= h($endpoint) ?>"
+         data-base-url="<?= h($baseUrl) ?>"
+         data-base-query="<?= h($baseQuery) ?>">
+      <h3 style="font-size:.9rem;font-weight:bold;color:#555;margin:0 0 6px;display:flex;align-items:center;gap:8px">
+        <i class="bi bi-stars"></i> جستجوی هوشمند
+      </h3>
+      <p class="fs-xs text-muted" style="margin:0 0 8px">پیشنهاد هوش مصنوعی بر اساس آگهی‌های همین دسته</p>
+      <div class="related-searches__chips" id="ai-cat-search-chips">
+        <?php if ($keywords): ?>
+          <?php foreach ($keywords as $kw): ?>
+          <a href="<?= h($buildSearchLink($kw)) ?>" class="filter-chip"><?= h($kw) ?></a>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <span class="fs-xs text-muted"><i class="bi bi-arrow-repeat"></i> در حال آماده‌سازی کلیدواژه‌ها…</span>
+        <?php endif; ?>
+      </div>
+    </div>
+    <script>
+    (function () {
+      function ready(fn) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', fn);
+        } else {
+          fn();
+        }
+      }
+
+      ready(function () {
+        var box = document.getElementById('ai-cat-search');
+        if (!box || box.getAttribute('data-stale') !== '1') { return; }
+
+        var slug      = box.getAttribute('data-cat-slug') || '';
+        var endpoint  = box.getAttribute('data-endpoint') || '';
+        var baseUrl   = box.getAttribute('data-base-url') || '';
+        var baseQuery = box.getAttribute('data-base-query') || '';
+        var chips     = document.getElementById('ai-cat-search-chips');
+        if (!slug || !endpoint || !chips) { return; }
+
+        function keywordLink(kw) {
+          var qs = baseQuery ? (baseQuery + '&q=' + encodeURIComponent(kw)) : ('q=' + encodeURIComponent(kw));
+          return baseUrl + '?' + qs;
+        }
+
+        function render(list) {
+          if (!Array.isArray(list) || !list.length) { return; }
+          chips.innerHTML = '';
+          list.forEach(function (kw) {
+            kw = String(kw || '').trim();
+            if (!kw) { return; }
+            var a = document.createElement('a');
+            a.className = 'filter-chip';
+            a.textContent = kw;
+            a.setAttribute('href', keywordLink(kw));
+            chips.appendChild(a);
+          });
+        }
+
+        function post(data) {
+          var fd = new FormData();
+          Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
+          if (typeof appendCsrf === 'function') { appendCsrf(fd); }
+          var headers = (typeof withCsrfHeaders === 'function') ? withCsrfHeaders() : {};
+          return fetch(endpoint, { method: 'POST', body: fd, credentials: 'same-origin', headers: headers })
+            .then(function (r) { return r.json(); })
+            .catch(function () { return null; });
+        }
+
+        function extractKeywords(text) {
+          if (typeof swaapinExtractJsonFromText !== 'function') { return null; }
+          var parsed = swaapinExtractJsonFromText(text);
+          return (parsed && Array.isArray(parsed.keywords)) ? parsed.keywords : null;
+        }
+
+        post({ action: 'get', cat: slug }).then(function (res) {
+          if (!res || res.ok !== true) { return; }
+          if (res.type === 'result') { render(res.keywords); return; }
+
+          if (res.type === 'client_prepare') {
+            var fallback = res.fallback_keywords;
+            if (typeof swaapinBrowserCompleteChat !== 'function') { render(fallback); return; }
+            swaapinBrowserCompleteChat(res).then(function (done) {
+              var kws = (done && done.content) ? extractKeywords(done.content) : null;
+              if (kws && kws.length) {
+                render(kws);
+                post({ action: 'save', cat: slug, keywords: JSON.stringify(kws) });
+              } else {
+                render(fallback);
+              }
+            }).catch(function () { render(fallback); });
+          }
+        });
+      });
+    })();
+    </script>
+    <?php
+}

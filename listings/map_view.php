@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/i18n.php';
 require_once __DIR__ . '/../includes/geo.php';
+require_once __DIR__ . '/../includes/ai_category_keywords.php';
 
 $user = auth_user();
 
@@ -480,6 +481,20 @@ if ($category) {
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
+
+        <?php if ($category): ?>
+            <?php
+            aick_render_sidebar($category, APP_URL . '/listings/map_view.php', [
+                'city'         => $city,
+                'want'         => $wantType,
+                'sort'         => $sort !== 'new' ? $sort : null,
+                'time_ago'     => $timeAgo,
+                'price_min'    => $pmin > 0 ? $pmin : null,
+                'price_max'    => $pmax > 0 ? $pmax : null,
+                'neighborhood' => $neighborhood,
+            ]);
+            ?>
+        <?php endif; ?>
 
         <div class="map-view-sidebar-section">
             <div class="map-view-sidebar-title">محله</div>
