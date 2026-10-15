@@ -631,12 +631,12 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 
 /* Image on the left (نصف اندازه) */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
-  width: 70px;
-  min-width: 70px;
-  height: 70px;
-  min-height: 70px;
-  max-height: none;
-  flex: 0 0 70px;
+  width: 70px !important;
+  min-width: 70px !important;
+  height: 70px !important;
+  min-height: 70px !important;
+  max-height: 70px !important;
+  flex: 0 0 70px !important;
   border-radius: 6px;
   overflow: hidden;
   background: #f3f4f6;
@@ -754,11 +754,12 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 /* Responsive */
 @media (max-width: 480px) {
   .listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
-    width: 56px;
-    min-width: 56px;
-    height: 56px;
-    min-height: 56px;
-    flex: 0 0 56px;
+    width: 56px !important;
+    min-width: 56px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    flex: 0 0 56px !important;
   }
   .listing-card.listing-card--v2.listing-card--horizontal .lc-title {
     font-size: 0.9rem;
