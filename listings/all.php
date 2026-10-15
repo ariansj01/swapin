@@ -261,6 +261,44 @@ render_navbar($user);
           </form>
         </div>
 
+        <?php
+        // جستجوهای مرتبط — کلیدواژه‌های آماده برای سرچ سریع آگهی‌ها
+        $relatedKeywords = [
+            'موبایل', 'سامسونگ', 'آیفون', 'لپ تاپ', 'پلی استیشن',
+            'تبلت', 'ساعت هوشمند', 'هدفون', 'دوربین', 'دوچرخه',
+            'کنسول بازی', 'تلویزیون', 'یخچال', 'مبل', 'فرش',
+        ];
+        if ($category && !empty($category['name'])) {
+            // در صفحه دسته‌بندی، جستجوهای مرتبط داخل همان دسته انجام می‌شود
+            array_unshift($relatedKeywords, trim((string)$category['name']));
+        }
+        $relatedKeywords = array_values(array_unique($relatedKeywords));
+        $buildSearchLink = function (string $kw) use ($catSlug, $city, $locMode, $nearbyCitiesRaw, $wantType, $condition, $pmin, $pmax, $sort, $timeAgo): string {
+            $qs = http_build_query(array_filter([
+                'q'              => $kw,
+                'cat'            => $catSlug !== '' ? $catSlug : null,
+                'city'           => $city !== '' ? $city : null,
+                'loc'            => $locMode === 'nearby' ? 'nearby' : null,
+                'nearby_cities'  => $locMode === 'nearby' && $nearbyCitiesRaw !== '' ? $nearbyCitiesRaw : null,
+                'want'           => $wantType !== '' ? $wantType : null,
+                'condition'      => $condition !== '' ? $condition : null,
+                'price_min'      => $pmin > 0 ? $pmin : null,
+                'price_max'      => $pmax > 0 ? $pmax : null,
+                'sort'           => $sort !== 'new' ? $sort : null,
+                'time_ago'       => $timeAgo !== '' ? $timeAgo : null,
+            ]));
+            return APP_URL . '/listings/all.php?' . $qs;
+        };
+        ?>
+        <div class="related-searches">
+          <h3 class="all-listings-sidebar__subtitle" style="margin-top:0"><i class="bi bi-search-heart"></i> جستجوهای مرتبط</h3>
+          <div class="related-searches__chips">
+            <?php foreach ($relatedKeywords as $kw): ?>
+            <a href="<?= h($buildSearchLink($kw)) ?>" class="filter-chip"><?= h($kw) ?></a>
+            <?php endforeach; ?>
+          </div>
+        </div>
+
         <h2 class="all-listings-sidebar__title">دسته‌بندی‌ها</h2>
         <?php
         $allTopCats = DB::fetchAll('SELECT * FROM categories WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1 ORDER BY sort_order');

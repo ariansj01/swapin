@@ -614,31 +614,32 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
    ========================================================= */
 .listing-card.listing-card--v2.listing-card--horizontal {
   flex-direction: row-reverse; /* Force image to left in RTL */
-  align-items: stretch;
+  align-items: center;
   gap: 0;
-  padding: 12px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
   text-decoration: none;
 }
 .listing-card.listing-card--v2.listing-card--horizontal:hover {
   transform: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 14px rgba(7, 26, 51, 0.12);
+  border-color: #d1d5db;
 }
 
-/* Image on the left */
+/* Image on the left (نصف اندازه) */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
-  width: 140px;
-  min-width: 140px;
-  height: 140px;
-  min-height: 140px;
+  width: 70px;
+  min-width: 70px;
+  height: 70px;
+  min-height: 70px;
   max-height: none;
-  flex: 0 0 140px;
+  flex: 0 0 70px;
   border-radius: 6px;
   overflow: hidden;
-  background: #2a2a2a;
+  background: #f3f4f6;
 }
 .listing-card.listing-card--v2.listing-card--horizontal .listing-card__media-img {
   width: 100% !important;
@@ -651,7 +652,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 .listing-card.listing-card--v2.listing-card--horizontal .listing-card__media-placeholder {
   width: 100%;
   height: 100% !important;
-  min-height: 140px !important;
+  min-height: 70px !important;
   max-height: none !important;
   border-radius: 6px;
 }
@@ -687,14 +688,14 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   background: transparent;
 }
 
-/* Title — right aligned, bold white */
+/* Title — right aligned, bold navy */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-title {
   text-align: right;
   max-width: none;
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #071A33;
   white-space: normal;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -716,27 +717,27 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 /* Condition */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-condition {
   font-size: 0.85rem;
-  color: #a0a0a0;
+  color: #6b7280;
   font-weight: 400;
 }
 
 /* Price */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-price {
   font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff;
+  font-weight: 700;
+  color: #071A33;
   line-height: 1.2;
   direction: rtl;
 }
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-unit {
   font-size: 0.85rem;
-  color: #ffffff;
+  color: #071A33;
   margin-right: 2px;
 }
 
 /* Meta row (time + location) */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-meta {
-  color: #a0a0a0;
+  color: #6b7280;
   font-size: 0.85rem;
   font-weight: 400;
   text-align: right;
@@ -753,14 +754,14 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 /* Responsive */
 @media (max-width: 480px) {
   .listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
-    width: 100px;
-    min-width: 100px;
-    height: 100px;
-    min-height: 100px;
-    flex: 0 0 100px;
+    width: 56px;
+    min-width: 56px;
+    height: 56px;
+    min-height: 56px;
+    flex: 0 0 56px;
   }
   .listing-card.listing-card--v2.listing-card--horizontal .lc-title {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 }
 </style>
