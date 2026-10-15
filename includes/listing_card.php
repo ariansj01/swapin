@@ -155,7 +155,7 @@ if ($isHorizontal) {
         }
       ?>
       <?php if ($hPrice > 0): ?>
-      <div class="lc-h-price"><?= fmt_credit($hPrice) ?> <span class="lc-h-unit"><?= (string)CREDIT_UNIT ?></span></div>
+      <div class="lc-h-price"><?= fmt_credit($hPrice, false) ?> <span class="lc-h-unit"><?= (string)CREDIT_UNIT ?></span></div>
       <?php endif; ?>
 
       <div class="lc-h-meta">
@@ -629,14 +629,14 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   border-color: #d1d5db;
 }
 
-/* Image on the left (نصف اندازه) */
+/* Image on the left */
 .listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
-  width: 70px !important;
-  min-width: 70px !important;
-  height: 70px !important;
-  min-height: 70px !important;
-  max-height: 70px !important;
-  flex: 0 0 70px !important;
+  width: 90px !important;
+  min-width: 90px !important;
+  height: 90px !important;
+  min-height: 90px !important;
+  max-height: 90px !important;
+  flex: 0 0 90px !important;
   border-radius: 6px;
   overflow: hidden;
   background: #f3f4f6;
@@ -652,7 +652,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 .listing-card.listing-card--v2.listing-card--horizontal .listing-card__media-placeholder {
   width: 100%;
   height: 100% !important;
-  min-height: 70px !important;
+  min-height: 90px !important;
   max-height: none !important;
   border-radius: 6px;
 }
@@ -683,7 +683,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: flex-end;
+  align-items: flex-start;
   text-align: right;
   background: transparent;
 }
@@ -708,7 +708,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 .lc-h-minimal-body {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 6px;
   width: 100%;
   margin-top: auto;
@@ -719,6 +719,8 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   font-size: 0.85rem;
   color: #6b7280;
   font-weight: 400;
+  text-align: right;
+  width: 100%;
 }
 
 /* Price */
@@ -728,6 +730,8 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   color: #071A33;
   line-height: 1.2;
   direction: rtl;
+  text-align: right;
+  width: 100%;
 }
 .listing-card.listing-card--v2.listing-card--horizontal .lc-h-unit {
   font-size: 0.85rem;
@@ -754,12 +758,12 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 /* Responsive */
 @media (max-width: 480px) {
   .listing-card.listing-card--v2.listing-card--horizontal .lc-media-wrapper {
-    width: 56px !important;
-    min-width: 56px !important;
-    height: 56px !important;
-    min-height: 56px !important;
-    max-height: 56px !important;
-    flex: 0 0 56px !important;
+    width: 72px !important;
+    min-width: 72px !important;
+    height: 72px !important;
+    min-height: 72px !important;
+    max-height: 72px !important;
+    flex: 0 0 72px !important;
   }
   .listing-card.listing-card--v2.listing-card--horizontal .lc-title {
     font-size: 0.9rem;

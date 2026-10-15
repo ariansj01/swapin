@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/content_manager.php';
+require_once __DIR__ . '/includes/stories.php';
 
 // #region debug-point homepage-500-index-start
 if (function_exists('swapin_debug_log')) {
@@ -282,6 +283,7 @@ render_navbar($user);
     </div>
   </div>
 </section>
+<?php stories_render_section(); ?>
 <?php endif; ?>
 
 <main id="main-content" class="section-sm">
