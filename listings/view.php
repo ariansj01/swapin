@@ -803,10 +803,6 @@ render_navbar($user);
         <?php $swapListingId = $id; include __DIR__ . '/../includes/listing_swap_suggestions_section.php'; ?>
         <?php endif; ?>
 
-        <?php if ($showNearbySection): ?>
-        <?php $nearbyListingId = $id; include __DIR__ . '/../includes/listing_nearby_section.php'; ?>
-        <?php endif; ?>
-
         <?php if (!empty($isoReverseMatches)): ?>
         <section id="iso-reverse-matches" class="lv-related-section" aria-label="کاربرانی که دنبال این کالا هستند">
           <h3 class="lv-related-title">
@@ -1082,6 +1078,12 @@ render_navbar($user);
             <?= h($listing['city']) ?><?= !empty($listing['neighborhood']) ? ' — ' . h($listing['neighborhood']) : '' ?>
           </p>
         </section>
+        <?php endif; ?>
+
+        <?php if ($showNearbySection): ?>
+        <div class="lv-nearby-col">
+          <?php $nearbyListingId = $id; include __DIR__ . '/../includes/listing_nearby_section.php'; ?>
+        </div>
         <?php endif; ?>
       </aside>
     </div>

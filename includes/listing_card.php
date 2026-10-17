@@ -190,8 +190,8 @@ if ($isHorizontal) {
       <?php if (!empty($l['created_at'])): ?>
       <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
       <?php endif; ?>
-      <?php $lcViews = (int)($l['views'] ?? 0); ?>
-      <span><i class="bi bi-eye"></i> بازدید: <?= $lcViews > 5000 ? fmt_num(5000) . '+' : fmt_num($lcViews) ?></span>
+      <!-- <?php $lcViews = (int)($l['views'] ?? 0); ?>
+      <span><i class="bi bi-eye"></i> بازدید: <?= $lcViews > 5000 ? fmt_num(5000) . '+' : fmt_num($lcViews) ?></span> -->
       <?php if (!empty($l['city'])): ?>
       <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?><?= !empty($l['neighborhood']) ? '، ' . h($l['neighborhood']) : '' ?></span>
       <?php endif; ?>
