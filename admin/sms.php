@@ -98,6 +98,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    sms_log_record(
+        (int) ($admin['id'] ?? 0),
+        $mode,
+        $message,
+        count($recipients),
+        $sent,
+        $failed,
+        $lastError
+    );
+
     if ($failed === 0) {
         admin_set_flash("پیامک برای {$sent} شماره ارسال شد.");
     } elseif ($sent > 0) {
@@ -136,6 +146,20 @@ $stats = DB::fetch(
             SUM(CASE WHEN is_active = 1 AND role <> 'admin' AND phone IS NOT NULL AND phone <> '' THEN 1 ELSE 0 END) AS active_nonadmin
      FROM users"
 ) ?: ['total' => 0, 'with_phone' => 0, 'active_nonadmin' => 0];
+
+$smsHistory = [];
+if (sms_logs_ensure_table()) {
+    try {
+        $smsHistory = DB::fetchAll(
+            "SELECT id, scope, message, recipients_total, sent_count, failed_count, error, created_at
+             FROM sms_logs
+             ORDER BY id DESC
+             LIMIT 50"
+        );
+    } catch (Throwable) {
+        $smsHistory = [];
+    }
+}
 
 $smsReady = (defined('SMS_ENABLED') && SMS_ENABLED
     && defined('SMS_IRANPAYAMAK_API_KEY') && !sms_is_placeholder((string) SMS_IRANPAYAMAK_API_KEY));
@@ -273,6 +297,43 @@ ob_start();
     <i class="bi bi-send"></i> ارسال پیامک
   </button>
 </form>
+
+<div class="card">
+  <div class="card-header"><strong>تاریخچه ارسال‌ها</strong> <span class="fs-xs" style="color:var(--text-muted)">(۵۰ مورد آخر)</span></div>
+  <div class="card-body" style="padding:0">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>تاریخ</th>
+          <th>گیرندگان</th>
+          <th>متن پیامک</th>
+          <th>کل</th>
+          <th>موفق</th>
+          <th>ناموفق</th>
+          <th>خطا</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php if (!$smsHistory): ?>
+        <tr><td colspan="8" style="text-align:center;color:var(--text-muted)">هنوز پیامکی ارسال نشده است.</td></tr>
+        <?php endif; ?>
+        <?php foreach ($smsHistory as $row): ?>
+        <tr>
+          <td><?= (int) $row['id'] ?></td>
+          <td class="fs-xs" dir="ltr" style="text-align:right"><?= h((string) $row['created_at']) ?></td>
+          <td><?= ($row['scope'] ?? 'all') === 'selected' ? 'کاربران خاص' : 'همه کاربران' ?></td>
+          <td class="fs-xs"><?= h(mb_strimwidth((string) $row['message'], 0, 80, '…')) ?></td>
+          <td><?= (int) $row['recipients_total'] ?></td>
+          <td><span class="badge badge-success"><?= (int) $row['sent_count'] ?></span></td>
+          <td><?= (int) $row['failed_count'] > 0 ? '<span class="badge badge-danger">' . (int) $row['failed_count'] . '</span>' : '0' ?></td>
+          <td class="fs-xs" style="color:var(--danger)"><?= h((string) ($row['error'] ?? '')) ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
 
 <script>
 function smsMode() {

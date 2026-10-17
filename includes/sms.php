@@ -321,3 +321,57 @@ function send_simple_sms(array $recipients, string $text, ?string $schedule = nu
     sms_log('sms-simple-sent', ['count' => count($list)]);
     return true;
 }
+
+/** Create the bulk-SMS history table on first use. */
+function sms_logs_ensure_table(): bool {
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+    try {
+        if (db_has_table('sms_logs')) {
+            $ok = true;
+            return true;
+        }
+        DB::query("
+            CREATE TABLE IF NOT EXISTS `sms_logs` (
+                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `admin_id` INT UNSIGNED NOT NULL DEFAULT 0,
+                `scope` ENUM('all','selected') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all',
+                `message` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `recipients_total` INT UNSIGNED NOT NULL DEFAULT 0,
+                `sent_count` INT UNSIGNED NOT NULL DEFAULT 0,
+                `failed_count` INT UNSIGNED NOT NULL DEFAULT 0,
+                `error` VARCHAR(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `idx_sms_logs_created` (`created_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+        $ok = true;
+    } catch (Throwable $e) {
+        sms_log('sms-logs-table-failed', ['error' => $e->getMessage()]);
+        $ok = false;
+    }
+    return $ok;
+}
+
+/** Store one bulk-SMS send attempt in the history. */
+function sms_log_record(int $adminId, string $scope, string $message, int $total, int $sent, int $failed, string $error = ''): void {
+    if (!sms_logs_ensure_table()) {
+        return;
+    }
+    try {
+        DB::insert('sms_logs', [
+            'admin_id'         => $adminId,
+            'scope'            => $scope === 'selected' ? 'selected' : 'all',
+            'message'          => $message,
+            'recipients_total' => $total,
+            'sent_count'       => $sent,
+            'failed_count'     => $failed,
+            'error'            => $error !== '' ? mb_substr($error, 0, 500) : null,
+        ]);
+    } catch (Throwable $e) {
+        sms_log('sms-log-record-failed', ['error' => $e->getMessage()]);
+    }
+}
