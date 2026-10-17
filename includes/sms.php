@@ -211,3 +211,113 @@ function send_pattern_sms(string $phone, array $attributes, ?string $patternCode
 function send_otp_sms(string $phone, string $code): bool {
     return send_pattern_sms($phone, sms_otp_attributes($code));
 }
+
+/** Human-readable message from a provider response payload. */
+function sms_provider_message($decoded, int $httpCode): string {
+    if (!is_array($decoded)) {
+        return 'HTTP ' . $httpCode;
+    }
+    $raw = $decoded['messages'] ?? $decoded['message'] ?? $decoded['error'] ?? ('HTTP ' . $httpCode);
+    if (is_array($raw)) {
+        $raw = implode(' | ', array_map(static fn($v) => is_scalar($v) ? (string) $v : json_encode($v, JSON_UNESCAPED_UNICODE), $raw));
+    }
+    $raw = trim((string) $raw);
+    return $raw !== '' ? $raw : 'HTTP ' . $httpCode;
+}
+
+/**
+ * Send a free-text SMS to one or many recipients via the IranPayamak "simple" API.
+ * Used by the admin bulk-SMS panel (OTP/patterns use send_pattern_sms).
+ *
+ * @param array<int,string> $recipients Raw phone numbers (any common format).
+ * @param string            $text       Message body.
+ * @param string|null       $schedule   Optional "YYYY-MM-DD HH:MM:SS" send time.
+ * @return bool  true when the provider accepted the whole request.
+ */
+function send_simple_sms(array $recipients, string $text, ?string $schedule = null): bool {
+    set_last_sms_error('');
+
+    $text = trim($text);
+    if ($text === '') {
+        set_last_sms_error('متن پیامک خالی است.');
+        return false;
+    }
+    if (!defined('SMS_ENABLED') || !SMS_ENABLED) {
+        set_last_sms_error('سرویس پیامک در تنظیمات فعال نیست.');
+        return false;
+    }
+    if (!defined('SMS_IRANPAYAMAK_API_KEY') || sms_is_placeholder((string) SMS_IRANPAYAMAK_API_KEY)) {
+        set_last_sms_error('کلید API پیامک تنظیم نشده است.');
+        return false;
+    }
+    if (!function_exists('curl_init')) {
+        set_last_sms_error('افزونه cURL در PHP فعال نیست.');
+        return false;
+    }
+
+    $list = [];
+    foreach ($recipients as $raw) {
+        $digits = preg_replace('/\D+/', '', (string) $raw);
+        if ($digits === '') {
+            continue;
+        }
+        $list[$digits] = sms_normalize_recipient((string) $raw);
+    }
+    $list = array_values($list);
+    if (!$list) {
+        set_last_sms_error('شماره معتبری برای ارسال یافت نشد.');
+        return false;
+    }
+
+    $payload = [
+        'text'          => $text,
+        'line_number'   => (string) SMS_IRANPAYAMAK_LINE_NUMBER,
+        'recipients'    => $list,
+        'number_format' => defined('SMS_NUMBER_FORMAT') ? SMS_NUMBER_FORMAT : 'english',
+        'schedule'      => $schedule,
+    ];
+
+    $ch = curl_init('https://api.iranpayamak.com/ws/v1/sms/simple');
+    if ($ch === false) {
+        set_last_sms_error('آماده‌سازی اتصال پیامک ناموفق بود.');
+        return false;
+    }
+
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Accept: application/json',
+        'Api-Key: ' . SMS_IRANPAYAMAK_API_KEY,
+        'Content-Type: application/json',
+    ]);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+
+    $response = curl_exec($ch);
+    $curlErr  = curl_error($ch);
+    $httpCode = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($response === false) {
+        set_last_sms_error($curlErr !== '' ? $curlErr : 'خطای نامشخص در ارتباط با سرویس پیامک.');
+        sms_log('sms-simple-curl-failed', ['count' => count($list), 'error' => last_sms_error()]);
+        return false;
+    }
+
+    $decoded = json_decode($response, true);
+    $status  = is_array($decoded) ? ($decoded['status'] ?? null) : null;
+
+    if ($httpCode < 200 || $httpCode >= 300 || $status === 'error') {
+        set_last_sms_error('ارسال پیامک رد شد: ' . sms_provider_message($decoded, $httpCode));
+        sms_log('sms-simple-http-failed', [
+            'count'    => count($list),
+            'status'   => $httpCode,
+            'response' => mb_strimwidth($response, 0, 300, '...'),
+        ]);
+        return false;
+    }
+
+    sms_log('sms-simple-sent', ['count' => count($list)]);
+    return true;
+}

@@ -77,6 +77,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'tickets'        => ['/tickets.php', 'پشتیبانی', 'bi-headset', $counts['tickets']],
         'live_chat'      => ['/live_chat.php', 'چت زنده', 'bi-chat-dots', $counts['live_chat']],
         'users'          => ['/users.php', 'کاربران', 'bi-people', 0],
+        'sms'            => ['/sms.php', 'ارسال پیامک', 'bi-chat-left-text', 0],
     ];
 
     echo '<div class="admin-layout">';
