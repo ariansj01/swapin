@@ -230,6 +230,7 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   cursor: pointer;
   align-items: center;
+  width: 90%;
 }
 
 .lv-nearby-item.is-active {
