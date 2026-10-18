@@ -314,6 +314,7 @@ $canOfferMobile = !$isOwner && $listing['status'] === 'active' && !$hasPendingOf
 $storeSwapUrl = APP_URL . '/store-offers/create.php?listing_id=' . $id;
 $storeOfferViewUrl = $myStoreOffer ? APP_URL . '/store-offers/view.php?id=' . (int) $myStoreOffer['id'] : '';
 $loginRedirect = APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $id);
+$chatUrl = APP_URL . '/chat/view?listing_id=' . $id;
 $showNearbySection = listing_has_coordinates($listing);
 $showSwapSuggestions = $showNearbySection;
 $swapCanOffer = $isOwner && listing_swap_offer_listing_swappable($listing);
@@ -441,6 +442,8 @@ render_navbar($user);
       <span class="lv-badge-swap" style="background:rgba(234,179,8,.15);color:#ca8a04"><i class="bi bi-lock-fill"></i> رزرو شده</span>
       <?php elseif ($hasBothBuySwap): ?>
       <span class="lv-badge-swap" style="background:rgba(37,99,235,.1);color:var(--accent,#2563eb)"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
+      <?php elseif ($canBuy): ?>
+      <span class="lv-badge-swap" style="background:rgba(255,102,0,.12);color:#c2410c"><i class="bi bi-cart-check"></i> قابل خرید</span>
       <?php elseif ($isStoreSwappable || ($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
       <span class="lv-badge-swap"><i class="bi bi-arrow-left-right"></i> امکان معاوضه</span>
       <?php endif; ?>
@@ -463,9 +466,16 @@ render_navbar($user);
           <span class="lv-chip lv-chip--info"><i class="bi bi-star"></i> <?= fmt_num((int)$sellerSwapScore['score']) ?></span>
         </div>
       </div>
-      <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-seller__link" aria-label="پروفایل فروشنده">
-        <i class="bi bi-chevron-left"></i>
-      </a>
+      <div style="display:flex;align-items:center;gap:8px">
+        <?php if (!$isOwner): ?>
+        <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-seller__link" aria-label="چت با فروشنده" title="چت با فروشنده" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>">
+          <i class="bi bi-chat-dots"></i>
+        </a>
+        <?php endif; ?>
+        <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-seller__link" aria-label="پروفایل فروشنده">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+      </div>
     </div>
 
     <!-- Description -->
@@ -483,7 +493,11 @@ render_navbar($user);
       <div class="lv-chips">
         <span class="lv-chip"><?= condition_label($listing['condition']) ?></span>
         <span class="lv-chip"><i class="bi bi-tag"></i> <?= h($listing['cat_name']) ?></span>
+        <?php if (($listing['listing_mode'] ?? 'swap') === 'sell'): ?>
+        <span class="lv-chip lv-chip--gold"><i class="bi bi-cart-check"></i> فروش نقدی</span>
+        <?php else: ?>
         <span class="lv-chip lv-chip--gold"><i class="bi bi-arrow-left-right"></i> معاوضه</span>
+        <?php endif; ?>
         <?php if (!empty($listing['inspection_status']) && $listing['inspection_status'] !== 'none'): ?>
         <span class="lv-chip"><i class="bi bi-search"></i> <?= $inspectionLabels[$listing['inspection_status']] ?? $listing['inspection_status'] ?></span>
         <?php endif; ?>
@@ -954,6 +968,15 @@ render_navbar($user);
           <?php else: ?>
           <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--primary w-100" data-navigate="<?= $loginRedirect ?>"><i class="bi bi-box-arrow-in-left"></i> ورود برای خرید</a>
           <?php endif; ?>
+        </section>
+        <?php endif; ?>
+        <?php if (!$isOwner): ?>
+        <section class="lv-offer-card">
+          <h3 class="lv-offer-title"><i class="bi bi-chat-dots" style="color:var(--lv-navy)"></i> چت با فروشنده</h3>
+          <p class="fs-sm mb-4" style="color:var(--text-muted)">سؤال یا ابهامی دارید؟ مستقیم با فروشنده گفتگو کنید.</p>
+          <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-btn lv-btn--outline w-100" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>">
+            <i class="bi bi-chat-dots"></i> شروع گفتگو
+          </a>
         </section>
         <?php endif; ?>
         <?php if ($isStoreSwappable): ?>

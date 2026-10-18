@@ -24,6 +24,9 @@ Options +MultiViews -Indexes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^api/v1/ api/v1/index.php [L,QSA]
 
+  # User ↔ user chat API (AJAX)
+  RewriteRule ^api/user_chat/?$ api/user_chat.php [L,NC,QSA]
+
   # Force HTTPS (exclude localhost & 127.0.0.1 for local dev)
   RewriteCond %{HTTPS} off
   RewriteCond %{HTTP:X-Forwarded-Proto} !https
@@ -67,6 +70,10 @@ Options +MultiViews -Indexes
   RewriteRule ^orders/?$ orders/index.php [L,NC,QSA]
   RewriteRule ^orders/checkout/?$ orders/checkout.php [L,NC,QSA]
   RewriteRule ^orders/view/?$ orders/view.php [L,NC,QSA]
+
+  # User ↔ user chat pages
+  RewriteRule ^chat/?$ chat/index.php [L,NC,QSA]
+  RewriteRule ^chat/view/?$ chat/view.php [L,NC,QSA]
 
   RewriteRule ^store-offers/?$ store-offers/index.php [L,NC,QSA]
   RewriteRule ^store-offers/create/?$ store-offers/create.php [L,NC,QSA]
@@ -134,7 +141,7 @@ Options +MultiViews -Indexes
   # Must exclude real routes/files/dirs and known system prefixes
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_URI} !^/(api|admin|includes|seed|database|storage|tools|vendor|logs|backups|sql|store|orders|store-offers|shops|search|shop|support|pwa|ai-lab|sep|iso|listings|auth|page|src|css|js|assets|scripts|ops)/ [NC]
+  RewriteCond %{REQUEST_URI} !^/(api|admin|includes|seed|database|storage|tools|vendor|logs|backups|sql|store|orders|chat|store-offers|shops|search|shop|support|pwa|ai-lab|sep|iso|listings|auth|page|src|css|js|assets|scripts|ops)/ [NC]
   RewriteCond %{REQUEST_URI} !^/(index\.php|profile\.php|dashboard\.php|404\.php|500\.php|sitemap\.php|payment_callback\.php|ai-lab\.php|pwa\.php|migration_[^/]+\.php) [NC]
   RewriteRule ^([^/].+)$ category/index.php?slug_path=$1 [L,QSA]
 

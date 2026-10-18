@@ -1,6 +1,8 @@
 <?php
 /** Shared panel navigation — sidebar & header dropdown stay in sync. */
 
+require_once __DIR__ . '/user_chat.php';
+
 function panel_nav_promote_href(int $userId): string {
     $url = APP_URL;
     $row = DB::fetch(
@@ -13,11 +15,16 @@ function panel_nav_promote_href(int $userId): string {
 }
 
 function panel_nav_counts(int $userId): array {
-    return [
+    static $cache = [];
+    if (isset($cache[$userId])) {
+        return $cache[$userId];
+    }
+    return $cache[$userId] = [
         'offers' => (int)(DB::fetch(
             'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "pending"',
             [$userId]
         )['c'] ?? 0),
+        'chat' => function_exists('user_chat_unread_count') ? user_chat_unread_count($userId) : 0,
     ];
 }
 
@@ -47,6 +54,7 @@ function panel_nav_items(array $user): array {
         'saved'        => [$url . '/listings/saved',        'علاقه‌مندی‌ها', 'bi-heart',           0],
         'store_offers' => [$url . '/store-offers',         'معاوضه با فروشگاه', 'bi-shop',       0],
         'trades'       => [$url . '/trades',               'اتاق معامله',   'bi-shield-lock',     $counts['offers']],
+        'chat'         => [$url . '/chat',                  'گفتگوهای من',   'bi-chat-dots',       $counts['chat']],
         'wallet'       => [$url . '/wallet',               'کیف پول',       'bi-wallet2',         0],
         'subscription' => [$url . '/subscription',        'اشتراک',        'bi-gem',             0],
         'settings'     => [$url . '/profile/edit',         'احراز هویت',    'bi-shield-check',    0],

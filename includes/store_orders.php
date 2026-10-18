@@ -136,7 +136,10 @@ function listing_can_cash_buy(array $listing, ?array $buyer = null): bool {
         return false;
     }
     $seller = DB::fetch('SELECT seller_type FROM users WHERE id = ?', [(int)$listing['user_id']]);
-    if (!$seller || ($seller['seller_type'] ?? '') !== 'store') {
+    $sellerType = (string)($seller['seller_type'] ?? '');
+    $listingMode = (string)($listing['listing_mode'] ?? 'swap');
+    // فروشگاه‌ها همیشه قابل خرید نقدی هستند؛ کاربران عادی فقط وقتی آگهی را در حالت «فروش» ثبت کرده باشند.
+    if ($sellerType !== 'store' && $listingMode !== 'sell') {
         return false;
     }
     if ($buyer && (int)$buyer['id'] === (int)$listing['user_id']) {

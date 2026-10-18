@@ -1,0 +1,319 @@
+/* src/css/user-chat.css — گفتگوی کاربر با کاربر (خریدار ↔ فروشنده) */
+
+/* ── لیست گفتگوها ───────────────────────────────────────────── */
+.uc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.uc-conv {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.uc-conv:hover {
+  border-color: rgba(7, 26, 51, .22);
+  box-shadow: 0 8px 22px rgba(7, 26, 51, .07);
+  transform: translateY(-1px);
+}
+
+.uc-conv__avatar {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.uc-conv__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.uc-conv__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.uc-conv__name {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: .95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uc-conv__time {
+  flex-shrink: 0;
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+
+.uc-conv__listing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  font-size: .76rem;
+  color: var(--text-muted);
+  max-width: 100%;
+}
+
+.uc-conv__listing span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uc-conv__last {
+  margin-top: 5px;
+  font-size: .85rem;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uc-conv__badge {
+  flex-shrink: 0;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--primary);
+  font-size: .72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uc-conv--unread .uc-conv__last {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ── سربرگ گفتگو ─────────────────────────────────────────────── */
+.uc-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: 0;
+}
+
+.uc-head__info {
+  min-width: 0;
+}
+
+.uc-head__name {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: .98rem;
+}
+
+.uc-head__sub {
+  font-size: .78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uc-head__link {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  font-size: .8rem;
+  color: var(--primary);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 6px 12px;
+  transition: .18s;
+}
+
+.uc-head__link:hover {
+  border-color: var(--primary);
+  background: var(--bg);
+}
+
+/* ── پنجره پیام‌ها ──────────────────────────────────────────── */
+.uc-thread {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+  max-height: 58vh;
+  overflow-y: auto;
+  padding: 18px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  scroll-behavior: smooth;
+}
+
+.uc-thread__empty {
+  margin: auto;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.uc-thread__empty i {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 8px;
+  color: var(--border-strong);
+}
+
+.uc-msg {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.uc-msg--mine {
+  justify-content: flex-start;
+}
+
+.uc-msg--other {
+  justify-content: flex-end;
+}
+
+.uc-msg__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.uc-msg__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.uc-bubble {
+  max-width: 72%;
+  padding: 10px 13px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, .05);
+  font-size: .9rem;
+  line-height: 1.8;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.uc-msg--mine .uc-bubble {
+  background: var(--primary);
+  color: #fff;
+}
+
+.uc-msg--other .uc-bubble {
+  background: #FFF8E1;
+}
+
+.uc-bubble__meta {
+  margin-top: 7px;
+  font-size: .7rem;
+  opacity: .72;
+}
+
+/* ── کادر ارسال ─────────────────────────────────────────────── */
+.uc-composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: flex-end;
+  margin-top: 12px;
+}
+
+.uc-composer textarea {
+  width: 100%;
+  resize: none;
+  min-height: 48px;
+  max-height: 140px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: .9rem;
+  line-height: 1.7;
+  color: inherit;
+}
+
+.uc-composer textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(7, 26, 51, .08);
+}
+
+.uc-send {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--primary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: .18s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uc-send:hover {
+  background: var(--accent-dark);
+}
+
+.uc-send:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.uc-error {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: .85rem;
+}
+
+@media (max-width: 640px) {
+  .uc-thread {
+    max-height: 62vh;
+    padding: 14px 12px;
+  }
+
+  .uc-bubble {
+    max-width: 82%;
+    font-size: .875rem;
+  }
+
+  .uc-head__link span {
+    display: none;
+  }
+}

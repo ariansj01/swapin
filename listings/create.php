@@ -6,7 +6,8 @@ require_once __DIR__ . '/../includes/iso.php';
 require_once __DIR__ . '/../includes/ai_moderation.php';
 
 $user = require_auth();
-$listingProviderType = is_store_seller($user) ? user_provider_type($user) : 'normal_store';
+$isStoreSeller = is_store_seller($user);
+$listingProviderType = $isStoreSeller ? user_provider_type($user) : 'normal_store';
 
 if ($listingErr = kyc_check_listing_action($user)) {
     render_full_page_modal(
@@ -33,6 +34,7 @@ $vals = [
     'custom_value'    => 0,
     'estimated_value' => 0,
     'sell_price'      => 0,
+    'listing_mode'    => 'swap',
 ];
 
 $suggestedValue = (int)($_POST['suggested_value'] ?? rand(10000000, 50000000));
@@ -101,10 +103,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'custom_value'    => (int)($_POST['custom_value']    ?? 0),
         'estimated_value' => 0,
         'sell_price'      => max(0, min((float)($_POST['sell_price']    ?? 0), 99999999999999.00)),
+        'listing_mode'    => clean($_POST['listing_mode'] ?? 'swap'),
     ];
     $suggestedValue = (int)($_POST['suggested_value'] ?? $suggestedValue);
     $vals['estimated_value'] = $vals['custom_value'] > 0 ? $vals['custom_value'] : $suggestedValue;
     $vals['estimated_value'] = max(0, min((float)$vals['estimated_value'], 999999999999.99));
+
+    if ($isStoreSeller) {
+        $vals['listing_mode'] = 'both';
+    } elseif (!in_array($vals['listing_mode'], ['swap', 'sell'], true)) {
+        $vals['listing_mode'] = 'swap';
+    }
+    if (!$isStoreSeller && $vals['listing_mode'] !== 'sell') {
+        $vals['sell_price'] = 0;
+    }
 
     // Validation
     $errors = [];
@@ -113,8 +125,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$vals['category_id']) $errors['category_id'] = 'لطفا دسته‌بندی را انتخاب کنید';
     if ($vals['category_id'] && !wizard_validate_category_id($vals['category_id'])) $errors['category_id'] = 'دسته‌بندی انتخاب‌شده نامعتبر است';
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
-    if (is_store_seller($user) && $vals['sell_price'] <= 0)
+    if ($isStoreSeller && $vals['sell_price'] <= 0)
         $errors['sell_price'] = 'قیمت فروش برای فروشگاه‌ها الزامی است.';
+    if (!$isStoreSeller && $vals['listing_mode'] === 'sell' && $vals['sell_price'] <= 0)
+        $errors['sell_price'] = 'برای آگهی فروش، وارد کردن قیمت فروش الزامی است.';
 
     $location = listing_location_from_request($vals);
     foreach (validate_listing_location($location) as $field => $msg) {
@@ -149,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'estimated_value'  => $vals['estimated_value'] ?: 0,
             'want_in_return'   => $vals['want_description'] ?: '',
             'want_type'        => 'any',
-            'listing_mode'     => 'both',
+            'listing_mode'     => $vals['listing_mode'],
             'sell_price'       => $vals['sell_price'],
             'needs_inspection' => 0,
             'city'             => $vals['city'] ?: null,
@@ -381,9 +395,39 @@ render_navbar($user);
         <!-- Step 6: Pricing -->
         <div class="wizard-step" data-step="6" id="step-6" style="display:none">
           <h2 class="wizard-step-title">تعریف قیمت‌ها</h2>
-          <p class="wizard-step-subtitle">یک قیمت برای معاوضه تعیین کنید؛ اگر فروشگاه هستید، قیمت خرید نقدی را هم وارد کنید.</p>
+          <p class="wizard-step-subtitle">
+            <?= $isStoreSeller ? 'قیمت معاوضه و قیمت خرید نقدی را وارد کنید.' : 'مشخص کنید کالا را معاوضه می‌کنید یا می‌فروشید.' ?>
+          </p>
+
+          <?php if (!$isStoreSeller): ?>
+          <!-- انتخاب نوع آگهی: معاوضه یا فروش -->
+          <div class="wizard-form-group">
+            <label class="wizard-form-label">نوع آگهی <span style="color:var(--danger)">*</span></label>
+            <div class="listing-mode-switch">
+              <label class="listing-mode-option">
+                <input type="radio" name="listing_mode" value="swap" <?= $vals['listing_mode'] !== 'sell' ? 'checked' : '' ?>>
+                <span class="listing-mode-option__inner">
+                  <i class="bi bi-arrow-left-right"></i>
+                  <strong>معاوضه</strong>
+                  <small>کالای خود را با کالای دیگران تبادل کنید</small>
+                </span>
+              </label>
+              <label class="listing-mode-option">
+                <input type="radio" name="listing_mode" value="sell" <?= $vals['listing_mode'] === 'sell' ? 'checked' : '' ?>>
+                <span class="listing-mode-option__inner">
+                  <i class="bi bi-cash-coin"></i>
+                  <strong>فروش</strong>
+                  <small>کالا را با قیمت نقدی بفروشید</small>
+                </span>
+              </label>
+            </div>
+          </div>
+          <?php else: ?>
+          <input type="hidden" name="listing_mode" value="both">
+          <?php endif; ?>
 
           <!-- ۱. قیمت تخمینی برای معاوضه (همه کاربران) -->
+          <div id="step6-swap-price-block">
           <div class="price-estimate-card">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--wizard-gap)">
               <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:rgba(8,27,69,.08);color:var(--primary);font-weight:800;font-size:.8125rem">۱</span>
@@ -411,17 +455,24 @@ render_navbar($user);
               این قیمت صرفاً برای محاسبه ارزش معاوضه و اختلاف قیمت شما با طرف مقابل است؛ «قیمت خرید نقدی» نیست.
             </p>
           </div>
+          </div><!-- /#step6-swap-price-block -->
 
-          <?php if (is_store_seller($user)): ?>
-          <!-- ۲. قیمت فروش نقدی (فقط فروشگاه‌ها) -->
-          <div class="wizard-form-group" style="margin-top: calc(var(--wizard-gap) * 2);padding:var(--wizard-gap);border:1.5px dashed var(--accent);border-radius:var(--wizard-radius);background:var(--st-accent-light,#FFF8E1)">
+          <!-- ۲. قیمت فروش نقدی -->
+          <div class="wizard-form-group" id="step6-sell-price-block"
+               style="margin-top: calc(var(--wizard-gap) * 2);padding:var(--wizard-gap);border:1.5px dashed var(--accent);border-radius:var(--wizard-radius);background:var(--st-accent-light,#FFF8E1);<?= $isStoreSeller ? '' : 'display:none' ?>">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--wizard-gap)">
               <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--accent);color:var(--primary);font-weight:800;font-size:.8125rem">۲</span>
-              <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">قیمت فروش نقدی (فقط برای فروشگاه)</h3>
+              <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">
+                <?= $isStoreSeller ? 'قیمت فروش نقدی (فقط برای فروشگاه)' : 'قیمت فروش نقدی' ?>
+              </h3>
             </div>
             <p class="price-estimate-note" style="margin:0 0 var(--wizard-gap) 0;color:#856404">
               <i class="bi bi-shop"></i>
+              <?php if ($isStoreSeller): ?>
               این مبلغ، <strong>قیمت خرید نقدی</strong> کالاست تا کاربران عادی بتوانند آن را مستقیماً (بدون معاوضه) از فروشگاه شما خریداری کنند.
+              <?php else: ?>
+              این مبلغ، <strong>قیمت فروش نقدی</strong> کالای شماست؛ کاربران با این قیمت دکمه «خرید» را می‌بینند و آنلاین پرداخت می‌کنند.
+              <?php endif; ?>
             </p>
             <label class="wizard-form-label" for="step6-sell-price-input">
               قیمت نقدی کالا (تومان) <span style="color:var(--danger)">*</span>
@@ -431,13 +482,12 @@ render_navbar($user);
                    value="<?= h((string)$vals['sell_price']) ?>">
             <p class="price-estimate-note" style="margin-top: var(--wizard-gap);color:var(--accent-dark,#856404)">
               <i class="bi bi-bag-check"></i>
-              کاربران در صفحه فروشگاه شما «افزودن به سبد خرید» می‌بینند و با این مبلغ نقدی خرید می‌کنند.
+              کاربران در صفحه آگهی دکمه «خرید» را می‌بینند و با این مبلغ نقدی خرید می‌کنند.
             </p>
             <?php if (isset($errors['sell_price'])): ?>
             <div class="invalid-feedback" style="display:block;margin-top:var(--wizard-gap)"><?= h($errors['sell_price']) ?></div>
             <?php endif; ?>
           </div>
-          <?php endif; ?>
 
           <input type="hidden" id="step6-suggested-value" name="suggested_value" value="<?= h($suggestedValue) ?>">
           <input type="hidden" id="step6-custom-value" name="custom_value" value="<?= h($vals['custom_value']) ?>">
@@ -496,7 +546,7 @@ render_navbar($user);
           </div>
           
           <div class="review-section">
-            <p class="review-label">قیمت تخمینی</p>
+            <p class="review-label" id="step7-price-label">قیمت تخمینی</p>
             <p class="review-value" id="step7-price"></p>
           </div>
         </div>
@@ -577,6 +627,29 @@ render_navbar($user);
 
 #step7-category, #review-category { padding-right: 0; }
 .wizard-form-group.is-invalid .cat-pick-trigger { border-color: var(--danger,#ef4444) !important; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
+
+/* نوع آگهی: معاوضه / فروش */
+.listing-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.listing-mode-option { position: relative; cursor: pointer; }
+.listing-mode-option input { position: absolute; opacity: 0; pointer-events: none; }
+.listing-mode-option__inner {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 14px 10px; text-align: center;
+  border: 1.5px solid #e5e7eb; border-radius: 14px; background: #fff;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.listing-mode-option__inner i { font-size: 1.35rem; color: var(--primary,#071A33); }
+.listing-mode-option__inner strong { font-size: .9375rem; font-weight: 800; color: var(--primary,#071A33); }
+.listing-mode-option__inner small { font-size: .75rem; color: #6b7280; line-height: 1.5; }
+.listing-mode-option input:checked + .listing-mode-option__inner {
+  border-color: var(--primary,#071A33);
+  background: rgba(7,26,51,.04);
+  box-shadow: 0 0 0 3px rgba(7,26,51,.06);
+}
+.listing-mode-option input:checked + .listing-mode-option__inner i { color: var(--orange,#FF6600); }
+@media (max-width: 480px) {
+  .listing-mode-switch { grid-template-columns: 1fr; }
+}
 </style>
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-location.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-location.css') ?>">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -938,7 +1011,19 @@ function validateCurrentStep() {
       return exchangeCategories.size > 0;
 
     case 5:
-    case 6:
+      return true;
+
+    case 6: {
+      const modeRadios = document.querySelectorAll('input[name="listing_mode"]');
+      if (!modeRadios.length) return true; // فروشگاه: اعتبارسنجی سمت سرور
+      const mode = document.querySelector('input[name="listing_mode"]:checked')?.value || 'swap';
+      if (mode === 'sell') {
+        const sp = parseFloat(document.getElementById('step6-sell-price-input')?.value || '0');
+        return sp > 0;
+      }
+      return true;
+    }
+
     case 7:
       return true;
 
@@ -1060,8 +1145,20 @@ function populateReview() {
   document.getElementById('step7-want-desc').textContent = document.getElementById('step5-description').value || 'نوشته نشده';
 
   // Step 6
-  const finalPrice = document.getElementById('step6-estimated-value').value;
-  document.getElementById('step7-price').textContent = new Intl.NumberFormat('fa-IR').format(parseInt(finalPrice || '0', 10)) + ' تومان';
+  const modeRadios = document.querySelectorAll('input[name="listing_mode"]');
+  const mode = modeRadios.length
+    ? (document.querySelector('input[name="listing_mode"]:checked')?.value || 'swap')
+    : 'both';
+  const priceLabel = document.getElementById('step7-price-label');
+  if (mode === 'sell') {
+    const sellVal = document.getElementById('step6-sell-price-input')?.value || '0';
+    if (priceLabel) priceLabel.textContent = 'قیمت فروش';
+    document.getElementById('step7-price').textContent = new Intl.NumberFormat('fa-IR').format(parseInt(sellVal || '0', 10)) + ' تومان';
+  } else {
+    const finalPrice = document.getElementById('step6-estimated-value').value;
+    if (priceLabel) priceLabel.textContent = 'قیمت تخمینی';
+    document.getElementById('step7-price').textContent = new Intl.NumberFormat('fa-IR').format(parseInt(finalPrice || '0', 10)) + ' تومان';
+  }
 
   // Step 2 images
   const imgGrid = document.getElementById('step7-images');
@@ -1095,6 +1192,22 @@ document.getElementById('wizard-next-btn').addEventListener('click', () => {
     goToStep(currentStep + 1);
   }
 });
+
+// ── نوع آگهی: معاوضه / فروش ──────────────────────────────────────────────
+function syncListingModeUi() {
+  const radios = document.querySelectorAll('input[name="listing_mode"]');
+  if (!radios.length) return; // فروشگاه: هر دو بخش نمایش داده می‌شوند
+  const mode = document.querySelector('input[name="listing_mode"]:checked')?.value || 'swap';
+  const swapBlock = document.getElementById('step6-swap-price-block');
+  const sellBlock = document.getElementById('step6-sell-price-block');
+  if (swapBlock) swapBlock.style.display = mode === 'sell' ? 'none' : '';
+  if (sellBlock) sellBlock.style.display = mode === 'sell' ? '' : 'none';
+  updateButtons();
+}
+document.querySelectorAll('input[name="listing_mode"]').forEach((el) => {
+  el.addEventListener('change', syncListingModeUi);
+});
+syncListingModeUi();
 
 </script>
 

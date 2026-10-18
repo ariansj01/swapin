@@ -58,6 +58,19 @@ $hasSwapCta = in_array($listingMode, ['swap', 'both'], true);
 $hasSellCta = $hasStore && in_array($listingMode, ['sell', 'both'], true);
 $isSaved  = isset($l['id']) && in_array((int)$l['id'], $_savedListingIds, true);
 $cardHref = APP_URL . '/listings/view?id=' . $l['id'];
+
+// آگهی‌های حالت «فروش»: به‌جای «پیشنهاد معاوضه» دکمه «خرید» (مستقیم به صفحه پرداخت)
+$cardBuyUrl = null;
+if ($listingMode === 'sell') {
+    require_once __DIR__ . '/store_orders.php';
+    $cardViewer = $user ?? auth_user();
+    if (function_exists('listing_can_cash_buy') && listing_can_cash_buy($l, $cardViewer)) {
+        $cardCheckoutPath = '/orders/checkout.php?listing_id=' . (int)$l['id'];
+        $cardBuyUrl = !empty($cardViewer['id'])
+            ? APP_URL . $cardCheckoutPath
+            : APP_URL . '/auth/login?redirect=' . urlencode($cardCheckoutPath);
+    }
+}
 $allPromotions = function_exists('listing_all_promotions_meta') ? listing_all_promotions_meta($l) : [];
 $promotionMeta = $allPromotions[0] ?? null;
 $promotionClass = $promotionMeta['card_class'] ?? '';
@@ -199,10 +212,17 @@ if ($isHorizontal) {
 
     <!-- CTA Button -->
     <div class="lc-cta">
+      <?php if ($cardBuyUrl): ?>
+      <a href="<?= h($cardBuyUrl) ?>" class="lc-btn lc-btn--buy" data-navigate="<?= h($cardBuyUrl) ?>" onclick="handleCardV2Click(event, this)">
+        <i class="bi bi-cart-check"></i>
+        <span>خرید</span>
+      </a>
+      <?php else: ?>
       <a href="<?= $cardHref ?>" class="lc-btn <?= $hasSwapCta ? 'lc-btn--swap' : 'lc-btn--view' ?>" onclick="handleCardV2Click(event, this)">
         <i class="bi <?= $hasSwapCta ? 'bi-arrow-left-right' : 'bi-eye' ?>"></i>
         <span><?= $hasSwapCta ? 'پیشنهاد معاوضه' : 'مشاهده آگهی' ?></span>
       </a>
+      <?php endif; ?>
     </div>
     <?php endif; ?>
   </div>
@@ -605,6 +625,18 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
 }
 .lc-btn--view:hover {
   background: #14305e;
+  transform: scale(1.01);
+}
+
+/* Buy button (sell-mode listings) */
+.lc-btn--buy {
+  background: #FF6600;
+  border-color: #FF6600;
+  color: #ffffff;
+}
+.lc-btn--buy i { color: #ffffff; }
+.lc-btn--buy:hover {
+  background: #e65c00;
   transform: scale(1.01);
 }
 
