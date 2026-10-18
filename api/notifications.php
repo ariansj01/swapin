@@ -51,10 +51,11 @@ if (db_has_table('notifications')) {
             'support'      => 'bi-headset',
             'iso_match'    => 'bi-magic',
             'profile'      => 'bi-person-fill',
+            'announcement' => 'bi-megaphone',
             default        => 'bi-info-circle',
         };
         $items[] = [
-            'type'     => in_array(($n['type'] ?? ''), ['saved_search','iso_match','profile','support'], true) ? $n['type'] : 'notification',
+            'type'     => in_array(($n['type'] ?? ''), ['saved_search','iso_match','profile','support','announcement'], true) ? $n['type'] : 'notification',
             'id'       => (int)$n['id'],
             'title'    => $n['title'],
             'body'     => $n['body'] ?? '',
