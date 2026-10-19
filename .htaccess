@@ -126,10 +126,6 @@ Options +MultiViews -Indexes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^listings/?$ listings.php [L,NC,QSA]
 
-  # ── آدرس تمیز آگهی: /listing/{id}-{slug} → listings/view.php?id={id} ──
-  # اسلاگ اختیاری است؛ شناسه عددی کلید اصلی است.
-  RewriteRule ^listing/([0-9]+)(?:-[^/]*)?/?$ listings/view.php?id=$1 [L,QSA]
-
   # آدرس تمیز نقشه آگهی‌ها (رفع آندرلاین در URL عمومی)
   RewriteRule ^listings/map/?$ listings/map_view.php [L,QSA]
 

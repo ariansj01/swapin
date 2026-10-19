@@ -50,24 +50,13 @@ if (!$listing) {
 
 $reviewStatus = $listing['review_status'] ?? 'approved';
 
-// ── یکدست‌سازی آدرس آگهی: هدایت ۳۰۱ به آدرس تمیز /listing/{id}-{slug} ──
-$canonicalListingUrl = listing_url($listing);
-$listingPath = (string) parse_url($canonicalListingUrl, PHP_URL_PATH);
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
-    $expectedPath = (string) parse_url($canonicalListingUrl, PHP_URL_PATH);
-    $actualPath   = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-    $extraParams  = array_diff(array_keys($_GET), ['id']);
-    if ($actualPath !== $expectedPath && empty($extraParams)) {
-        header('Location: ' . $canonicalListingUrl, true, 301);
-        exit;
-    }
-}
+$listingPath = '/listings/view?id=' . $id;
 
 if ($listing['status'] !== 'active' && !$isOwner && !$isAdmin) {
 
 
     $similar = DB::fetch(
-        'SELECT id, title
+        'SELECT id
          FROM listings
          WHERE category_id = ?
          AND status = "active"
@@ -298,7 +287,7 @@ $hasBothBuySwap = $canBuy && $isStoreSwappable;
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
 $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
-$listingUrl = $canonicalListingUrl;
+$listingUrl = APP_URL . $listingPath;
 $ogImage    = $images ? UPLOAD_URL . $images[0]['filename'] : LOGO_URL;
 $seoTitle   = seo_listing_title($listing);
 $metaDesc   = seo_listing_description($listing);
