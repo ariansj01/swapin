@@ -55,7 +55,7 @@ render_navbar($user);
 <div class="ex-page">
   <div class="ex-container">
     <div class="ex-header">
-      <a href="<?= APP_URL ?>/dashboard.php" class="ex-header__back">
+      <a href="<?= APP_URL ?>/dashboard" class="ex-header__back">
         <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
       </a>
       <div class="ex-header__row">
@@ -108,7 +108,7 @@ render_navbar($user);
           if (in_array($o['status'], ['delivered', 'completed'])) $statusClass = 'ex-status--success';
           if ($o['status'] === 'canceled') $statusClass = 'ex-status--rejected';
         ?>
-          <a href="<?= APP_URL ?>/orders/view.php?id=<?= (int)$o['id'] ?>" class="ex-offer-item">
+          <a href="<?= APP_URL ?>/orders/view?id=<?= (int)$o['id'] ?>" class="ex-offer-item">
             <?php if (!empty($o['listing_thumb'])): ?>
               <img src="<?= UPLOAD_URL . h($o['listing_thumb']) ?>" alt="" class="ex-offer-item__thumb">
             <?php else: ?>

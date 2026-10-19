@@ -26,7 +26,7 @@ $listing = DB::fetch(
 );
 
 if (!$listing) {
-    header('Location: ' . APP_URL . '/listings/my.php');
+    header('Location: ' . APP_URL . '/listings/my');
     exit;
 }
 
@@ -135,7 +135,7 @@ ob_start();
     </div>
     <div class="promote-header__actions">
       <?php if (count($userListings) > 1): ?>
-      <form method="GET" action="<?= APP_URL ?>/listings/promote.php" style="margin:0">
+      <form method="GET" action="<?= APP_URL ?>/listings/promote" style="margin:0">
         <label for="promote-listing-switch" class="fs-xs" style="display:block;color:var(--text-muted);margin-bottom:6px">تغییر آگهی</label>
         <select id="promote-listing-switch" name="id" class="form-control" style="min-width:240px" onchange="this.form.submit()">
           <?php foreach ($userListings as $userListing): ?>
@@ -254,7 +254,7 @@ ob_start();
     <div>
       <?php
       $perfListing = $listing;
-      $perfListing['link_url'] = APP_URL . '/listings/view?id=' . $listingId;
+      $perfListing['link_url'] = listing_url($listing);
       include __DIR__ . '/../includes/listing_performance_card.php';
       ?>
     </div>
@@ -305,7 +305,7 @@ render_head('ارتقای آگهی', 'ارتقای آگهی و افزایش با
 render_panel_styles();
 render_navbar($user);
 render_user_panel_open($user, 'promote', [
-    'promote' => APP_URL . '/listings/promote.php?id=' . $listingId,
+    'promote' => APP_URL . '/listings/promote?id=' . $listingId,
 ]);
 echo $content;
 render_user_panel_close();

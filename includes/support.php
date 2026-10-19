@@ -76,7 +76,7 @@ function create_support_ticket(int $userId, string $subject, string $category, s
     notify_admins(
         'تیکت پشتیبانی جدید: ' . $subject,
         mb_strimwidth($body, 0, 300),
-        APP_URL . '/admin/tickets.php?id=' . $ticketId
+        APP_URL . '/admin/tickets?id=' . $ticketId
     );
 
     return ['ticket_id' => $ticketId];
@@ -109,7 +109,7 @@ function add_ticket_message(int $ticketId, string $senderType, int $senderId, st
             'type'    => 'support',
             'title'   => 'پاسخ به تیکت: ' . mb_strimwidth($ticket['subject'], 0, 100),
             'body'    => mb_strimwidth($body, 0, 300),
-            'link'    => APP_URL . '/support/view.php?id=' . $ticketId,
+            'link'    => APP_URL . '/support/view?id=' . $ticketId,
             'is_read' => 0,
         ]);
         if (mail_is_enabled()) {
@@ -119,7 +119,7 @@ function add_ticket_message(int $ticketId, string $senderType, int $senderId, st
                     $user['email'],
                     'پاسخ به تیکت: ' . $ticket['subject'],
                     '<p>' . nl2br(h($body)) . '</p>',
-                    APP_URL . '/support/view.php?id=' . $ticketId
+                    APP_URL . '/support/view?id=' . $ticketId
                 );
             }
         }
@@ -127,7 +127,7 @@ function add_ticket_message(int $ticketId, string $senderType, int $senderId, st
         notify_admins(
             'پاسخ کاربر در تیکت #' . $ticketId,
             mb_strimwidth($body, 0, 300),
-            APP_URL . '/admin/tickets.php?id=' . $ticketId
+            APP_URL . '/admin/tickets?id=' . $ticketId
         );
     }
 
@@ -156,7 +156,7 @@ function submit_error_report(?int $userId, string $message, string $steps, strin
     notify_admins(
         'گزارش خطای جدید #' . $reportId,
         mb_strimwidth($message, 0, 300),
-        APP_URL . '/admin/tickets.php?tab=errors&id=' . $reportId
+        APP_URL . '/admin/tickets?tab=errors&id=' . $reportId
     );
 
     return ['report_id' => $reportId];
@@ -243,7 +243,7 @@ function live_chat_start(string $name, string $phone): array {
     notify_admins(
         'چت زنده جدید: ' . $name,
         'کاربر ' . $name . ' (' . $phone . ') شروع به چت کرد.',
-        APP_URL . '/admin/live_chat.php?id=' . $chatId
+        APP_URL . '/admin/live_chat?id=' . $chatId
     );
 
     return ['chat_id' => $chatId, 'token' => $token];

@@ -196,7 +196,7 @@ render_navbar($user);
           تیم پشتیبانی سواَپین و دستیار هوشمند ما آماده پاسخگویی به شما هستند.
         </p>
         <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap">
-          <a href="<?= APP_URL ?>/support/index.php" class="btn btn-primary btn-lg"><i class="bi bi-headset"></i> ثبت تیکت پشتیبانی</a>
+          <a href="<?= APP_URL ?>/support" class="btn btn-primary btn-lg"><i class="bi bi-headset"></i> ثبت تیکت پشتیبانی</a>
           <a href="<?= APP_URL ?>/ai/chat" class="btn btn-outline btn-lg"><i class="bi bi-stars"></i> چت با دستیار هوشمند</a>
         </div>
       </div>

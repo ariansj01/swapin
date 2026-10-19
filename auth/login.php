@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
                 $dest = $redir ? APP_URL . $redir : APP_URL . '/';
                 if (trim((string)($user['name'] ?? '')) === '') {
-                    $dest = APP_URL . '/auth/complete-name.php' . ($redir ? '?redirect=' . urlencode($redir) : '');
+                    $dest = APP_URL . '/auth/complete-name' . ($redir ? '?redirect=' . urlencode($redir) : '');
                 }
                 header('Location: ' . $dest); exit;
             } else {
@@ -143,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 login_user($uid);
                 notify_profile_completion($uid);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
-                $dest = APP_URL . '/auth/complete-name.php' . ($redir ? '?redirect=' . urlencode($redir) : '');
+                $dest = APP_URL . '/auth/complete-name' . ($redir ? '?redirect=' . urlencode($redir) : '');
                 header('Location: ' . $dest); exit;
             }
         } else {
@@ -196,7 +196,7 @@ render_navbar(null);
           <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:flex-start;">
           <?php if ($step === 'phone'): ?>
           <?php if ($googleClientId !== ''): ?>
-          <form method="POST" action="<?= APP_URL ?>/auth/google-login.php" id="googleLoginForm">
+          <form method="POST" action="<?= APP_URL ?>/auth/google-login" id="googleLoginForm">
             <?= csrf_field() ?>
             <?php if ($redir): ?>
             <input type="hidden" name="redirect" value="<?= h($redir) ?>">

@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($result['error'])) {
             $error = $result['error'];
         } else {
-            header('Location: ' . APP_URL . '/store-offers/confirm.php?id=' . $offerId);
+            header('Location: ' . APP_URL . '/store-offers/confirm?id=' . $offerId);
             exit;
         }
     } elseif ($action === 'reject') {
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($result['error'])) {
             $error = $result['error'];
         } else {
-            header('Location: ' . APP_URL . '/store-offers/view.php?id=' . $offerId . '&accepted=1');
+            header('Location: ' . APP_URL . '/store-offers/view?id=' . $offerId . '&accepted=1');
             exit;
         }
     }
@@ -190,7 +190,7 @@ render_navbar($user);
     <?php if ($isBuyer && ($offer['status'] ?? '') === 'accepted'): ?>
     <div class="ex-sticky-bar ex-visible-mobile">
       <div class="ex-sticky-bar__inner">
-        <a href="<?= APP_URL . '/store-offers/confirm.php?id=' . $offerId ?>" class="ex-btn ex-btn--cta ex-btn--lg" data-navigate="<?= APP_URL . '/store-offers/confirm.php?id=' . $offerId ?>">
+        <a href="<?= APP_URL . '/store-offers/confirm?id=' . $offerId ?>" class="ex-btn ex-btn--cta ex-btn--lg" data-navigate="<?= APP_URL . '/store-offers/confirm?id=' . $offerId ?>">
           <i class="bi bi-hand-thumbs-up-fill"></i>
           تأیید نهایی و شروع معاوضه
         </a>
@@ -203,7 +203,7 @@ render_navbar($user);
           <div class="ex-card__title" style="margin-bottom:4px"><i class="bi bi-check-circle-fill" style="color:var(--ex-success);margin-left:6px"></i>پیشنهاد تایید شد!</div>
           <p class="ex-card__subtitle" style="margin-bottom:0">فروشگاه پیشنهاد شما را پذیرفته است. برای ادامه فرآیند، روی دکمه زیر کلیک کنید.</p>
         </div>
-        <a href="<?= APP_URL . '/store-offers/confirm.php?id=' . $offerId ?>" class="ex-btn ex-btn--cta" style="width:auto;min-width:260px" data-navigate="<?= APP_URL . '/store-offers/confirm.php?id=' . $offerId ?>">
+        <a href="<?= APP_URL . '/store-offers/confirm?id=' . $offerId ?>" class="ex-btn ex-btn--cta" style="width:auto;min-width:260px" data-navigate="<?= APP_URL . '/store-offers/confirm?id=' . $offerId ?>">
           <i class="bi bi-hand-thumbs-up-fill"></i>
           تأیید نهایی و شروع
         </a>

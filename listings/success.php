@@ -21,7 +21,7 @@ render_navbar($user);
       </p>
       <div class="success-buttons">
         <?php if ($listingId): ?>
-          <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="wizard-btn wizard-btn-primary">
+          <a href="<?= h(listing_url((int)$listingId)) ?>" class="wizard-btn wizard-btn-primary">
             مشاهده آگهی
           </a>
         <?php endif; ?>

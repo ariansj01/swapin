@@ -63,7 +63,7 @@ render_navbar($user);
 
       <div class="ex-actions" style="margin-top:28px">
         <?php if ($tradeId): ?>
-        <a href="<?= APP_URL ?>/trades/view.php?id=<?= $tradeId ?>" class="ex-btn ex-btn--cta ex-btn--lg" data-navigate="<?= APP_URL ?>/trades/view.php?id=<?= $tradeId ?>">
+        <a href="<?= APP_URL ?>/trades/view?id=<?= $tradeId ?>" class="ex-btn ex-btn--cta ex-btn--lg" data-navigate="<?= APP_URL ?>/trades/view?id=<?= $tradeId ?>">
           <i class="bi bi-door-open-fill"></i>
           ورود به اتاق امن معامله
         </a>

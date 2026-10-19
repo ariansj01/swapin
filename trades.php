@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
                 if (isset($result['error'])) {
                     $error = $result['error'];
                 } else {
-                    header('Location: ' . APP_URL . '/trades/view.php?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
+                    header('Location: ' . APP_URL . '/trades/view?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
                     exit;
                 }
             }
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['trade']) && ($tab === 'active' || $tab === '')) {
     $latestTrade = DB::fetch("SELECT id FROM trades WHERE user_a_id = ? OR user_b_id = ? ORDER BY created_at DESC LIMIT 1", [$uid, $uid]);
     if ($latestTrade) {
-        header('Location: ' . APP_URL . '/trades/view.php?id=' . $latestTrade['id']);
+        header('Location: ' . APP_URL . '/trades/view?id=' . $latestTrade['id']);
         exit;
     }
 }
@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_id'])) {
                         header('Location: ' . WALLET_TOPUP_URL . '?amount=' . ($result['required_amount'] ?? 0));
                         exit;
                     } else {
-                        header('Location: ' . APP_URL . '/trades.php?trade=' . $tradeId);
+                        header('Location: ' . APP_URL . '/trades?trade=' . $tradeId);
                         exit;
                     }
                 }
@@ -268,7 +268,7 @@ render_navbar($user);
   <div class="container-md">
 
     <div class="mb-6">
-      <a href="<?= APP_URL ?>/dashboard.php" style="color:var(--text-muted);font-size:.875rem">
+      <a href="<?= APP_URL ?>/dashboard" style="color:var(--text-muted);font-size:.875rem">
         <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
       </a>
       <h2 class="mt-3">اتاق امن معاملات</h2>
@@ -317,7 +317,7 @@ render_navbar($user);
             $otherName = $isA ? $t['user_b_name'] : $t['user_a_name'];
             $otherId = $isA ? $t['user_b_id'] : $t['user_a_id'];
           ?>
-          <a href="<?= APP_URL ?>/trades/view.php?id=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
+          <a href="<?= APP_URL ?>/trades/view?id=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
             <div class="card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
               <?php if ($t['la_thumb']): ?>
               <img src="<?= UPLOAD_URL . h($t['la_thumb']) ?>" alt="" style="width:60px;height:60px;border-radius:12px;object-fit:cover">
@@ -350,7 +350,7 @@ render_navbar($user);
             $otherId = $isA ? $t['user_b_id'] : $t['user_a_id'];
             $myRating = $t['my_rating'];
           ?>
-          <a href="<?= APP_URL ?>/trades/view.php?id=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
+          <a href="<?= APP_URL ?>/trades/view?id=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
             <div class="card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
               <div style="flex:1;min-width:0">
                 <div style="font-weight:700">معامله با <?= h($otherName) ?></div>
@@ -465,7 +465,7 @@ render_navbar($user);
                 </div>
                 <?php elseif ($offer['status'] === 'accepted' && $offer['trade_id']): ?>
                 <div style="width:100%">
-                  <a href="<?= APP_URL ?>/trades/view.php?id=<?= (int)$offer['trade_id'] ?>" class="btn btn-primary w-100">
+                  <a href="<?= APP_URL ?>/trades/view?id=<?= (int)$offer['trade_id'] ?>" class="btn btn-primary w-100">
                     <i class="bi bi-shield-lock"></i> ورود به اتاق امن
                   </a>
                 </div>
@@ -503,7 +503,7 @@ render_navbar($user);
               </div>
               <?php if ($o['status'] === 'accepted' && $o['trade_id']): ?>
                 <div class="mt-3">
-                  <a href="<?= APP_URL ?>/trades/view.php?id=<?= (int)$o['trade_id'] ?>" class="btn btn-primary btn-sm">ورود به اتاق امن</a>
+                  <a href="<?= APP_URL ?>/trades/view?id=<?= (int)$o['trade_id'] ?>" class="btn btn-primary btn-sm">ورود به اتاق امن</a>
                 </div>
               <?php endif; ?>
             </div>

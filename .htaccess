@@ -126,6 +126,13 @@ Options +MultiViews -Indexes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^listings/?$ listings.php [L,NC,QSA]
 
+  # ── آدرس تمیز آگهی: /listing/{id}-{slug} → listings/view.php?id={id} ──
+  # اسلاگ اختیاری است؛ شناسه عددی کلید اصلی است.
+  RewriteRule ^listing/([0-9]+)(?:-[^/]*)?/?$ listings/view.php?id=$1 [L,QSA]
+
+  # آدرس تمیز نقشه آگهی‌ها (رفع آندرلاین در URL عمومی)
+  RewriteRule ^listings/map/?$ listings/map_view.php [L,QSA]
+
   # AI capabilities lab (interactive demos, no DB writes)
   RewriteRule ^ai-lab/?$ ai-lab.php [L,NC,QSA]
 
@@ -141,7 +148,7 @@ Options +MultiViews -Indexes
   # Must exclude real routes/files/dirs and known system prefixes
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_URI} !^/(api|admin|includes|seed|database|storage|tools|vendor|logs|backups|sql|store|orders|chat|store-offers|shops|search|shop|support|pwa|ai-lab|sep|iso|listings|auth|page|src|css|js|assets|scripts|ops)/ [NC]
+  RewriteCond %{REQUEST_URI} !^/(api|admin|includes|seed|database|storage|tools|vendor|logs|backups|sql|store|orders|chat|store-offers|shops|search|shop|support|pwa|ai-lab|sep|iso|listing|listings|auth|page|src|css|js|assets|scripts|ops)/ [NC]
   RewriteCond %{REQUEST_URI} !^/(index\.php|profile\.php|dashboard\.php|404\.php|500\.php|sitemap\.php|payment_callback\.php|ai-lab\.php|pwa\.php|migration_[^/]+\.php) [NC]
   RewriteRule ^([^/].+)$ category/index.php?slug_path=$1 [L,QSA]
 

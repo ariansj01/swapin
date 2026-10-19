@@ -1702,10 +1702,10 @@ function require_auth(): array {
         exit;
     }
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-    $isCompleteNamePage = (strpos($requestUri, '/auth/complete-name.php') !== false);
+    $isCompleteNamePage = (strpos($requestUri, '/auth/complete-name') !== false);
     if (!$isCompleteNamePage && trim((string)($user['name'] ?? '')) === '') {
         $redirect = urlencode($_SERVER['REQUEST_URI']);
-        header('Location: ' . APP_URL . '/auth/complete-name.php?redirect=' . $redirect);
+        header('Location: ' . APP_URL . '/auth/complete-name?redirect=' . $redirect);
         exit;
     }
     return $user;
@@ -1792,6 +1792,72 @@ function dismiss_profile_completion_notifications(int $userId): void {
 function app_url(string $path = ''): string {
     $path = ltrim($path, '/');
     return $path === '' ? APP_URL . '/' : APP_URL . '/' . $path;
+}
+
+/**
+ * تبدیل عنوان فارسی به اسلاگ لاتین (فقط [a-z0-9-]).
+ * شناسه عددی آگهی کلید اصلی URL است، بنابراین اسلاگ صرفاً برای خوانایی و سئو است.
+ */
+function listing_slug(string $title, int $maxLen = 60): string {
+    $title = trim(html_entity_decode($title, ENT_QUOTES, 'UTF-8'));
+    if ($title === '') {
+        return '';
+    }
+
+    static $map = [
+        'آ' => 'a', 'ا' => 'a', 'أ' => 'a', 'إ' => 'a', 'ٱ' => 'a',
+        'ب' => 'b', 'پ' => 'p', 'ت' => 't', 'ث' => 's', 'ج' => 'j',
+        'چ' => 'ch', 'ح' => 'h', 'خ' => 'kh', 'د' => 'd', 'ذ' => 'z',
+        'ر' => 'r', 'ز' => 'z', 'ژ' => 'zh', 'س' => 's', 'ش' => 'sh',
+        'ص' => 's', 'ض' => 'z', 'ط' => 't', 'ظ' => 'z', 'ع' => 'a',
+        'غ' => 'gh', 'ف' => 'f', 'ق' => 'gh', 'ک' => 'k', 'ك' => 'k',
+        'گ' => 'g', 'ل' => 'l', 'م' => 'm', 'ن' => 'n', 'و' => 'v',
+        'ؤ' => 'o', 'ه' => 'h', 'ة' => 'h', 'ی' => 'y', 'ي' => 'y',
+        'ئ' => 'y', 'ى' => 'a', 'ء' => '',
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        '‌' => '-', '‏' => '-', '‎' => '-',
+        'َ' => '', 'ِ' => '', 'ُ' => '', 'ً' => '', 'ٍ' => '',
+        'ٌ' => '', 'ّ' => '', 'ْ' => '', 'ـ' => '',
+    ];
+
+    $title = str_replace(array_keys($map), array_values($map), $title);
+    $title = mb_strtolower($title, 'UTF-8');
+    $title = (string) preg_replace('/[^a-z0-9]+/u', '-', $title);
+    $title = trim($title, '-');
+
+    if ($title === '') {
+        return '';
+    }
+    if (mb_strlen($title) > $maxLen) {
+        $title = rtrim(mb_substr($title, 0, $maxLen), '-');
+    }
+
+    return $title;
+}
+
+/**
+ * آدرس تمیز آگهی: /listing/{id}-{slug}
+ * آرایه‌ای از آگهی یا فقط شناسه عددی را می‌پذیرد.
+ */
+function listing_url($listing, ?string $title = null): string {
+    if (is_array($listing)) {
+        $id = (int) ($listing['id'] ?? 0);
+        if ($title === null) {
+            $title = (string) ($listing['title'] ?? '');
+        }
+    } else {
+        $id = (int) $listing;
+    }
+
+    if ($id <= 0) {
+        return APP_URL . '/listings';
+    }
+
+    $slug = listing_slug((string) ($title ?? ''));
+    return APP_URL . '/listing/' . $id . ($slug !== '' ? '-' . $slug : '');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

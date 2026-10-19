@@ -222,7 +222,7 @@ render_navbar($user);
 
                 <div class="ai-valuation-result__note" data-result="note">—</div>
 
-                <a href="<?= $url ?>/listings/create.php"
+                <a href="<?= $url ?>/listings/create"
                    id="ai-valuation-create-link"
                    class="btn btn-primary btn-lg ai-valuation-result__create-btn"
                    target="_self">

@@ -235,7 +235,7 @@ render_head($homeMetaTitle, $homeMetaDesc, [
     'og_type'   => 'website',
     'og_image'  => APP_URL . '/src/img/heropng.png',
     'keywords'  => 'مبادله کالا, تعویض کالا, بازار مبادله, سواَپین, معاوضه',
-    'json_ld'   => [seo_json_ld_website(), seo_json_ld_organization()],
+    'json_ld'   => [seo_json_ld_website(), seo_json_ld_site_navigation(), seo_json_ld_organization()],
 ]);
 render_navbar($user);
 ?>
@@ -264,7 +264,10 @@ render_navbar($user);
 <section class="hero hero--compact">
   <div class="container hero__inner" style="background: var(--gradient-brand);border-radius: 10px;margin-top: 13px;padding: 15px;">
     <div class="hero__visual">
-      <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" loading="eager">
+      <picture>
+        <source srcset="<?= APP_URL ?>/src/img/heropng.webp" type="image/webp">
+        <img src="<?= APP_URL ?>/src/img/heropng.png" alt="مبادله هوشمند کالا در <?= APP_NAME ?>" class="hero__img" width="900" height="600" loading="eager" decoding="async">
+      </picture>
     </div>
      <div class="hero__content">
       <h1 class="hero__title">
@@ -479,7 +482,7 @@ render_navbar($user);
         <section class="home-listings-section" aria-label="اگهی‌های ویژه">
           <div class="home-section-heading home-section-heading--large mb-5">
             <h2>اگهی‌های ویژه</h2>
-            <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
+            <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
               مشاهده همه آگهی‌ها
             </a>
           </div>
@@ -507,7 +510,7 @@ render_navbar($user);
         <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
           <div class="home-section-heading home-section-heading--large mb-5">
             <h2>جدیدترین آگهی‌ها</h2>
-            <a href="<?= APP_URL ?>/listings/all.php" class="home-section-heading__link">
+            <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
               مشاهده همه
             </a>
           </div>

@@ -224,7 +224,7 @@ ob_start();
           <i class="bi bi-trash-fill"></i> حذف دائمی آگهی
         </button>
       </form>
-      <a href="<?= APP_URL ?>/listings/view?id=<?= $id ?>" class="btn btn-ghost w-100 mt-3" target="_blank">مشاهده در سایت</a>
+      <a href="<?= h(listing_url($listing)) ?>" class="btn btn-ghost w-100 mt-3" target="_blank">مشاهده در سایت</a>
     </div>
   </div>
 </div>

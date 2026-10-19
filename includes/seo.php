@@ -63,6 +63,37 @@ function seo_json_ld_website(): array {
     ];
 }
 
+/**
+ * SiteNavigationElement — اعلام صریح بخش‌های اصلی سایت به گوگل.
+ * یکی از سیگنال‌های مؤثر در انتخاب لینک‌های Sitelinks برای کوئری برند.
+ */
+function seo_json_ld_site_navigation(): array {
+    $items = [
+        ['خانه', APP_URL . '/'],
+        ['دسته‌بندی‌ها', APP_URL . '/listings/all'],
+        ['فروشگاه‌ها', APP_URL . '/shops'],
+        ['دستیار هوشمند', APP_URL . '/ai-assistant'],
+        ['اتاق امن', APP_URL . '/trades'],
+        ['ثبت آگهی', APP_URL . '/listings/create'],
+    ];
+
+    $elements = [];
+    foreach ($items as $i => [$name, $url]) {
+        $elements[] = [
+            '@type'    => 'SiteNavigationElement',
+            'position' => $i + 1,
+            'name'     => $name,
+            'url'      => $url,
+        ];
+    }
+
+    return [
+        '@context'        => 'https://schema.org',
+        '@type'           => 'ItemList',
+        'itemListElement' => $elements,
+    ];
+}
+
 function seo_json_ld_organization(): array {
     return [
         '@context' => 'https://schema.org',

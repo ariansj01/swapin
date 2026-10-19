@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (isset($result['error'])) {
                     $error = $result['error'];
                 } else {
-                    header('Location: ' . APP_URL . '/trades/view.php?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
+                    header('Location: ' . APP_URL . '/trades/view?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
                     exit;
                 }
             }
@@ -67,7 +67,7 @@ if ($listingId) {
         'SELECT * FROM listings WHERE id = ? AND user_id = ?', [$listingId, $uid]
     );
     if (!$listing) {
-        header('Location: ' . APP_URL . '/listings/my.php'); exit;
+        header('Location: ' . APP_URL . '/listings/my'); exit;
     }
     $offers = DB::fetchAll(
         'SELECT o.*, u.name AS from_name, u.avatar AS from_avatar, u.rating AS from_rating, u.city AS from_city,
@@ -258,7 +258,7 @@ render_navbar($user);
             </div>
             <?php elseif ($offer['status'] === 'accepted' && $offer['trade_id']): ?>
             <div style="width:100%">
-              <a href="<?= APP_URL ?>/trades/view.php?id=<?= (int)$offer['trade_id'] ?>" class="btn btn-primary w-100">
+              <a href="<?= APP_URL ?>/trades/view?id=<?= (int)$offer['trade_id'] ?>" class="btn btn-primary w-100">
                 <i class="bi bi-shield-lock"></i> ورود به اتاق امن
               </a>
             </div>

@@ -410,7 +410,7 @@ HTML;
             <i class="bi bi-grid"></i> دسته‌بندی‌ها <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
           </button>
           <div class="dropdown-menu categories-dropdown" id="categories-dropdown">
-            <a href="{$url}/listings/all.php" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
+            <a href="{$url}/listings/" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
 HTML;
     echo $_renderCatLevel($categories, 0, $_renderCatLevel);
     echo <<<HTML
@@ -654,6 +654,8 @@ function render_footer(): void {
         <p>سواَپین بستری امن و آسان برای معاوضه‌ی کالاها و خدمات در سراسر ایران</p>
       </div>
       <div class="site-footer__compact-col site-footer__compact-col--links">
+        <a href="https://cafebazaar.ir/app/ir.swaapin.mobile">دانلود اپلیکیشن</a>
+        <span>|</span>
         <a href="{$url}/fraud-prevention">راهنمای امنیت</a>
         <span>|</span>
         <a href="{$url}/terms">قوانین و مقررات</a>
@@ -666,6 +668,15 @@ function render_footer(): void {
         <a href="{$url}/auth/store-login">پنل فروشگاه</a>
         <span>|</span>
         <a href="{$url}/shops">لیست فروشگاه‌ها</a>
+      </div>
+       <div class="site-footer__compact-col site-footer__compact-col--links site-footer__compact-col--links-left">
+        <a href="#">معاوضه کالا به کالا</a>
+        <span>|</span>
+        <a href="#">معاوضه گوشی</a>
+        <span>|</span>
+        <a href="#">معاوضه خانه</a>
+         <span>|</span>
+        <a href="#">وسایل نقلیه</a>
       </div>
     </div>
     <p class="site-footer__compact-copy">
@@ -757,7 +768,7 @@ function render_listing_simple_footer(): void {
 
     $footerLinks = [
         [$url . '/',                   'صفحه اصلی',  'bi-house'],
-        [$url . '/listings/all.php',   'آگهی‌ها',    'bi-grid'],
+        [$url . '/listings/',          'آگهی‌ها',    'bi-grid'],
         [$url . '/shops',              'فروشگاه‌ها', 'bi-shop'],
         [$url . '/search/ai',          'دستیار AI',  'bi-stars'],
         [$url . '/trades',             'اتاق امن',   'bi-shield-lock'],
@@ -914,7 +925,7 @@ function render_categories_strip(?int $active = null): void {
         'other' => APP_URL . '/src/img/category/community.png',
     ];
 
-    echo "<a href='" . APP_URL . "/listings/all.php' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
+    echo "<a href='" . APP_URL . "/listings/' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
     foreach ($cats as $c) {
         $cls = $active == $c['id'] ? ' active' : '';
         $catUrl = category_url($c['slug']);

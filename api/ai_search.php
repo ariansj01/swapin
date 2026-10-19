@@ -36,7 +36,7 @@ $listings = array_map(static function ($l) {
         'estimated_value' => (float)($l['estimated_value'] ?? 0),
         'value_fmt'       => !empty($l['estimated_value']) ? fmt_credit((float)$l['estimated_value']) : '',
         'thumb'           => !empty($l['thumb']) ? UPLOAD_URL . $l['thumb'] : null,
-        'url'             => APP_URL . '/listings/view?id=' . (int)$l['id'],
+        'url'             => listing_url((int)$l['id'], (string)($l['title'] ?? '')),
     ];
 }, $result['listings']);
 

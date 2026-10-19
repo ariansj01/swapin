@@ -16,12 +16,12 @@ $listing = $listingId ? DB::fetch(
 ) : null;
 
 if (!$listing || !listing_is_store_swappable($listing)) {
-    header('Location: ' . APP_URL . '/listings/view?id=' . $listingId);
+    header('Location: ' . ($listing ? listing_url($listing) : APP_URL . '/listings'));
     exit;
 }
 
 if ((int) $listing['user_id'] === $uid) {
-    header('Location: ' . APP_URL . '/listings/view?id=' . $listingId);
+    header('Location: ' . listing_url($listing));
     exit;
 }
 
@@ -32,7 +32,7 @@ if (store_swap_offer_user_has_active($uid, $listingId)) {
         [$listingId, $uid]
     );
     if ($existing) {
-        header('Location: ' . APP_URL . '/store-offers/view.php?id=' . (int) $existing['id']);
+        header('Location: ' . APP_URL . '/store-offers/view?id=' . (int) $existing['id']);
         exit;
     }
 }
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_listing'])) {
         $error = $result['error'];
         $step = 1;
     } else {
-        header('Location: ' . APP_URL . '/store-offers/create.php?listing_id=' . $listingId . '&step=1&picked=' . (int) $result['listing_id']);
+        header('Location: ' . APP_URL . '/store-offers/create?listing_id=' . $listingId . '&step=1&picked=' . (int) $result['listing_id']);
         exit;
     }
 }
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_offer'])) {
         $error = $result['error'];
         $step = 2;
     } else {
-        header('Location: ' . APP_URL . '/store-offers/success.php?id=' . (int) $result['offer_id']);
+        header('Location: ' . APP_URL . '/store-offers/success?id=' . (int) $result['offer_id']);
         exit;
     }
 }
@@ -114,7 +114,7 @@ render_navbar($user);
   <div class="ex-container" style="place-items:center; display:grid;">
 
     <div class="ex-header" style="width: 60%;">
-      <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="ex-header__back">
+      <a href="<?= h(listing_url($listing)) ?>" class="ex-header__back">
         <i class="bi bi-arrow-right"></i>
         بازگشت به محصول
       </a>
@@ -430,7 +430,7 @@ render_navbar($user);
       <div class="ex-sticky-bar ex-visible-mobile">
         <div class="ex-sticky-bar__inner">
           <div class="ex-sticky-bar__row">
-            <a href="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>">
+            <a href="<?= APP_URL ?>/store-offers/create?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/create?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>">
               ویرایش
             </a>
             <button type="submit" class="ex-btn ex-btn--cta ex-btn--lg">
@@ -442,7 +442,7 @@ render_navbar($user);
       </div>
 
       <div class="ex-actions ex-actions--row-sm ex-hidden-mobile">
-        <a href="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/create.php?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" style="flex:1">
+        <a href="<?= APP_URL ?>/store-offers/create?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/create?listing_id=<?= $listingId ?>&step=1&picked=<?= $pickedId ?>" style="flex:1">
           <i class="bi bi-pencil"></i>
           بازگشت و ویرایش
         </a>

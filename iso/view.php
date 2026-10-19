@@ -177,7 +177,7 @@ render_navbar($user);
         $score = (int)$m['score'];
       ?>
         <div class="card" style="margin:0;overflow:hidden;display:flex;flex-direction:column">
-          <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>" style="display:block">
+          <a href="<?= h(listing_url((int)$m['listing_id'], $m['title'] ?? '')) ?>" style="display:block">
             <div style="position:relative;aspect-ratio:16/10;background:var(--border)">
               <?php if (!empty($m['thumb'])): ?>
                 <img src="<?= UPLOAD_URL . h($m['thumb']) ?>" alt="<?= h($m['title']) ?>" style="width:100%;height:100%;object-fit:cover">
@@ -197,7 +197,7 @@ render_navbar($user);
             </div>
           </a>
           <div style="padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-2);flex:1">
-            <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>" style="font-weight:700;font-size:.95rem;color:inherit;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"><?= h($m['title']) ?></a>
+            <a href="<?= h(listing_url((int)$m['listing_id'], $m['title'] ?? '')) ?>" style="font-weight:700;font-size:.95rem;color:inherit;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"><?= h($m['title']) ?></a>
             <div class="fs-xs" style="color:var(--text-secondary)">
               <i class="bi bi-person"></i> <?= h($m['seller_name']) ?>
               <?php if (!empty($m['city'])): ?> · <i class="bi bi-geo-alt"></i> <?= h($m['city']) ?><?php endif; ?>
@@ -210,7 +210,7 @@ render_navbar($user);
             <div class="match-reason-box" style="margin-top:auto"><?= h($m['match_reason']) ?></div>
             <?php endif; ?>
             <div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-3);flex-wrap:wrap">
-              <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>" class="btn btn-primary btn-sm flex-1">مشاهده آگهی</a>
+              <a href="<?= h(listing_url((int)$m['listing_id'], $m['title'] ?? '')) ?>" class="btn btn-primary btn-sm flex-1">مشاهده آگهی</a>
               <form method="post" style="display:inline;flex:1">
                 <?= csrf_input() ?>
                 <input type="hidden" name="action" value="mark_interested">
@@ -246,13 +246,13 @@ render_navbar($user);
         <div class="card" style="margin:0;padding:var(--sp-3);display:flex;gap:var(--sp-3);align-items:center">
           <div style="width:64px;height:64px;border-radius:10px;overflow:hidden;background:var(--border);flex-shrink:0">
             <?php if (!empty($m['thumb'])): ?>
-              <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>"><img src="<?= UPLOAD_URL . h($m['thumb']) ?>" style="width:100%;height:100%;object-fit:cover"></a>
+              <a href="<?= h(listing_url((int)$m['listing_id'], $m['title'] ?? '')) ?>"><img src="<?= UPLOAD_URL . h($m['thumb']) ?>" style="width:100%;height:100%;object-fit:cover"></a>
             <?php else: ?>
               <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted)"><i class="bi bi-image"></i></div>
             <?php endif; ?>
           </div>
           <div style="flex:1;min-width:0">
-            <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>" style="font-weight:600;font-size:.85rem;color:inherit;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= h($m['title']) ?></a>
+            <a href="<?= h(listing_url((int)$m['listing_id'], $m['title'] ?? '')) ?>" style="font-weight:600;font-size:.85rem;color:inherit;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= h($m['title']) ?></a>
             <div class="fs-xs" style="color:var(--text-muted)"><?= h($m['seller_name']) ?><?php if (!empty($m['city'])): ?> · <?= h($m['city']) ?><?php endif; ?></div>
           </div>
           <span class="match-score-pill match-score-pill--possible" style="font-size:.7rem;padding:2px 8px"><?= (int)$m['score'] ?>٪</span>

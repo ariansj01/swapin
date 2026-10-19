@@ -228,15 +228,15 @@ render_navbar();
             </p>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <?php if ($payment['type'] === 'wallet_topup'): ?>
-                    <a href="<?= APP_URL ?>/wallet.php" class="btn btn-primary">مشاهده کیف پول</a>
+                    <a href="<?= APP_URL ?>/wallet" class="btn btn-primary">مشاهده کیف پول</a>
                 <?php elseif ($payment['type'] === 'store_purchase'):
                     $payMeta = json_decode($payment['meta'] ?? '', true) ?: [];
                     $orderId = (int)($payMeta['order_id'] ?? 0);
                 ?>
-                    <a href="<?= APP_URL ?>/orders/view.php?id=<?= $orderId ?>" class="btn btn-primary">پیگیری سفارش</a>
+                    <a href="<?= APP_URL ?>/orders/view?id=<?= $orderId ?>" class="btn btn-primary">پیگیری سفارش</a>
                     <a href="<?= APP_URL ?>/orders/" class="btn btn-outline">سفارش‌های من</a>
                 <?php else: ?>
-                    <a href="<?= APP_URL ?>/listings/my.php" class="btn btn-primary">مشاهده آگهی‌ها</a>
+                    <a href="<?= APP_URL ?>/listings/my" class="btn btn-primary">مشاهده آگهی‌ها</a>
                 <?php endif; ?>
                 <a href="<?= APP_URL ?>/" class="btn btn-outline">صفحه اصلی</a>
             </div>
@@ -247,7 +247,7 @@ render_navbar();
             <h2 style="margin-bottom: 16px; color: #ef4444;">پرداخت ناموفق</h2>
             <p style="color: var(--text-muted); margin-bottom: 24px;"><?= h($error ?: 'خطایی در فرآیند پرداخت رخ داد') ?></p>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <a href="<?= APP_URL ?>/wallet.php" class="btn btn-primary">تلاش مجدد</a>
+                <a href="<?= APP_URL ?>/wallet" class="btn btn-primary">تلاش مجدد</a>
                 <a href="<?= APP_URL ?>/" class="btn btn-outline">صفحه اصلی</a>
             </div>
         </div>

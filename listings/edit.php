@@ -15,7 +15,7 @@ $listing = DB::fetch(
 );
 
 if (!$listing) {
-    header('Location: ' . APP_URL . '/listings/my.php');
+    header('Location: ' . APP_URL . '/listings/my');
     exit;
 }
 
@@ -166,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        header('Location: ' . APP_URL . '/listings/view?id=' . $id . '&edited=1');
+        header('Location: ' . listing_url($id, (string)($vals['title'] ?? '')) . '?edited=1');
         exit;
     }
 
@@ -191,7 +191,7 @@ render_navbar($user);
   <div class="container-md">
 
     <div class="mb-6">
-      <a href="<?= APP_URL ?>/listings/view?id=<?= $id ?>" style="color:var(--text-muted);font-size:.875rem">
+      <a href="<?= h(listing_url($id, (string)($listing['title'] ?? ''))) ?>" style="color:var(--text-muted);font-size:.875rem">
         <i class="bi bi-arrow-right"></i> بازگشت به آگهی
       </a>
       <h2 class="mt-3">ویرایش آگهی</h2>
@@ -419,7 +419,7 @@ render_navbar($user);
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-3)">
-        <a href="<?= APP_URL ?>/listings/view?id=<?= $id ?>" class="btn btn-ghost">
+        <a href="<?= h(listing_url($id, (string)($listing['title'] ?? ''))) ?>" class="btn btn-ghost">
           <i class="bi bi-x"></i> انصراف
         </a>
         <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">

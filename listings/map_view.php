@@ -135,6 +135,10 @@ $mapListings = DB::fetchAll(
      AND l.latitude IS NOT NULL AND l.longitude IS NOT NULL",
     $params
 );
+foreach ($mapListings as &$ml) {
+    $ml['url'] = listing_url($ml);
+}
+unset($ml);
 
 $title = ($category ? category_label($category['slug'], $category['name']) : 'آگهی‌ها') . ' | ' . APP_NAME;
 $desc = "مشاهده آگهی‌های معاوضه در دسته " . ($category ? $category['name'] : 'همه') . " در شهر " . $city;
@@ -453,7 +457,7 @@ if ($category) {
         <div class="map-view-sidebar-section">
             <div class="map-view-sidebar-title">دسته‌ها</div>
             <div class="mb-3">
-                <a href="<?= APP_URL ?>/listings/map_view.php" class="text-dark text-decoration-none fs-sm">
+                <a href="<?= APP_URL ?>/listings/map" class="text-dark text-decoration-none fs-sm">
                     <i class="bi bi-arrow-right"></i> همه‌ی آگهی‌ها
                 </a>
             </div>
@@ -484,7 +488,7 @@ if ($category) {
 
         <?php if ($category): ?>
             <?php
-            aick_render_sidebar($category, APP_URL . '/listings/map_view.php', [
+            aick_render_sidebar($category, APP_URL . '/listings/map', [
                 'city'         => $city,
                 'want'         => $wantType,
                 'sort'         => $sort !== 'new' ? $sort : null,
@@ -527,7 +531,7 @@ if ($category) {
                 </div>
             <?php else: ?>
                 <?php foreach ($listings as $l): ?>
-                    <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>" class="listing-card-single">
+                    <a href="<?= h(listing_url($l)) ?>" class="listing-card-single">
                         <div class="position-relative">
                             <?php if ($l['thumb']): ?>
                                 <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" class="listing-card-single__thumb" alt="<?= h($l['title']) ?>">
@@ -602,7 +606,7 @@ if ($category) {
                         ${thumb ? `<img src="${thumb}" alt="">` : ''}
                         <strong>${l.title}</strong><br>
                         ${l.estimated_value > 0 ? `<span style="color:var(--accent)">${new Intl.NumberFormat('fa-IR').format(l.estimated_value)} تومان</span>` : ''}
-                        <br><a href="<?= APP_URL ?>/listings/view?id=${l.id}" style="color:blue">مشاهده آگهی</a>
+                        <br><a href="${l.url}" style="color:blue">مشاهده آگهی</a>
                     </div>
                 `;
                 marker.bindPopup(popupContent);

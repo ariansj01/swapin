@@ -10,7 +10,7 @@ function panel_nav_promote_href(int $userId): string {
         [$userId]
     );
     return $row
-        ? $url . '/listings/promote.php?id=' . (int)$row['id']
+        ? $url . '/listings/promote?id=' . (int)$row['id']
         : $url . '/listings/my';
 }
 

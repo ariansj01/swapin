@@ -28,13 +28,13 @@ function user_chat_not_found(?array $user): void {
 
 // شروع گفتگو از صفحه آگهی: /chat/view?listing_id=X  →  تبدیل به گفتگوی پایدار
 if ($convId <= 0 && $listingId > 0) {
-    $listing = DB::fetch('SELECT id, user_id FROM listings WHERE id = ?', [$listingId]);
+    $listing = DB::fetch('SELECT id, user_id, title FROM listings WHERE id = ?', [$listingId]);
     if (!$listing) {
         user_chat_not_found($user);
     }
     $otherId = (int)$listing['user_id'];
     if ($otherId === $uid) {
-        header('Location: ' . APP_URL . '/listings/view?id=' . $listingId);
+        header('Location: ' . listing_url((int)$listing['id'], $listing['title'] ?? ''));
         exit;
     }
     $newId = user_chat_start($listingId, $uid, $otherId);
@@ -94,7 +94,7 @@ render_user_panel_open($user, 'chat');
         <?php endif; ?>
       </div>
       <?php if (!empty($conv['listing_id'])): ?>
-        <a class="uc-head__link" href="<?= APP_URL ?>/listings/view?id=<?= (int)$conv['listing_id'] ?>">
+        <a class="uc-head__link" href="<?= h(listing_url((int)$conv['listing_id'], $conv['listing_title'] ?? '')) ?>">
           <i class="bi bi-box-arrow-up-right"></i> <span>مشاهده آگهی</span>
         </a>
       <?php endif; ?>

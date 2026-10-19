@@ -293,7 +293,7 @@ function safe_redirect_path(string $path): string {
 }
 
 function private_media_url(int $userId): string {
-    return APP_URL . '/media/private.php?u=' . $userId;
+    return APP_URL . '/media/private?u=' . $userId;
 }
 
 function resolve_private_upload_path(string $filename): ?string {
@@ -339,7 +339,7 @@ function mask_bank_account(?string $account): string {
 }
 
 function dispute_evidence_url(int $disputeId): string {
-    return APP_URL . '/media/dispute_evidence.php?id=' . $disputeId;
+    return APP_URL . '/media/dispute_evidence?id=' . $disputeId;
 }
 
 function serve_private_file(string $path, string $downloadName = ''): void {

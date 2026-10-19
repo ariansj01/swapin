@@ -57,7 +57,8 @@ if ($listingMode === '') {
 $hasSwapCta = in_array($listingMode, ['swap', 'both'], true);
 $hasSellCta = $hasStore && in_array($listingMode, ['sell', 'both'], true);
 $isSaved  = isset($l['id']) && in_array((int)$l['id'], $_savedListingIds, true);
-$cardHref = APP_URL . '/listings/view?id=' . $l['id'];
+$cardHref = listing_url($l);
+$cardPath = (string) parse_url($cardHref, PHP_URL_PATH);
 
 // آگهی‌های حالت «فروش»: به‌جای «پیشنهاد معاوضه» دکمه «خرید» (مستقیم به صفحه پرداخت)
 $cardBuyUrl = null;
@@ -65,7 +66,7 @@ if ($listingMode === 'sell') {
     require_once __DIR__ . '/store_orders.php';
     $cardViewer = $user ?? auth_user();
     if (function_exists('listing_can_cash_buy') && listing_can_cash_buy($l, $cardViewer)) {
-        $cardCheckoutPath = '/orders/checkout.php?listing_id=' . (int)$l['id'];
+        $cardCheckoutPath = '/orders/checkout?listing_id=' . (int)$l['id'];
         $cardBuyUrl = !empty($cardViewer['id'])
             ? APP_URL . $cardCheckoutPath
             : APP_URL . '/auth/login?redirect=' . urlencode($cardCheckoutPath);
@@ -121,7 +122,7 @@ if ($isHorizontal) {
       <i class="bi bi-<?= $isSaved ? 'heart-fill' : 'heart' ?>"></i>
     </button>
     <?php else: ?>
-    <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode('/listings/view?id=' . $l['id']) ?>"
+    <a href="<?= APP_URL ?>/auth/login?redirect=<?= urlencode($cardPath) ?>"
        class="lc-fav-btn"
        style="display:inline-flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;"
        aria-label="ورود برای ذخیره"

@@ -336,7 +336,7 @@ render_navbar($user);
                   $matchTitle = (string)($m['source_listing_title'] ?? $m['title'] ?? '');
                   $matchedFrom = (string)($m['matched_from_listing_title'] ?? '');
               ?>
-              <a href="<?= APP_URL ?>/iso/view.php?id=<?= (int)$m['id'] ?>" class="d-flex align-items-center gap-3" style="text-decoration:none;padding:var(--sp-2);border-radius:12px" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">
+              <a href="<?= APP_URL ?>/iso/view?id=<?= (int)$m['id'] ?>" class="d-flex align-items-center gap-3" style="text-decoration:none;padding:var(--sp-2);border-radius:12px" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">
                 <div style="width:48px;height:48px;border-radius:12px;background:var(--surface);flex-shrink:0;display:flex;align-items:center;justify-content:center">
                   <span class="badge badge-<?= ($m['match_score'] ?? 0) >= 70 ? 'success' : (($m['match_score'] ?? 0) >= 50 ? 'warning' : 'info') ?>" style="font-weight:800">
                     <?= fmt_num((int)($m['match_score'] ?? 0)) ?>٪
@@ -409,7 +409,7 @@ render_navbar($user);
                   $val   = (int)($m['score_value']    ?? 0);
                   $succ  = (int)($m['score_success']  ?? 0);
               ?>
-              <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$m['listing_id'] ?>" class="match-row" data-listing-id="<?= (int)$m['listing_id'] ?>">
+              <a href="<?= h(listing_url((int)$m['listing_id'], $m['title'] ?? '')) ?>" class="match-row" data-listing-id="<?= (int)$m['listing_id'] ?>">
                 <div class="match-row__score"><?= (int)$m['match_score'] ?>٪</div>
                 <div class="match-row__body">
                   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -564,7 +564,7 @@ render_navbar($user);
           <?php foreach ($isoReverseMatchesDashboard as $irm):
             $irmScore = (int)($irm['match_score'] ?? 0);
           ?>
-            <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$irm['listing_id'] ?>" class="match-row" data-listing-id="<?= (int)$irm['listing_id'] ?>" style="text-decoration:none;color:inherit">
+            <a href="<?= h(listing_url((int)$irm['listing_id'], $irm['title'] ?? '')) ?>" class="match-row" data-listing-id="<?= (int)$irm['listing_id'] ?>" style="text-decoration:none;color:inherit">
               <div class="match-row__score" style="background:<?= $irmScore >= 80 ? 'linear-gradient(135deg,#22c55e,#16a34a);color:#fff' : ($irmScore >= 60 ? 'linear-gradient(135deg,#3b82f6,#6366f1);color:#fff' : 'linear-gradient(135deg,#f59e0b,#d97706);color:#fff') ?>">
                 <?= $irmScore ?>٪
               </div>
@@ -616,7 +616,7 @@ render_navbar($user);
           <div style="padding:14px 18px">
             <div class="dash-listings-grid">
               <?php foreach ($recentListings as $listing): ?>
-              <a href="<?= APP_URL ?>/listings/view?id=<?= $listing['id'] ?>" class="dash-listing-card">
+              <a href="<?= h(listing_url($listing)) ?>" class="dash-listing-card">
                 <div class="dash-listing-card__thumb">
                   <?php if ($listing['thumb']): ?>
                   <img src="<?= UPLOAD_URL . h($listing['thumb']) ?>" alt="<?= h($listing['title']) ?>">

@@ -195,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
                 if (isset($result['error'])) {
                     $error = $result['error'];
                 } else {
-                    header('Location: ' . APP_URL . '/store-offers/view.php?id=' . $offerId);
+                    header('Location: ' . APP_URL . '/store-offers/view?id=' . $offerId);
                     exit;
                 }
             } else {
@@ -213,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
                 if (isset($result['error'])) {
                     $error = $result['error'];
                 } else {
-                    header('Location: ' . APP_URL . '/trades/view.php?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
+                    header('Location: ' . APP_URL . '/trades/view?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
                     exit;
                 }
             }
@@ -315,7 +315,7 @@ foreach (array_slice($swapOffersList, 0, 5) as $_nOffer) {
         'text' => 'درخواست معاوضه از «' . ($_nOffer['from_name'] ?? '') . '» برای «' . ($_nOffer['listing_title'] ?? '') . '»',
         'time' => timeago($_nOffer['created_at']),
         'link' => (($_nOffer['flow_type'] ?? 'user_to_user') === 'user_to_store')
-            ? APP_URL . '/store-offers/view.php?id=' . (int) ($_nOffer['id'] ?? 0)
+            ? APP_URL . '/store-offers/view?id=' . (int) ($_nOffer['id'] ?? 0)
             : APP_URL . '/store/?tab=requests&subtab=swap-requests',
     ];
 }
@@ -358,7 +358,7 @@ foreach ($allPendingOffers as $_nOffer) {
         'link'  => $_type === 'buy'
             ? APP_URL . '/store/?tab=requests&subtab=buy-requests'
             : ((($_nOffer['flow_type'] ?? 'user_to_user') === 'user_to_store')
-                ? APP_URL . '/store-offers/view.php?id=' . (int) ($_nOffer['id'] ?? 0)
+                ? APP_URL . '/store-offers/view?id=' . (int) ($_nOffer['id'] ?? 0)
                 : APP_URL . '/store/?tab=requests&subtab=swap-requests'),
     ];
 }
@@ -374,7 +374,7 @@ foreach (array_slice($sellerOrders, 0, 10) as $_sOrder) {
         'desc'  => 'خریدار «' . ($_sOrder['buyer_name'] ?? '') . '» — «' . ($_sOrder['listing_title'] ?? '') . '» (' . store_order_status_label($_sOrder['status']) . ')',
         'time'  => timeago($_sOrder['created_at']),
         'unread'=> in_array($_sOrder['status'], ['paid', 'preparing'], true),
-        'link'  => APP_URL . '/orders/view.php?id=' . (int)$_sOrder['id'],
+        'link'  => APP_URL . '/orders/view?id=' . (int)$_sOrder['id'],
     ];
 }
 
@@ -419,7 +419,7 @@ render_navbar($user);
       <i class="bi bi-info-circle-fill"></i>
       <div>
         برای استفاده از پنل فروشگاه، در
-        <a href="<?= APP_URL ?>/profile/edit.php">ویرایش پروفایل</a>
+        <a href="<?= APP_URL ?>/profile/edit">ویرایش پروفایل</a>
         نوع حساب را «فروشگاه / کسب‌وکار» انتخاب کنید.
       </div>
     </div>
@@ -820,7 +820,7 @@ render_navbar($user);
                   <a href="<?= APP_URL ?>/store/?tab=requests&amp;subtab=swap-requests" class="store-product__offers" title="مشاهده درخواست‌های معاوضه"><i class="bi bi-inbox"></i> <?= (int)$item['pending_offers'] ?></a>
                   <?php endif; ?>
                   <a href="<?= APP_URL ?>/listings/edit?id=<?= $item['id'] ?>" class="store-btn store-btn--sm store-btn--outline"><i class="bi bi-pencil"></i></a>
-                  <a href="<?= APP_URL ?>/listings/view?id=<?= $item['id'] ?>" class="store-btn store-btn--sm store-btn--navy"><i class="bi bi-eye"></i></a>
+                  <a href="<?= h(listing_url($item)) ?>" class="store-btn store-btn--sm store-btn--navy"><i class="bi bi-eye"></i></a>
                   <button class="store-btn store-btn--sm store-btn--danger"><i class="bi bi-trash"></i></button>
                 </div>
               </div>
@@ -980,7 +980,7 @@ render_navbar($user);
                 </div>
                 <div class="store-request__actions store-request__actions--forms">
                   <?php if (($offer['flow_type'] ?? 'user_to_user') === 'user_to_store'): ?>
-                  <a href="<?= APP_URL ?>/store-offers/view.php?id=<?= (int)$offer['id'] ?>" class="store-btn store-btn--sm store-btn--primary">
+                  <a href="<?= APP_URL ?>/store-offers/view?id=<?= (int)$offer['id'] ?>" class="store-btn store-btn--sm store-btn--primary">
                     <i class="bi bi-chat-dots"></i> مدیریت و مذاکره
                   </a>
                   <span class="store-request__status store-request__status--pending"><?= h(store_swap_offer_status_label((string)($offer['status'] ?? 'pending'))) ?></span>
@@ -1045,7 +1045,7 @@ render_navbar($user);
                 <?= h(store_order_status_label($order['status'])) ?>
               </div>
               <div class="store-request__actions">
-                <a href="<?= APP_URL ?>/orders/view.php?id=<?= (int)$order['id'] ?>" class="store-btn store-btn--sm store-btn--navy">
+                <a href="<?= APP_URL ?>/orders/view?id=<?= (int)$order['id'] ?>" class="store-btn store-btn--sm store-btn--navy">
                   <i class="bi bi-eye"></i> مدیریت و ارسال
                 </a>
               </div>
@@ -1428,7 +1428,7 @@ render_navbar($user);
             </div>
             <?php endif; ?>
             <div class="store-form-group" style="margin-top:12px">
-              <a href="<?= APP_URL ?>/profile/edit.php" class="store-btn store-btn--outline w-100">
+              <a href="<?= APP_URL ?>/profile/edit" class="store-btn store-btn--outline w-100">
                 <i class="bi bi-shield-check"></i> مدیریت احراز هویت
               </a>
             </div>

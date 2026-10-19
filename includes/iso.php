@@ -565,7 +565,7 @@ function iso_notification_for_match(int $userId, int $isoId, int $listingId, arr
         min(100, $score),
         $titleShort
     );
-    $link = APP_URL . '/listings/view.php?id=' . (int)$listingId;
+    $link = listing_url((int)$listingId, (string)($listing['title'] ?? ''));
     $existing = DB::fetch(
         'SELECT id FROM notifications WHERE user_id = ? AND type = ? AND link = ? AND is_read = 0 LIMIT 1',
         [$userId, 'iso_match', $link]

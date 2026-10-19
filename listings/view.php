@@ -50,11 +50,24 @@ if (!$listing) {
 
 $reviewStatus = $listing['review_status'] ?? 'approved';
 
+// ── یکدست‌سازی آدرس آگهی: هدایت ۳۰۱ به آدرس تمیز /listing/{id}-{slug} ──
+$canonicalListingUrl = listing_url($listing);
+$listingPath = (string) parse_url($canonicalListingUrl, PHP_URL_PATH);
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+    $expectedPath = (string) parse_url($canonicalListingUrl, PHP_URL_PATH);
+    $actualPath   = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    $extraParams  = array_diff(array_keys($_GET), ['id']);
+    if ($actualPath !== $expectedPath && empty($extraParams)) {
+        header('Location: ' . $canonicalListingUrl, true, 301);
+        exit;
+    }
+}
+
 if ($listing['status'] !== 'active' && !$isOwner && !$isAdmin) {
 
 
     $similar = DB::fetch(
-        'SELECT id
+        'SELECT id, title
          FROM listings
          WHERE category_id = ?
          AND status = "active"
@@ -72,7 +85,7 @@ if ($listing['status'] !== 'active' && !$isOwner && !$isAdmin) {
     if ($similar) {
 
         header(
-            'Location: ' . APP_URL . '/listings/view?id=' . (int)$similar['id'],
+            'Location: ' . listing_url($similar),
             true,
             301
         );
@@ -162,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     csrf_verify_or_fail();
     rate_limit_ip_or_fail('listing_action', 40, 900);
     if (!$user) {
-        header('Location: ' . APP_URL . '/auth/login?redirect=/listings/view%3Fid=' . $id); exit;
+        header('Location: ' . APP_URL . '/auth/login?redirect=' . urlencode($listingPath)); exit;
     }
     if ($_POST['action'] === 'make_offer') {
         if ($listing['user_id'] == $user['id']) {
@@ -285,7 +298,7 @@ $hasBothBuySwap = $canBuy && $isStoreSwappable;
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
 $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
-$listingUrl = APP_URL . '/listings/view?id=' . $id;
+$listingUrl = $canonicalListingUrl;
 $ogImage    = $images ? UPLOAD_URL . $images[0]['filename'] : LOGO_URL;
 $seoTitle   = seo_listing_title($listing);
 $metaDesc   = seo_listing_description($listing);
@@ -311,9 +324,9 @@ $wantChips = array_values(array_filter(array_map(
 $tradeAccepted = $user && $listing['trade_id']
     && ((int)$user['id'] === (int)$listing['user_a_id'] || (int)$user['id'] === (int)$listing['user_b_id']);
 $canOfferMobile = !$isOwner && $listing['status'] === 'active' && !$hasPendingOffer && !$tradeAccepted;
-$storeSwapUrl = APP_URL . '/store-offers/create.php?listing_id=' . $id;
-$storeOfferViewUrl = $myStoreOffer ? APP_URL . '/store-offers/view.php?id=' . (int) $myStoreOffer['id'] : '';
-$loginRedirect = APP_URL . '/auth/login?redirect=' . urlencode('/listings/view?id=' . $id);
+$storeSwapUrl = APP_URL . '/store-offers/create?listing_id=' . $id;
+$storeOfferViewUrl = $myStoreOffer ? APP_URL . '/store-offers/view?id=' . (int) $myStoreOffer['id'] : '';
+$loginRedirect = APP_URL . '/auth/login?redirect=' . urlencode($listingPath);
 $chatUrl = APP_URL . '/chat/view?listing_id=' . $id;
 $showNearbySection = listing_has_coordinates($listing);
 $showSwapSuggestions = $showNearbySection;
@@ -561,7 +574,7 @@ render_navbar($user);
   <?php if ($canBuy && !$isOwner && $listing['status'] === 'active'): ?>
   <div class="lv-bottom-bar lv-bottom-bar--dual">
     <?php if ($user): ?>
-    <a href="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--buy" data-navigate="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>">
+    <a href="<?= APP_URL ?>/orders/checkout?listing_id=<?= $id ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--buy" data-navigate="<?= APP_URL ?>/orders/checkout?listing_id=<?= $id ?>">
       <i class="bi bi-cart-check"></i> خرید نقدی
     </a>
     <?php else: ?>
@@ -598,7 +611,7 @@ render_navbar($user);
       <i class="bi bi-send"></i> ارسال پیشنهاد
     </button>
     <?php else: ?>
-    <a href="<?= APP_URL ?>/listings/create.php" class="lv-bottom-bar__btn" style="text-decoration:none" data-navigate="<?= APP_URL ?>/listings/create.php">
+    <a href="<?= APP_URL ?>/listings/create" class="lv-bottom-bar__btn" style="text-decoration:none" data-navigate="<?= APP_URL ?>/listings/create">
       <i class="bi bi-plus-circle"></i> ثبت کالا برای پیشنهاد
     </a>
     <?php endif; ?>
@@ -615,7 +628,7 @@ render_navbar($user);
   </div>
   <?php elseif ($tradeAccepted): ?>
   <div class="lv-bottom-bar">
-    <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="lv-bottom-bar__btn" style="text-decoration:none">
+    <a href="<?= APP_URL ?>/trades?trade=<?= $listing['trade_id'] ?>" class="lv-bottom-bar__btn" style="text-decoration:none">
       <i class="bi bi-arrow-left-right"></i> مشاهده معامله
     </a>
   </div>
@@ -669,7 +682,7 @@ render_navbar($user);
           <?php else: ?>
           <div class="lv-empty-offer">
             <p><i class="bi bi-box-seam"></i> برای ارسال پیشنهاد، ابتدا یک کالا ثبت کنید.</p>
-            <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">ثبت کالا</a>
+            <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت کالا</a>
           </div>
           <?php endif; ?>
         </div>
@@ -832,7 +845,7 @@ render_navbar($user);
             $rScore = (int)($rm['match_score'] ?? 0);
           ?>
             <div class="card" style="margin:0;overflow:hidden;display:flex;flex-direction:column">
-              <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$rm['listing_id'] ?>" style="display:block">
+              <a href="<?= h(listing_url($rm['listing_id'], $rm['title'] ?? '')) ?>" style="display:block">
                 <div style="position:relative;aspect-ratio:16/9;background:var(--border);overflow:hidden">
                   <?php
                     $rmThumb = DB::fetch('SELECT filename FROM listing_images WHERE listing_id = ? AND is_primary = 1 LIMIT 1', [(int)$rm['listing_id']]);
@@ -871,7 +884,7 @@ render_navbar($user);
                 <div class="match-reason-box" style="margin-top:auto;font-size:.75rem"><?= h($rm['match_reason']) ?></div>
                 <?php endif; ?>
                 <div style="margin-top:8px">
-                  <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$rm['listing_id'] ?>" class="btn btn-sm" style="width:100%;background:var(--accent);color:#fff;border:1px solid var(--accent)">
+                  <a href="<?= h(listing_url($rm['listing_id'], $rm['title'] ?? '')) ?>" class="btn btn-sm" style="width:100%;background:var(--accent);color:#fff;border:1px solid var(--accent)">
                     <i class="bi bi-eye"></i> مشاهده آگهی <?= h($rm['iso_user_name'] ?? 'او') ?>
                   </a>
                 </div>
@@ -930,7 +943,7 @@ render_navbar($user);
           <h3 class="lv-offer-title"><i class="bi bi-check-circle"></i> وضعیت پیشنهاد</h3>
           <div class="alert alert-success" style="margin:0">
             پیشنهاد شما پذیرفته شده است.
-            <a href="<?= APP_URL ?>/trades.php?trade=<?= $listing['trade_id'] ?>" class="alert-link">مشاهده معامله</a>
+            <a href="<?= APP_URL ?>/trades?trade=<?= $listing['trade_id'] ?>" class="alert-link">مشاهده معامله</a>
           </div>
         </section>
         <?php elseif ($myStoreOffer): ?>
@@ -962,7 +975,7 @@ render_navbar($user);
           <h3 class="lv-offer-title"><i class="bi bi-cart-check" style="color:var(--lv-navy)"></i> خرید نقدی</h3>
           <p class="fs-sm mb-4" style="color:var(--text-muted)">پرداخت آنلاین و ثبت آدرس ارسال — پیگیری مرحله‌به‌مرحله مثل فروشگاه‌های آنلاین.</p>
           <?php if ($user): ?>
-          <a href="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>" class="lv-btn lv-btn--primary w-100" data-navigate="<?= APP_URL ?>/orders/checkout.php?listing_id=<?= $id ?>">
+          <a href="<?= APP_URL ?>/orders/checkout?listing_id=<?= $id ?>" class="lv-btn lv-btn--primary w-100" data-navigate="<?= APP_URL ?>/orders/checkout?listing_id=<?= $id ?>">
             <i class="bi bi-credit-card"></i> خرید با قیمت <?= fmt_credit($buyPrice) ?>
           </a>
           <?php else: ?>
@@ -1059,7 +1072,7 @@ render_navbar($user);
               <?php else: ?>
               <div class="alert alert-info mb-3">
                 <i class="bi bi-box-seam"></i> هنوز کالایی برای پیشنهاد ندارید.
-                <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm" style="margin-top:8px">ثبت کالا</a>
+                <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary btn-sm" style="margin-top:8px">ثبت کالا</a>
               </div>
               <?php endif; ?>
             </div>

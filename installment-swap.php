@@ -508,7 +508,7 @@ render_navbar($user);
       <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap">
         <?php if ($user): ?>
         <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary btn-lg" style="padding:14px 32px;font-size:1.0625rem;border-radius:14px"><i class="bi bi-plus-lg"></i> ثبت آگهی اقساطی</a>
-        <a href="<?= APP_URL ?>/listings/all.php" class="btn btn-outline btn-lg" style="border-radius:14px;padding:14px 32px"><i class="bi bi-grid"></i> مرور آگهی‌های اقساطی</a>
+        <a href="<?= APP_URL ?>/listings/" class="btn btn-outline btn-lg" style="border-radius:14px;padding:14px 32px"><i class="bi bi-grid"></i> مرور آگهی‌های اقساطی</a>
         <?php else: ?>
         <a href="<?= APP_URL ?>/auth/login" class="btn btn-primary btn-lg" style="padding:14px 32px;font-size:1.0625rem;border-radius:14px"><i class="bi bi-person-plus"></i> ورود / ثبت‌نام رایگان</a>
         <a href="<?= APP_URL ?>/" class="btn btn-outline btn-lg" style="border-radius:14px;padding:14px 32px"><i class="bi bi-arrow-left-right"></i> آشنایی با نحوه کار سواَپین</a>

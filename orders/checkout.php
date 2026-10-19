@@ -17,7 +17,7 @@ $listing = $listingId ? DB::fetch(
 ) : null;
 
 if (!$listing || !listing_can_cash_buy($listing, $user)) {
-    header('Location: ' . APP_URL . '/listings/view?id=' . $listingId);
+    header('Location: ' . ($listing ? listing_url($listing) : APP_URL . '/listings'));
     exit;
 }
 
@@ -162,7 +162,7 @@ render_navbar($user);
 <div class="ex-page">
   <div class="ex-container" style="width: 70%;">
     <div class="ex-header">
-      <a href="<?= APP_URL ?>/listings/view?id=<?= $listingId ?>" class="ex-header__back">
+      <a href="<?= h(listing_url($listing)) ?>" class="ex-header__back">
         <i class="bi bi-arrow-right"></i> بازگشت به محصول
       </a>
       <div class="ex-header__row">

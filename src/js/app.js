@@ -769,7 +769,7 @@ function initSaveButtons() {
 
         if (!res.ok) {
           if (data.error === 'login_required') {
-            window.location.href = `${appUrl}/auth/login.php?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+            window.location.href = `${appUrl}/auth/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
             return;
           }
           throw new Error(data.error || 'save_failed');
@@ -1503,7 +1503,7 @@ function initAiChat() {
           if (data.value !== undefined && data.value !== null) {
             params.set('prefill_value', String(data.value));
           }
-          const base = createLink.getAttribute('href') || (appUrl + '/listings/create.php');
+          const base = createLink.getAttribute('href') || (appUrl + '/listings/create');
           const sep  = base.includes('?') ? '&' : '?';
           createLink.href = base + sep + params.toString();
         }
@@ -1949,7 +1949,7 @@ function initListingsLocationFilter() {
     });
 
     const qs = params.toString();
-    return `${appUrl}/listings/all.php${qs ? `?${qs}` : ''}`;
+    return `${appUrl}/listings/${qs ? `?${qs}` : ''}`;
   }
 
   locSelect.addEventListener('change', () => {

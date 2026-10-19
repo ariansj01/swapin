@@ -96,7 +96,7 @@ foreach ($perfListings as $pl) {
     }
 }
 if ($perfListing) {
-    $perfListing['link_url'] = APP_URL . '/listings/view?id=' . (int)$perfListing['id'];
+    $perfListing['link_url'] = listing_url($perfListing);
 }
 
 $statusLabels = ['active' => 'فعال', 'reserved' => 'رزرو شده', 'traded' => 'معامله‌شده', 'expired' => 'منقضی', 'deleted' => 'حذف‌شده'];
@@ -119,7 +119,7 @@ render_user_panel_open($user, 'my');
   <div class="dash-panel">
     <?php render_panel_page_header('آگهی‌های من', 'مدیریت همه آگهی‌های تعویض شما'); ?>
     <div class="dash-page-head__actions">
-      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary btn-sm">
+      <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
     </div>
@@ -200,7 +200,7 @@ render_user_panel_open($user, 'my');
         <?php endif; ?>
       </p>
       <?php if ($tab === 'active'): ?>
-      <a href="<?= APP_URL ?>/listings/create.php" class="btn btn-primary">
+      <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> ثبت آگهی
       </a>
       <?php endif; ?>
@@ -216,7 +216,7 @@ render_user_panel_open($user, 'my');
       ?>
       <article class="my-listing-card <?= $hasPending ? 'my-listing-card--pending' : '' ?>">
         <div class="my-listing-card__media">
-          <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>" class="my-listing-card__media-link" aria-label="<?= h($l['title']) ?>"></a>
+          <a href="<?= h(listing_url($l)) ?>" class="my-listing-card__media-link" aria-label="<?= h($l['title']) ?>"></a>
           <?php if ($l['thumb']): ?>
           <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>">
           <?php else: ?>
@@ -239,12 +239,12 @@ render_user_panel_open($user, 'my');
           <?php endif; ?>
           <p class="my-listing-card__want">"<?= h(mb_strimwidth($l['want_in_return'], 0, 60, '…')) ?>"</p>
           <div class="my-listing-card__actions">
-            <a href="<?= APP_URL ?>/listings/view?id=<?= $l['id'] ?>" class="btn btn-ghost btn-sm" title="مشاهده"><i class="bi bi-eye"></i></a>
+            <a href="<?= h(listing_url($l)) ?>" class="btn btn-ghost btn-sm" title="مشاهده"><i class="bi bi-eye"></i></a>
             <?php if ($l['status'] === 'active'): ?>
-            <a href="<?= APP_URL ?>/listings/edit.php?id=<?= $l['id'] ?>" class="btn btn-outline btn-sm" title="ویرایش"><i class="bi bi-pencil"></i></a>
-            <a href="<?= APP_URL ?>/listings/promote.php?id=<?= $l['id'] ?>" class="btn btn-accent btn-sm" title="ارتقا"><i class="bi bi-rocket"></i></a>
+            <a href="<?= APP_URL ?>/listings/edit?id=<?= $l['id'] ?>" class="btn btn-outline btn-sm" title="ویرایش"><i class="bi bi-pencil"></i></a>
+            <a href="<?= APP_URL ?>/listings/promote?id=<?= $l['id'] ?>" class="btn btn-accent btn-sm" title="ارتقا"><i class="bi bi-rocket"></i></a>
             <?php if ($l['total_offers'] > 0): ?>
-            <a href="<?= APP_URL ?>/listings/offers.php?id=<?= $l['id'] ?>" class="btn btn-<?= $hasPending ? 'accent' : 'ghost' ?> btn-sm"><i class="bi bi-inbox"></i></a>
+            <a href="<?= APP_URL ?>/listings/offers?id=<?= $l['id'] ?>" class="btn btn-<?= $hasPending ? 'accent' : 'ghost' ?> btn-sm"><i class="bi bi-inbox"></i></a>
             <?php endif; ?>
             <?php elseif (in_array($l['status'], ['traded', 'expired'])): ?>
             <form method="POST" style="display:inline" onsubmit="return confirm('دوباره فعال شود؟')">

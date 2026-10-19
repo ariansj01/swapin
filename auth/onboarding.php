@@ -8,5 +8,5 @@ if ($user['onboarding_completed']) {
     exit;
 }
 
-header('Location: ' . APP_URL . '/listings/create.php');
+header('Location: ' . APP_URL . '/listings/create');
 exit;

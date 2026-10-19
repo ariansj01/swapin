@@ -169,7 +169,7 @@ function av_get_user_assets(int $userId): array {
             'confidence_pct' => $calc['confidence_pct'],
             'source'         => $calc['source'],
             'value_breakdown'=> $calc['breakdown'],
-            'view_url'       => APP_URL . '/listings/view.php?id=' . (int)$l['id'],
+            'view_url'       => listing_url((int)$l['id'], (string)($l['title'] ?? '')),
         ];
     }
 

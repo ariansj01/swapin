@@ -56,7 +56,7 @@ try {
     }
 
     if ($nameEmpty) {
-        $dest = APP_URL . '/auth/complete-name.php' . ($redir ? '?redirect=' . urlencode($redir) : '');
+        $dest = APP_URL . '/auth/complete-name' . ($redir ? '?redirect=' . urlencode($redir) : '');
     } else {
         $dest = APP_URL . '/';
         if ($redir) {

@@ -209,7 +209,7 @@ function notify_saved_search_match(int $userId, array $search, array $listing): 
         'type'    => 'saved_search',
         'title'   => $title,
         'body'    => $body,
-        'link'    => APP_URL . '/listings/view?id=' . (int)$listing['id'],
+        'link'    => listing_url((int)$listing['id'], (string)($listing['title'] ?? '')),
         'meta_json' => json_encode([
             'saved_search_id' => (int)$search['id'],
             'listing_id'      => (int)$listing['id'],

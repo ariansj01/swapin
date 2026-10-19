@@ -51,7 +51,7 @@ render_navbar($user);
       </div>
 
       <div class="ex-actions">
-        <a href="<?= APP_URL ?>/store-offers/view.php?id=<?= $offerId ?>" class="ex-btn ex-btn--primary ex-btn--lg" data-navigate="<?= APP_URL ?>/store-offers/view.php?id=<?= $offerId ?>">
+        <a href="<?= APP_URL ?>/store-offers/view?id=<?= $offerId ?>" class="ex-btn ex-btn--primary ex-btn--lg" data-navigate="<?= APP_URL ?>/store-offers/view?id=<?= $offerId ?>">
           <i class="bi bi-chat-dots-fill"></i>
           مشاهده و پیگیری پیشنهاد
         </a>

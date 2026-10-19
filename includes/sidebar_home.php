@@ -58,7 +58,7 @@
               'price_max' => $overrides['price_max'] ?? ($f_pmax > 0 ? $f_pmax : null),
           ]);
           $queryString = $params ? '?' . http_build_query($params) : '';
-          return APP_URL . '/listings/map_view.php' . $queryString;
+          return APP_URL . '/listings/map' . $queryString;
       };
       ?>
       <?php foreach ($sidebarCats as $sc):
@@ -76,7 +76,7 @@
     </nav>
 
     <!-- Filters: Real Dropdowns (همه شهرها، انواع معامله، جدیدترین) + جستجو -->
-    <form id="sidebar-filters-form" method="GET" action="<?= APP_URL ?>/listings/map_view.php" class="home-sidebar-filters-form">
+    <form id="sidebar-filters-form" method="GET" action="<?= APP_URL ?>/listings/map" class="home-sidebar-filters-form">
       <input type="hidden" name="cat" value="<?= h($f_catSlug) ?>">
       <input type="hidden" name="time_ago" value="<?= h($f_timeAgo) ?>">
 
@@ -185,7 +185,7 @@
             'price_max' => $f_pmax > 0 ? (int)$f_pmax : null,
           ];
           $chipQuery = array_filter($chipQuery);
-          $chipUrl = APP_URL . '/listings/map_view.php' . ($chipQuery ? '?' . http_build_query($chipQuery) : '');
+          $chipUrl = APP_URL . '/listings/map' . ($chipQuery ? '?' . http_build_query($chipQuery) : '');
         ?>
           <a href="<?= $chipUrl ?>" class="time-chip <?= $isActive ? 'time-chip--active' : '' ?>">
             <?= $tc['label'] ?>
@@ -196,11 +196,11 @@
 
     <!-- Menus -->
     <div class="home-sidebar-menu">
-      <a href="<?= APP_URL ?>/about.php">درباره ما</a>
+      <a href="<?= APP_URL ?>/about">درباره ما</a>
       <span class="home-sidebar-menu__dot"></span>
-      <a href="<?= APP_URL ?>/contact.php">تماس با ما</a>
+      <a href="<?= APP_URL ?>/contact">تماس با ما</a>
       <span class="home-sidebar-menu__dot"></span>
-      <a href="<?= APP_URL ?>/faq.php">سوالات متداول</a>
+      <a href="<?= APP_URL ?>/faq">سوالات متداول</a>
     </div>
     <div class="home-sidebar-menu">
       <a href="<?= APP_URL ?>/pwa">نصب اپلیکیشن</a>

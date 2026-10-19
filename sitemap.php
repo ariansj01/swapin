@@ -24,7 +24,7 @@ $urls = [
     ['loc' => $base . '/shops',          'priority' => '0.8', 'changefreq' => 'daily'],
     ['loc' => $base . '/shops/online',   'priority' => '0.8', 'changefreq' => 'daily'],
     ['loc' => $base . '/shops/physical', 'priority' => '0.8', 'changefreq' => 'daily'],
-    ['loc' => $base . '/listings/all',   'priority' => '0.7', 'changefreq' => 'daily'],
+    ['loc' => $base . '/listings/',  'priority' => '0.7', 'changefreq' => 'daily'],
     ['loc' => $base . '/trades',       'priority' => '0.5', 'changefreq' => 'weekly'],
 ];
 
@@ -55,11 +55,11 @@ foreach ($cats as $cat) {
 }
 
 $listings = DB::fetchAll(
-    'SELECT id, updated_at FROM listings WHERE status = "active" AND review_status = "approved" ORDER BY updated_at DESC LIMIT 5000'
+    'SELECT id, title, updated_at FROM listings WHERE status = "active" AND review_status = "approved" ORDER BY updated_at DESC LIMIT 5000'
 );
 foreach ($listings as $l) {
     $urls[] = [
-        'loc'        => $base . '/listings/view?id=' . (int)$l['id'],
+        'loc'        => listing_url($l),
         'priority'   => '0.8',
         'changefreq' => 'weekly',
         'lastmod'    => !empty($l['updated_at']) ? date('c', strtotime($l['updated_at'])) : $now,

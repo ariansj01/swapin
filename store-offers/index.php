@@ -68,7 +68,7 @@ render_navbar($user);
         elseif ($statusRaw === 'counter_offered') $statusClass = 'ex-status--counter';
         elseif (in_array($statusRaw, ['completed', 'finalized'], true)) $statusClass = 'ex-status--completed';
       ?>
-      <a href="<?= APP_URL ?>/store-offers/view.php?id=<?= (int) $o['id'] ?>" class="ex-offer-item" data-navigate="<?= APP_URL ?>/store-offers/view.php?id=<?= (int) $o['id'] ?>">
+      <a href="<?= APP_URL ?>/store-offers/view?id=<?= (int) $o['id'] ?>" class="ex-offer-item" data-navigate="<?= APP_URL ?>/store-offers/view?id=<?= (int) $o['id'] ?>">
         <?php if (!empty($o['store_thumb'])): ?>
         <img src="<?= UPLOAD_URL . h($o['store_thumb']) ?>" alt="" class="ex-offer-item__thumb">
         <?php else: ?>

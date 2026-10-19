@@ -1387,7 +1387,7 @@ render_user_panel_open($user, 'trades');
                   if ($relatedTrade):
                 ?>
                   <div style="width:100%">
-                    <a href="<?= APP_URL ?>/trades/view.php?id=<?= (int)$relatedTrade['id'] ?>" class="btn btn-primary w-100">
+                    <a href="<?= APP_URL ?>/trades/view?id=<?= (int)$relatedTrade['id'] ?>" class="btn btn-primary w-100">
                       <i class="bi bi-shield-lock"></i> ورود به اتاق معامله
                     </a>
                   </div>

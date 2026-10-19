@@ -13,7 +13,7 @@ if (!$offer || !store_swap_offer_can_access($offer, $user)) {
 }
 
 if (($offer['status'] ?? '') !== 'accepted') {
-    header('Location: ' . APP_URL . '/store-offers/view.php?id=' . $offerId);
+    header('Location: ' . APP_URL . '/store-offers/view?id=' . $offerId);
     exit;
 }
 
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($result['error'])) {
         $error = $result['error'];
     } else {
-        header('Location: ' . APP_URL . '/store-offers/complete.php?id=' . $offerId . '&trade=' . (int) $result['trade_id']);
+        header('Location: ' . APP_URL . '/store-offers/complete?id=' . $offerId . '&trade=' . (int) $result['trade_id']);
         exit;
     }
 }
@@ -37,7 +37,7 @@ render_navbar($user);
   <div class="ex-container">
 
     <div class="ex-header">
-      <a href="<?= APP_URL ?>/store-offers/view.php?id=<?= $offerId ?>" class="ex-header__back">
+      <a href="<?= APP_URL ?>/store-offers/view?id=<?= $offerId ?>" class="ex-header__back">
         <i class="bi bi-arrow-right"></i>
         بازگشت به پیشنهاد
       </a>
@@ -145,7 +145,7 @@ render_navbar($user);
       <div class="ex-sticky-bar ex-visible-mobile">
         <div class="ex-sticky-bar__inner">
           <div class="ex-sticky-bar__row">
-            <a href="<?= APP_URL ?>/store-offers/view.php?id=<?= $offerId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/view.php?id=<?= $offerId ?>">
+            <a href="<?= APP_URL ?>/store-offers/view?id=<?= $offerId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/view?id=<?= $offerId ?>">
               بازگشت
             </a>
             <button type="submit" class="ex-btn ex-btn--cta ex-btn--lg">
@@ -157,7 +157,7 @@ render_navbar($user);
       </div>
 
       <div class="ex-actions ex-actions--row-sm ex-hidden-mobile">
-        <a href="<?= APP_URL ?>/store-offers/view.php?id=<?= $offerId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/view.php?id=<?= $offerId ?>" style="flex:1">
+        <a href="<?= APP_URL ?>/store-offers/view?id=<?= $offerId ?>" class="ex-btn ex-btn--outline" data-navigate="<?= APP_URL ?>/store-offers/view?id=<?= $offerId ?>" style="flex:1">
           <i class="bi bi-arrow-right"></i>
           بازگشت
         </a>

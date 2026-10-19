@@ -295,7 +295,7 @@ if (preg_match('#^listings/(\d+)$#', $path, $m) && $method === 'GET') {
             ))),
             'saved' => $saved,
             'is_owner' => (bool)$isOwner,
-            'share_url' => APP_URL . '/listings/view?id=' . $id,
+            'share_url' => listing_url($listing),
         ],
     ]);
 }

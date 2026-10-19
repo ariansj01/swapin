@@ -265,7 +265,7 @@ function listing_nearby_map_item(array $row, bool $isCurrent = false, ?array $sc
         'distance_km'     => round($distance, 2),
         'distance_fmt'    => $distance > 0 ? listing_nearby_format_distance($distance) : '',
         'location_fmt'    => listing_nearby_location_fmt($row),
-        'url'             => APP_URL . '/listings/view?id=' . $listingId,
+        'url'             => listing_url($listingId, $title),
         'is_current'      => $isCurrent,
     ];
 
@@ -668,7 +668,7 @@ function listing_nearby_format_suggestion(
         'mutual'          => !empty($row['mutual']),
         'freshness_score' => (int) $freshness['freshness_score'],
         'freshness_label' => (string) $freshness['freshness_label'],
-        'url'             => APP_URL . '/listings/view?id=' . $listingId,
+        'url'             => listing_url($listingId, (string) ($row['title'] ?? '')),
         'source'          => $sourceTag,
     ];
 

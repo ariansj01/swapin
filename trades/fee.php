@@ -15,7 +15,7 @@ $trade = DB::fetch(
 );
 
 if ($trade) {
-    header('Location: ' . APP_URL . '/trades/view.php?id=' . (int)$trade['id'] . '&tab=fee');
+    header('Location: ' . APP_URL . '/trades/view?id=' . (int)$trade['id'] . '&tab=fee');
     exit;
 }
 

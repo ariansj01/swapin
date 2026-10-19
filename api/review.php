@@ -5,7 +5,7 @@ $user = require_auth();
 $uid  = $user['id'];
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ' . APP_URL . '/trades.php');
+    header('Location: ' . APP_URL . '/trades');
     exit;
 }
 
@@ -23,7 +23,7 @@ $trade = DB::fetch(
 );
 
 if (!$trade || !in_array($toUserId, [(int)$trade['user_a_id'], (int)$trade['user_b_id']], true) || $toUserId === $uid) {
-    header('Location: ' . APP_URL . '/trades.php?tab=completed&error=invalid');
+    header('Location: ' . APP_URL . '/trades?tab=completed&error=invalid');
     exit;
 }
 
@@ -32,7 +32,7 @@ $existing = DB::fetch(
     [$tradeId, $uid]
 );
 if ($existing) {
-    header('Location: ' . APP_URL . '/trades.php?tab=completed');
+    header('Location: ' . APP_URL . '/trades?tab=completed');
     exit;
 }
 
@@ -63,5 +63,5 @@ DB::update('users', [
     'rating_count' => (int)($stats['cnt'] ?? 0),
 ], 'id = ?', [$toUserId]);
 
-header('Location: ' . APP_URL . '/trades.php?tab=completed&reviewed=1');
+header('Location: ' . APP_URL . '/trades?tab=completed&reviewed=1');
 exit;

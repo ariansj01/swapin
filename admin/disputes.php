@@ -96,7 +96,7 @@ ob_start();
       <?php else: ?>
       <p class="fs-sm" style="color:var(--text-muted)">این اختلاف بسته شده است.</p>
       <?php endif; ?>
-      <a href="<?= APP_URL ?>/trades.php?trade=<?= (int)$detail['trade_id'] ?>" class="btn btn-ghost w-100 mt-3" target="_blank">مشاهده معامله</a>
+      <a href="<?= APP_URL ?>/trades?trade=<?= (int)$detail['trade_id'] ?>" class="btn btn-ghost w-100 mt-3" target="_blank">مشاهده معامله</a>
     </div>
   </div>
 </div>

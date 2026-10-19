@@ -2,7 +2,7 @@
 // SWAPIN_DIRECT_ALL_PHP_301
 if (!defined('SKIP_301') && isset($_SERVER["REQUEST_URI"]) && preg_match("#^/listings/all\.php(?:\?|$)#", $_SERVER["REQUEST_URI"])) {
     $query = $_SERVER["QUERY_STRING"] ?? "";
-    header("Location: /listings" . ($query ? "?" . $query : ""), true, 301);
+    header("Location: /listings/" . ($query ? "?" . $query : ""), true, 301);
     exit;
 }
 require_once __DIR__ . '/../includes/config.php';
@@ -148,11 +148,15 @@ $listings = DB::fetchAll(
 // الگو عنوان: معاوضه [عنوان] | در [شهر] | سواَپین  (حداکثر ۶۵ کاراکتر)
 // الگو توضیحات: شامل دسته، شهر، عنوان و ارزش تخمینی (حداکثر ۱۶۰ کاراکتر)
 $catChainNames = [];
+$catChainCrumbs = [];
 if ($category) {
     $chainSlugs = get_category_ancestors($category['slug']);
     foreach ($chainSlugs as $cs) {
         $crow = DB::fetch('SELECT name FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [$cs]);
-        if ($crow) $catChainNames[] = $crow['name'];
+        if ($crow) {
+            $catChainNames[]  = $crow['name'];
+            $catChainCrumbs[] = ['name' => $crow['name'], 'url' => category_url($cs)];
+        }
     }
 }
 $catDisplayName = !empty($catChainNames) ? implode(' › ', $catChainNames) : '';
@@ -209,10 +213,20 @@ if ($category && !$hasOtherFilters) {
     $canonical = category_url($category['slug']);
 }
 
+// BreadcrumbList — تقویت درک گوگل از ساختار دسته‌بندی (کمک به Sitelinks)
+$jsonLd = [];
+if ($category && !$hasOtherFilters && !empty($catChainCrumbs)) {
+    $jsonLd[] = seo_json_ld_breadcrumbs(array_merge(
+        [['name' => 'خانه', 'url' => APP_URL . '/']],
+        $catChainCrumbs
+    ));
+}
+
 render_head($title, $desc, [
   'canonical' => $canonical,
   'og_type'   => 'website',
   'og_image'  => APP_URL . '/src/img/heropng.png',
+  'json_ld'   => $jsonLd,
 ]);
 render_navbar($user);
 ?>
@@ -242,7 +256,7 @@ render_navbar($user);
         <!-- جستجو -->
         <div class="mb-5">
           <label class="fs-xs" for="q">جستجو در آگهی‌ها</label>
-          <form method="GET" action="<?= APP_URL ?>/listings/all.php" class="d-flex gap-2 align-center">
+          <form method="GET" action="<?= APP_URL ?>/listings/" class="d-flex gap-2 align-center">
             <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
             <input type="hidden" name="city" value="<?= h($city) ?>">
             <input type="hidden" name="loc" value="<?= h($locMode) ?>">
@@ -278,7 +292,7 @@ render_navbar($user);
                 'sort'           => $sort !== 'new' ? $sort : null,
                 'time_ago'       => $timeAgo !== '' ? $timeAgo : null,
             ]));
-            return APP_URL . '/listings/all.php?' . $qs;
+            return APP_URL . '/listings/?' . $qs;
         };
 
         if ($category):
@@ -348,7 +362,7 @@ render_navbar($user);
                     'sort' => $sort !== 'new' ? $sort : null,
                     'time_ago' => $timeAgo !== '' ? $timeAgo : null,
                 ]));
-                return APP_URL . '/listings/all.php?' . $qs;
+                return APP_URL . '/listings/?' . $qs;
             }
             return $baseCatUrl;
         };
@@ -403,7 +417,7 @@ render_navbar($user);
         </div>
 
         <h3 class="all-listings-sidebar__subtitle">فیلترهای دیگر</h3>
-        <form method="GET" action="<?= APP_URL ?>/listings/all.php" class="all-listings-filters" id="all-listings-filters">
+        <form method="GET" action="<?= APP_URL ?>/listings/" class="all-listings-filters" id="all-listings-filters">
           <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
           <?php if ($search): ?><input type="hidden" name="q" value="<?= h($search) ?>"><?php endif; ?>
           <input type="hidden" name="nearby_cities" id="nearby-cities" value="<?= h($nearbyCitiesRaw) ?>">

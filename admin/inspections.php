@@ -68,7 +68,7 @@ ob_start();
       <?php if ($detail['report']): ?>
       <div><strong>گزارش:</strong> <?= h($detail['report']) ?></div>
       <?php endif; ?>
-      <a href="<?= APP_URL ?>/listings/view?id=<?= (int)$detail['listing_id'] ?>" target="_blank" class="btn btn-sm btn-outline mt-2">مشاهده آگهی</a>
+      <a href="<?= h(listing_url((int)$detail['listing_id'], (string)($detail['listing_title'] ?? ''))) ?>" target="_blank" class="btn btn-sm btn-outline mt-2">مشاهده آگهی</a>
     </div>
   </div>
 
