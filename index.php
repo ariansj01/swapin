@@ -3,6 +3,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/content_manager.php';
 require_once __DIR__ . '/includes/stories.php';
+require_once __DIR__ . '/includes/banners.php';
 
 // #region debug-point homepage-500-index-start
 if (function_exists('swapin_debug_log')) {
@@ -305,6 +306,7 @@ render_navbar($user);
 </section>
 
 <?php stories_render_section(); ?>
+<?php banners_render_slider(); ?>
 <?php endif; ?>
 
 <main id="main-content" class="section-sm">
@@ -497,28 +499,34 @@ render_navbar($user);
 
         <!-- Premium Listings Section (Active promotion plans) -->
         <?php if (!empty($premiumListings)): ?>
-        <section class="home-listings-section" aria-label="اگهی‌های ویژه">
-          <div class="home-section-heading home-section-heading--large mb-5">
-            <h2>اگهی‌های ویژه</h2>
-            <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
-              مشاهده همه آگهی‌ها
-            </a>
-          </div>
-          <div class="listings-rows-container">
-            <div class="listings-row-wrapper">
-              <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-premium" aria-label="آگهی بعدی">
-                <i class="bi bi-chevron-right"></i>
-              </button>
-              <div class="listings-scroll-row" id="listings-row-premium">
-                <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
-                <div class="listings-scroll-card">
-                  <?php include __DIR__ . '/includes/listing_card.php'; ?>
-                </div>
-                <?php endforeach; ?>
-              </div>
-              <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-premium" aria-label="آگهی قبلی">
+        <section class="home-listings-section home-listings-section--premium" aria-label="آگهی‌های ویژه">
+          <div class="container">
+            <div class="home-section-heading home-section-heading--premium mb-5">
+              <a href="<?= APP_URL ?>/listings/" class="home-section-heading__back">
                 <i class="bi bi-chevron-left"></i>
-              </button>
+              </a>
+              <h2>آگهی‌های ویژه</h2>
+            </div>
+            <div class="listings-rows-container">
+              <div class="listings-row-wrapper">
+                <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-premium" aria-label="آگهی بعدی">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+                <div class="listings-scroll-row" id="listings-row-premium">
+                  <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
+                  <div class="listings-scroll-card listings-scroll-card--premium">
+                    <?php 
+                      $cardLayout = 'premium-horizontal';
+                      include __DIR__ . '/includes/listing_card.php'; 
+                      unset($cardLayout);
+                    ?>
+                  </div>
+                  <?php endforeach; ?>
+                </div>
+                <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-premium" aria-label="آگهی قبلی">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+              </div>
             </div>
           </div>
         </section>

@@ -77,8 +77,9 @@ $promotionMeta = $allPromotions[0] ?? null;
 $promotionClass = $promotionMeta['card_class'] ?? '';
 $hasPromo = !empty($allPromotions);
 
-$cardLayout = isset($cardLayout) && $cardLayout === 'horizontal' ? 'horizontal' : 'vertical';
+$cardLayout = isset($cardLayout) ? $cardLayout : 'vertical';
 $isHorizontal = $cardLayout === 'horizontal';
+$isPremiumHorizontal = $cardLayout === 'premium-horizontal';
 
 // Image count for badge
 $imgCount = 0;
@@ -87,7 +88,7 @@ if ($isHorizontal) {
     $imgCount = (int)($resCount['cnt'] ?? 0);
 }
 ?>
-<article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
+<article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= $isPremiumHorizontal ? 'listing-card--premium-horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
 
   <!-- ========== IMAGE SECTION (TOP) ========== -->
   <div class="lc-media-wrapper">
@@ -99,17 +100,23 @@ if ($isHorizontal) {
     </div>
     <?php endif; ?>
 
-    <!-- Image Count Badge (Minimal) -->
-    <?php if ($isHorizontal && $imgCount > 1): ?>
-    <div class="lc-img-count">
-      <i class="bi bi-camera-fill"></i>
-      <span><?= fmt_num($imgCount) ?></span>
+    <!-- Badges Row on Image - Top Right -->
+    <div class="lc-badges-row"
+         style="display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+      <?php if ($hasPromo): ?>
+        <?php foreach ($allPromotions as $p): ?>
+      <span class="lc-badge lc-badge--promo <?= $p['badge_class'] ?? '' ?>"
+            style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
+        <i class="bi <?= $p['icon'] ?? 'bi-star-fill' ?>"></i>
+        <?= h($p['label'] ?? 'پلن ویژه') ?>
+      </span>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </div>
-    <?php endif; ?>
 
-    <!-- Favorite Button - Top Left -->
+    <!-- Favorite Button - Top Left (Only for standard vertical) -->
+    <?php if (!$isHorizontal && !$isPremiumHorizontal): ?>
     <?php $currentUser = $currentUser ?? auth_user(); ?>
-    <?php if (!$isHorizontal): ?>
     <?php if (!empty($currentUser['id'])): ?>
     <button type="button"
             class="lc-fav-btn<?= $isSaved ? ' is-saved' : '' ?>"
@@ -131,27 +138,39 @@ if ($isHorizontal) {
     </a>
     <?php endif; ?>
     <?php endif; ?>
-
-    <!-- Badges Row on Image - Top Right (Only for vertical) -->
-    <?php if (!$isHorizontal): ?>
-    <div class="lc-badges-row"
-         style="display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
-      <?php if ($hasPromo): ?>
-        <?php foreach ($allPromotions as $p): ?>
-      <span class="lc-badge lc-badge--promo <?= $p['badge_class'] ?? '' ?>"
-            style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;">
-        <i class="bi <?= $p['icon'] ?? 'bi-star-fill' ?>"></i>
-        <?= h($p['label'] ?? 'پلن ویژه') ?>
-      </span>
-        <?php endforeach; ?>
-      <?php endif; ?>
-    </div>
-    <?php endif; ?>
   </div>
 
   <!-- ========== CONTENT SECTION ========== -->
   <div class="lc-content">
-    <?php if ($isHorizontal): ?>
+    <?php if ($isPremiumHorizontal): ?>
+      <h3 class="lc-title"><?= h($l['title']) ?></h3>
+      
+      <!-- Want in Return Box -->
+      <?php if (!empty($l['want_in_return'])): ?>
+      <div class="lc-want-box">
+        <span class="lc-want-arrow"><i class="bi bi-arrow-left-right"></i></span>
+        <span class="lc-want-text">مبادله با <?= h($l['want_in_return']) ?></span>
+      </div>
+      <?php endif; ?>
+
+      <!-- Value / Price Row -->
+      <?php if (!empty($l['estimated_value']) && (float)$l['estimated_value'] > 0): ?>
+      <div class="lc-value-row">
+        <span class="lc-value-label">ارزش تقریبی:</span>
+        <span class="lc-value-amount"><?= fmt_credit((float)$l['estimated_value']) ?></span>
+      </div>
+      <?php endif; ?>
+
+      <!-- Meta Row -->
+      <div class="lc-meta">
+        <?php if (!empty($l['created_at'])): ?>
+        <span><i class="bi bi-clock"></i> <?= timeago($l['created_at']) ?></span>
+        <?php endif; ?>
+        <?php if (!empty($l['city'])): ?>
+        <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?></span>
+        <?php endif; ?>
+      </div>
+    <?php elseif ($isHorizontal): ?>
     <!-- Horizontal Minimal Layout (Title -> Condition -> Price -> Time/Location) -->
     <h3 class="lc-title"><?= h($l['title']) ?></h3>
     

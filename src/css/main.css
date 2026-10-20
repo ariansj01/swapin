@@ -4246,7 +4246,7 @@ html body .categories-dropdown {
 
     .mobile-category-circle i {
       font-size: 1.85rem;
-      color: rgb(255, 102, 0); /* User preferred Orange */
+      color: #FFC928;
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
     }
 
@@ -8736,3 +8736,305 @@ aside.home-sidebar,
 .home-filter-bar {
   display: none !important;
 }
+
+/* ── 25. Banner Slider ──────────────────────────────────────────────────── */
+.banner-slider {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 20px;
+    background: #071A33;
+    min-height: 200px;
+}
+
+.banner-slider__wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.banner-slide {
+    display: none;
+    width: 100%;
+    animation: fadeInBanner 0.5s ease-in-out;
+}
+
+.banner-slide.active {
+    display: block;
+}
+
+@keyframes fadeInBanner {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.banner-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    text-decoration: none;
+    padding: var(--sp-6) var(--sp-8);
+    gap: var(--sp-6);
+    color: white;
+}
+
+.banner-card__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    color: #FFD84D;
+    margin-bottom: var(--sp-4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: fit-content;
+}
+
+.banner-card__title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0 0 var(--sp-4);
+    line-height: 1.3;
+    color: white;
+}
+
+.banner-card__subtitle {
+    font-size: 1rem;
+    opacity: 0.8;
+    line-height: 1.6;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.banner-card__image {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.banner-card__image img {
+    max-width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: contain;
+}
+
+.banner-slider__dots {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+.banner-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.banner-dot.active {
+    background: white;
+    width: 25px;
+    border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+    .banner-card {
+        grid-template-columns: 1fr;
+        padding: var(--sp-6) var(--sp-5);
+        text-align: center;
+    }
+    .banner-card__image {
+        display: none;
+    }
+    .banner-card__title {
+        font-size: 1.35rem;
+    }
+    .banner-card__badge {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* -- 26. Premium Featured Slider (Yellow BG + Peek Effect) ------------------ */
+.home-listings-section--premium {
+    background: #FFC928;
+    padding: var(--sp-8) 0;
+    margin: var(--sp-6) 0;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+}
+
+.home-listings-section--premium .home-section-heading h2 {
+    color: #071A33;
+    font-weight: 900;
+}
+
+.home-listings-section--premium .home-section-heading__link {
+    color: #071A33;
+    opacity: 0.8;
+}
+
+/* Slider Peek Effect */
+.home-listings-section--premium .listings-scroll-row {
+    padding: var(--sp-4) 0;
+    overflow-x: auto;
+    scroll-padding: 0 var(--sp-4);
+    gap: var(--sp-4);
+}
+
+.listings-scroll-card--premium {
+    flex: 0 0 85% !important; /* Peek effect: 85% width means 15% of next card is visible */
+    max-width: 500px !important;
+    scroll-snap-align: center;
+}
+
+@media (min-width: 768px) {
+    .listings-scroll-card--premium {
+        flex: 0 0 450px !important;
+    }
+}
+
+/* Premium Horizontal Card Style */
+.listing-card--premium-horizontal {
+    flex-direction: row-reverse !important;
+    background: #ffffff !important;
+    border: none !important;
+    padding: 12px !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    min-height: 180px !important;
+}
+
+.listing-card--premium-horizontal .lc-media-wrapper {
+    flex: 0 0 140px !important;
+    height: 140px !important;
+    min-height: 140px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+}
+
+.listing-card--premium-horizontal .listing-card__media-img {
+    height: 100% !important;
+    min-height: 100% !important;
+    border-radius: 14px !important;
+}
+
+.listing-card--premium-horizontal .lc-content {
+    flex: 1 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    text-align: right !important;
+    justify-content: space-between !important;
+}
+
+.listing-card--premium-horizontal .lc-title {
+    text-align: right !important;
+    margin: 0 0 8px 0 !important;
+    font-size: 1.1rem !important;
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+}
+
+.listing-card--premium-horizontal .lc-want-box {
+    background: #f3f4f6 !important;
+    border: none !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    margin: 0 0 8px 0 !important;
+}
+
+.listing-card--premium-horizontal .lc-want-text {
+    font-size: 0.8rem !important;
+    color: #4b5563 !important;
+}
+
+.listing-card--premium-horizontal .lc-value-row {
+    margin: 0 0 8px 0 !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+}
+
+.listing-card--premium-horizontal .lc-value-label {
+    font-size: 0.85rem !important;
+}
+
+.listing-card--premium-horizontal .lc-value-amount {
+    font-size: 1.2rem !important;
+    color: #F59E0B !important;
+}
+
+.listing-card--premium-horizontal .lc-meta {
+    margin-top: auto !important;
+    font-size: 0.8rem !important;
+    gap: 12px !important;
+}
+
+.listing-card--premium-horizontal .lc-badges-row {
+    top: 8px !important;
+    right: 8px !important;
+}
+
+.listing-card--premium-horizontal .lc-badge {
+    padding: 4px 10px !important;
+    font-size: 0.7rem !important;
+}
+
+/* Arrow adjustments for yellow BG */
+.home-listings-section--premium .listings-slider-arrow {
+    background: #071A33;
+    color: #ffffff;
+    border: none;
+}
+.home-listings-section--premium .listings-slider-arrow:hover {
+    background: #14305e;
+}
+
+
+.home-section-heading--premium {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-direction: row-reverse !important; /* Back arrow on left, Title on right */
+}
+
+.home-section-heading--premium h2 {
+    margin: 0 !important;
+    font-size: 1.5rem !important;
+}
+
+.home-section-heading__back {
+    color: #071A33;
+    font-size: 1.2rem;
+    text-decoration: none;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ensure horizontal cards look good on very small screens */
+@media (max-width: 400px) {
+    .listing-card--premium-horizontal .lc-media-wrapper {
+        flex: 0 0 110px !important;
+        height: 110px !important;
+    }
+    .listing-card--premium-horizontal .lc-title {
+        font-size: 0.95rem !important;
+    }
+}
+
