@@ -8735,7 +8735,7 @@ aside.home-sidebar,
 .home-categories-heading,
 .home-filter-bar {
   display: none !important;
-}
+} 
 
 /* ── 25. Banner Slider ──────────────────────────────────────────────────── */
 .banner-slider {
@@ -8908,91 +8908,156 @@ aside.home-sidebar,
     }
 
     /* Premium Horizontal Card Style */
-    .listing-card--premium-horizontal {
-        flex-direction: row-reverse !important;
-        background: #ffffff !important;
-        border: none !important;
-        padding: 12px !important;
-        gap: 12px !important;
-        align-items: stretch !important;
-        min-height: 180px !important;
-    }
+.listing-card--premium-horizontal {
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    background: #ffffff !important;
+    border: none !important;
+    padding: 12px !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    min-height: 180px !important;
+    border-radius: 18px !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+}
 
-    .listing-card--premium-horizontal .lc-media-wrapper {
-        flex: 0 0 140px !important;
-        height: 140px !important;
-        min-height: 140px !important;
-        border-radius: 14px !important;
-        overflow: hidden !important;
-    }
+.listing-card--premium-horizontal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08) !important;
+}
 
-    .listing-card--premium-horizontal .listing-card__media-img {
-        height: 100% !important;
-        min-height: 100% !important;
-        border-radius: 14px !important;
-    }
+.listing-card--premium-horizontal .lc-media-wrapper {
+    flex: 0 0 140px !important;
+    height: 140px !important;
+    min-height: 140px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
 
-    .listing-card--premium-horizontal .lc-content {
-        flex: 1 !important;
-        padding: 0 !important;
-        min-height: 0 !important;
-        text-align: right !important;
-        justify-content: space-between !important;
-    }
+.listing-card--premium-horizontal .listing-card__media-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 14px !important;
+}
 
-    .listing-card--premium-horizontal .lc-title {
-        text-align: right !important;
-        margin: 0 0 8px 0 !important;
-        font-size: 1.1rem !important;
-        white-space: normal !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
-        -webkit-box-orient: vertical !important;
-    }
+.listing-card--premium-horizontal .lc-content {
+    flex: 1 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    text-align: right !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
 
-    .listing-card--premium-horizontal .lc-want-box {
-        background: #f3f4f6 !important;
-        border: none !important;
-        padding: 8px 12px !important;
-        border-radius: 10px !important;
-        margin: 0 0 8px 0 !important;
-    }
+.listing-card--premium-horizontal .lc-title {
+    text-align: right !important;
+    margin: 0 0 8px 0 !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    color: #071A33 !important;
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+}
 
-    .listing-card--premium-horizontal .lc-want-text {
-        font-size: 0.8rem !important;
-        color: #4b5563 !important;
-    }
+.listing-card--premium-horizontal .lc-want-box {
+    background: #f8f9fa !important;
+    border: 1px solid #edf2f7 !important;
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+    margin: 0 0 8px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
 
-    .listing-card--premium-horizontal .lc-value-row {
-        margin: 0 0 8px 0 !important;
-        justify-content: flex-start !important;
-        gap: 8px !important;
-    }
+.listing-card--premium-horizontal .lc-want-arrow {
+    color: #F59E0B !important;
+    font-size: 0.9rem !important;
+}
 
-    .listing-card--premium-horizontal .lc-value-label {
-        font-size: 0.85rem !important;
-    }
+.listing-card--premium-horizontal .lc-want-text {
+    font-size: 0.8rem !important;
+    color: #4a5568 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
 
-    .listing-card--premium-horizontal .lc-value-amount {
-        font-size: 1rem !important; /* Decreased from 1.2rem */
-        color: #F59E0B !important;
-    }
+.listing-card--premium-horizontal .lc-value-row {
+    margin: 0 0 6px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+}
 
-    .listing-card--premium-horizontal .lc-meta {
-        margin-top: auto !important;
-        font-size: 0.8rem !important;
-        gap: 12px !important;
-    }
+.listing-card--premium-horizontal .lc-value-label {
+    font-size: 0.75rem !important;
+    color: #718096 !important;
+}
 
-    .listing-card--premium-horizontal .lc-badges-row {
-        top: 8px !important;
-        right: 8px !important;
-    }
+.listing-card--premium-horizontal .lc-value-amount {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #F59E0B !important;
+}
 
-    .listing-card--premium-horizontal .lc-badge {
-        padding: 4px 10px !important;
-        font-size: 0.7rem !important;
+.listing-card--premium-horizontal .lc-meta {
+    margin-top: auto !important;
+    font-size: 0.75rem !important;
+    color: #a0aec0 !important;
+    display: flex !important;
+    gap: 12px !important;
+}
+
+.listing-card--premium-horizontal .lc-meta span {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.listing-card--premium-horizontal .lc-badges-row {
+    position: absolute !important;
+    top: 6px !important;
+    right: 6px !important;
+    z-index: 5 !important;
+    display: flex !important;
+    gap: 4px !important;
+}
+
+.listing-card--premium-horizontal .lc-badge {
+    padding: 3px 8px !important;
+    font-size: 0.65rem !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+@media (max-width: 1024px) {
+    .home-listings-section--premium {
+        display: block !important;
+        background: #FFC928;
+        padding: var(--sp-8) 0;
+        margin: var(--sp-6) 0;
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
     }
+    
+    .listings-scroll-card--premium {
+        flex: 0 0 78% !important;
+        max-width: 500px !important;
+        scroll-snap-align: center;
+    }
+}
 
     /* Arrow adjustments for yellow BG */
     .home-listings-section--premium .listings-slider-arrow {
@@ -9071,5 +9136,52 @@ aside.home-sidebar,
     .listing-card--premium-horizontal .lc-title {
         font-size: 0.95rem !important;
     }
+}
+
+
+/* -- Newest Listings Layout -- */
+.newest-listings-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+.newest-listing-item {
+    width: 100%;
+}
+
+.newest-listing-item .listing-card--premium-horizontal {
+    border: 1px solid #f0f0f0 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+}
+
+@media (min-width: 1025px) {
+    .newest-listings-list {
+        gap: var(--sp-6);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .newest-listing-item .listing-card--premium-horizontal {
+        min-height: 200px !important;
+    }
+
+    .newest-listing-item .lc-media-wrapper {
+        flex: 0 0 220px !important;
+        height: 220px !important;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.home-listings-section--premium .listings-slider-arrow {
+    display: none !important;
 }
 

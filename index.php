@@ -502,73 +502,92 @@ render_navbar($user);
         <section class="home-listings-section home-listings-section--premium" aria-label="آگهی‌های ویژه">
           <div class="container">
             <div class="home-section-heading home-section-heading--premium mb-5">
-              <a href="<?= APP_URL ?>/listings/" class="home-section-heading__back">
-                <i class="bi bi-chevron-left"></i>
-              </a>
-              <h2>آگهی‌های ویژه</h2>
-            </div>
-            <div class="listings-rows-container">
-              <div class="listings-row-wrapper">
-                <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-premium" aria-label="آگهی بعدی">
-                  <i class="bi bi-chevron-right"></i>
-                </button>
-                <div class="listings-scroll-row" id="listings-row-premium">
-                  <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
-                  <div class="listings-scroll-card listings-scroll-card--premium">
-                    <?php 
-                      $cardLayout = 'premium-horizontal';
-                      include __DIR__ . '/includes/listing_card.php'; 
-                      unset($cardLayout);
-                    ?>
-                  </div>
-                  <?php endforeach; ?>
-                </div>
-                <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-premium" aria-label="آگهی قبلی">
-                  <i class="bi bi-chevron-left"></i>
-                </button>
-              </div>
-            </div>
+               <a href="<?= APP_URL ?>/listings/" class="home-section-heading__back">
+                 <i class="bi bi-chevron-left"></i>
+               </a>
+               <h2>آگهی‌های ویژه</h2>
+             </div>
+             <div class="listings-rows-container">
+               <div class="listings-row-wrapper">
+                 <div class="listings-scroll-row" id="listings-row-premium">
+                   <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
+                   <div class="listings-scroll-card listings-scroll-card--premium">
+                     <?php 
+                       $cardLayout = 'premium-horizontal';
+                       include __DIR__ . '/includes/listing_card.php'; 
+                       unset($cardLayout);
+                     ?>
+                   </div>
+                   <?php endforeach; ?>
+                 </div>
+               </div>
+             </div>
           </div>
         </section>
         <?php endif; ?>
 
         <!-- New Listings Section -->
         <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
-          <div class="home-section-heading home-section-heading--large mb-5">
-            <h2>جدیدترین آگهی‌ها</h2>
-            <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
-              مشاهده همه
-            </a>
-          </div>
-          <?php if (empty($listings)): ?>
-          <div class="empty-state">
-            <i class="bi bi-search"></i>
-            <h3>آگهی‌ای یافت نشد</h3>
-            <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
-            <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
-          </div>
-          <?php else: ?>
-          <?php
-          $showcaseListings = array_slice($listings, 0, 20);
-          ?>
-          <div class="listings-rows-container">
-            <div class="listings-row-wrapper">
-              <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="listings-row-1" aria-label="آگهی بعدی">
-                <i class="bi bi-chevron-right"></i>
-              </button>
-              <div class="listings-scroll-row" id="listings-row-1">
-                <?php foreach ($showcaseListings as $l): ?>
-                <div class="listings-scroll-card">
-                  <?php include __DIR__ . '/includes/listing_card.php'; ?>
+          <div class="container">
+            <div class="home-section-heading home-section-heading--large mb-5">
+              <h2>جدیدترین آگهی‌ها</h2>
+              <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
+                مشاهده همه
+              </a>
+            </div>
+            <?php if (empty($listings)): ?>
+            <div class="empty-state">
+              <i class="bi bi-search"></i>
+              <h3>آگهی‌ای یافت نشد</h3>
+              <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
+              <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
+            </div>
+            <?php else: ?>
+            <div class="newest-listings-container">
+              <div class="newest-listings-list" id="newest-listings-list">
+                <?php foreach (array_slice($listings, 0, 40) as $index => $l): ?>
+                <div class="newest-listing-item <?= $index >= 10 ? 'd-none' : '' ?>">
+                  <?php 
+                    $cardLayout = 'premium-horizontal';
+                    include __DIR__ . '/includes/listing_card.php'; 
+                    unset($cardLayout);
+                  ?>
                 </div>
                 <?php endforeach; ?>
               </div>
-              <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="listings-row-1" aria-label="آگهی قبلی">
-                <i class="bi bi-chevron-left"></i>
-              </button>
+              
+              <?php if (count($listings) > 10): ?>
+              <div class="text-center mt-6">
+                <button type="button" class="btn btn-outline btn-lg w-100" id="btn-load-more">
+                  <i class="bi bi-plus-circle"></i> نمایش بیشتر
+                </button>
+              </div>
+              <?php endif; ?>
             </div>
+
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              const btn = document.getElementById('btn-load-more');
+              const list = document.getElementById('newest-listings-list');
+              if (!btn || !list) return;
+
+              btn.addEventListener('click', function() {
+                const hiddenItems = list.querySelectorAll('.newest-listing-item.d-none');
+                const nextItems = Array.from(hiddenItems).slice(0, 10);
+                
+                nextItems.forEach(item => {
+                  item.classList.remove('d-none');
+                  item.classList.add('animate-fade-in');
+                });
+
+                if (list.querySelectorAll('.newest-listing-item.d-none').length === 0) {
+                  btn.parentElement.style.display = 'none';
+                }
+              });
+            });
+            </script>
+            <?php endif; ?>
           </div>
-          <?php endif; ?>
         </section>
 
         <!-- Stores Section -->
