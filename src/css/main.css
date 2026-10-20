@@ -8866,142 +8866,177 @@ aside.home-sidebar,
 
 /* -- 26. Premium Featured Slider (Yellow BG + Peek Effect) ------------------ */
 .home-listings-section--premium {
-    background: #FFC928;
-    padding: var(--sp-8) 0;
-    margin: var(--sp-6) 0;
-    width: 100vw;
-    position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
+    display: none;
 }
 
-.home-listings-section--premium .home-section-heading h2 {
-    color: #071A33;
-    font-weight: 900;
-}
-
-.home-listings-section--premium .home-section-heading__link {
-    color: #071A33;
-    opacity: 0.8;
-}
-
-/* Slider Peek Effect */
-.home-listings-section--premium .listings-scroll-row {
-    padding: var(--sp-4) 0;
-    overflow-x: auto;
-    scroll-padding: 0 var(--sp-4);
-    gap: var(--sp-4);
-}
-
-.listings-scroll-card--premium {
-    flex: 0 0 85% !important; /* Peek effect: 85% width means 15% of next card is visible */
-    max-width: 500px !important;
-    scroll-snap-align: center;
-}
-
-@media (min-width: 768px) {
-    .listings-scroll-card--premium {
-        flex: 0 0 450px !important;
+@media (max-width: 1024px) {
+    .home-listings-section--premium {
+        display: block !important;
+        background: #FFC928;
+        padding: var(--sp-8) 0;
+        margin: var(--sp-6) 0;
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
     }
-}
 
-/* Premium Horizontal Card Style */
-.listing-card--premium-horizontal {
-    flex-direction: row-reverse !important;
-    background: #ffffff !important;
-    border: none !important;
-    padding: 12px !important;
-    gap: 12px !important;
-    align-items: stretch !important;
-    min-height: 180px !important;
-}
+    .home-listings-section--premium .home-section-heading h2 {
+        color: #071A33;
+        font-weight: 900;
+    }
 
-.listing-card--premium-horizontal .lc-media-wrapper {
-    flex: 0 0 140px !important;
-    height: 140px !important;
-    min-height: 140px !important;
-    border-radius: 14px !important;
-    overflow: hidden !important;
-}
+    .home-listings-section--premium .home-section-heading__link {
+        color: #071A33;
+        opacity: 0.8;
+    }
 
-.listing-card--premium-horizontal .listing-card__media-img {
-    height: 100% !important;
-    min-height: 100% !important;
-    border-radius: 14px !important;
-}
+    /* Slider Peek Effect */
+    .home-listings-section--premium .listings-scroll-row {
+        padding: var(--sp-4) 0;
+        overflow-x: auto;
+        scroll-padding: 0 var(--sp-4);
+        gap: var(--sp-4);
+    }
 
-.listing-card--premium-horizontal .lc-content {
-    flex: 1 !important;
-    padding: 0 !important;
-    min-height: 0 !important;
-    text-align: right !important;
-    justify-content: space-between !important;
-}
+    .listings-scroll-card--premium {
+        flex: 0 0 78% !important; /* Decreased from 85% for better peek */
+        max-width: 500px !important;
+        scroll-snap-align: center;
+    }
 
-.listing-card--premium-horizontal .lc-title {
-    text-align: right !important;
-    margin: 0 0 8px 0 !important;
-    font-size: 1.1rem !important;
-    white-space: normal !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-}
+    /* Premium Horizontal Card Style */
+    .listing-card--premium-horizontal {
+        flex-direction: row-reverse !important;
+        background: #ffffff !important;
+        border: none !important;
+        padding: 12px !important;
+        gap: 12px !important;
+        align-items: stretch !important;
+        min-height: 180px !important;
+    }
 
-.listing-card--premium-horizontal .lc-want-box {
-    background: #f3f4f6 !important;
-    border: none !important;
-    padding: 8px 12px !important;
-    border-radius: 10px !important;
-    margin: 0 0 8px 0 !important;
-}
+    .listing-card--premium-horizontal .lc-media-wrapper {
+        flex: 0 0 140px !important;
+        height: 140px !important;
+        min-height: 140px !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+    }
 
-.listing-card--premium-horizontal .lc-want-text {
-    font-size: 0.8rem !important;
-    color: #4b5563 !important;
-}
+    .listing-card--premium-horizontal .listing-card__media-img {
+        height: 100% !important;
+        min-height: 100% !important;
+        border-radius: 14px !important;
+    }
 
-.listing-card--premium-horizontal .lc-value-row {
-    margin: 0 0 8px 0 !important;
-    justify-content: flex-start !important;
-    gap: 8px !important;
-}
+    .listing-card--premium-horizontal .lc-content {
+        flex: 1 !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+        text-align: right !important;
+        justify-content: space-between !important;
+    }
 
-.listing-card--premium-horizontal .lc-value-label {
-    font-size: 0.85rem !important;
-}
+    .listing-card--premium-horizontal .lc-title {
+        text-align: right !important;
+        margin: 0 0 8px 0 !important;
+        font-size: 1.1rem !important;
+        white-space: normal !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+    }
 
-.listing-card--premium-horizontal .lc-value-amount {
-    font-size: 1.2rem !important;
-    color: #F59E0B !important;
-}
+    .listing-card--premium-horizontal .lc-want-box {
+        background: #f3f4f6 !important;
+        border: none !important;
+        padding: 8px 12px !important;
+        border-radius: 10px !important;
+        margin: 0 0 8px 0 !important;
+    }
 
-.listing-card--premium-horizontal .lc-meta {
-    margin-top: auto !important;
-    font-size: 0.8rem !important;
-    gap: 12px !important;
-}
+    .listing-card--premium-horizontal .lc-want-text {
+        font-size: 0.8rem !important;
+        color: #4b5563 !important;
+    }
 
-.listing-card--premium-horizontal .lc-badges-row {
-    top: 8px !important;
-    right: 8px !important;
-}
+    .listing-card--premium-horizontal .lc-value-row {
+        margin: 0 0 8px 0 !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+    }
 
-.listing-card--premium-horizontal .lc-badge {
-    padding: 4px 10px !important;
-    font-size: 0.7rem !important;
-}
+    .listing-card--premium-horizontal .lc-value-label {
+        font-size: 0.85rem !important;
+    }
 
-/* Arrow adjustments for yellow BG */
-.home-listings-section--premium .listings-slider-arrow {
-    background: #071A33;
-    color: #ffffff;
-    border: none;
-}
-.home-listings-section--premium .listings-slider-arrow:hover {
-    background: #14305e;
+    .listing-card--premium-horizontal .lc-value-amount {
+        font-size: 1rem !important; /* Decreased from 1.2rem */
+        color: #F59E0B !important;
+    }
+
+    .listing-card--premium-horizontal .lc-meta {
+        margin-top: auto !important;
+        font-size: 0.8rem !important;
+        gap: 12px !important;
+    }
+
+    .listing-card--premium-horizontal .lc-badges-row {
+        top: 8px !important;
+        right: 8px !important;
+    }
+
+    .listing-card--premium-horizontal .lc-badge {
+        padding: 4px 10px !important;
+        font-size: 0.7rem !important;
+    }
+
+    /* Arrow adjustments for yellow BG */
+    .home-listings-section--premium .listings-slider-arrow {
+        background: #071A33;
+        color: #ffffff;
+        border: none;
+    }
+    .home-listings-section--premium .listings-slider-arrow:hover {
+        background: #14305e;
+    }
+
+
+    .home-section-heading--premium {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-direction: row-reverse !important; /* Back arrow on left, Title on right */
+    }
+
+    .home-section-heading--premium h2 {
+        margin: 0 !important;
+        font-size: 1.5rem !important;
+    }
+
+    .home-section-heading__back {
+        color: #071A33;
+        font-size: 1.2rem;
+        text-decoration: none;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Ensure horizontal cards look good on very small screens */
+    @media (max-width: 400px) {
+        .listing-card--premium-horizontal .lc-media-wrapper {
+            flex: 0 0 110px !important;
+            height: 110px !important;
+        }
+        .listing-card--premium-horizontal .lc-title {
+            font-size: 0.95rem !important;
+        }
+    }
 }
 
 
