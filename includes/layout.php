@@ -317,7 +317,7 @@ function render_navbar(?array $user = null): void {
         <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">
       </a>
 
-      <div class="navbar-city-search-wrapper hide-mobile">
+      <div class="navbar-city-search-wrapper">
         <div class="navbar-city-select">
           <i class="bi bi-geo-alt navbar-city-select__icon"></i>
           <button type="button" class="navbar-city-select__btn" id="city-select-btn">
