@@ -9283,6 +9283,9 @@ aside.home-sidebar,
     /* بخش دسته‌بندی موبایل فقط در موبایل دیده شود */
     .mobile-categories-wrapper { display: none !important; }
 
+    /* لوگو در دسکتاپ سمت راست هدر */
+    .navbar-brand { order: -1; }
+
     /* اسلایدر بنر فقط در موبایل دیده شود */
     .home-slider-section { display: none !important; }
 
@@ -9291,6 +9294,21 @@ aside.home-sidebar,
         margin-right: 0;
         max-width: 16%;
     }
+
+    /* دکمه‌های بخش AI: کوچک‌تر و همیشه کنار هم */
+    .home-ai__actions {
+        flex-wrap: nowrap !important;
+        gap: var(--sp-2);
+        margin-top: 16px;
+    }
+    .home-ai__actions .btn {
+        height: 42px;
+        font-size: .8125rem;
+        padding: 0 14px;
+        border-radius: 10px;
+        gap: 6px;
+    }
+    .home-ai__actions .btn i { font-size: .9375rem; }
 
     /* نمایش کامل محتوای کارت (دکمه) در دسکتاپ */
     .listing-card--premium-horizontal .lc-cta--premium {
