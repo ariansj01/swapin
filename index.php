@@ -286,24 +286,24 @@ render_navbar($user);
     </div>
   </div>
 </section>
-<?php
-// Mobile-only Categories Section
-$_mobileCats = DB::fetchAll('SELECT * FROM categories WHERE is_active = 1 AND parent_id = 0 ORDER BY sort_order ASC, name ASC');
-if (!empty($_mobileCats)):
-?>
+
+<!-- Mobile Categories -->
 <section class="mobile-categories-wrapper">
   <div class="mobile-categories-list">
-    <?php foreach ($_mobileCats as $_c): ?>
-    <a href="<?= category_url($_c['slug']) ?>" class="mobile-category-item">
+    <?php
+    $allCats = DB::fetchAll('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, id ASC LIMIT 10');
+    foreach ($allCats as $cat):
+    ?>
+    <a href="<?= category_url($cat['slug']) ?>" class="mobile-category-item">
       <div class="mobile-category-circle">
-        <i class="<?= h($_c['icon'] ?: 'bi bi-grid') ?>"></i>
+        <i class="<?= h($cat['icon'] ?: 'bi bi-grid') ?>"></i>
       </div>
-      <span class="mobile-category-title"><?= h($_c['name']) ?></span>
+      <span class="mobile-category-title"><?= h($cat['name']) ?></span>
     </a>
     <?php endforeach; ?>
   </div>
 </section>
-<?php endif; ?>
+
 <?php stories_render_section(); ?>
 <?php endif; ?>
 
