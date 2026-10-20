@@ -1,146 +1,123 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -u
 
-SITE="https://swaapin.ir"
+BASE="https://swaapin.ir"
+FAIL=0
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+pass() { echo "✅ $1"; }
+fail() { echo "❌ $1"; FAIL=$((FAIL + 1)); }
+warn() { echo "⚠️ $1"; }
+
+fetch() {
+    local url="$1"
+    local file="$2"
+    curl -fsSL --max-time 30 "$url" -o "$file"
+}
 
 echo "===== SWAAPIN SEO / ANALYTICS PRODUCTION QA ====="
+echo
 
-
-echo ""
 echo "1) Homepage SEO"
 
-HOME=$(curl -Ls "$SITE/")
+if fetch "$BASE/" "$TMP/home.html"; then
+    grep -qi '<title[^>]*>[^<]' "$TMP/home.html" \
+        && pass "Title OK" || fail "Missing Title"
 
-echo "$HOME" | grep -q "<title>" \
-&& echo "✅ Title OK" \
-|| echo "❌ Missing Title"
+    grep -qiE '<meta[^>]+name=["'"'"']description["'"'"']' "$TMP/home.html" \
+        && pass "Description OK" || fail "Missing Description"
 
+    grep -qiE '<link[^>]+rel=["'"'"']canonical["'"'"'][^>]+href=["'"'"']https://swaapin\.ir/?["'"'"']' "$TMP/home.html" \
+        && pass "Canonical OK" || fail "Missing/Wrong Canonical"
 
-echo "$HOME" | grep -q 'meta name="description"' \
-&& echo "✅ Description OK" \
-|| echo "❌ Missing Description"
+    grep -qi 'application/ld+json' "$TMP/home.html" \
+        && pass "Schema OK" || fail "Schema Missing"
+else
+    fail "Homepage fetch failed"
+fi
 
-
-echo "$HOME" | grep -q "canonical" \
-&& echo "✅ Canonical OK" \
-|| echo "❌ Missing Canonical"
-
-
-echo "$HOME" | grep -q "application/ld+json" \
-&& echo "✅ Schema OK" \
-|| echo "❌ Schema Missing"
-
-
-
-echo ""
+echo
 echo "2) Google Tag Manager"
 
-echo "$HOME" | grep -q "GTM-5GLQN3HL" \
-&& echo "✅ GTM Public Enabled" \
-|| echo "❌ GTM Missing"
+grep -qiE 'GTM-[A-Z0-9]+' "$TMP/home.html" \
+    && pass "GTM Public Enabled" || fail "GTM Missing"
 
-
-
-echo ""
+echo
 echo "3) Direct GA4 Check"
 
-echo "$HOME" | grep -q "G-S0RG4SWX8K"
-
-if [ $? -eq 0 ]
-then
- echo "❌ Direct GA4 Found - Should be GTM only"
+if grep -qiE 'googletagmanager\.com/gtag/js\?id=G-' "$TMP/home.html"; then
+    fail "Direct GA4 found outside GTM"
 else
- echo "✅ GA4 Controlled By GTM"
+    pass "GA4 Controlled By GTM"
 fi
 
-
-
-echo ""
+echo
 echo "4) Admin Tracking Isolation"
 
-ADMIN=$(curl -Ls "$SITE/admin/login.php")
+curl -sS --max-time 30 "$BASE/admin/" -o "$TMP/admin.html" || true
 
-echo "$ADMIN" | grep -q "GTM-5GLQN3HL"
-
-if [ $? -eq 0 ]
-then
- echo "❌ GTM leaked into Admin"
+if grep -qiE 'GTM-[A-Z0-9]+|googletagmanager\.com/gtag/js\?id=G-' "$TMP/admin.html" 2>/dev/null; then
+    fail "Admin Tracking Enabled"
 else
- echo "✅ Admin Tracking Disabled"
+    pass "Admin Tracking Disabled"
 fi
 
-
-
-echo ""
+echo
 echo "5) Dashboard Tracking Isolation"
 
-DASH=$(curl -Ls "$SITE/dashboard.php")
+curl -sS --max-time 30 "$BASE/dashboard" -o "$TMP/dashboard.html" || true
 
-echo "$DASH" | grep -q "GTM-5GLQN3HL"
-
-if [ $? -eq 0 ]
-then
- echo "❌ GTM leaked into Dashboard"
+if grep -qiE 'GTM-[A-Z0-9]+|googletagmanager\.com/gtag/js\?id=G-' "$TMP/dashboard.html" 2>/dev/null; then
+    fail "Dashboard Tracking Enabled"
 else
- echo "✅ Dashboard Tracking Disabled"
+    pass "Dashboard Tracking Disabled"
 fi
 
-
-
-echo ""
+echo
 echo "6) Blog SEO"
 
-BLOG=$(curl -Ls "$SITE/blog/")
+if fetch "$BASE/blog/" "$TMP/blog.html"; then
+    grep -qiE '<link[^>]+rel=["'"'"']canonical["'"'"'][^>]+href=["'"'"']https://swaapin\.ir/blog/?["'"'"']' "$TMP/blog.html" \
+        && pass "Blog Canonical OK" || fail "Blog Canonical Missing/Wrong"
 
-echo "$BLOG" | grep -q "canonical"
-
-if [ $? -eq 0 ]
-then
- echo "✅ Blog Canonical OK"
+    if grep -qiE '<meta[^>]+name=["'"'"']robots["'"'"'][^>]+content=["'"'"'][^"'"'"']*noindex' "$TMP/blog.html"; then
+        fail "Blog is NOINDEX"
+    else
+        pass "Blog Robots OK"
+    fi
 else
- echo "❌ Blog Canonical Missing"
+    fail "Blog fetch failed"
 fi
 
-
-echo "$BLOG" | grep -q "robots"
-
-if [ $? -eq 0 ]
-then
- echo "✅ Blog Robots OK"
-else
- echo "❌ Blog Robots Missing"
-fi
-
-
-
-echo ""
+echo
 echo "7) Robots.txt"
 
-ROBOTS=$(curl -Ls "$SITE/robots.txt")
-
-echo "$ROBOTS" | grep -q "Sitemap"
-
-if [ $? -eq 0 ]
-then
- echo "✅ Sitemap Declaration OK"
+if fetch "$BASE/robots.txt" "$TMP/robots.txt"; then
+    grep -qiE '^sitemap:[[:space:]]*https://swaapin\.ir/sitemap\.xml' "$TMP/robots.txt" \
+        && pass "Sitemap Declaration OK" || fail "Sitemap Declaration Missing"
 else
- echo "⚠️ Sitemap Declaration Missing"
+    fail "robots.txt fetch failed"
 fi
 
-
-
-echo ""
+echo
 echo "8) Sitemap Availability"
 
-curl -sf "$SITE/sitemap.xml" > /dev/null
+CODE="$(curl -sS -o /dev/null -w '%{http_code}' "$BASE/sitemap.xml" || true)"
 
-if [ $? -eq 0 ]
-then
- echo "✅ Sitemap Available"
+if [ "$CODE" = "200" ]; then
+    pass "Sitemap Available"
 else
- echo "⚠️ Sitemap Not Found"
+    fail "Sitemap Not Found: HTTP $CODE"
 fi
 
+echo
+echo "===== QA RESULT ====="
+echo "Failures: $FAIL"
 
+if [ "$FAIL" -gt 0 ]; then
+    echo "===== QA FAILED ====="
+    exit 1
+fi
 
-echo ""
-echo "===== QA COMPLETE ====="
+echo "===== QA COMPLETE / PASS ====="

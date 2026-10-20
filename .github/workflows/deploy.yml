@@ -71,7 +71,11 @@ jobs:
 
             echo "[7/8] Reloading services..."
             sudo systemctl reload php8.4-fpm
+            echo "Running SEO static deployment gate..."
+            bash "$APP_DIR/tools/seo-static-deploy-gate.sh"
             sudo systemctl reload nginx
+            echo "Running SEO post-deploy critical guard..."
+            bash "$APP_DIR/tools/seo-critical-guard.sh"
 
             echo "[8/8] Running production SEO guard..."
 
