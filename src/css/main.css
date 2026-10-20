@@ -2908,7 +2908,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   padding: 12px 18px;
   font-size: .9rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: #fff;
   text-decoration: none;
   transition: all 0.15s ease;
   border-right: 3px solid transparent;
@@ -4099,7 +4099,7 @@ html body .categories-dropdown {
   .navbar-city-select__menu {
     position: absolute !important;
     top: 100% !important;
-    right: 0 !important;
+    right: -38vw !important;
     left: auto !important;
     width: 200px !important;
     max-height: 300px !important;
@@ -4171,7 +4171,7 @@ html body .categories-dropdown {
   }
 
   .brand-logo {
-    height: 22px !important;
+    height: 40px !important;
     width: auto !important;
   }
 
@@ -4224,33 +4224,36 @@ html body .categories-dropdown {
        text-decoration: none;
      }
 
-     .mobile-category-circle {
-       width: 65px;
-       height: 65px;
-       background-color: var(--primary); /* Navy blue */
-       border-radius: 50%;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       box-shadow: 0 4px 10px rgba(7, 26, 51, 0.2);
-       transition: transform 0.2s ease;
-     }
+    .mobile-category-circle {
+      width: 68px;
+      height: 68px;
+      background-color: #071A33; /* Exact Navy blue from profile */
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(7, 26, 51, 0.15);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-     .mobile-category-item:active .mobile-category-circle {
-       transform: scale(0.95);
-     }
+    .mobile-category-item:active .mobile-category-circle {
+      transform: scale(0.92);
+      background-color: #0B1F3A;
+    }
 
-     .mobile-category-circle i {
-       font-size: 1.8rem;
-       color: var(--accent); /* Orange icon */
-     }
+    .mobile-category-circle i {
+      font-size: 1.85rem;
+      color: rgb(255, 102, 0); /* User preferred Orange */
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
 
-     .mobile-category-title {
-       font-size: 0.75rem;
-       font-weight: 700;
-       color: var(--primary);
-       white-space: nowrap;
-     }
+    .mobile-category-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #071A33;
+      white-space: nowrap;
+      margin-top: 4px;
+    }
    }
 
    #filter-modal {
