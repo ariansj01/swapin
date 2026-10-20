@@ -8740,13 +8740,13 @@ aside.home-sidebar,
 /* ── 25. Banner Slider ──────────────────────────────────────────────────── */
 .banner-slider {
     position: relative;
-    width: 100%;
+    width: 122%;
     overflow: hidden;
     border-radius: 20px;
     background: #071A33;
-    min-height: 200px;
-    /* نسبت ثابت → اسلایدر همیشه مستطیل عریض می‌ماند */
+    min-height: 30%;
     aspect-ratio: 16 / 9;
+    margin-right: -9%;
 }
 
 .banner-slider__wrapper {
@@ -8890,9 +8890,9 @@ aside.home-sidebar,
     .home-listings-section--premium {
         display: block !important;
         background: #FFC928;
-        padding: var(--sp-8) 0;
-        margin: var(--sp-6) 0;
-        width: 100vw;
+        /* padding: var(--sp-8) 0; */
+        /* margin: var(--sp-6) 0; */
+        width: 110vw;
         position: relative;
         left: 50%;
         right: 50%;

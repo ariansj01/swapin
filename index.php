@@ -295,7 +295,11 @@ render_navbar($user);
     $allCats = DB::fetchAll('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, id ASC LIMIT 10');
     foreach ($allCats as $cat):
     ?>
-    <a href="<?= category_url($cat['slug']) ?>" class="mobile-category-item">
+    <a href="<?= APP_URL . '/listings/map?' . http_build_query([
+        'cat'  => $cat['slug'],
+        'city' => $city,
+        'sort' => 'new',
+    ]) ?>" class="mobile-category-item">
       <div class="mobile-category-circle">
         <i class="<?= h($cat['icon'] ?: 'bi bi-grid') ?>"></i>
       </div>
@@ -529,7 +533,7 @@ render_navbar($user);
         <!-- New Listings Section -->
         <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
           <div class="container">
-            <div class="home-section-heading home-section-heading--large mb-5">
+            <div class="home-section-heading home-section-heading--large mb-5" style="margin-right: -17%;">
               <h2>جدیدترین آگهی‌ها</h2>
               <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
                 مشاهده همه
@@ -543,7 +547,7 @@ render_navbar($user);
               <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
             </div>
             <?php else: ?>
-            <div class="newest-listings-container">
+            <div class="newest-listings-container" style="margin-right: -20%;">
               <div class="newest-listings-list" id="newest-listings-list">
                 <?php foreach (array_slice($listings, 0, 40) as $index => $l): ?>
                 <div class="newest-listing-item <?= $index >= 10 ? 'd-none' : '' ?>">
