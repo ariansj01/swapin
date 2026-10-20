@@ -8950,19 +8950,22 @@ aside.home-sidebar,
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
+    overflow: hidden !important; /* Prevent content overflow */
 }
 
 .listing-card--premium-horizontal .lc-title {
     text-align: right !important;
-    margin: 0 0 8px 0 !important;
+    margin: 0 0 4px 0 !important; /* Reduced margin */
     font-size: 1.05rem !important;
     font-weight: 700 !important;
-    line-height: 1.4 !important;
+    line-height: 1.3 !important; /* Tighter line height */
     color: #071A33 !important;
     white-space: normal !important;
     display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
+    -webkit-line-clamp: 1 !important; /* Force single line for title as per preference */
     -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 .listing-card--premium-horizontal .lc-want-box {
@@ -8970,15 +8973,18 @@ aside.home-sidebar,
     border: 1px solid #edf2f7 !important;
     padding: 6px 10px !important;
     border-radius: 10px !important;
-    margin: 0 0 8px 0 !important;
+    margin: 4px 0 6px 0 !important; /* Adjusted margin */
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
 }
 
 .listing-card--premium-horizontal .lc-want-arrow {
     color: #F59E0B !important;
     font-size: 0.9rem !important;
+    flex-shrink: 0 !important;
 }
 
 .listing-card--premium-horizontal .lc-want-text {
@@ -8987,6 +8993,7 @@ aside.home-sidebar,
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+    flex: 1 !important;
 }
 
 .listing-card--premium-horizontal .lc-value-row {
@@ -9147,7 +9154,7 @@ aside.home-sidebar,
 }
 
 .newest-listing-item {
-    width: 100%;
+    width: 83%;
 }
 
 .newest-listing-item .listing-card--premium-horizontal {
@@ -9184,4 +9191,69 @@ aside.home-sidebar,
 .home-listings-section--premium .listings-slider-arrow {
     display: none !important;
 }
+
+/* Mobile Fixes for Newest Listings Cards */
+@media (max-width: 1024px) {
+    .newest-listings-container {
+        margin-right: 0 !important;
+        width: 100% !important;
+        padding: 0 var(--sp-4) !important;
+    }
+
+    .newest-listing-item {
+        width: 100% !important;
+    }
+
+    .listing-card--premium-horizontal {
+        min-height: 160px !important;
+        padding: 10px !important;
+        gap: 10px !important;
+    }
+
+    .listing-card--premium-horizontal .lc-media-wrapper {
+        flex: 0 0 120px !important;
+        height: 120px !important;
+        min-height: 120px !important;
+    }
+
+    /* Move badges to the left on the image (outer edge in RTL) */
+    .listing-card--premium-horizontal .lc-badges-row {
+        right: auto !important;
+        left: 8px !important;
+        top: 8px !important;
+    }
+
+    /* Ensure 1 line for all text elements with ellipsis */
+    .listing-card--premium-horizontal .lc-title {
+        -webkit-line-clamp: 1 !important;
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        white-space: normal !important;
+        font-size: 1rem !important;
+    }
+
+    .listing-card--premium-horizontal .lc-want-text {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        flex: 1 !important;
+    }
+
+    .listing-card--premium-horizontal .lc-value-row {
+        margin-bottom: 4px !important;
+    }
+
+    .listing-card--premium-horizontal .lc-value-amount {
+        font-size: 1.1rem !important;
+    }
+
+    .listing-card--premium-horizontal .lc-meta {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        gap: 8px !important;
+    }
+}
+
 
