@@ -8862,6 +8862,11 @@ aside.home-sidebar,
         margin-left: auto;
         margin-right: auto;
     }
+      .newest-listings-container {
+      margin-right: -24% !important;
+      width: 100% !important;
+      padding: 0 var(--sp-4) !important;
+    }
 }
 
 /* -- 26. Premium Featured Slider (Yellow BG + Peek Effect) ------------------ */
@@ -9194,11 +9199,7 @@ aside.home-sidebar,
 
 /* Mobile Fixes for Newest Listings Cards */
 @media (max-width: 1024px) {
-    .newest-listings-container {
-        margin-right: -24% !important;
-        width: 100% !important;
-        padding: 0 var(--sp-4) !important;
-    }
+
 
     .newest-listing-item {
         width: 100% !important;
