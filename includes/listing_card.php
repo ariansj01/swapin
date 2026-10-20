@@ -170,6 +170,21 @@ if ($isHorizontal) {
         <span><i class="bi bi-geo-alt"></i> <?= h($l['city']) ?></span>
         <?php endif; ?>
       </div>
+
+      <!-- CTA Button (only shown on desktop) -->
+      <div class="lc-cta lc-cta--premium">
+        <?php if ($cardBuyUrl): ?>
+        <a href="<?= h($cardBuyUrl) ?>" class="lc-btn lc-btn--buy" data-navigate="<?= h($cardBuyUrl) ?>" onclick="handleCardV2Click(event, this)">
+          <i class="bi bi-cart-check"></i>
+          <span>خرید</span>
+        </a>
+        <?php else: ?>
+        <a href="<?= $cardHref ?>" class="lc-btn <?= $hasSwapCta ? 'lc-btn--swap' : 'lc-btn--view' ?>" onclick="handleCardV2Click(event, this)">
+          <i class="bi <?= $hasSwapCta ? 'bi-arrow-left-right' : 'bi-eye' ?>"></i>
+          <span><?= $hasSwapCta ? 'پیشنهاد معاوضه' : 'مشاهده آگهی' ?></span>
+        </a>
+        <?php endif; ?>
+      </div>
     <?php elseif ($isHorizontal): ?>
     <!-- Horizontal Minimal Layout (Title -> Condition -> Price -> Time/Location) -->
     <h3 class="lc-title"><?= h($l['title']) ?></h3>

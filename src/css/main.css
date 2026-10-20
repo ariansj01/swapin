@@ -9195,7 +9195,7 @@ aside.home-sidebar,
 /* Mobile Fixes for Newest Listings Cards */
 @media (max-width: 1024px) {
     .newest-listings-container {
-        margin-right: 0 !important;
+        margin-right: -24% !important;
         width: 100% !important;
         padding: 0 var(--sp-4) !important;
     }
@@ -9253,6 +9253,72 @@ aside.home-sidebar,
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         gap: 8px !important;
+    }
+}
+
+/* =========================================================
+   DESKTOP-ONLY OVERRIDES  (min-width: 1025px)
+   موبایل هیچ تغییری نمی‌کند
+   ========================================================= */
+/* دکمه کارت‌های premium-horizontal فقط در دسکتاپ نمایش داده می‌شود */
+.listing-card--premium-horizontal .lc-cta--premium { display: none !important; }
+
+@media (min-width: 1025px) {
+    /* بخش دسته‌بندی موبایل فقط در موبایل دیده شود */
+    .mobile-categories-wrapper { display: none !important; }
+
+    /* نمایش کامل محتوای کارت (دکمه) در دسکتاپ */
+    .listing-card--premium-horizontal .lc-cta--premium {
+        display: block !important;
+        margin-top: auto;
+        padding-top: 8px;
+    }
+
+    /* جدیدترین آگهی‌ها در دسکتاپ به صورت اسلایدر افقی */
+    .newest-listings-list {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        max-width: none !important;
+        margin: 0 !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        padding: 0 0 14px;
+        gap: var(--sp-4) !important;
+    }
+    .newest-listings-list::-webkit-scrollbar { height: 8px; }
+    .newest-listings-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+
+    .newest-listing-item {
+        flex: 0 0 300px !important;
+        width: 300px !important;
+        max-width: 300px !important;
+        scroll-snap-align: start;
+    }
+    /* در دسکتاپ همه کارت‌ها داخل اسلایدر دیده شوند */
+    .newest-listing-item.d-none { display: block !important; }
+
+    /* دکمه «نمایش بیشتر» در دسکتاپ لازم نیست (اسلایدر همه را نشان می‌دهد) */
+    .newest-listings-container #btn-load-more { display: none !important; }
+
+    /* هم‌قد بودن کارت‌های اسلایدر */
+    .newest-listing-item .listing-card--premium-horizontal {
+        height: 100% !important;
+        min-height: 100% !important;
+    }
+    .newest-listing-item .lc-media-wrapper {
+        flex: 0 0 200px !important;
+        height: 200px !important;
+        min-height: 200px !important;
+        max-height: 200px !important;
+    }
+    .newest-listing-item .listing-card__media-img {
+        height: 200px !important;
+        min-height: 200px !important;
+        max-height: 200px !important;
     }
 }
 
