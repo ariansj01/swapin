@@ -3677,7 +3677,7 @@ html body .categories-dropdown {
     margin-bottom: 20px;
   }
   .newest-home-section-heading{
-    margin-right: -17%;
+    margin-right: -17% !important;
   }
   .home-section-heading::after{
     display: none;
@@ -9291,8 +9291,8 @@ aside.home-sidebar,
 
     /* کلاس newest-listing فقط در دسکتاپ */
     .newest-listing {
-        margin-right: 0;
-        max-width: 16%;
+        margin-right: 0 !important;
+        max-width: 16% !important;
     }
 
     /* دکمه‌های بخش AI: کوچک‌تر و همیشه کنار هم */

@@ -669,7 +669,7 @@ function render_footer(): void {
         <span>|</span>
         <a href="{$url}/shops">لیست فروشگاه‌ها</a>
       </div>
-       <div class="site-footer__compact-col site-footer__compact-col--links site-footer__compact-col--links-left">
+       <!-- <div class="site-footer__compact-col site-footer__compact-col--links site-footer__compact-col--links-left">
         <a href="#">معاوضه کالا به کالا</a>
         <span>|</span>
         <a href="#">معاوضه گوشی</a>
@@ -677,7 +677,7 @@ function render_footer(): void {
         <a href="#">معاوضه خانه</a>
          <span>|</span>
         <a href="#">وسایل نقلیه</a>
-      </div>
+      </div> -->
     </div>
     <p class="site-footer__compact-copy">
       2026 | تمامی حقوق این وبسایت متعلق به سواَپین می‌باشد.
