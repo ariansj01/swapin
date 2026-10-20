@@ -312,11 +312,7 @@ function render_navbar(?array $user = null): void {
       <button type="button" class="navbar-hamburger" id="nav-hamburger" aria-label="منو">
         <i class="bi bi-list"></i>
       </button>
-
-      <a href="{$url}/" class="navbar-brand">
-        <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">
-      </a>
-
+      
       <div class="navbar-city-search-wrapper">
         <div class="navbar-city-select">
           <i class="bi bi-geo-alt navbar-city-select__icon"></i>
@@ -338,6 +334,10 @@ function render_navbar(?array $user = null): void {
           {$cityHiddenInput}
         </form>
       </div>
+
+      <a href="{$url}/" class="navbar-brand">
+        <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">
+      </a>
 
       <div class="navbar-actions">
 HTML;
