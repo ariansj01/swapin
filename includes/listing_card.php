@@ -508,7 +508,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   font-weight: 800;
   color: #071A33;
   line-height: 1.55;
-  text-align: center;
+  /* text-align: center; */
   display: block;
   width: 100%;
   max-width: 320px;
@@ -532,7 +532,7 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   font-weight: 600;
 }
 .lc-value-amount {
-  font-size: 1.55rem;
+  font-size: 1rem;
   font-weight: 900;
   color: #F59E0B;
   line-height: 1.2;
