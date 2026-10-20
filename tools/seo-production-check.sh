@@ -165,13 +165,7 @@ check_self_canonical "$BASE/electronics"
 check_self_canonical "$BASE/home-appliances"
 
 # Also verify the legacy /category/* URLs 301-redirect to new canonical-style URLs
-check_legacy_redirect "$BASE/category/electronics"      "$BASE/electronics"
-check_legacy_redirect "$BASE/category/home-appliances" "$BASE/home-appliances"
-
-# --------------------------------------------------
-# 5. Legacy .php duplicates
-# --------------------------------------------------
-
+# Redirect validation helper must be defined before first use
 check_legacy_redirect() {
     local old="$1"
     local expected="$2"
@@ -179,12 +173,24 @@ check_legacy_redirect() {
     code=$(status_code "$old")
     loc=$(redirect_url "$old")
 
-    if [ "$code" = "301" ] && [ "$loc" = "$expected" ]; then
+    norm_loc="$(python3 -c 'import sys; from urllib.parse import unquote; print(unquote(sys.argv[1]))' "$loc")"
+    norm_expected="$(python3 -c 'import sys; from urllib.parse import unquote; print(unquote(sys.argv[1]))' "$expected")"
+
+    if [ "$code" = "301" ] && [ "$norm_loc" = "$norm_expected" ]; then
         pass "$old redirects permanently to $expected"
     else
         fail "$old redirect incorrect: status=$code location=$loc expected=$expected"
     fi
 }
+
+check_legacy_redirect "$BASE/category/electronics"      "$BASE/electronics"
+check_legacy_redirect "$BASE/category/home-appliances" "$BASE/home-appliances"
+
+# --------------------------------------------------
+# 5. Legacy .php duplicates
+# --------------------------------------------------
+
+
 
 check_legacy_redirect "$BASE/about.php" "$BASE/about"
 check_legacy_redirect "$BASE/contact.php" "$BASE/contact"
@@ -193,6 +199,11 @@ check_legacy_redirect "$BASE/privacy.php" "$BASE/privacy"
 
 check_legacy_redirect "$BASE/listings/all" "$BASE/listings/"
 check_legacy_redirect "$BASE/listings/all.php" "$BASE/listings/"
+
+check_legacy_redirect \
+    "$BASE/blog/2026/07/21/%D9%85%D8%B9%D8%A7%D9%88%D8%B6%D9%87-%DA%A9%D8%A7%D9%84%D8%A7-%D8%A8%D8%A7-%DA%A9%D8%A7%D9%84%D8%A7/" \
+    "$BASE/blog/%D9%85%D8%B9%D8%A7%D9%88%D8%B6%D9%87-%DA%A9%D8%A7%D9%84%D8%A7-%D8%A8%D8%A7-%DA%A9%D8%A7%D9%84%D8%A7/"
+
 
 # --------------------------------------------------
 # 6. Sitemap endpoints

@@ -207,7 +207,14 @@ if (mb_strlen($desc) > 160) {
 }
 
 // Canonical: بدون فیلترهای اضافی و صفحه اول، به URL دسته‌بندی سلسله‌مراتبی اشاره می‌کند
-$canonical = APP_URL . '/listings/';
+$categorySlugPath = trim((string)($_GET['slug_path'] ?? ''), '/');
+$requestCanonicalPath = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+
+if ($categorySlugPath !== '' && $requestCanonicalPath !== '') {
+    $canonical = APP_URL . rtrim($requestCanonicalPath, '/');
+} else {
+    $canonical = APP_URL . '/listings/';
+}
 $hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $page !== 1 || $timeAgo !== '';
 if ($category && !$hasOtherFilters) {
     $canonical = category_url($category['slug']);

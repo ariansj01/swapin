@@ -25,7 +25,6 @@ $urls = [
     ['loc' => $base . '/shops/online',   'priority' => '0.8', 'changefreq' => 'daily'],
     ['loc' => $base . '/shops/physical', 'priority' => '0.8', 'changefreq' => 'daily'],
     ['loc' => $base . '/listings/',  'priority' => '0.7', 'changefreq' => 'daily'],
-    ['loc' => $base . '/trades',       'priority' => '0.5', 'changefreq' => 'weekly'],
 ];
 
 $cats = DB::fetchAll('SELECT id, slug, parent_id FROM categories WHERE is_active = 1 ORDER BY parent_id IS NULL DESC, parent_id ASC, sort_order, id');

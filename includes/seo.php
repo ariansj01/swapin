@@ -73,7 +73,6 @@ function seo_json_ld_site_navigation(): array {
         ['دسته‌بندی‌ها', APP_URL . '/listings/all'],
         ['فروشگاه‌ها', APP_URL . '/shops'],
         ['دستیار هوشمند', APP_URL . '/ai-assistant'],
-        ['اتاق امن', APP_URL . '/trades'],
         ['ثبت آگهی', APP_URL . '/listings/create'],
     ];
 
