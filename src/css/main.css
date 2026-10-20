@@ -9066,7 +9066,7 @@ aside.home-sidebar,
     .home-listings-section--premium {
         display: block !important;
         background: #FFC928;
-        padding: var(--sp-8) 0;
+        /* padding: var(--sp-8) 0; */
         margin: var(--sp-6) 0;
         width: 100vw;
         position: relative;

@@ -1388,33 +1388,11 @@ render_navbar($user);
       <?php endforeach; ?>
     </div>
     <style>
+      /* در موبایل اسلایدر شبکه اعتماد مخفی می‌شود */
       @media (max-width: 768px) {
         .trust-grid--compact[data-role="trust-slider"] {
-          display: flex !important;
-          overflow-x: auto;
-          overflow-y: hidden;
-          scroll-snap-type: x mandatory;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
-          padding-bottom: 8px;
-          margin-bottom: -8px;
-          gap: 14px;
+          display: none !important;
         }
-        .trust-grid--compact[data-role="trust-slider"]::-webkit-scrollbar {
-          display: none;
-        }
-        .trust-slider__item {
-          flex: 0 0 82% !important;
-          max-width: 82% !important;
-          scroll-snap-align: center;
-          scroll-snap-stop: always;
-          margin-bottom: 0 !important;
-        }
-        .trust-slider__item:first-child { margin-right: 4px; }
-        .trust-slider__item:last-child  { margin-left: 4px; }
-      }
-      @media (max-width: 420px) {
-        .trust-slider__item { flex-basis: 86% !important; max-width: 86% !important; }
       }
     </style>
     <script>
