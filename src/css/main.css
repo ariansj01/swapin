@@ -3676,6 +3676,9 @@ html body .categories-dropdown {
   .home-section-heading{
     margin-bottom: 20px;
   }
+  .newest-home-section-heading{
+    margin-right: -17%;
+  }
   .home-section-heading::after{
     display: none;
   }
@@ -9282,6 +9285,12 @@ aside.home-sidebar,
 
     /* اسلایدر بنر فقط در موبایل دیده شود */
     .home-slider-section { display: none !important; }
+
+    /* کلاس newest-listing فقط در دسکتاپ */
+    .newest-listing {
+        margin-right: 0;
+        max-width: 16%;
+    }
 
     /* نمایش کامل محتوای کارت (دکمه) در دسکتاپ */
     .listing-card--premium-horizontal .lc-cta--premium {
