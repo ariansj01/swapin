@@ -629,7 +629,7 @@ function render_mobile_bottom_nav(?array $user = null): void {
   </a>
   <a href="{$trades}" class="mobile-bottom-nav__item">
     <i class="bi bi-shield-lock"></i>
-    <span>معامله امن</span>
+    <span>اتاق گفتگو</span>
   </a>
   <a href="{$profile}" class="mobile-bottom-nav__item">
     <i class="bi bi-person"></i>

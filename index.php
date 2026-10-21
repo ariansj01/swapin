@@ -562,7 +562,7 @@ render_navbar($user);
               
               <?php if (count($listings) > 10): ?>
               <div class="text-center mt-6">
-                <button type="button" class="btn btn-outline btn-lg w-100" id="btn-load-more">
+                <button type="button" class="btn btn-outline btn-lg w-100" id="btn-load-more" style="width: 45%; height: 2%;">
                   <i class="bi bi-plus-circle"></i> نمایش بیشتر
                 </button>
               </div>

@@ -8743,13 +8743,13 @@ aside.home-sidebar,
 /* ── 25. Banner Slider ──────────────────────────────────────────────────── */
 .banner-slider {
     position: relative;
-    width: 122%;
+    width: 128%;
     overflow: hidden;
     border-radius: 20px;
     background: #071A33;
     min-height: 30%;
     aspect-ratio: 16 / 9;
-    margin-right: -9%;
+    margin-right: -14%;
 }
 
 .banner-slider__wrapper {
@@ -8875,6 +8875,15 @@ aside.home-sidebar,
       width: 100% !important;
       padding: 0 var(--sp-4) !important;
     }
+    .listing-card--premium-horizontal{
+      min-width: 85%;
+    }
+    .listing-card--premium-horizontal .lc-value-amount{
+      font-style: 1rem;
+    }
+    .home-section-heading--premium{
+      margin-bottom: 5px;
+    }
 }
 
 /* در تبلت اسلایدر بنر عریض‌تر (مستطیل‌تر) شود */
@@ -8915,7 +8924,7 @@ aside.home-sidebar,
 
     /* Slider Peek Effect */
     .home-listings-section--premium .listings-scroll-row {
-        padding: var(--sp-4) 0;
+        /* padding: var(--sp-4) 0; */
         overflow-x: auto;
         scroll-padding: 0 var(--sp-4);
         gap: var(--sp-4);
@@ -9382,6 +9391,124 @@ aside.home-sidebar,
     .navbar-top-inner {
         display: flex !important;
         justify-content: space-between !important;
+    }
+}
+
+/* =========================================================
+   MOBILE LISTING CARD POLISH (max-width: 1024px)
+   عنوان دو خطی، متن want-box چندخطی، بج‌ها روی تصویر و کوچک‌تر
+   ========================================================= */
+@media (max-width: 1024px) {
+    /* عنوان آگهی تا ۲ خط (به جای برش در یک خط) */
+    .listing-card--v2 .lc-title {
+        white-space: normal !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+        line-height: 1.45 !important;
+    }
+
+    /* متن «مبادله با ...» در چند خط کامل دیده شود (بدون سه‌نقطه) */
+    .listing-card--v2 .lc-want-text {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        line-height: 1.6 !important;
+    }
+
+    /* بج‌ها همیشه روی تصویر (lc-media-wrapper) بمانند */
+    .listing-card--v2 .lc-media-wrapper { position: relative !important; }
+    .listing-card--v2 .lc-badges-row {
+        position: absolute !important;
+        top: 8px !important;
+        max-width: calc(100% - 16px) !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+    }
+    .listing-card--v2 .lc-badge {
+        padding: 2px 6px !important;
+        font-size: 0.56rem !important;
+        gap: 2px !important;
+    }
+    .listing-card--v2 .lc-badge i { font-size: 0.6rem !important; }
+}
+
+/* =========================================================
+   MOBILE STORE CARDS (max-width: 1024px)
+   کارت فروشگاه‌ها شبیه کارت آگهی (تصویر چپ، متن راست)
+   ========================================================= */
+@media (max-width: 1024px) {
+    #home-stores-row .listings-scroll-card {
+        flex: 0 0 86% !important;
+        max-width: 86% !important;
+    }
+    #home-stores-row .home-stores-card .shop-card {
+        position: relative !important;
+        display: flex !important;
+        flex-direction: row-reverse !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 10px !important;
+        background: #fff !important;
+        border: 1px solid #f0f0f0 !important;
+        border-radius: 18px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+        overflow: hidden !important;
+    }
+    #home-stores-row .home-stores-card .shop-card__banner-wrap {
+        flex: 0 0 120px !important;
+        width: 120px !important;
+        height: 120px !important;
+        min-height: 120px !important;
+        aspect-ratio: auto !important;
+        align-self: center !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+    }
+    #home-stores-row .home-stores-card .shop-card__banner {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        border-radius: 14px !important;
+    }
+    #home-stores-row .home-stores-card .shop-card__body {
+        flex: 1 !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        gap: 6px !important;
+        justify-content: center !important;
+        text-align: right !important;
+    }
+    #home-stores-row .home-stores-card .shop-card__name {
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    #home-stores-row .home-stores-card .shop-card__desc { display: none !important; }
+    #home-stores-row .home-stores-card .shop-card__meta {
+        margin-top: 2px !important;
+        font-size: 0.78rem !important;
+        color: #a0aec0 !important;
+    }
+    /* دکمه «مشاهده فروشگاه» حذف ظاهری می‌شود ولی کل کارت قابل کلیک می‌ماند */
+    #home-stores-row .home-stores-card .shop-card__body .btn {
+        position: absolute !important;
+        inset: 0 !important;
+        z-index: 2 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        color: transparent !important;
+        font-size: 0 !important;
     }
 }
 

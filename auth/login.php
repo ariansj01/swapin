@@ -195,33 +195,6 @@ render_navbar(null);
 
           <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:flex-start;">
           <?php if ($step === 'phone'): ?>
-          <?php if ($googleClientId !== ''): ?>
-          <form method="POST" action="<?= APP_URL ?>/auth/google-login" id="googleLoginForm">
-            <?= csrf_field() ?>
-            <?php if ($redir): ?>
-            <input type="hidden" name="redirect" value="<?= h($redir) ?>">
-            <?php endif; ?>
-            <input type="hidden" name="credential" id="googleCredentialInput" value="">
-          </form>
-
-          <div class="card" style="background:#fff;border:1px solid var(--border);box-shadow:none;margin-bottom:18px;">
-            <div class="card-body" style="padding:16px;">
-              <button type="button" class="btn btn-lg w-100" id="googleSigninTrigger" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1px solid var(--border);color:var(--text);">
-                <i class="bi bi-google" aria-hidden="true"></i>
-                <span>ورود با گوگل</span>
-              </button>
-              <p class="fs-sm text-center" style="color:var(--text-muted);margin:12px 0 0;">ورود با حساب گوگل</p>
-              <div id="googleWidgetFallback" style="display:none;justify-content:center;margin-top:12px;"></div>
-            </div>
-          </div>
-
-          <div style="display:flex;align-items:center;gap:12px;margin:6px 0 18px;">
-            <span style="flex:1;height:1px;background:var(--border);"></span>
-            <span style="color:var(--text-muted);font-size:.92rem;">یا با شماره موبایل</span>
-            <span style="flex:1;height:1px;background:var(--border);"></span>
-          </div>
-          <?php endif; ?>
-
           <!-- Phone Entry -->
           <form method="POST" id="phoneForm">
             <?= csrf_field() ?>
@@ -236,6 +209,34 @@ render_navbar(null);
             </div>
             <button type="submit" class="btn btn-primary w-100 btn-lg" id="sendBtn">ارسال کد</button>
           </form>
+
+          <?php if ($googleClientId !== ''): ?>
+          <div style="display:flex;align-items:center;gap:12px;margin:20px 0;">
+            <span style="flex:1;height:1px;background:var(--border);"></span>
+            <span style="color:var(--text-muted);font-size:.92rem;">یا</span>
+            <span style="flex:1;height:1px;background:var(--border);"></span>
+          </div>
+
+          <form method="POST" action="<?= APP_URL ?>/auth/google-login" id="googleLoginForm">
+            <?= csrf_field() ?>
+            <?php if ($redir): ?>
+            <input type="hidden" name="redirect" value="<?= h($redir) ?>">
+            <?php endif; ?>
+            <input type="hidden" name="credential" id="googleCredentialInput" value="">
+          </form>
+
+          <button type="button" class="btn btn-lg w-100" id="googleSigninTrigger" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1px solid var(--border);color:var(--text);">
+            <svg class="google-logo" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" focusable="false" style="flex-shrink:0">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            <span>ورود با گوگل</span>
+          </button>
+
+          <div id="googleWidgetFallback" style="display:none;justify-content:center;margin-top:12px;"></div>
+          <?php endif; ?>
           <?php elseif ($step === 'otp'): ?>
           <!-- OTP Entry -->
           <form method="POST" id="otpForm">

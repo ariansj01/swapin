@@ -449,14 +449,14 @@
   }
 
   .lv-bottom-bar__btn--chat {
-    background: #fff !important;
-    color: var(--lv-navy) !important;
-    border: 1.5px solid var(--lv-navy) !important;
-    box-shadow: none !important;
+    background: var(--lv-navy) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(8, 27, 69, 0.3) !important;
   }
 
   .lv-bottom-bar__btn--chat i {
-    color: var(--lv-navy) !important;
+    color: #fff !important;
   }
 
   .lv-bottom-bar__btn {
