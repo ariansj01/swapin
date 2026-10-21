@@ -410,9 +410,6 @@ render_navbar($user);
 
   <div class="lv-body">
     <div class="lv-header-mobile">
-      <div class="lv-header-thumb">
-        <img src="<?= $images ? UPLOAD_URL . h($images[0]['filename']) : LOGO_URL ?>" alt="<?= h($listing['title']) ?>">
-      </div>
       <div class="lv-header-content">
         <nav class="lv-breadcrumb-mobile" aria-label="مسیر صفحه">
           <?php foreach ($_catChain as $_i => $_cc): ?>
@@ -586,33 +583,36 @@ render_navbar($user);
     <?php if ($isStoreSwappable): ?>
     <?php if ($user): ?>
     <a href="<?= $storeSwapUrl ?>" class="lv-bottom-bar__btn" data-navigate="<?= $storeSwapUrl ?>">
-      <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
+      <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </a>
     <?php else: ?>
     <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn" data-navigate="<?= $loginRedirect ?>">
-      <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
+      <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </a>
     <?php endif; ?>
     <?php else: ?>
     <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" <?= !$user ? 'data-login-href="' . h($loginRedirect) . '"' : '' ?>>
-      <i class="bi bi-arrow-left-right"></i> معاوضه
+      <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </button>
     <?php endif; ?>
     <?php endif; ?>
   </div>
   <?php elseif ($canOfferMobile): ?>
-  <div class="lv-bottom-bar">
+  <div class="lv-bottom-bar lv-bottom-bar--dual">
+    <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--chat" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>">
+      <i class="bi bi-chat-dots"></i> چت با آگهی دهنده
+    </a>
     <?php if (!$user): ?>
     <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" data-login-href="<?= h($loginRedirect) ?>">
-      <i class="bi bi-send"></i> ارسال پیشنهاد
+      <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </button>
     <?php elseif ($myListings): ?>
     <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer">
-      <i class="bi bi-send"></i> ارسال پیشنهاد
+      <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </button>
     <?php else: ?>
     <a href="<?= APP_URL ?>/listings/create" class="lv-bottom-bar__btn" style="text-decoration:none" data-navigate="<?= APP_URL ?>/listings/create">
-      <i class="bi bi-plus-circle"></i> ثبت کالا برای پیشنهاد
+      <i class="bi bi-plus-circle"></i> ثبت کالا برای معاوضه
     </a>
     <?php endif; ?>
   </div>
