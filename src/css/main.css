@@ -8876,8 +8876,8 @@ aside.home-sidebar,
         margin-right: auto;
     }
       .newest-listings-container {
-      margin-right: -24% !important;
-      width: 135% !important;
+      margin-right: -20% !important;
+      width: 180% !important;
       padding: 0 var(--sp-4) !important;
     }
     .listing-card--premium-horizontal{
