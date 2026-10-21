@@ -9396,11 +9396,44 @@ aside.home-sidebar,
 
 /* =========================================================
    MOBILE LISTING CARD POLISH (max-width: 1024px)
-   عنوان دو خطی، متن want-box چندخطی، بج‌ها روی تصویر و کوچک‌تر
+   تصویر چپ + عنوان و want-box کنار تصویر، قیمت و متا تمام‌عرض
    ========================================================= */
 @media (max-width: 1024px) {
+    /* چیدمان گرید: ستون راست محتوا، ستون چپ تصویر */
+    .listing-card--v2 {
+        display: grid !important;
+        grid-template-columns: 1fr min(110px, 34%) !important;
+        column-gap: 10px !important;
+        row-gap: 6px !important;
+        align-items: start !important;
+    }
+    /* محتوای کارت از حالت جعبه خارج می‌شود تا آیتم‌های گرید شوند */
+    .listing-card--v2 .lc-content { display: contents !important; }
+
+    /* تصویر: ستون چپ، هم‌ارتفاع با عنوان و want-box */
+    .listing-card--v2 .lc-media-wrapper {
+        grid-column: 2 !important;
+        grid-row: 1 / span 2 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 90px !important;
+        max-height: none !important;
+        align-self: stretch !important;
+    }
+    .listing-card--v2 .listing-card__media-img,
+    .listing-card--v2 .listing-card__media-placeholder {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 100% !important;
+        max-height: none !important;
+        object-fit: cover !important;
+    }
+
     /* عنوان آگهی تا ۲ خط (به جای برش در یک خط) */
     .listing-card--v2 .lc-title {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
         white-space: normal !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 2 !important;
@@ -9409,9 +9442,15 @@ aside.home-sidebar,
         text-overflow: ellipsis !important;
         max-width: 100% !important;
         line-height: 1.45 !important;
+        margin: 0 !important;
     }
 
-    /* متن «مبادله با ...» در چند خط کامل دیده شود (بدون سه‌نقطه) */
+    /* باکس «مبادله با ...» کنار تصویر و چندخطی (بدون سه‌نقطه) */
+    .listing-card--v2 .lc-want-box {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        margin: 0 !important;
+    }
     .listing-card--v2 .lc-want-text {
         white-space: normal !important;
         overflow: visible !important;
@@ -9422,14 +9461,43 @@ aside.home-sidebar,
         line-height: 1.6 !important;
     }
 
+    /* قیمت و متا: تمام‌عرض کارت */
+    .listing-card--v2 .lc-value-row {
+        grid-column: 1 / -1 !important;
+        grid-row: 3 !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+        margin-top: 2px !important;
+    }
+    .listing-card--v2 .lc-meta {
+        grid-column: 1 / -1 !important;
+        grid-row: 4 !important;
+        width: 100% !important;
+        margin-top: 0 !important;
+    }
+    .listing-card--v2 .lc-cta {
+        grid-column: 1 / -1 !important;
+        grid-row: 5 !important;
+    }
+    /* چیدمان افقی مینیمال: عنوان کنار تصویر، بقیه تمام‌عرض */
+    .listing-card--v2 .lc-h-minimal-body {
+        grid-column: 1 / -1 !important;
+        grid-row: 3 !important;
+        width: 100% !important;
+    }
+
     /* بج‌ها همیشه روی تصویر (lc-media-wrapper) بمانند */
     .listing-card--v2 .lc-media-wrapper { position: relative !important; }
     .listing-card--v2 .lc-badges-row {
         position: absolute !important;
         top: 8px !important;
-        max-width: calc(100% - 16px) !important;
+        max-width: calc(100% - 42px) !important;
         flex-wrap: wrap !important;
         gap: 4px !important;
+    }
+    /* کارت‌های عمودی روی تصویر دکمه علاقه‌مندی دارند؛ بج‌ها از آن فاصله بگیرند */
+    .listing-card--v2:not(.listing-card--horizontal):not(.listing-card--premium-horizontal) .lc-badges-row {
+        max-width: calc(100% - 64px) !important;
     }
     .listing-card--v2 .lc-badge {
         padding: 2px 6px !important;
@@ -9441,52 +9509,49 @@ aside.home-sidebar,
 
 /* =========================================================
    MOBILE STORE CARDS (max-width: 1024px)
-   کارت فروشگاه‌ها شبیه کارت آگهی (تصویر چپ، متن راست)
+   تصویر بالا تمام‌عرض، محتوا پایین — کارت جمع‌وجور
    ========================================================= */
 @media (max-width: 1024px) {
     #home-stores-row .listings-scroll-card {
-        flex: 0 0 86% !important;
-        max-width: 86% !important;
+        flex: 0 0 68% !important;
+        max-width: 68% !important;
     }
     #home-stores-row .home-stores-card .shop-card {
         position: relative !important;
         display: flex !important;
-        flex-direction: row-reverse !important;
-        align-items: stretch !important;
-        gap: 10px !important;
-        padding: 10px !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 8px !important;
         background: #fff !important;
         border: 1px solid #f0f0f0 !important;
-        border-radius: 18px !important;
+        border-radius: 16px !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
         overflow: hidden !important;
     }
     #home-stores-row .home-stores-card .shop-card__banner-wrap {
-        flex: 0 0 120px !important;
-        width: 120px !important;
-        height: 120px !important;
-        min-height: 120px !important;
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        height: 100px !important;
+        min-height: 100px !important;
         aspect-ratio: auto !important;
-        align-self: center !important;
-        border-radius: 14px !important;
+        border-radius: 12px !important;
         overflow: hidden !important;
     }
     #home-stores-row .home-stores-card .shop-card__banner {
         width: 100% !important;
         height: 100% !important;
         object-fit: cover !important;
-        border-radius: 14px !important;
+        border-radius: 12px !important;
     }
     #home-stores-row .home-stores-card .shop-card__body {
         flex: 1 !important;
         min-width: 0 !important;
-        padding: 0 !important;
-        gap: 6px !important;
-        justify-content: center !important;
+        padding: 0 2px !important;
+        gap: 4px !important;
         text-align: right !important;
     }
     #home-stores-row .home-stores-card .shop-card__name {
-        font-size: 1rem !important;
+        font-size: 0.95rem !important;
         font-weight: 700 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
@@ -9494,9 +9559,10 @@ aside.home-sidebar,
     }
     #home-stores-row .home-stores-card .shop-card__desc { display: none !important; }
     #home-stores-row .home-stores-card .shop-card__meta {
-        margin-top: 2px !important;
-        font-size: 0.78rem !important;
+        margin-top: 0 !important;
+        font-size: 0.75rem !important;
         color: #a0aec0 !important;
+        gap: 10px !important;
     }
     /* دکمه «مشاهده فروشگاه» حذف ظاهری می‌شود ولی کل کارت قابل کلیک می‌ماند */
     #home-stores-row .home-stores-card .shop-card__body .btn {
