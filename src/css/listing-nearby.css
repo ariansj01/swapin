@@ -90,10 +90,6 @@
     gap: var(--sp-2, 0.5rem);
   }
   /* تصویر کارت‌های «آگهی‌های مشابه» در موبایل حدوداً دو برابر */
-  .lv-related .listing-card--v2,
-  .lv-related-section .listing-card--v2 {
-    grid-template-columns: 1fr 170px !important;
-  }
   .lv-related .listing-card.listing-card--horizontal .lc-media-wrapper,
   .lv-related-section .listing-card.listing-card--horizontal .lc-media-wrapper {
     width: 170px !important;
