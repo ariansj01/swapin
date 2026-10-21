@@ -409,46 +409,57 @@ render_navbar($user);
   </div>
 
   <div class="lv-body">
-    <h1 class="lv-title"><?= h($listing['title']) ?></h1>
+    <div class="lv-header-mobile">
+      <div class="lv-header-thumb">
+        <img src="<?= $images ? UPLOAD_URL . h($images[0]['filename']) : LOGO_URL ?>" alt="<?= h($listing['title']) ?>">
+      </div>
+      <div class="lv-header-content">
+        <nav class="lv-breadcrumb-mobile" aria-label="مسیر صفحه">
+          <?php foreach ($_catChain as $_i => $_cc): ?>
+          <a href="<?= h($_cc['url']) ?>"><?= h($_cc['name']) ?></a>
+          <?php if ($_i < $_catChainCount - 1): ?>
+          <span class="breadcrumb-separator">›</span>
+          <?php endif; ?>
+          <?php endforeach; ?>
+        </nav>
 
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.875rem;color:var(--text-muted);">
-      <span>فروشنده:</span>
-      <?php if (!empty($listing['store_name']) && !empty($listing['store_slug'])): ?>
-      <div style="display:flex;flex-direction:column;gap:2px;">
-        <a href="<?= APP_URL ?>/shop/<?= h($listing['store_slug']) ?>" class="badge badge-primary" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-weight:600;"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></a>
-        <strong style="color:var(--dash-navy);font-size:.8125rem;"><?= h($listing['seller_name']) ?></strong>
+        <h1 class="lv-title"><?= h($listing['title']) ?></h1>
+
+        <div class="lv-meta-mobile">
+          <span class="lv-meta-item seller-label">فروشنده:</span>
+          <span class="lv-meta-item seller-name"><?= h($listing['seller_name']) ?></span>
+          <?php if ($listing['seller_city']): ?>
+          <span class="lv-meta-separator">·</span>
+          <span class="lv-meta-item seller-city"><?= h($listing['seller_city']) ?></span>
+          <?php endif; ?>
+        </div>
       </div>
-      <?php else: ?>
-      <strong style="color:var(--dash-navy);"><?= h($listing['seller_name']) ?></strong>
-      <?php endif; ?>
-      <?php if ($listing['seller_city']): ?>
-      <span>(<?= h($listing['seller_city']) ?>)</span>
-      <?php endif; ?>
-      <?php if ($listing['verification_level'] >= 2): ?>
-      <span class="badge badge-success"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
-      <?php endif; ?>
     </div>
-    <div class="lv-price-row">
-      <?php if ($canBuy): ?>
-      <div>
-        <span class="lv-price-label">قیمت فروش</span>
+
+    <div class="lv-price-badge-row">
+      <div class="lv-price-col">
+        <?php if ($canBuy): ?>
         <span class="lv-price"><?= fmt_credit($buyPrice) ?></span>
-      </div>
-      <?php elseif ((float)$listing['estimated_value'] > 0): ?>
-      <div>
-        <span class="lv-price-label">ارزش تقریبی</span>
+        <?php elseif ((float)$listing['estimated_value'] > 0): ?>
         <span class="lv-price"><?= fmt_credit((float)$listing['estimated_value']) ?></span>
+        <?php endif; ?>
       </div>
-      <?php endif; ?>
-      <?php if ($listingIsReserved): ?>
-      <span class="lv-badge-swap" style="background:rgba(234,179,8,.15);color:#ca8a04"><i class="bi bi-lock-fill"></i> رزرو شده</span>
-      <?php elseif ($hasBothBuySwap): ?>
-      <span class="lv-badge-swap" style="background:rgba(37,99,235,.1);color:var(--accent,#2563eb)"><i class="bi bi-shop"></i> قابل خرید و معاوضه</span>
-      <?php elseif ($canBuy): ?>
-      <span class="lv-badge-swap" style="background:rgba(255,102,0,.12);color:#c2410c"><i class="bi bi-cart-check"></i> قابل خرید</span>
-      <?php elseif ($isStoreSwappable || ($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
-      <span class="lv-badge-swap"><i class="bi bi-arrow-left-right"></i> امکان معاوضه</span>
-      <?php endif; ?>
+
+      <div class="lv-badges-col">
+        <?php if ($listing['verification_level'] >= 2): ?>
+        <span class="lv-badge-verified"><i class="bi bi-patch-check-fill"></i> تأییدشده</span>
+        <?php endif; ?>
+
+        <?php if ($listingIsReserved): ?>
+        <span class="lv-badge-swap is-reserved"><i class="bi bi-lock-fill"></i> رزرو شده</span>
+        <?php elseif ($hasBothBuySwap): ?>
+        <span class="lv-badge-swap is-dual"><i class="bi bi-shop"></i> خرید و معاوضه</span>
+        <?php elseif ($canBuy): ?>
+        <span class="lv-badge-swap is-sell"><i class="bi bi-cart-check"></i> فروش</span>
+        <?php elseif ($isStoreSwappable || ($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
+        <span class="lv-badge-swap is-swap"><i class="bi bi-arrow-left-right"></i> معاوضه</span>
+        <?php endif; ?>
+      </div>
     </div>
 
     <!-- Seller -->
