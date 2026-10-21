@@ -9493,22 +9493,35 @@ aside.home-sidebar,
         width: 100% !important;
     }
 
-    /* بج‌ها: روی تصویر، کنار هم (بدون شکستن خط) و کوچک‌تر */
+    /* بج‌ها: روی تصویر، حداکثر ۲ عدد دیده شود و بقیه با اسلاید افقی */
     .listing-card--v2 .lc-media-wrapper { position: relative !important; }
     .listing-card--v2 .lc-badges-row {
         position: absolute !important;
         top: 8px !important;
-        left: 8px !important;
+        left: 6px !important;
         right: auto !important;
-        max-width: none !important;
+        max-width: calc(100% - 12px) !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
-        gap: 4px !important;
+        gap: 3px !important;
         z-index: 30 !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-x: contain !important;
+        scrollbar-width: none !important;
+        scroll-snap-type: x proximity !important;
+        padding: 0 !important;
+    }
+    .listing-card--v2 .lc-badges-row::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
     }
     .listing-card--v2 .lc-badge {
         flex-shrink: 0 !important;
         white-space: nowrap !important;
+        scroll-snap-align: start !important;
         padding: 2px 6px !important;
         font-size: 0.56rem !important;
         gap: 2px !important;
