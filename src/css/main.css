@@ -3677,7 +3677,12 @@ html body .categories-dropdown {
     margin-bottom: 20px;
   }
   .newest-home-section-heading{
-    margin-right: -17% !important;
+    margin-right: -26% !important;
+    width: 155%;
+  }
+  .newest-listing-item{
+    width: 135% !important;
+    margin-right: -12%;
   }
   .home-section-heading::after{
     display: none;
@@ -9410,16 +9415,16 @@ aside.home-sidebar,
     /* محتوای کارت از حالت جعبه خارج می‌شود تا آیتم‌های گرید شوند */
     .listing-card--v2 .lc-content { display: contents !important; }
 
-    /* تصویر: ستون چپ، هم‌ارتفاع با عنوان و want-box */
+    /* تصویر: ستون چپ، ارتفاع یکسان برای همه کارت‌ها */
     .listing-card--v2 .lc-media-wrapper {
         grid-column: 2 !important;
         grid-row: 1 / span 2 !important;
         width: 100% !important;
         min-width: 0 !important;
-        height: auto !important;
-        min-height: 90px !important;
-        max-height: none !important;
-        align-self: stretch !important;
+        height: clamp(88px, 26vw, 120px) !important;
+        min-height: clamp(88px, 26vw, 120px) !important;
+        max-height: clamp(88px, 26vw, 120px) !important;
+        align-self: start !important;
     }
     .listing-card--v2 .listing-card__media-img,
     .listing-card--v2 .listing-card__media-placeholder {
@@ -9486,25 +9491,33 @@ aside.home-sidebar,
         width: 100% !important;
     }
 
-    /* بج‌ها همیشه روی تصویر (lc-media-wrapper) بمانند */
+    /* بج‌ها: روی تصویر، کنار هم (بدون شکستن خط) و کوچک‌تر */
     .listing-card--v2 .lc-media-wrapper { position: relative !important; }
     .listing-card--v2 .lc-badges-row {
         position: absolute !important;
         top: 8px !important;
-        max-width: calc(100% - 42px) !important;
-        flex-wrap: wrap !important;
+        max-width: none !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
         gap: 4px !important;
     }
-    /* کارت‌های عمودی روی تصویر دکمه علاقه‌مندی دارند؛ بج‌ها از آن فاصله بگیرند */
-    .listing-card--v2:not(.listing-card--horizontal):not(.listing-card--premium-horizontal) .lc-badges-row {
-        max-width: calc(100% - 64px) !important;
-    }
     .listing-card--v2 .lc-badge {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
         padding: 2px 6px !important;
         font-size: 0.56rem !important;
         gap: 2px !important;
     }
     .listing-card--v2 .lc-badge i { font-size: 0.6rem !important; }
+    /* دکمه علاقه‌مندی در موبایل به پایین تصویر تا با بج‌ها تداخل نکند */
+    .listing-card--v2 .lc-fav-btn {
+        top: auto !important;
+        bottom: 8px !important;
+        left: 8px !important;
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 1rem !important;
+    }
 }
 
 /* =========================================================
