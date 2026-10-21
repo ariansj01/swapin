@@ -9425,6 +9425,8 @@ aside.home-sidebar,
         min-height: clamp(88px, 26vw, 120px) !important;
         max-height: clamp(88px, 26vw, 120px) !important;
         align-self: start !important;
+        /* بج‌ها نباید توسط والد بریده شوند */
+        overflow: visible !important;
     }
     .listing-card--v2 .listing-card__media-img,
     .listing-card--v2 .listing-card__media-placeholder {
@@ -9496,10 +9498,13 @@ aside.home-sidebar,
     .listing-card--v2 .lc-badges-row {
         position: absolute !important;
         top: 8px !important;
+        left: 8px !important;
+        right: auto !important;
         max-width: none !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
         gap: 4px !important;
+        z-index: 30 !important;
     }
     .listing-card--v2 .lc-badge {
         flex-shrink: 0 !important;

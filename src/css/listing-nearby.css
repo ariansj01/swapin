@@ -89,20 +89,29 @@
     grid-template-columns: 1fr;
     gap: var(--sp-2, 0.5rem);
   }
-  .lv-related .listing-card:not(.listing-card--horizontal) .lc-media-wrapper,
-  .lv-related-section .listing-card:not(.listing-card--horizontal) .lc-media-wrapper {
-    height: 110px !important;
-    min-height: 110px !important;
-    max-height: 110px !important;
-    flex: 0 0 110px !important;
+  /* تصویر کارت‌های «آگهی‌های مشابه» در موبایل حدوداً دو برابر */
+  .lv-related .listing-card--v2,
+  .lv-related-section .listing-card--v2 {
+    grid-template-columns: 1fr 170px !important;
   }
-  .lv-related .listing-card:not(.listing-card--horizontal) .listing-card__media-img,
-  .lv-related-section .listing-card:not(.listing-card--horizontal) .listing-card__media-img,
-  .lv-related .listing-card:not(.listing-card--horizontal) .listing-card__media-placeholder,
-  .lv-related-section .listing-card:not(.listing-card--horizontal) .listing-card__media-placeholder {
-    height: 110px !important;
-    min-height: 110px !important;
-    max-height: 110px !important;
+  .lv-related .listing-card.listing-card--horizontal .lc-media-wrapper,
+  .lv-related-section .listing-card.listing-card--horizontal .lc-media-wrapper {
+    width: 170px !important;
+    min-width: 170px !important;
+    height: 170px !important;
+    min-height: 170px !important;
+    max-height: 170px !important;
+    flex: 0 0 170px !important;
+    border-radius: 10px;
+  }
+  .lv-related .listing-card.listing-card--horizontal .listing-card__media-img,
+  .lv-related-section .listing-card.listing-card--horizontal .listing-card__media-img,
+  .lv-related .listing-card.listing-card--horizontal .listing-card__media-placeholder,
+  .lv-related-section .listing-card.listing-card--horizontal .listing-card__media-placeholder {
+    height: 100% !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    border-radius: 10px;
   }
 }
 
