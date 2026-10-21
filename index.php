@@ -504,7 +504,7 @@ render_navbar($user);
         <!-- Premium Listings Section (Active promotion plans) -->
         <?php if (!empty($premiumListings)): ?>
         <section class="home-listings-section home-listings-section--premium" aria-label="آگهی‌های ویژه">
-          <div class="container newest-listing">
+          <div class="container">
             <div class="home-section-heading home-section-heading--premium mb-5">
                <a href="<?= APP_URL ?>/listings/" class="home-section-heading__back">
                  <i class="bi bi-chevron-left"></i>
@@ -532,7 +532,7 @@ render_navbar($user);
 
         <!-- New Listings Section -->
         <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
-          <div class="container">
+          <div class="container newest-listing">
             <div class="home-section-heading newest-home-section-heading home-section-heading--large mb-5">
               <h2>جدیدترین آگهی‌ها</h2>
               <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
