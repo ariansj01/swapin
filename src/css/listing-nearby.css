@@ -89,15 +89,15 @@
     grid-template-columns: 1fr;
     gap: var(--sp-2, 0.5rem);
   }
-  /* تصویر کارت‌های «آگهی‌های مشابه» در موبایل حدوداً دو برابر */
+  /* تصویر کارت‌های «آگهی‌های مشابه» در موبایل */
   .lv-related .listing-card.listing-card--horizontal .lc-media-wrapper,
   .lv-related-section .listing-card.listing-card--horizontal .lc-media-wrapper {
-    width: 170px !important;
-    min-width: 170px !important;
-    height: 170px !important;
-    min-height: 170px !important;
-    max-height: 170px !important;
-    flex: 0 0 170px !important;
+    width: 140px !important;
+    min-width: 140px !important;
+    height: 140px !important;
+    min-height: 140px !important;
+    max-height: 140px !important;
+    flex: 0 0 140px !important;
     border-radius: 10px;
   }
   .lv-related .listing-card.listing-card--horizontal .listing-card__media-img,
