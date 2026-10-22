@@ -331,4 +331,62 @@ function toPersianNum(n) {
   return String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
 }
 
+/* ── Trade disclaimer note ──────────────────────────────────────────────── */
+const TRADE_NOTE_KEY = 'swapin_trade_note_ack';
+let tradeNoteCallback = null;
+
+function tradeNoteAcknowledged() {
+  try { return localStorage.getItem(TRADE_NOTE_KEY) === '1'; } catch (_) { return true; }
+}
+
+function openTradeNote(onAck) {
+  const modal = document.getElementById('trade-note');
+  if (!modal) { if (typeof onAck === 'function') onAck(); return; }
+  tradeNoteCallback = typeof onAck === 'function' ? onAck : null;
+  modal.classList.add('is-open');
+  document.body.classList.add('lv-modal-open');
+}
+
+function closeTradeNote() {
+  const modal = document.getElementById('trade-note');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  document.body.classList.remove('lv-modal-open');
+}
+
+function initTradeNote() {
+  const modal = document.getElementById('trade-note');
+  if (!modal) return;
+
+  // بستن مودال (پس‌زمینه یا دکمه «متوجه شدم»)
+  modal.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-trade-note-close]')) return;
+    const cb = tradeNoteCallback;
+    tradeNoteCallback = null;
+    closeTradeNote();
+    if (cb) {
+      try { localStorage.setItem(TRADE_NOTE_KEY, '1'); } catch (_) {}
+      cb();
+    }
+  });
+
+  // آیکون «!» — همیشه مودال را نشان می‌دهد
+  document.querySelectorAll('[data-disclaimer-open]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openTradeNote();
+    });
+  });
+
+  // اولین کلیک روی چت/درخواست معاوضه → اول مودال، بعد انجام عمل اصلی
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-trade-gate]');
+    if (!el || tradeNoteAcknowledged()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openTradeNote(() => el.click());
+  }, true);
+}
+
 document.addEventListener('DOMContentLoaded', initListingViewMobile);
+document.addEventListener('DOMContentLoaded', initTradeNote);

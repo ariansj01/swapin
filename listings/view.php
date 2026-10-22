@@ -431,6 +431,7 @@ render_navbar($user);
           <?php endif; ?>
         </div>
       </div>
+      <button type="button" class="lv-note-btn" data-disclaimer-open aria-label="اطلاعیه مهم" title="اطلاعیه مهم">!</button>
     </div>
 
     <div class="lv-price-badge-row">
@@ -478,7 +479,7 @@ render_navbar($user);
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <?php if (!$isOwner): ?>
-        <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-seller__link" aria-label="چت با فروشنده" title="چت با فروشنده" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>">
+        <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-seller__link" aria-label="چت با فروشنده" title="چت با فروشنده" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>" data-trade-gate>
           <i class="bi bi-chat-dots"></i>
         </a>
         <?php endif; ?>
@@ -582,16 +583,16 @@ render_navbar($user);
     <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && $canOfferMobile): ?>
     <?php if ($isStoreSwappable): ?>
     <?php if ($user): ?>
-    <a href="<?= $storeSwapUrl ?>" class="lv-bottom-bar__btn" data-navigate="<?= $storeSwapUrl ?>">
+    <a href="<?= $storeSwapUrl ?>" class="lv-bottom-bar__btn" data-navigate="<?= $storeSwapUrl ?>" data-trade-gate>
       <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </a>
     <?php else: ?>
-    <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn" data-navigate="<?= $loginRedirect ?>">
+    <a href="<?= $loginRedirect ?>" class="lv-bottom-bar__btn" data-navigate="<?= $loginRedirect ?>" data-trade-gate>
       <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </a>
     <?php endif; ?>
     <?php else: ?>
-    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" <?= !$user ? 'data-login-href="' . h($loginRedirect) . '"' : '' ?>>
+    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" data-trade-gate <?= !$user ? 'data-login-href="' . h($loginRedirect) . '"' : '' ?>>
       <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </button>
     <?php endif; ?>
@@ -599,15 +600,15 @@ render_navbar($user);
   </div>
   <?php elseif ($canOfferMobile): ?>
   <div class="lv-bottom-bar lv-bottom-bar--dual">
-    <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--chat" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>">
+    <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-bottom-bar__btn lv-bottom-bar__btn--chat" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>" data-trade-gate>
       <i class="bi bi-chat-dots"></i> چت با آگهی دهنده
     </a>
     <?php if (!$user): ?>
-    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" data-login-href="<?= h($loginRedirect) ?>">
+    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" data-login-href="<?= h($loginRedirect) ?>" data-trade-gate>
       <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </button>
     <?php elseif ($myListings): ?>
-    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer">
+    <button type="button" class="lv-bottom-bar__btn" id="lv-open-offer" data-trade-gate>
       <i class="bi bi-arrow-left-right"></i> درخواست معاوضه
     </button>
     <?php else: ?>
@@ -761,7 +762,10 @@ render_navbar($user);
         </section>
 
         <section class="lv-details-section">
-          <h1 class="lv-title"><?= h($listing['title']) ?></h1>
+          <div class="lv-title-row">
+            <h1 class="lv-title"><?= h($listing['title']) ?></h1>
+            <button type="button" class="lv-note-btn" data-disclaimer-open aria-label="اطلاعیه مهم" title="اطلاعیه مهم">!</button>
+          </div>
 
           <div class="lv-meta-top">
             <span class="lv-chip lv-chip--primary"><i class="bi bi-tag"></i> <?= h($listing['cat_name']) ?></span>
@@ -987,7 +991,7 @@ render_navbar($user);
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-chat-dots" style="color:var(--lv-navy)"></i> چت با فروشنده</h3>
           <p class="fs-sm mb-4" style="color:var(--text-muted)">سؤال یا ابهامی دارید؟ مستقیم با فروشنده گفتگو کنید.</p>
-          <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-btn lv-btn--outline w-100" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>">
+          <a href="<?= $user ? h($chatUrl) : h($loginRedirect) ?>" class="lv-btn lv-btn--outline w-100" data-navigate="<?= h($user ? $chatUrl : $loginRedirect) ?>" data-trade-gate>
             <i class="bi bi-chat-dots"></i> شروع گفتگو
           </a>
         </section>
@@ -997,11 +1001,11 @@ render_navbar($user);
           <h3 class="lv-offer-title"><i class="bi bi-arrow-left-right" style="color:var(--lv-gold)"></i> پیشنهاد معاوضه با فروشگاه</h3>
           <p class="fs-sm mb-4" style="color:var(--text-muted)">کالای خود را انتخاب کنید و در صورت نیاز مبلغ تکمیلی پیشنهاد دهید.</p>
           <?php if ($user): ?>
-          <a href="<?= $storeSwapUrl ?>" class="lv-btn lv-btn--outline lv-btn--swap w-100" data-navigate="<?= $storeSwapUrl ?>">
+          <a href="<?= $storeSwapUrl ?>" class="lv-btn lv-btn--outline lv-btn--swap w-100" data-navigate="<?= $storeSwapUrl ?>" data-trade-gate>
             <i class="bi bi-arrow-left-right"></i> پیشنهاد معاوضه
           </a>
           <?php else: ?>
-          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--outline lv-btn--swap w-100" data-navigate="<?= $loginRedirect ?>"><i class="bi bi-box-arrow-in-left"></i> ورود برای پیشنهاد معاوضه</a>
+          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--outline lv-btn--swap w-100" data-navigate="<?= $loginRedirect ?>" data-trade-gate><i class="bi bi-box-arrow-in-left"></i> ورود برای پیشنهاد معاوضه</a>
           <?php endif; ?>
         </section>
         <?php else: ?>
@@ -1030,7 +1034,7 @@ render_navbar($user);
 
           <?php if (!$user): ?>
           <p class="fs-sm mb-4" style="color:var(--text-muted)">برای ارسال پیشنهاد وارد شوید.</p>
-          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--outline lv-btn--swap" data-navigate="<?= $loginRedirect ?>"><i class="bi bi-box-arrow-in-left"></i> ورود برای پیشنهاد</a>
+          <a href="<?= $loginRedirect ?>" class="lv-btn lv-btn--outline lv-btn--swap" data-navigate="<?= $loginRedirect ?>" data-trade-gate><i class="bi bi-box-arrow-in-left"></i> ورود برای پیشنهاد</a>
           <?php else: ?>
           <?php if ($offerError): ?>
           <div class="alert alert-danger mb-4"><i class="bi bi-exclamation-circle"></i> <?= h($offerError) ?></div>
@@ -1082,7 +1086,7 @@ render_navbar($user);
               <textarea class="lv-offer-textarea" name="message" id="lv-offer-message" placeholder="در مورد پیشنهادتان کمی توضیح بدهید..."></textarea>
             </div>
 
-            <button type="submit" class="lv-btn lv-btn--outline lv-btn--swap">
+            <button type="submit" class="lv-btn lv-btn--outline lv-btn--swap" data-trade-gate>
               <i class="bi bi-send"></i> ارسال پیشنهاد
             </button>
           </form>
@@ -1199,6 +1203,19 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php endif; ?>
+<!-- Trade disclaimer modal -->
+<div class="trade-note" id="trade-note" role="dialog" aria-modal="true" aria-labelledby="trade-note-title">
+  <div class="trade-note__backdrop" data-trade-note-close></div>
+  <div class="trade-note__panel">
+    <div class="trade-note__icon"><i class="bi bi-exclamation"></i></div>
+    <h2 class="trade-note__title" id="trade-note-title">اطلاعیه مهم</h2>
+    <p class="trade-note__text">
+      سواَپین صرفاً بستر انتشار آگهی و ایجاد ارتباط میان کاربران است و در معاملات هیچ‌گونه دخالتی ندارد. مسئولیت صحت اطلاعات، شرایط تهاتر، ارزش‌گذاری و اجرای توافقات بر عهده کاربران می‌باشد. لطفاً پیش از هرگونه توافق، نسبت به بررسی دقیق آگهی، احراز هویت طرف مقابل و اطمینان از شرایط معامله اقدام نمایید. انجام معاملات آگاهانه و بررسی کامل، از بروز مشکلات احتمالی جلوگیری خواهد کرد.
+    </p>
+    <button type="button" class="trade-note__ok" data-trade-note-close>متوجه شدم</button>
+  </div>
+</div>
+
 <!-- Image Lightbox Modal -->
 <div id="image-lightbox" class="image-lightbox" onclick="closeImageLightbox()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;">
   <button type="button" onclick="event.stopPropagation();closeImageLightbox()" style="position:absolute;top:20px;right:20px;background:none;border:none;color:white;font-size:2rem;cursor:pointer;">

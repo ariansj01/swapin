@@ -20,6 +20,7 @@ $urls = [
     ['loc' => $base . '/fraud-prevention', 'priority' => '0.6', 'changefreq' => 'monthly'],
     ['loc' => $base . '/faq',       'priority' => '0.7', 'changefreq' => 'monthly'],
     ['loc' => $base . '/ai-assistant', 'priority' => '0.8', 'changefreq' => 'monthly'],
+    ['loc' => $base . '/valuation',  'priority' => '0.8', 'changefreq' => 'weekly'],
     ['loc' => $base . '/ai/chat',   'priority' => '0.5', 'changefreq' => 'weekly'],
     ['loc' => $base . '/shops',          'priority' => '0.8', 'changefreq' => 'daily'],
     ['loc' => $base . '/shops/online',   'priority' => '0.8', 'changefreq' => 'daily'],
