@@ -443,34 +443,10 @@ render_navbar($user);
     try { return JSON.parse(snip.replace(/,\s*([\]}])/g, '$1').replace(/\bNaN\b/g, 'null')); } catch (_) { return null; }
   }
 
+  // تابع جهانی app.js هم Gemini و هم OpenAI را پشتیبانی می‌کند؛ از همان استفاده می‌کنیم.
   async function browserCompleteChat(prepare) {
-    const providers = Array.isArray(prepare.providers) ? prepare.providers : [];
-    const msgs = Array.isArray(prepare.messages) ? prepare.messages : [];
-    const temperature = typeof prepare.temperature === 'number' ? prepare.temperature : 0.15;
-    const maxTokens = Number(prepare.max_tokens) || 1200;
-    for (const p of providers) {
-      try {
-        const res = await fetch(p.url, {
-          method: 'POST',
-          headers: Object.assign({ 'Content-Type': 'application/json' }, p.headers || {}),
-          body: JSON.stringify(Object.assign({}, p.body || {}, {
-            messages: msgs, temperature: temperature, max_tokens: maxTokens,
-          })),
-        });
-        if (!res.ok) continue;
-        const j = await res.json();
-        let content = '';
-        if (j && j.choices && j.choices[0]) {
-          const c = j.choices[0];
-          if (c.message && typeof c.message.content === 'string') content = c.message.content;
-          else if (typeof c.text === 'string') content = c.text;
-        }
-        if (!content && j && typeof j.content === 'string') content = j.content;
-        if (!content && j && typeof j.output === 'string') content = j.output;
-        if (content && content.trim().length > 10) return { content: content };
-      } catch (_) { /* try next provider */ }
-    }
-    return null;
+    if (typeof swaapinBrowserCompleteChat !== 'function') return null;
+    try { return await swaapinBrowserCompleteChat(prepare); } catch (_) { return null; }
   }
 
   const form = document.getElementById('valuation-form');

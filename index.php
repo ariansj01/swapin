@@ -1208,6 +1208,13 @@ render_navbar($user);
   }
 
   async function browserCompleteChat(prepare) {
+    // ابتدا از تابع جهانی app.js استفاده کن (پشتیبانی از Gemini و OpenAI)
+    if (typeof swaapinBrowserCompleteChat === 'function') {
+      try {
+        const done = await swaapinBrowserCompleteChat(prepare);
+        if (done && done.content) return done;
+      } catch (_) { /* در صورت خطا به پیاده‌سازی محلی برمی‌گردیم */ }
+    }
     const providers = Array.isArray(prepare.providers) ? prepare.providers : [];
     const msgs = Array.isArray(prepare.messages) ? prepare.messages : [];
     const temperature = typeof prepare.temperature === 'number' ? prepare.temperature : 0.15;

@@ -80,9 +80,9 @@ if (function_exists('ai_price_listing')) {
 }
 
 $fallback = ai_sanitize_pricing_for_client(ai_price_listing_fallback($listing));
-$estMin = (int)($fallback['min_value'] ?? 0);
-$estMax = (int)($fallback['max_value'] ?? 0);
-$estMid = (int)($fallback['estimated_value'] ?? 0);
+$estMin = (int)($fallback['range_low'] ?? $fallback['min_value'] ?? 0);
+$estMax = (int)($fallback['range_high'] ?? $fallback['max_value'] ?? 0);
+$estMid = (int)($fallback['value'] ?? $fallback['estimated_value'] ?? 0);
 $note   = trim((string)($fallback['note'] ?? ''));
 
 $geminiMessages = ai_pricing_build_gemini_messages($listing, $similar);
