@@ -34,11 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'save') {
         $id        = (int)($_POST['id'] ?? 0);
-        $title     = trim((string)($_POST['title'] ?? ''));
-        $subtitle  = trim((string)($_POST['subtitle'] ?? ''));
-        $badge     = trim((string)($_POST['badge'] ?? ''));
         $linkUrl   = banners_safe_link((string)($_POST['link_url'] ?? ''));
-        $sortOrder = (int)($_POST['sort_order'] ?? 0);
         $isActive  = isset($_POST['is_active']) ? 1 : 0;
 
         $existing = banners_get($id);
@@ -60,12 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$errors) {
             $data = [
-                'title'      => $title,
-                'subtitle'   => $subtitle,
-                'badge'      => $badge,
-                'link_url'   => $linkUrl,
-                'sort_order' => $sortOrder,
-                'is_active'  => $isActive,
+                'link_url'  => $linkUrl,
+                'is_active' => $isActive,
             ];
             if ($image) {
                 $data['image'] = $image;
@@ -116,39 +108,20 @@ ob_start();
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5)">
     <div class="form-group">
-      <label class="form-label" for="title">عنوان اصلی</label>
-      <input type="text" id="title" name="title" class="form-control" maxlength="150" value="<?= h($editing['title'] ?? '') ?>" placeholder="مثلاً ارزش‌گذاری و مشاوره معاوضه با AI">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label" for="badge">نشان (Badge)</label>
-      <input type="text" id="badge" name="badge" class="form-control" maxlength="50" value="<?= h($editing['badge'] ?? '') ?>" placeholder="مثلاً هوش مصنوعی">
-    </div>
-
-    <div class="form-group" style="grid-column: span 2">
-      <label class="form-label" for="subtitle">زیرعنوان / توضیحات کوتاه</label>
-      <textarea id="subtitle" name="subtitle" rows="2" class="form-control" maxlength="255"><?= h($editing['subtitle'] ?? '') ?></textarea>
-    </div>
-
-    <div class="form-group">
       <label class="form-label" for="image">تصویر بنر <?= $editing ? '(برای تغییر، فایل جدید انتخاب کنید)' : '' ?></label>
-      <input type="file" id="image" name="image" class="form-control" accept="image/png,image/jpeg,image/webp">
+      <input type="file" id="image" name="image" class="form-control" accept="image/png,image/jpeg,image/webp" <?= $editing ? '' : 'required' ?>>
+      <p class="fs-xs" style="color:var(--text-muted);margin:6px 0 0">نسبت پیشنهادی تصویر: ۱۶:۵ — مثلاً ۱۶۰۰×۵۰۰ پیکسل</p>
       <?php if ($editing && !empty($editing['image'])): ?>
-      <img src="<?= UPLOAD_URL . h($editing['image']) ?>" alt="" style="margin-top:8px;max-width:200px;height:auto;border-radius:12px;border:1px solid var(--border)">
+      <img src="<?= UPLOAD_URL . h($editing['image']) ?>" alt="" style="margin-top:8px;max-width:240px;height:auto;border-radius:12px;border:1px solid var(--border)">
       <?php endif; ?>
     </div>
 
     <div class="form-group">
       <label class="form-label" for="link_url">لینک کلیک (URL)</label>
-      <input type="text" id="link_url" name="link_url" class="form-control" value="<?= h($editing['link_url'] ?? '') ?>" placeholder="https://swaapin.ir/ai-tools">
+      <input type="text" id="link_url" name="link_url" class="form-control" value="<?= h($editing['link_url'] ?? '') ?>" placeholder="https://swaapin.ir/valuation">
     </div>
 
-    <div class="form-group">
-      <label class="form-label" for="sort_order">ترتیب نمایش</label>
-      <input type="number" id="sort_order" name="sort_order" class="form-control" value="<?= (int)($editing['sort_order'] ?? 0) ?>">
-    </div>
-
-    <div class="form-group" style="display:flex;align-items:flex-end">
+    <div class="form-group" style="grid-column: span 2">
       <label class="form-label" style="display:flex;align-items:center;gap:8px;margin:0;cursor:pointer">
         <input type="checkbox" name="is_active" value="1" <?= (!$editing || (int)$editing['is_active'] === 1) ? 'checked' : '' ?>>
         نمایش در سایت
@@ -171,24 +144,25 @@ ob_start();
 <thead>
 <tr>
 <th>تصویر</th>
-<th>عنوان</th>
-<th>ترتیب</th>
+<th>لینک</th>
 <th>وضعیت</th>
 <th></th>
 </tr>
 </thead>
 <tbody>
 <?php if (!$banners): ?>
-<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:var(--sp-5)">هنوز بنری ثبت نشده است.</td></tr>
+<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:var(--sp-5)">هنوز بنری ثبت نشده است.</td></tr>
 <?php endif; ?>
 <?php foreach ($banners as $b): ?>
 <tr>
-<td><img src="<?= UPLOAD_URL . h($b['image']) ?>" alt="" style="width:100px;height:50px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"></td>
+<td><img src="<?= UPLOAD_URL . h($b['image']) ?>" alt="" style="width:120px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"></td>
 <td>
-    <strong><?= h($b['title']) ?></strong>
-    <div class="fs-xs" style="color:var(--text-muted)"><?= h($b['badge']) ?></div>
+    <?php if (!empty($b['link_url'])): ?>
+    <a href="<?= h($b['link_url']) ?>" target="_blank" rel="noopener" class="fs-xs"><?= h($b['link_url']) ?></a>
+    <?php else: ?>
+    <span class="fs-xs" style="color:var(--text-muted)">— لینک ندارد —</span>
+    <?php endif; ?>
 </td>
-<td><?= (int)$b['sort_order'] ?></td>
 <td>
   <form method="POST" style="display:inline">
     <?= csrf_field() ?>

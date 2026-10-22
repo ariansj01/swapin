@@ -93,18 +93,8 @@ function banners_render_slider(): void {
                 <?php foreach ($banners as $index => $b): ?>
                 <div class="banner-slide <?= $index === 0 ? 'active' : '' ?>" data-index="<?= $index ?>">
                     <a href="<?= h($b['link_url'] ?: 'javascript:void(0)') ?>" class="banner-card">
-                        <div class="banner-card__content">
-                            <?php if ($b['badge']): ?>
-                            <div class="banner-card__badge">
-                                <i class="bi bi-stars"></i>
-                                <span><?= h($b['badge']) ?></span>
-                            </div>
-                            <?php endif; ?>
-                            <h2 class="banner-card__title"><?= h($b['title']) ?></h2>
-                            <p class="banner-card__subtitle"><?= h($b['subtitle']) ?></p>
-                        </div>
                         <div class="banner-card__image">
-                            <img src="<?= UPLOAD_URL . h($b['image']) ?>" alt="<?= h($b['title']) ?>" loading="lazy">
+                            <img src="<?= UPLOAD_URL . h($b['image']) ?>" alt="بنر" loading="lazy">
                         </div>
                     </a>
                 </div>
