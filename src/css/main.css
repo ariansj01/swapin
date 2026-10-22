@@ -8898,6 +8898,35 @@ aside.home-sidebar,
     }
 }
 
+/* -- 25.5 Home Stores Section (Yellow BG like Premium on mobile) ----------- */
+@media (max-width: 1024px) {
+    .home-listings-section--yellow {
+        background: #FFC928;
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        padding: var(--sp-5) var(--sp-4);
+        border-radius: 0;
+    }
+
+    .home-listings-section--yellow .home-section-heading h2 {
+        color: #071A33;
+        font-weight: 900;
+    }
+
+    .home-listings-section--yellow .home-section-heading__link {
+        color: #071A33;
+        opacity: 0.8;
+    }
+
+    .home-listings-section--yellow .home-section-heading::after {
+        background: linear-gradient(90deg, rgba(7, 26, 51, .18) 0%, rgba(7, 26, 51, .32) 100%);
+    }
+}
+
 /* -- 26. Premium Featured Slider (Yellow BG + Peek Effect) ------------------ */
 .home-listings-section--premium {
     display: none;
@@ -9473,7 +9502,7 @@ aside.home-sidebar,
         grid-column: 1 / -1 !important;
         grid-row: 3 !important;
         width: 100% !important;
-        justify-content: space-between !important;
+        justify-content: start !important;
         margin-top: 2px !important;
     }
     .listing-card--v2 .lc-meta {

@@ -610,7 +610,7 @@ render_navbar($user);
             height: 100%;
           }
         </style>
-        <section class="home-listings-section" aria-label="فروشگاه‌ها" style="margin-top:48px">
+        <section class="home-listings-section home-listings-section--yellow" aria-label="فروشگاه‌ها" style="margin-top:48px">
           <div class="home-section-heading home-section-heading--large mb-5">
             <h2>فروشگاه‌ها</h2>
             <a href="<?= APP_URL ?>/shops" class="home-section-heading__link">

@@ -102,18 +102,45 @@ function initLvOfferSheet(root) {
   const listingId = root.dataset.listingId || '';
   const storageKey = `lv_offer_${listingId}`;
 
+  // باز شدن شیت یک ورودی به تاریخچه اضافه می‌کند تا دکمه Back مرورگر/گوشی
+  // به جای ترک صفحه اگهی، فقط شیت را ببندد.
+  let historyPushed = false;
+
+  function hideSheet() {
+    sheet.classList.remove('is-open');
+    document.body.classList.remove('lv-modal-open');
+  }
+
+  function pushSheetHistory() {
+    if (historyPushed) return;
+    history.pushState({ lvOfferSheet: true }, '', location.href);
+    historyPushed = true;
+  }
+
   function openSheet() {
     sheet.classList.add('is-open');
     document.body.classList.add('lv-modal-open');
+    pushSheetHistory();
     restoreFormState();
     updateSubmitState();
   }
 
   function closeSheet() {
     saveFormState();
-    sheet.classList.remove('is-open');
-    document.body.classList.remove('lv-modal-open');
+    if (historyPushed) {
+      history.back(); // popstate ورودی تاریخچه را برمی‌دارد و شیت را می‌بندد
+      return;
+    }
+    hideSheet();
   }
+
+  window.addEventListener('popstate', () => {
+    historyPushed = false;
+    if (sheet.classList.contains('is-open')) hideSheet();
+  });
+
+  // شیت ممکن است قبل از init به صورت خودکار باز شده باشد (بازگشت با خطای اعتبارسنجی)
+  if (sheet.classList.contains('is-open')) pushSheetHistory();
 
   openBtn?.addEventListener('click', (e) => {
     e.preventDefault();
