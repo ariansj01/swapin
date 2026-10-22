@@ -8908,7 +8908,7 @@ aside.home-sidebar,
         right: 50%;
         margin-left: -50vw;
         margin-right: -50vw;
-        padding: var(--sp-5) var(--sp-4);
+        padding: var(--sp-5) 5px;
         border-radius: 0;
     }
 
@@ -9205,6 +9205,9 @@ aside.home-sidebar,
     }
     .listing-card--premium-horizontal .lc-title {
         font-size: 0.95rem !important;
+    }
+    .home-section-heading{
+      margin-bottom: -3%;
     }
 }
 
