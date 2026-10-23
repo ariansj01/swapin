@@ -2913,6 +2913,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   transition: all 0.15s ease;
   border-right: 3px solid transparent;
 }
+ #city-select-menu .dropdown-item {
+  color: #fff !important;
+}
 .dropdown-item i {
   font-size: 1.05rem;
   width: 20px;
