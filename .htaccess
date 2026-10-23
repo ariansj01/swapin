@@ -56,16 +56,9 @@ Options -MultiViews -Indexes
   # Explicitly handle /profile/ to avoid directory listing
   RewriteRule ^profile/?$ profile.php [L,NC,QSA]
   
-  # Block sensitive directories
-  RewriteRule ^includes/ - [F,L]
-  RewriteRule ^seed/ - [F,L]
-  RewriteRule ^database/ - [F,L]
-  RewriteRule ^storage/ - [F,L]
-  RewriteRule ^tools/ - [F,L]
-  RewriteRule ^vendor/ - [F,L]
-  RewriteRule ^logs/ - [F,L]
-  RewriteRule ^backups/ - [F,L]
-  RewriteRule ^sql/ - [F,L]
+  # Block sensitive files and directories
+  RewriteRule \.(env|zip|bak|sql|dump|ini|log|sh|git|jsonl)$ - [F,L]
+  RewriteRule ^(includes|seed|database|storage|tools|vendor|logs|backups|sql)/ - [F,L]
 
   # ── FIX: /store and /support routes ────────────────────────────────────
   # These MUST come BEFORE the !-d checks because store/ and support/

@@ -3,7 +3,7 @@
  * Imported by: sw-android.js, sw-ios.js, sw.js (fallback)
  * ========================================================= */
 
-self.SWAAPIN_SW_CORE_VERSION = '1.0.1';
+self.SWAAPIN_SW_CORE_VERSION = '1.0.2';
 self.SWAAPIN_CACHE_BASE = 'swaapin-cache';
 
 self.SwaapinSWCore = (function () {
