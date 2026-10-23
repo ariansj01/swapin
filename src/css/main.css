@@ -2908,7 +2908,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   padding: 12px 18px;
   font-size: .9rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--primary-text, #0A2540);
   text-decoration: none;
   transition: all 0.15s ease;
   border-right: 3px solid transparent;

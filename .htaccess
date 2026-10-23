@@ -17,7 +17,13 @@ Options +MultiViews -Indexes
   # For production server (root domain) — adjust RewriteBase if deployed at domain root:
   # RewriteBase /
   # For local development (XAMPP in /swaapin subdir):
-  RewriteBase /swaapin/
+  # RewriteBase /swaapin/
+  # For production or root:
+  # RewriteBase /
+
+  # Landing pages
+  RewriteRule ^exchange/?$ exchange.php [L,NC,QSA]
+  RewriteRule ^services/?$ services.php [L,NC,QSA]
 
   # Mobile Flutter API (do not affect PWA routes)
   RewriteRule ^api/v1/index\.php$ - [L]
@@ -112,7 +118,7 @@ Options +MultiViews -Indexes
   # Handle trailing slashes for files (e.g., /profile/ -> /profile.php)
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteCond %{REQUEST_FILENAME} ^(.+)/$
-  RewriteCond %1.php -f
+  RewriteCond %{DOCUMENT_ROOT}/$1.php -f
   RewriteRule ^(.+)/$ $1.php [L,QSA]
 
   # Remove .php extension (prioritize files over directories)
@@ -127,7 +133,8 @@ Options +MultiViews -Indexes
   RewriteRule ^listings/?$ listings.php [L,NC,QSA]
 
   # آدرس تمیز نقشه آگهی‌ها (رفع آندرلاین در URL عمومی)
-  RewriteRule ^listings/map/?$ listings/map_view.php [L,QSA]
+  # استفاده از آدرس مستقیم برای جلوگیری از لوپ
+  RewriteRule ^listings/map/?$ listings/map_view.php [L,NC,QSA]
 
   # AI capabilities lab (interactive demos, no DB writes)
   RewriteRule ^ai-lab/?$ ai-lab.php [L,NC,QSA]

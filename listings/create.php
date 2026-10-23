@@ -69,20 +69,40 @@ $categories = DB::fetchAll(
      WHERE c.is_active = 1 ORDER BY COALESCE(p.sort_order,c.sort_order), c.sort_order'
 );
 
-// Exchange categories for the new step 4
+// Exchange categories for the new step 4 (expanded and refined)
 $exchangeCategories = [
-    ['name' => 'موبایل', 'icon' => 'bi-phone'],
-    ['name' => 'لپ‌تاپ', 'icon' => 'bi-laptop'],
-    ['name' => 'خودرو', 'icon' => 'bi-car-front'],
-    ['name' => 'موتور', 'icon' => 'bi-bicycle'],
-    ['name' => 'کنسول بازی', 'icon' => 'bi-controller'],
-    ['name' => 'دوربین', 'icon' => 'bi-camera'],
-    ['name' => 'طلا و جواهر', 'icon' => 'bi-gem'],
-    ['name' => 'ساعت', 'icon' => 'bi-watch'],
-    ['name' => 'کتاب', 'icon' => 'bi-book'],
-    ['name' => 'لوازم خانگی', 'icon' => 'bi-tv'],
-    ['name' => 'پوشاک', 'icon' => 'bi-bag'],
-    ['name' => 'لوازم ورزشی', 'icon' => 'bi-activity'],
+    ['name' => 'گوشی آیفون', 'icon' => 'bi-apple'],
+    ['name' => 'گوشی سامسونگ', 'icon' => 'bi-phone'],
+    ['name' => 'سایر گوشی‌ها', 'icon' => 'bi-phone-fill'],
+    ['name' => 'لپ‌تاپ گیمینگ', 'icon' => 'bi-gpu-card'],
+    ['name' => 'لپ‌تاپ اداری/مهندسی', 'icon' => 'bi-laptop'],
+    ['name' => 'مک‌بوک', 'icon' => 'bi-laptop-fill'],
+    ['name' => 'تبلت و آیپد', 'icon' => 'bi-tablet'],
+    ['name' => 'خودرو سواری', 'icon' => 'bi-car-front'],
+    ['name' => 'خودرو سنگین/باری', 'icon' => 'bi-truck'],
+    ['name' => 'موتورسیکلت', 'icon' => 'bi-bicycle'],
+    ['name' => 'خانه و آپارتمان', 'icon' => 'bi-house-fill'],
+    ['name' => 'ویلا و باغ', 'icon' => 'bi-tree'],
+    ['name' => 'زمین و کلنگی', 'icon' => 'bi-map'],
+    ['name' => 'دفتر کار و تجاری', 'icon' => 'bi-building'],
+    ['name' => 'کنسول پلی‌استیشن', 'icon' => 'bi-controller'],
+    ['name' => 'کنسول ایکس‌باکس', 'icon' => 'bi-controller'],
+    ['name' => 'کنسول نینتندو/پرتابل', 'icon' => 'bi-joystick'],
+    ['name' => 'دوربین عکاسی/فیلمبرداری', 'icon' => 'bi-camera'],
+    ['name' => 'لوازم جانبی دوربین', 'icon' => 'bi-camera-reels'],
+    ['name' => 'طلا و مسکوکات', 'icon' => 'bi-gem'],
+    ['name' => 'ساعت مچی هوشمند', 'icon' => 'bi-watch'],
+    ['name' => 'ساعت مچی کلاسیک', 'icon' => 'bi-clock'],
+    ['name' => 'کتاب و لوازم تحریر', 'icon' => 'bi-book'],
+    ['name' => 'یخچال و فریزر', 'icon' => 'bi-snow'],
+    ['name' => 'تلویزیون و صوتی', 'icon' => 'bi-tv'],
+    ['name' => 'ماشین لباسشویی/ظرفشویی', 'icon' => 'bi-water'],
+    ['name' => 'مبلمان و دکوراسیون', 'icon' => 'bi-chair'],
+    ['name' => 'پوشاک و اکسسوری', 'icon' => 'bi-bag'],
+    ['name' => 'لوازم ورزشی و بدنسازی', 'icon' => 'bi-activity'],
+    ['name' => 'ابزارآلات صنعتی/برقی', 'icon' => 'bi-tools'],
+    ['name' => 'خدمات آموزشی', 'icon' => 'bi-mortarboard'],
+    ['name' => 'خدمات فنی/تعمیراتی', 'icon' => 'bi-wrench'],
 ];
 
 // Handle form submission
