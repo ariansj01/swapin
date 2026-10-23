@@ -2914,7 +2914,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   border-right: 3px solid transparent;
 }
 .navbar-city-select__menu .dropdown-item {
-  color: var(--primary-text, #0A2540);
+  color: #fff;
 }
 .dropdown-item i {
   font-size: 1.05rem;
@@ -9482,7 +9482,7 @@ aside.home-sidebar,
     }
 
     /* بج‌ها: روی تصویر، حداکثر ۲ عدد دیده شود و بقیه با اسلاید افقی */
-    .listing-card--v2 .lc-media-wrapper { position: relative !important; }
+    .listing-card--v2 .lc-media-wrapper { position: relative !important; transform: translateY(30px); }
     .listing-card--v2 .lc-badges-row {
         position: absolute !important;
         top: 8px !important;

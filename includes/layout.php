@@ -652,7 +652,7 @@ function render_footer(): void {
 
     echo <<<HTML
 <footer class="site-footer site-footer--compact">
-  <div class="container" style="margin-right: -30px;width: 116% !important;">
+  <div class="" style="margin-right: -30px;width: 116% !important;">
     <div class="site-footer__compact-row">
       <div class="site-footer__compact-col site-footer__compact-col--text">
         <p>سواَپین بستری امن و آسان برای معاوضه‌ی کالاها و خدمات در سراسر ایران</p>
