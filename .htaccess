@@ -1,5 +1,5 @@
 # Enable MultiViews for automatic extension handling
-Options +MultiViews -Indexes
+Options -MultiViews -Indexes
 
 # Block CLI migration scripts from web access (defense in depth)
 <FilesMatch "^run_.*\.php$">
@@ -20,6 +20,9 @@ Options +MultiViews -Indexes
   # RewriteBase /swaapin/
   # For production or root:
   # RewriteBase /
+
+  # آدرس تمیز نقشه آگهی‌ها (رفع آندرلاین در URL عمومی) - انتقال به بالا برای اولویت
+  RewriteRule ^listings/map/?$ listings/map_view.php [L,NC,QSA]
 
   # Landing pages
   RewriteRule ^exchange/?$ exchange.php [L,NC,QSA]
@@ -132,9 +135,7 @@ Options +MultiViews -Indexes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^listings/?$ listings.php [L,NC,QSA]
 
-  # آدرس تمیز نقشه آگهی‌ها (رفع آندرلاین در URL عمومی)
-  # استفاده از آدرس مستقیم برای جلوگیری از لوپ
-  RewriteRule ^listings/map/?$ listings/map_view.php [L,NC,QSA]
+
 
   # AI capabilities lab (interactive demos, no DB writes)
   RewriteRule ^ai-lab/?$ ai-lab.php [L,NC,QSA]

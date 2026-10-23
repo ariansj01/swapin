@@ -3,7 +3,7 @@
  * Imported by: sw-android.js, sw-ios.js, sw.js (fallback)
  * ========================================================= */
 
-self.SWAAPIN_SW_CORE_VERSION = '1.0.0';
+self.SWAAPIN_SW_CORE_VERSION = '1.0.1';
 self.SWAAPIN_CACHE_BASE = 'swaapin-cache';
 
 self.SwaapinSWCore = (function () {
@@ -35,6 +35,7 @@ self.SwaapinSWCore = (function () {
       p.startsWith('/listings/my') ||
       p.startsWith('/listings/create') ||
       p.startsWith('/listings/edit') ||
+      p.startsWith('/listings/map') ||
       p.startsWith('/iso') ||
       p.startsWith('/messages') ||
       p.startsWith('/panel') ||
