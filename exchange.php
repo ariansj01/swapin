@@ -16,24 +16,45 @@ render_navbar($user);
 
 // دسته‌بندی‌های اصلی برای نمایش در چیپ‌ها
 $mainCats = [
-    ['name' => 'گوشی', 'icon' => 'bi-phone', 'q' => 'گوشی'],
-    ['name' => 'لپ‌تاپ', 'icon' => 'bi-laptop', 'q' => 'لپ تاپ'],
-    ['name' => 'تبلت', 'icon' => 'bi-tablet', 'q' => 'تبلت'],
-    ['name' => 'خانه', 'icon' => 'bi-house', 'q' => 'خانه'],
-    ['name' => 'آپارتمان', 'icon' => 'bi-building', 'q' => 'آپارتمان'],
-    ['name' => 'زمین', 'icon' => 'bi-map', 'q' => 'زمین'],
-    ['name' => 'ماشین', 'icon' => 'bi-car-front', 'q' => 'ماشین'],
-    ['name' => 'موتور', 'icon' => 'bi-bicycle', 'q' => 'موتور'],
-    ['name' => 'یخچال', 'icon' => 'bi-snow', 'q' => 'یخچال'],
-    ['name' => 'تلویزیون', 'icon' => 'bi-tv', 'q' => 'تلویزیون'],
-    ['name' => 'مبل', 'icon' => 'bi-chair', 'q' => 'مبل'],
-    ['name' => 'طلا', 'icon' => 'bi-gem', 'q' => 'طلا'],
-    ['name' => 'دوچرخه', 'icon' => 'bi-bicycle', 'q' => 'دوچرخه'],
+    ['name' => 'گوشی', 'icon' => 'bi-phone', 'slug' => 'electronics/phones'],
+    ['name' => 'لپ‌تاپ', 'icon' => 'bi-laptop', 'slug' => 'electronics/laptops'],
+    ['name' => 'تبلت', 'icon' => 'bi-tablet', 'slug' => 'electronics/tablets'],
+    ['name' => 'خانه و آپارتمان', 'icon' => 'bi-house', 'slug' => 'real-estate/residential'],
+    ['name' => 'ویلا و باغ', 'icon' => 'bi-tree', 'slug' => 'real-estate/villa'],
+    ['name' => 'زمین و کلنگی', 'icon' => 'bi-map', 'slug' => 'real-estate/land'],
+    ['name' => 'ماشین', 'icon' => 'bi-car-front', 'slug' => 'vehicles/cars'],
+    ['name' => 'موتور', 'icon' => 'bi-bicycle', 'slug' => 'vehicles/motorcycles'],
+    ['name' => 'یخچال', 'icon' => 'bi-snow', 'slug' => 'home-appliances/fridge'],
+    ['name' => 'تلویزیون', 'icon' => 'bi-tv', 'slug' => 'home-appliances/tv'],
+    ['name' => 'مبل', 'icon' => 'bi-chair', 'slug' => 'home-appliances/furniture'],
+    ['name' => 'طلا', 'icon' => 'bi-gem', 'slug' => 'personal-items/jewelry'],
+    ['name' => 'دوچرخه', 'icon' => 'bi-bicycle', 'slug' => 'leisure/bicycle'],
 ];
 
 $combinedPairs = [
-    'گوشی' => ['لپ تاپ', 'تبلت', 'خانه', 'آپارتمان', 'زمین', 'ماشین', 'موتور', 'یخچال', 'تلویزیون', 'مبل', 'طلا', 'دوچرخه'],
-    'لپ تاپ' => ['گوشی', 'تبلت', 'ماشین', 'موتور', 'طلا'],
+    'گوشی' => [
+        ['label' => 'لپ‌تاپ', 'q' => 'گوشی', 'w' => 'لپ تاپ'],
+        ['label' => 'تبلت', 'q' => 'گوشی', 'w' => 'تبلت'],
+        ['label' => 'ماشین', 'q' => 'گوشی', 'w' => 'ماشین'],
+        ['label' => 'ساعت هوشمند', 'q' => 'گوشی', 'w' => 'ساعت هوشمند'],
+        ['label' => 'کنسول بازی', 'q' => 'گوشی', 'w' => 'کنسول بازی'],
+    ],
+    'املاک' => [
+        ['label' => 'آپارتمان با ویلا', 'q' => 'آپارتمان', 'w' => 'ویلا'],
+        ['label' => 'زمین با ماشین', 'q' => 'زمین', 'w' => 'ماشین'],
+        ['label' => 'خانه با مغازه', 'q' => 'خانه', 'w' => 'مغازه'],
+        ['label' => 'باغ با آپارتمان', 'q' => 'باغ', 'w' => 'آپارتمان'],
+    ],
+    'خودرو' => [
+        ['label' => 'ماشین با ماشین', 'q' => 'ماشین', 'w' => 'ماشین'],
+        ['label' => 'ماشین با زمین', 'q' => 'ماشین', 'w' => 'زمین'],
+        ['label' => 'موتور با گوشی', 'q' => 'موتور', 'w' => 'گوشی'],
+    ],
+    'لوازم خانگی' => [
+        ['label' => 'یخچال با تلویزیون', 'q' => 'یخچال', 'w' => 'تلویزیون'],
+        ['label' => 'مبل با فرش', 'q' => 'مبل', 'w' => 'فرش'],
+        ['label' => 'کولر با پکیج', 'q' => 'کولر', 'w' => 'پکیج'],
+    ]
 ];
 ?>
 
@@ -130,10 +151,10 @@ $combinedPairs = [
         
         <!-- دسته‌های اصلی -->
         <section class="ex-section">
-            <h2 class="ex-title">دسته‌های اصلی</h2>
+            <h2 class="ex-title">دسته‌های اصلی معاوضه</h2>
             <div class="ex-grid">
                 <?php foreach ($mainCats as $cat): ?>
-                    <a href="<?= APP_URL ?>/listings/?q=<?= urlencode('معاوضه ' . $cat['q']) ?>" class="ex-chip">
+                    <a href="<?= APP_URL ?>/listings/?cat=<?= urlencode($cat['slug']) ?>" class="ex-chip">
                         معاوضه <?= h($cat['name']) ?>
                     </a>
                 <?php endforeach; ?>
@@ -142,29 +163,20 @@ $combinedPairs = [
 
         <!-- معاوضه ترکیبی -->
         <section class="ex-section">
-            <h2 class="ex-title">معاوضه ترکیبی</h2>
+            <h2 class="ex-title">پیشنهادات معاوضه ترکیبی</h2>
             
-            <?php foreach ($combinedPairs as $main => $subs): ?>
+            <?php foreach ($combinedPairs as $group => $subs): ?>
                 <div class="ex-combined-row">
-                    <div class="ex-combined-label">معاوضه <?= h($main) ?> با...</div>
+                    <div class="ex-combined-label"><?= h($group) ?> با...</div>
                     <div class="ex-scroll">
                         <?php foreach ($subs as $sub): ?>
-                            <a href="<?= APP_URL ?>/listings/?q=<?= urlencode('معاوضه ' . $main) ?>&want=<?= urlencode($sub) ?>" class="ex-sub-chip">
-                                معاوضه <?= h($main) ?> با <?= h($sub) ?>
+                            <a href="<?= APP_URL ?>/listings/?q=<?= urlencode($sub['q']) ?>&want=<?= urlencode($sub['w']) ?>" class="ex-sub-chip">
+                                <?= h($sub['label']) ?>
                             </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
-
-            <!-- Fallback for other combinations -->
-            <div class="ex-combined-row">
-                <div class="ex-combined-label">معاوضه تبلت با...</div>
-                <div class="ex-scroll">
-                    <a href="<?= APP_URL ?>/listings/?q=معاوضه تبلت&want=گوشی" class="ex-sub-chip">معاوضه تبلت با گوشی</a>
-                    <a href="<?= APP_URL ?>/listings/?q=معاوضه تبلت&want=لپ تاپ" class="ex-sub-chip">معاوضه تبلت با لپ تاپ</a>
-                </div>
-            </div>
         </section>
 
     </div>

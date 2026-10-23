@@ -16,21 +16,38 @@ render_navbar($user);
 
 // دسته‌بندی‌های خدمات
 $serviceCats = [
-    ['name' => 'آموزش', 'icon' => 'bi-book', 'q' => 'آموزش'],
-    ['name' => 'تعمیرات', 'icon' => 'bi-tools', 'q' => 'تعمیرات'],
-    ['name' => 'حمل و نقل', 'icon' => 'bi-truck', 'q' => 'حمل'],
-    ['name' => 'نظافت', 'icon' => 'bi-stars', 'q' => 'نظافت'],
-    ['name' => 'آرایشگری', 'icon' => 'bi-scissors', 'q' => 'آرایش'],
-    ['name' => 'طراحی و گرافیک', 'icon' => 'bi-palette', 'q' => 'طراحی'],
-    ['name' => 'برنامه‌نویسی', 'icon' => 'bi-code-slash', 'q' => 'برنامه نویسی'],
-    ['name' => 'مشاوره', 'icon' => 'bi-chat-dots', 'q' => 'مشاوره'],
-    ['name' => 'باغبانی', 'icon' => 'bi-tree', 'q' => 'باغبانی'],
-    ['name' => 'پذیرایی', 'icon' => 'bi-cup-hot', 'q' => 'پذیرایی'],
+    ['name' => 'آموزش و تدریس', 'icon' => 'bi-book', 'slug' => 'services/education'],
+    ['name' => 'تعمیرات تخصصی', 'icon' => 'bi-tools', 'slug' => 'services/repairs'],
+    ['name' => 'حمل و نقل', 'icon' => 'bi-truck', 'slug' => 'services/transportation'],
+    ['name' => 'نظافت و خدمات منزل', 'icon' => 'bi-stars', 'slug' => 'services/cleaning'],
+    ['name' => 'آرایشگری و زیبایی', 'icon' => 'bi-scissors', 'slug' => 'services/beauty'],
+    ['name' => 'طراحی و گرافیک', 'icon' => 'bi-palette', 'slug' => 'services/design'],
+    ['name' => 'برنامه‌نویسی و IT', 'icon' => 'bi-code-slash', 'slug' => 'services/it'],
+    ['name' => 'مشاوره و روانشناسی', 'icon' => 'bi-chat-dots', 'slug' => 'services/counseling'],
+    ['name' => 'باغبانی و فضای سبز', 'icon' => 'bi-tree', 'slug' => 'services/gardening'],
+    ['name' => 'پذیرایی و تشریفات', 'icon' => 'bi-cup-hot', 'slug' => 'services/catering'],
 ];
 
 $servicePairs = [
-    'آموزش' => ['گوشی', 'لپ تاپ', 'تعمیرات', 'مشاوره'],
-    'تعمیرات' => ['کالا', 'خدمات نظافت', 'آموزش'],
+    'آموزش' => [
+        ['label' => 'آموزش زبان با گوشی', 'q' => 'آموزش زبان', 'w' => 'گوشی'],
+        ['label' => 'تدریس کنکور با لپ‌تاپ', 'q' => 'تدریس کنکور', 'w' => 'لپ تاپ'],
+        ['label' => 'آموزش موسیقی با ساز', 'q' => 'آموزش موسیقی', 'w' => 'ساز موسیقی'],
+    ],
+    'تعمیرات' => [
+        ['label' => 'تعمیر خودرو با لوازم یدکی', 'q' => 'تعمیر خودرو', 'w' => 'لوازم یدکی'],
+        ['label' => 'تعمیر پکیج با موبایل', 'q' => 'تعمیر پکیج', 'w' => 'موبایل'],
+        ['label' => 'نصب ویندوز با فلش', 'q' => 'نصب ویندوز', 'w' => 'فلش مموری'],
+    ],
+    'دیجیتال و IT' => [
+        ['label' => 'طراحی سایت با گوشی', 'q' => 'طراحی سایت', 'w' => 'گوشی'],
+        ['label' => 'تولید محتوا با دوربین', 'q' => 'تولید محتوا', 'w' => 'دوربین عکاسی'],
+        ['label' => 'ادیت ویدیو با تبلت', 'q' => 'ادیت ویدیو', 'w' => 'تبلت'],
+    ],
+    'منزل و فنی' => [
+        ['label' => 'نظافت با لوازم برقی', 'q' => 'نظافت منزل', 'w' => 'لوازم برقی'],
+        ['label' => 'نقاشی ساختمان با ابزار', 'q' => 'نقاشی ساختمان', 'w' => 'ابزارآلات'],
+    ]
 ];
 ?>
 
@@ -127,10 +144,10 @@ $servicePairs = [
         
         <!-- دسته‌های خدمات -->
         <section class="sv-section">
-            <h2 class="sv-title">خدمات سواَپین</h2>
+            <h2 class="sv-title">دسته‌های اصلی خدمات</h2>
             <div class="sv-grid">
                 <?php foreach ($serviceCats as $cat): ?>
-                    <a href="<?= APP_URL ?>/listings/?q=<?= urlencode('خدمات ' . $cat['q']) ?>" class="sv-chip">
+                    <a href="<?= APP_URL ?>/listings/?cat=<?= urlencode($cat['slug']) ?>" class="sv-chip">
                         <?= h($cat['name']) ?>
                     </a>
                 <?php endforeach; ?>
@@ -139,15 +156,15 @@ $servicePairs = [
 
         <!-- معاوضه خدمات -->
         <section class="sv-section">
-            <h2 class="sv-title">تبادل مهارت و خدمت</h2>
+            <h2 class="sv-title">پیشنهادات تبادل خدمت و کالا</h2>
             
-            <?php foreach ($servicePairs as $main => $subs): ?>
+            <?php foreach ($servicePairs as $group => $subs): ?>
                 <div class="sv-combined-row">
-                    <div class="sv-combined-label">ارائه <?= h($main) ?> در قبال...</div>
+                    <div class="sv-combined-label"><?= h($group) ?> در قبال...</div>
                     <div class="sv-scroll">
                         <?php foreach ($subs as $sub): ?>
-                            <a href="<?= APP_URL ?>/listings/?q=<?= urlencode($main) ?>&want=<?= urlencode($sub) ?>" class="sv-sub-chip">
-                                <?= h($main) ?> با <?= h($sub) ?>
+                            <a href="<?= APP_URL ?>/listings/?q=<?= urlencode($sub['q']) ?>&want=<?= urlencode($sub['w']) ?>" class="sv-sub-chip">
+                                <?= h($sub['label']) ?>
                             </a>
                         <?php endforeach; ?>
                     </div>
