@@ -2913,9 +2913,6 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   transition: all 0.15s ease;
   border-right: 3px solid transparent;
 }
-.navbar-city-select__menu .dropdown-item {
-  color: var(--primary-text, #0A2540);
-}
 .dropdown-item i {
   font-size: 1.05rem;
   width: 20px;
@@ -4106,8 +4103,8 @@ html body .categories-dropdown {
     gap: 0 !important;
     position: relative;
   }
-  .navbar-city-select__menu .dropdown-item {
-    color: #fff;
+  .navbar-city-select__menu{
+    color: #fff !important;
   }
 
   .navbar-city-select__menu {
