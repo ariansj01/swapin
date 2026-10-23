@@ -8756,23 +8756,19 @@ aside.home-sidebar,
     aspect-ratio: 16 / 5;
     margin-right: -14%;
     margin-top: 20px;
+    touch-action: pan-y;
 }
 
 .banner-slider__wrapper {
-    position: relative;
-    width: 100%;
+    display: flex;
+    transition: transform 0.5s ease-in-out;
     height: 100%;
 }
 
 .banner-slide {
-    display: none;
+    flex: 0 0 100%;
     width: 100%;
     height: 100%;
-    animation: fadeInBanner 0.5s ease-in-out;
-}
-
-.banner-slide.active {
-    display: block;
 }
 
 @keyframes fadeInBanner {

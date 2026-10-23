@@ -115,16 +115,16 @@ function banners_render_slider(): void {
         const slider = document.getElementById('bannerSlider');
         if (!slider) return;
         
+        const wrapper = slider.querySelector('.banner-slider__wrapper');
         const slides = slider.querySelectorAll('.banner-slide');
         const dots = slider.querySelectorAll('.banner-dot');
         let current = 0;
         let interval;
 
         function showSlide(index) {
-            slides.forEach(s => s.classList.remove('active'));
             dots.forEach(d => d.classList.remove('active'));
             
-            slides[index].classList.add('active');
+            wrapper.style.transform = `translateX(${index * 100}%)`;
             if (dots[index]) dots[index].classList.add('active');
             current = index;
         }
@@ -148,6 +148,36 @@ function banners_render_slider(): void {
                 startAutoPlay();
             });
         });
+
+        // Touch sliding support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        slider.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            stopAutoPlay();
+        }, { passive: true });
+
+        slider.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+            startAutoPlay();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swipe left -> next slide
+                    showSlide((current + 1) % slides.length);
+                } else {
+                    // Swipe right -> prev slide
+                    showSlide((current - 1 + slides.length) % slides.length);
+                }
+            }
+        }
 
         slider.addEventListener('mouseenter', stopAutoPlay);
         slider.addEventListener('mouseleave', startAutoPlay);
