@@ -234,6 +234,7 @@ render_head($title, $desc, [
   'og_type'   => 'website',
   'og_image'  => APP_URL . '/src/img/heropng.png',
   'json_ld'   => $jsonLd,
+  'body_class' => 'page-listings',
 ]);
 render_navbar($user);
 ?>

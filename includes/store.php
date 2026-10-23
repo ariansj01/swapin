@@ -213,7 +213,7 @@ function render_listing_type_fields(string $providerType, array $values = [], st
         return '';
     }
 
-    $html = '<div class="' . h($cssPrefix) . '-type-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px">';
+    $html = '<div class="' . h($cssPrefix) . '-type-fields" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px">';
     foreach ($defs as $key => $def) {
         $name = 'listing_attr_' . $key;
         $val = h((string)($values[$key] ?? ''));

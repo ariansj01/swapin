@@ -104,6 +104,10 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     $enableAnalytics = true;
 
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+    $bodyClass = '';
+    if (!empty($seo['body_class'])) {
+        $bodyClass = ' class="' . h((string)$seo['body_class']) . '"';
+    }
 
     if (
         str_contains($requestUri, '/admin') ||
@@ -221,7 +225,7 @@ GA;
 })();
 </script>
 </head>
-<body>
+<body{$bodyClass}>
 {$gtm_noscript}
 
 
@@ -482,7 +486,7 @@ HTML;
     echo "<a href=\"{$url}/shops/online\" class=\"mobile-drawer__link\"><i class=\"bi bi-globe2\"></i> فروشگاه‌های آنلاین</a>";
     echo "<a href=\"{$url}/shops/physical\" class=\"mobile-drawer__link\"><i class=\"bi bi-building-check\"></i> فروشگاه‌های حضوری</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
-    echo "<a href=\"{$url}/#home-steps\" class=\"mobile-drawer__link\"><i class=\"bi bi-diagram-3\"></i> سواَپین چگونه کار می‌کند؟</a>";
+    // echo "<a href=\"{$url}/#home-steps\" class=\"mobile-drawer__link\"><i class=\"bi bi-diagram-3\"></i> سواَپین چگونه کار می‌کند؟</a>";
     echo "<a href=\"{$url}/installment-swap\" class=\"mobile-drawer__link\"><i class=\"bi bi-calendar-check\"></i> مبادله قسطی</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     foreach ($navItems as [$href, $label, $icon, $extraClass]) {
@@ -648,7 +652,7 @@ function render_footer(): void {
 
     echo <<<HTML
 <footer class="site-footer site-footer--compact">
-  <div class="container">
+  <div class="container" style="margin-right: -30px;width: 116% !important;">
     <div class="site-footer__compact-row">
       <div class="site-footer__compact-col site-footer__compact-col--text">
         <p>سواَپین بستری امن و آسان برای معاوضه‌ی کالاها و خدمات در سراسر ایران</p>

@@ -2908,10 +2908,13 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   padding: 12px 18px;
   font-size: .9rem;
   font-weight: 500;
-  color: var(--primary-text, #0A2540);
+  color: #fff;
   text-decoration: none;
   transition: all 0.15s ease;
   border-right: 3px solid transparent;
+}
+.navbar-city-select__menu .dropdown-item {
+  color: var(--primary-text, #0A2540);
 }
 .dropdown-item i {
   font-size: 1.05rem;
@@ -3682,14 +3685,14 @@ html body .categories-dropdown {
   }
   .newest-listing-item{
     width: 135% !important;
-    margin-right: -12%;
+    margin-right: -7%;
   }
   .home-section-heading::after{
     display: none;
   }
   .listings-rows-container{
-    width: 125% !important;
-    margin-right: -11px;
+    width: 110% !important;
+    margin-right: -10px;
   }
   .listings-row-wrapper{
     max-width: 100% !important;
@@ -6477,6 +6480,12 @@ html body .categories-dropdown {
   margin: var(--sp-6) 0;
 }
 
+@media (max-width: 1024px) {
+  body.page-listings .site-footer {
+    display: none !important;
+  }
+}
+
 @media (max-width: 992px) {
   .site-footer__stats {
     grid-template-columns: repeat(2, 1fr);
@@ -9209,7 +9218,7 @@ aside.home-sidebar,
 
 
     .newest-listing-item {
-        width: 100% !important;
+        width: 90% !important;
     }
 
     .listing-card--premium-horizontal {
@@ -9389,6 +9398,7 @@ aside.home-sidebar,
         column-gap: 10px !important;
         row-gap: 6px !important;
         align-items: start !important;
+        padding: 15px;
     }
     /* محتوای کارت از حالت جعبه خارج می‌شود تا آیتم‌های گرید شوند */
     .listing-card--v2 .lc-content { display: contents !important; }

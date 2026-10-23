@@ -109,6 +109,9 @@
     max-height: none !important;
     border-radius: 10px;
   }
+  .lv-nearby-item{
+    width: 100%;
+  }
 }
 
 .lv-nearby-section {

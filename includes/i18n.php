@@ -532,17 +532,11 @@ function swaapin_upsert_category(array $row, ?int $parentId): int {
     $icon       = $row['icon'] ?? ($iconMap[$slug] ?? 'bi bi-tag');
     if ($slug === '' || $name === '') return 0;
 
-    $pidSql = $parentId === null ? ' (parent_id IS NULL OR parent_id = 0)' : ' parent_id = ? ';
-    if ($parentId === null) {
-        $params = [$slug];
-    } else {
-        $params = [$parentId, $slug];
-    }
-    $existing = DB::fetch("SELECT id FROM categories WHERE {$pidSql} AND slug = ? LIMIT 1", $params);
+    $existing = DB::fetch("SELECT id FROM categories WHERE slug = ? LIMIT 1", [$slug]);
     if ($existing) {
         DB::query(
-            "UPDATE categories SET name = ?, icon = ?, sort_order = ?, is_active = 1 WHERE id = ?",
-            [$name, $icon, $sortOrder, (int)$existing['id']]
+            "UPDATE categories SET name = ?, icon = ?, sort_order = ?, is_active = 1, parent_id = ? WHERE id = ?",
+            [$name, $icon, $sortOrder, $parentId, (int)$existing['id']]
         );
         return (int)$existing['id'];
     }

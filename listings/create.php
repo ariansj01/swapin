@@ -314,7 +314,7 @@ render_navbar($user);
 
           <div class="wizard-form-group">
             <label class="wizard-form-label">توضیحات *</label>
-            <textarea name="description" id="step1-description" class="wizard-form-textarea" rows="6"
+            <textarea name="description" id="step1-description" class="wizard-form-textarea" rows="4"
                       placeholder="کالا را با جزئیات توضیح دهید — سن، برند، مشخصات، ایرادات…"><?= h($vals['description']) ?></textarea>
             <div class="char-count"><span id="step1-desc-count"><?= mb_strlen((string)$vals['description']) ?></span> کاراکتر</div>
           </div>
@@ -407,7 +407,7 @@ render_navbar($user);
           <p class="wizard-step-subtitle">دقیق بنویسید که به چه چیزی نیاز دارید.</p>
 
           <div class="wizard-form-group">
-            <textarea name="want_description" id="step5-description" class="wizard-form-textarea" rows="6"
+            <textarea name="want_description" id="step5-description" class="wizard-form-textarea" rows="4"
                       placeholder="مثلا فقط آیفون ۱۵ پرو تمیز با سلامت باتری بالای ۹۰ درصد…"></textarea>
           </div>
         </div>
@@ -597,17 +597,17 @@ render_navbar($user);
 <style>
 .wizard-category-picker { position: relative; width: 100%; }
 .cat-pick-trigger {
-  display: flex; align-items: center; gap: 10px;
-  width: 100%; min-height: 48px; padding: 10px 16px;
-  background: #fff; border: 1.5px solid #e5e7eb; border-radius: 12px;
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; min-height: 36px; padding: 6px 12px;
+  background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px;
   cursor: pointer; transition: all .15s ease; user-select: none;
 }
 .cat-pick-trigger:hover { border-color: var(--primary,#0066FF); box-shadow: 0 0 0 3px rgba(0,102,255,.08); }
 .cat-pick-trigger.cat-pick-open { border-color: var(--primary,#0066FF); box-shadow: 0 0 0 3px rgba(0,102,255,.12); }
 .cat-pick-trigger[data-empty="1"] .cat-pick-trigger-label { color: #9ca3af; }
 .cat-pick-trigger[data-empty="0"] .cat-pick-trigger-label { color: #111827; font-weight: 600; }
-.cat-pick-trigger-icon { color: var(--primary,#0066FF); font-size: 1.05rem; flex-shrink: 0; }
-.cat-pick-trigger-label { flex: 1; text-align: right; font-size: .9375rem; }
+.cat-pick-trigger-icon { color: var(--primary,#0066FF); font-size: .9rem; flex-shrink: 0; }
+.cat-pick-trigger-label { flex: 1; text-align: right; font-size: .8125rem; }
 .cat-pick-trigger-caret { color: #6b7280; font-size: .75rem; transition: transform .2s ease; }
 .cat-pick-trigger.cat-pick-open .cat-pick-trigger-caret { transform: rotate(180deg); }
 
@@ -649,22 +649,22 @@ render_navbar($user);
 .wizard-form-group.is-invalid .cat-pick-trigger { border-color: var(--danger,#ef4444) !important; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
 
 /* نوع آگهی: معاوضه / فروش */
-.listing-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.listing-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 .listing-mode-option { position: relative; cursor: pointer; }
 .listing-mode-option input { position: absolute; opacity: 0; pointer-events: none; }
 .listing-mode-option__inner {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  padding: 14px 10px; text-align: center;
-  border: 1.5px solid #e5e7eb; border-radius: 14px; background: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 8px 8px; text-align: center;
+  border: 1.5px solid #e5e7eb; border-radius: 10px; background: #fff;
   transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
-.listing-mode-option__inner i { font-size: 1.35rem; color: var(--primary,#071A33); }
-.listing-mode-option__inner strong { font-size: .9375rem; font-weight: 800; color: var(--primary,#071A33); }
-.listing-mode-option__inner small { font-size: .75rem; color: #6b7280; line-height: 1.5; }
+.listing-mode-option__inner i { font-size: 1rem; color: var(--primary,#071A33); }
+.listing-mode-option__inner strong { font-size: .8125rem; font-weight: 800; color: var(--primary,#071A33); }
+.listing-mode-option__inner small { font-size: .6875rem; color: #6b7280; line-height: 1.4; }
 .listing-mode-option input:checked + .listing-mode-option__inner {
   border-color: var(--primary,#071A33);
   background: rgba(7,26,51,.04);
-  box-shadow: 0 0 0 3px rgba(7,26,51,.06);
+  box-shadow: 0 0 0 2px rgba(7,26,51,.06);
 }
 .listing-mode-option input:checked + .listing-mode-option__inner i { color: var(--orange,#FF6600); }
 @media (max-width: 480px) {

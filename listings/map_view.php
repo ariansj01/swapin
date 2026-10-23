@@ -145,6 +145,7 @@ $desc = "مشاهده آگهی‌های معاوضه در دسته " . ($categor
 
 render_head($title, $desc, [
     'og_type' => 'website',
+    'body_class' => 'page-listings',
 ]);
 render_navbar($user);
 

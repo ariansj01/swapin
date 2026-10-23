@@ -292,7 +292,12 @@ render_navbar($user);
 <section class="mobile-categories-wrapper">
   <div class="mobile-categories-list">
     <?php
-    $allCats = DB::fetchAll('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, id ASC LIMIT 10');
+    $topCatSlugs = wizard_allowed_category_slugs();
+    $topCatPlaceholders = implode(',', array_fill(0, count($topCatSlugs), '?'));
+    $allCats = DB::fetchAll(
+        "SELECT * FROM categories WHERE is_active = 1 AND slug IN ({$topCatPlaceholders}) ORDER BY sort_order ASC, id ASC LIMIT 10",
+        $topCatSlugs
+    );
     foreach ($allCats as $cat):
     ?>
     <a href="<?= APP_URL . '/listings/map?' . http_build_query([
@@ -562,7 +567,7 @@ render_navbar($user);
               
               <?php if (count($listings) > 10): ?>
               <div class="text-center mt-6">
-                <button type="button" class="btn btn-outline btn-lg w-100" id="btn-load-more" style="width: 45%; height: 2%;">
+                <button type="button" class="btn btn-outline btn-lg w-100" id="btn-load-more" style="width: 45%; height: 2%;margin-right: -25vw;">
                   <i class="bi bi-plus-circle"></i> نمایش بیشتر
                 </button>
               </div>
@@ -611,7 +616,7 @@ render_navbar($user);
           }
         </style>
         <section class="home-listings-section home-listings-section--yellow" aria-label="فروشگاه‌ها" style="margin-top:48px">
-          <div class="home-section-heading home-section-heading--large mb-5">
+          <div class="home-section-heading home-section-heading--large mb-5" style="width: 90%;margin-right: 5%;">
             <h2>فروشگاه‌ها</h2>
             <a href="<?= APP_URL ?>/shops" class="home-section-heading__link">
               مشاهده همه
