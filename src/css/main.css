@@ -3980,7 +3980,7 @@ html body .categories-dropdown {
     -ms-overflow-style: none;
   }
   .listings-scroll-row-shop{
-    min-width: 75% !important;
+    max-width: 75% !important;
   }
   .listings-scroll-row::-webkit-scrollbar {
     display: none;
@@ -9274,7 +9274,7 @@ aside.home-sidebar,
     }
 
     .listing-card--premium-horizontal .lc-value-amount {
-        font-size: 1.1rem !important;
+        font-size: .8rem !important;
     }
 
     .listing-card--premium-horizontal .lc-meta {
@@ -9465,7 +9465,7 @@ aside.home-sidebar,
     .listing-card--v2 .listing-card__media-img,
     .listing-card--v2 .listing-card__media-placeholder {
         width: 100% !important;
-        height: 100% !important;
+        height: 135% !important;
         min-height: 100% !important;
         max-height: none !important;
         object-fit: cover !important;
@@ -9533,7 +9533,7 @@ aside.home-sidebar,
     }
 
     .listings-scroll-card--premium .listing-card--v2 .lc-media-wrapper{
-      transform: translateY(0px) !important;
+      transform: translateY(10px) !important;
     }
 
     /* بج‌ها: روی تصویر، حداکثر ۲ عدد دیده شود و بقیه با اسلاید افقی */
