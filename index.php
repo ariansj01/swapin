@@ -318,7 +318,7 @@ render_navbar($user);
 <?php banners_render_slider(); ?>
 <?php endif; ?>
 
-<main id="main-content" class="section-sm" style="margin-top: -6%;">
+<main id="main-content" class="section-sm">
 
   <div class="container">
 
