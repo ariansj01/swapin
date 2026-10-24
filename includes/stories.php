@@ -131,8 +131,8 @@ body.sw-story-open { overflow: hidden; }
 
 <section class="sw-stories" aria-label="استوری‌ها">
   <div class="container">
-    <h2 class="sw-stories__title" style="margin-right: -10%;"><i class="bi bi-lightning-charge-fill"></i> استوری‌ها</h2>
-    <div class="sw-stories__track" style="width: 120%;margin-right: -10%;">
+    <h2 class="sw-stories__title"><i class="bi bi-lightning-charge-fill"></i> استوری‌ها</h2>
+    <div class="sw-stories__track">
       <?php foreach ($stories as $i => $s): ?>
       <button type="button" class="sw-story" data-story-index="<?= (int)$i ?>" aria-label="مشاهده استوری <?= h($s['title'] !== '' ? $s['title'] : '') ?>">
         <span class="sw-story__ring">

@@ -4000,6 +4000,17 @@ html body .categories-dropdown {
   .all-page-listing-card{
     width: 100% !important;
   }
+  .sw-stories__title{
+    margin-right: -10%;
+  }
+  .sw-stories__track{
+    width: 120%;
+    margin-right: -10%;
+  }
+  .site-footer--compact-child{
+    margin-right: -30px;
+    width: 116% !important;
+  }
 }
 
 @media (min-width: 769px) and (max-width: 991px) {
