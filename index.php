@@ -318,7 +318,7 @@ render_navbar($user);
 <?php banners_render_slider(); ?>
 <?php endif; ?>
 
-<main id="main-content" class="section-sm">
+<main id="main-content" class="section-sm" style="margin-top: -6%;">
 
   <div class="container">
 
@@ -514,7 +514,7 @@ render_navbar($user);
                <a href="<?= APP_URL ?>/listings/" class="home-section-heading__back">
                  <i class="bi bi-chevron-left"></i>
                </a>
-               <h2 style="margin: 0;font-size: clamp(1.05rem, 1.8vw, 1.45rem);font-weight: 800;letter-spacing: -0.02em;order: 1;">آگهی‌های ویژه</h2>
+               <h2 style="margin: 0 !important;font-size: clamp(1.05rem, 1.8vw, 1.45rem) !important;font-weight: 800;letter-spacing: -0.02em;order: 1;">آگهی‌های ویژه</h2>
              </div>
              <div class="listings-rows-container">
                <div class="listings-row-wrapper" id="listings-row-premium-parent">

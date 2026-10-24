@@ -7907,9 +7907,6 @@ body.is-offline::after {
 }
 
 /* ── Home Trust Compact ────────────────────────────────────────────────── */
-.home-trust--compact {
-  padding: 32px 0 !important;
-}
 
 .home-trust--compact .home-section__header {
   display: none !important;
@@ -9471,6 +9468,11 @@ aside.home-sidebar,
         object-fit: cover !important;
     }
 
+    /* ارتفاع ۱۴۰٪ تصویر — فقط برای کارت‌های «جدیدترین آگهی‌ها» در صفحه اصلی */
+    .newest-listings-container .listing-card--v2 .listing-card__media-img {
+        height: 140% !important;
+    }
+
     /* عنوان آگهی تا ۲ خط (به جای برش در یک خط) */
     .listing-card--v2 .lc-title {
         grid-column: 1 !important;
@@ -9578,60 +9580,91 @@ aside.home-sidebar,
 
 /* =========================================================
    MOBILE STORE CARDS (max-width: 1024px)
-   تصویر بالا تمام‌عرض، محتوا پایین — کارت جمع‌وجور
+   کارت فروشگاه هم‌طراز کارت «آگهی ویژه»: تصویر چپ، محتوا راست
    ========================================================= */
 @media (max-width: 1024px) {
     #home-stores-row .listings-scroll-card {
-        flex: 0 0 68% !important;
-        max-width: 55% !important;
+        flex: 0 0 78% !important;
+        max-width: 500px !important;
+        scroll-snap-align: center !important;
     }
     #home-stores-row .home-stores-card .shop-card {
         position: relative !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 8px !important;
-        padding: 8px !important;
+        display: grid !important;
+        grid-template-columns: 1fr min(135px, 45%) !important;
+        column-gap: 10px !important;
+        row-gap: 6px !important;
+        align-items: start !important;
+        padding: 15px !important;
         background: #fff !important;
-        border: 1px solid #f0f0f0 !important;
-        border-radius: 16px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+        border: none !important;
+        border-radius: 18px !important;
+        box-shadow: none !important;
         overflow: hidden !important;
     }
+    /* تصویر: ستون چپ */
     #home-stores-row .home-stores-card .shop-card__banner-wrap {
-        flex: 0 0 auto !important;
+        grid-column: 2 !important;
+        grid-row: 1 / span 2 !important;
         width: 100% !important;
-        height: 100px !important;
-        min-height: 100px !important;
+        min-width: 0 !important;
+        height: clamp(88px, 26vw, 120px) !important;
+        min-height: clamp(88px, 26vw, 120px) !important;
+        max-height: clamp(88px, 26vw, 120px) !important;
         aspect-ratio: auto !important;
-        border-radius: 12px !important;
+        border-radius: 14px !important;
         overflow: hidden !important;
+        align-self: start !important;
     }
     #home-stores-row .home-stores-card .shop-card__banner {
         width: 100% !important;
         height: 100% !important;
         object-fit: cover !important;
-        border-radius: 12px !important;
+        border-radius: 14px !important;
     }
+    /* محتوا: ستون راست */
     #home-stores-row .home-stores-card .shop-card__body {
-        flex: 1 !important;
+        grid-column: 1 !important;
+        grid-row: 1 / span 2 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        padding: 0 !important;
         min-width: 0 !important;
-        padding: 0 2px !important;
-        gap: 4px !important;
         text-align: right !important;
     }
+    #home-stores-row .home-stores-card .shop-card__profile { gap: 0 !important; }
     #home-stores-row .home-stores-card .shop-card__name {
-        font-size: 0.95rem !important;
+        font-size: 1.05rem !important;
         font-weight: 700 !important;
-        white-space: nowrap !important;
+        color: #071A33 !important;
+        line-height: 1.3 !important;
+        white-space: normal !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
+    /* چیپ‌های نوع فروشگاه و شهر — ریز و مینیمال */
+    #home-stores-row .home-stores-card .shop-card__tags {
+        gap: 4px !important;
+        margin-top: 4px !important;
+    }
+    #home-stores-row .home-stores-card .shop-card__tags .badge,
+    #home-stores-row .home-stores-card .shop-card__city {
+        padding: 2px 7px !important;
+        font-size: 0.58rem !important;
+        font-weight: 700 !important;
+        border-radius: 999px !important;
+        line-height: 1.4 !important;
+    }
     #home-stores-row .home-stores-card .shop-card__desc { display: none !important; }
     #home-stores-row .home-stores-card .shop-card__meta {
-        margin-top: 0 !important;
+        margin-top: auto !important;
         font-size: 0.75rem !important;
         color: #a0aec0 !important;
-        gap: 10px !important;
+        gap: 12px !important;
     }
     /* دکمه «مشاهده فروشگاه» حذف ظاهری می‌شود ولی کل کارت قابل کلیک می‌ماند */
     #home-stores-row .home-stores-card .shop-card__body .btn {

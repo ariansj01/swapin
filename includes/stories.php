@@ -74,7 +74,7 @@ function stories_render_section(): void {
     $json = json_encode($storyData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     ?>
 <style>
-.sw-stories { margin-top: 26px; }
+.sw-stories { margin-top: 20px; }
 .sw-stories__title { display: flex; align-items: center; gap: 8px; font-size: 1.05rem; font-weight: 800; margin: 0 0 14px; color: #071A33; }
 .sw-stories__title i { color: #FF6600; }
 .sw-stories__track { display: flex; gap: 16px; overflow-x: auto; padding: 4px 2px 10px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
