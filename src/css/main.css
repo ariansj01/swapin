@@ -9119,7 +9119,7 @@ aside.home-sidebar,
 
     .home-section-heading--premium h2 {
         margin: 0 !important;
-        font-size: 1.5rem !important;
+        font-size: 1.25rem !important;
     }
 
     .home-section-heading__back {
@@ -9377,6 +9377,39 @@ aside.home-sidebar,
         max-height: 200px !important;
     }
 }
+
+/* =========================================================
+   MINIMAL LOAD-MORE BUTTON — دکمه «نمایش بیشتر» مینیمال و ریز
+   ========================================================= */
+.newest-listings-container .text-center { margin-top: var(--sp-4); }
+
+#btn-load-more.load-more-btn {
+    width: auto;
+    height: 32px;
+    padding: 0 14px;
+    gap: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid rgba(7, 26, 51, .16);
+    background: #fff;
+    color: var(--text-muted);
+    box-shadow: none;
+}
+#btn-load-more.load-more-btn i {
+    font-size: .9rem;
+    color: var(--text-muted);
+    transition: color 180ms ease;
+}
+#btn-load-more.load-more-btn:hover {
+    border-color: rgba(7, 26, 51, .32);
+    background: #fff;
+    color: var(--primary);
+    transform: none;
+    box-shadow: none;
+}
+#btn-load-more.load-more-btn:hover i { color: var(--primary); }
+#btn-load-more.load-more-btn:active { transform: scale(.97); }
 
 /* =========================================================
    MOBILE-ONLY OVERRIDES  (max-width: 1024px)
