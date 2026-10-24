@@ -517,7 +517,7 @@ render_navbar($user);
                <h2 style="margin: 0;font-size: clamp(1.05rem, 1.8vw, 1.45rem);font-weight: 800;letter-spacing: -0.02em;order: 1;">آگهی‌های ویژه</h2>
              </div>
              <div class="listings-rows-container">
-               <div class="listings-row-wrapper listings-row-premium-parent">
+               <div class="listings-row-wrapper" id="listings-row-premium-parent">
                  <div class="listings-scroll-row" id="listings-row-premium">
                    <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
                    <div class="listings-scroll-card listings-scroll-card--premium">

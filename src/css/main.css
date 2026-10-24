@@ -6156,7 +6156,7 @@ html body .categories-dropdown {
     width: 100%;
     margin-right: 9%;
   }
-  .listings-row-wrapper-parent{
+  #listings-row-premium-parent {
     margin-right: 0%;
   }
   .listings-slider-arrow{
@@ -9549,7 +9549,7 @@ aside.home-sidebar,
 @media (max-width: 1024px) {
     #home-stores-row .listings-scroll-card {
         flex: 0 0 68% !important;
-        max-width: 68% !important;
+        max-width: 55% !important;
     }
     #home-stores-row .home-stores-card .shop-card {
         position: relative !important;
