@@ -619,7 +619,7 @@ render_navbar($user);
           <div class="home-section-heading home-section-heading--large mb-5" style="width: 90%;margin-right: 5%;">
             <h2>فروشگاه‌ها</h2>
             <a href="<?= APP_URL ?>/shops" class="home-section-heading__link">
-              مشاهده همه
+              <i class="bi bi-chevron-left" style="color:var(--text-muted)"></i>
             </a>
           </div>
           <div class="listings-rows-container">

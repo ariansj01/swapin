@@ -149,7 +149,7 @@ if ($isHorizontal) {
       <?php if (!empty($l['want_in_return'])): ?>
       <div class="lc-want-box">
         <span class="lc-want-arrow"><i class="bi bi-arrow-left-right"></i></span>
-        <span class="lc-want-text">مبادله با <?= h($l['want_in_return']) ?></span>
+        <span class="lc-want-text" style="text-align: start;">مبادله با <?= h($l['want_in_return']) ?></span>
       </div>
       <?php endif; ?>
 
@@ -229,7 +229,7 @@ if ($isHorizontal) {
     <?php if (!empty($l['want_in_return'])): ?>
     <div class="lc-want-box">
       <span class="lc-want-arrow"><i class="bi bi-arrow-left-right"></i></span>
-      <span class="lc-want-text">مبادله با <?= h($l['want_in_return']) ?></span>
+      <span class="lc-want-text" style="text-align: start;">مبادله با <?= h($l['want_in_return']) ?></span>
     </div>
     <?php endif; ?>
 

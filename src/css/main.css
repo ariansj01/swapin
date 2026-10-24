@@ -3691,8 +3691,8 @@ html body .categories-dropdown {
     display: none;
   }
   .listings-rows-container{
-    width: 110% !important;
-    margin-right: -10px;
+    width: 125% !important;
+    margin-right: -30px;
   }
   .listings-row-wrapper{
     max-width: 100% !important;
@@ -6153,7 +6153,7 @@ html body .categories-dropdown {
     text-align: right !important;
   }
   .listings-row-wrapper {
-    width: 90%;
+    width: 100%;
     margin-right: -2%;
   }
   .listings-slider-arrow{
@@ -8909,7 +8909,8 @@ aside.home-sidebar,
 
     .home-listings-section--premium .home-section-heading h2 {
         color: #071A33;
-        font-weight: 900;
+        font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+        font-weight: 800;
     }
 
     .home-listings-section--premium .home-section-heading__link {
@@ -9484,8 +9485,12 @@ aside.home-sidebar,
         width: 100% !important;
     }
 
+    .listings-scroll-card--premium .listing-card--v2 .lc-media-wrapper{
+      transform: translateY(0px) !important;
+    }
+
     /* بج‌ها: روی تصویر، حداکثر ۲ عدد دیده شود و بقیه با اسلاید افقی */
-    .listing-card--v2 .lc-media-wrapper { position: relative !important; transform: translateY(30px); }
+    .listing-card--v2 .lc-media-wrapper { position: relative !important; transform: translateY(8px); }
     .listing-card--v2 .lc-badges-row {
         position: absolute !important;
         top: 8px !important;
