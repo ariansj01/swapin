@@ -3979,6 +3979,9 @@ html body .categories-dropdown {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
+  .listings-scroll-row-shop{
+    min-width: 75% !important;
+  }
   .listings-scroll-row::-webkit-scrollbar {
     display: none;
   }

@@ -627,7 +627,7 @@ render_navbar($user);
               <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="home-stores-row" aria-label="فروشگاه بعدی">
                 <i class="bi bi-chevron-right"></i>
               </button>
-              <div class="listings-scroll-row" id="home-stores-row">
+              <div class="listings-scroll-row listings-scroll-row-shop" id="home-stores-row">
                 <?php foreach ($featuredStores as $store):
                   $name = $store['store_name'] ?: $store['name'];
                   $slug = $store['store_slug'];
