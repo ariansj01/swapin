@@ -8886,6 +8886,11 @@ aside.home-sidebar,
     .home-listings-section--yellow .home-section-heading::after {
         background: linear-gradient(90deg, rgba(7, 26, 51, .18) 0%, rgba(7, 26, 51, .32) 100%);
     }
+
+    /* در موبایل دکمه‌های بعدی/قبلی اسلایدر فروشگاه حذف شوند (اسکرول لمسی جایگزین) */
+    .home-listings-section--yellow .listings-slider-arrow {
+        display: none;
+    }
 }
 
 /* -- 26. Premium Featured Slider (Yellow BG + Peek Effect) ------------------ */
