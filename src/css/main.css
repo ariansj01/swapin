@@ -6154,7 +6154,10 @@ html body .categories-dropdown {
   }
   .listings-row-wrapper {
     width: 100%;
-    margin-right: -2%;
+    margin-right: 9%;
+  }
+  .listings-row-wrapper-parent{
+    margin-right: 0%;
   }
   .listings-slider-arrow{
     width: 36px;
