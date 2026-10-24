@@ -510,11 +510,11 @@ render_navbar($user);
         <?php if (!empty($premiumListings)): ?>
         <section class="home-listings-section home-listings-section--premium" aria-label="آگهی‌های ویژه">
           <div class="container">
-            <div class="home-section-heading home-section-heading--premium mb-5">
+            <div class="home-section-heading home-section-heading--premium mb-5" style="width: 120%;margin-right: -25px;">
                <a href="<?= APP_URL ?>/listings/" class="home-section-heading__back">
                  <i class="bi bi-chevron-left"></i>
                </a>
-               <h2>آگهی‌های ویژه</h2>
+               <h2 style="margin: 0;font-size: clamp(1.05rem, 1.8vw, 1.45rem);font-weight: 800;letter-spacing: -0.02em;order: 1;">آگهی‌های ویژه</h2>
              </div>
              <div class="listings-rows-container">
                <div class="listings-row-wrapper">

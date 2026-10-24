@@ -1551,7 +1551,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .home-listings-section {
   display: grid;
-  gap: var(--sp-5);
+  /* gap: var(--sp-5); */
 }
 
 .home-steps {
@@ -9398,7 +9398,7 @@ aside.home-sidebar,
     /* چیدمان گرید: ستون راست محتوا، ستون چپ تصویر */
     .listing-card--v2 {
         display: grid !important;
-        grid-template-columns: 1fr min(110px, 34%) !important;
+        grid-template-columns: 1fr min(135px, 45%) !important;
         column-gap: 10px !important;
         row-gap: 6px !important;
         align-items: start !important;
