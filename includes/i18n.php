@@ -157,6 +157,22 @@ function category_url(string $slug): string {
     return APP_URL . '/' . $path;
 }
 
+/**
+ * Legacy top-level category slugs that were renamed/merged.
+ * Maps the old slug to the current canonical slug so old URLs 301 instead of 404.
+ */
+function swaapin_legacy_category_aliases(): array {
+    return [
+        'home-appliances' => 'home-kitchen',
+        'home-garden'     => 'home-kitchen',
+    ];
+}
+
+function swaapin_resolve_legacy_category_slug(string $slug): ?string {
+    $aliases = swaapin_legacy_category_aliases();
+    return $aliases[$slug] ?? null;
+}
+
 function wizard_allowed_category_slugs(): array {
     return [
         'real-estate',

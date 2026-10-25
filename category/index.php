@@ -17,7 +17,8 @@ if ($redirectSlugs !== '') {
     $parts = array_values(array_filter(explode('/', $redirectSlugs), 'strlen'));
     if (!empty($parts)) {
         $last = end($parts);
-        $newUrl = category_url($last);
+        $alias = swaapin_resolve_legacy_category_slug($last);
+        $newUrl = category_url($alias ?? $last);
         if ($newUrl && strpos($newUrl, '/category/') === false) {
             header('Location: ' . $newUrl, true, 301);
             exit;
@@ -34,6 +35,13 @@ if ($slugPath !== '') {
     if (!empty($parts)) {
         $parts = array_map('rawurldecode', $parts);
         $category = get_category_by_slug_path($parts);
+        if (!$category && count($parts) === 1) {
+            $alias = swaapin_resolve_legacy_category_slug($parts[0]);
+            if ($alias !== null) {
+                header('Location: ' . category_url($alias), true, 301);
+                exit;
+            }
+        }
     }
 }
 
