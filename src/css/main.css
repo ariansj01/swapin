@@ -2896,6 +2896,11 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: block;
 }
 
+/* Keep the top-level dropdown open after the mouse leaves (2s grace period set in app.js) */
+.navbar-nav .dropdown.open > .dropdown-menu {
+  display: block;
+}
+
 .navbar-nav .dropdown:hover > [id$="-btn"],
 .navbar-nav .dropdown:hover > .navbar-nav__link {
   color: #fff;

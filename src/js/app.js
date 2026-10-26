@@ -464,9 +464,25 @@ function initNavbarHoverDropdowns() {
   const nav = document.querySelector('.navbar-nav');
   if (!nav) return;
 
-  // Top-level dropdowns: no mouseenter/mouseleave — open exclusively via click (initDropdowns).
-  // Closing happens on document click (initDropdowns) so the menu stays open while the user
-  // moves the mouse to submenus / links.
+  // Top-level dropdowns: open on hover and stay open for a grace period after the mouse
+  // leaves, so the menu does not vanish while the user is reaching for it.
+  const TOP_CLOSE_DELAY = 2000;
+  document.querySelectorAll('.navbar-nav > .dropdown').forEach(dd => {
+    const menu = dd.querySelector(':scope > .dropdown-menu');
+    if (!menu) return;
+    let closeTimer = null;
+    dd.addEventListener('mouseenter', () => {
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+      menu.classList.add('open');
+    });
+    dd.addEventListener('mouseleave', () => {
+      if (closeTimer) clearTimeout(closeTimer);
+      closeTimer = setTimeout(() => {
+        closeTimer = null;
+        if (!dd.matches(':hover')) menu.classList.remove('open');
+      }, TOP_CLOSE_DELAY);
+    });
+  });
 
   // Apply forced inline styles to ensure submenu position & visibility (CSS override fallback)
   const forceSubmenuStyles = (sub, open) => {

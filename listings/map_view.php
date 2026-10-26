@@ -450,11 +450,221 @@ if ($category) {
         color: #333 !important;
         border: 1px solid #dee2e6 !important;
     }
+
+    /* ══════════════════════════════════════════════════════════════
+       موبایل: نقشه تمام‌صفحه + شیت پایینی آگهی‌ها + کشوی فیلترها
+       ══════════════════════════════════════════════════════════════ */
+    .map-view-filters-btn,
+    .map-view-overlay,
+    .map-view-drawer-head,
+    .map-view-header__hint {
+        display: none;
+    }
+
+    @media (max-width: 991px) {
+        body.page-listings { overflow: hidden; }
+
+        .map-view-layout {
+            display: block;
+            position: relative;
+            height: calc(100vh - 140px); /* با JS دقیق‌تر تنظیم می‌شود */
+            overflow: hidden;
+        }
+
+        /* نقشه تمام‌صفحه؛ اولین چیزی که کاربر می‌بیند */
+        .map-view-map-container {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            flex: none;
+        }
+
+        .map-view-close-btn {
+            top: 14px;
+            left: 14px;
+            bottom: auto;
+            transform: none;
+            padding: 9px 15px;
+            font-size: 0.8rem;
+            background: #fff;
+            color: #071A33;
+            box-shadow: 0 4px 14px rgba(7, 26, 51, 0.18);
+        }
+
+        .map-view-filters-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 500;
+            padding: 9px 15px;
+            border: none;
+            border-radius: 50px;
+            background: #fff;
+            color: #071A33;
+            font-size: 0.8rem;
+            font-weight: 700;
+            box-shadow: 0 4px 14px rgba(7, 26, 51, 0.18);
+            cursor: pointer;
+        }
+
+        /* سایدبار → کشوی راست (مخفی تا زمان کلیک) */
+        .map-view-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 87%;
+            max-width: 360px;
+            height: 100%;
+            z-index: 2100;
+            padding: 0 18px calc(26px + env(safe-area-inset-bottom, 0px));
+            background: #fff;
+            box-shadow: -10px 0 34px rgba(7, 26, 51, 0.2);
+            transform: translateX(101%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .map-view-sidebar.is-open { transform: translateX(0); }
+
+        .map-view-drawer-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            margin: 0 -18px 16px;
+            padding: 14px 18px;
+            background: #fff;
+            border-bottom: 1px solid #eef1f4;
+        }
+
+        .map-view-drawer-head__title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #071A33;
+        }
+
+        .map-view-drawer-close {
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 10px;
+            background: #f4f6f8;
+            color: #071A33;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .map-view-overlay {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 2050;
+            background: rgba(7, 26, 51, 0.45);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .map-view-overlay.is-open { opacity: 1; visibility: visible; }
+
+        /* سایدبار هوم داخل کشو: تمام‌عرض و همیشه باز */
+        .map-view-sidebar .home-sidebar { width: 100% !important; }
+        .map-view-sidebar .home-sidebar__inner { width: 100%; }
+        .map-view-sidebar .home-sidebar__mobile-toggle { display: none !important; }
+        .map-view-sidebar .home-sidebar__inner--collapsible {
+            display: block !important;
+            padding-top: 0;
+        }
+
+        /* لیست آگهی‌ها → شیت پایینی */
+        .map-view-middle {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 70vh;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            border-bottom: none;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -10px 34px rgba(7, 26, 51, 0.16);
+            z-index: 1200;
+            transform: translateY(calc(100% - 100px));
+            transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+
+        .map-view-middle.is-expanded { transform: translateY(0); }
+        .map-view-middle.is-dragging { transition: none; }
+
+        .map-view-header {
+            position: relative;
+            flex-shrink: 0;
+            padding: 18px 20px 12px;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .map-view-header::before {
+            content: "";
+            position: absolute;
+            top: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 46px;
+            height: 4px;
+            border-radius: 999px;
+            background: #d5dae0;
+        }
+
+        .map-view-header h1 { font-size: 1rem; }
+
+        .map-view-header__hint {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .map-view-listings-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 14px 16px 26px;
+        }
+
+        .listing-card-single { padding: 10px; gap: 12px; }
+        .listing-card-single__thumb { width: 88px; height: 88px; }
+        .listing-card-single__title { font-size: 0.88rem; margin-bottom: 5px; }
+        .listing-card-single__price { font-size: 0.98rem; }
+    }
+
+    @media (max-width: 991px) and (max-height: 640px) {
+        .map-view-middle { height: 86vh; }
+    }
 </style>
 
 <div class="map-view-layout">
     <!-- Right: Sidebar (First in HTML for RTL Right position) -->
-    <div class="map-view-sidebar">
+    <div class="map-view-sidebar" id="map-view-sidebar">
+        <div class="map-view-drawer-head">
+            <span class="map-view-drawer-head__title">فیلترها و دسته‌بندی‌ها</span>
+            <button type="button" class="map-view-drawer-close" id="map-view-drawer-close" aria-label="بستن">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
         <div class="map-view-sidebar-section">
             <div class="map-view-sidebar-title">دسته‌ها</div>
             <div class="mb-3">
@@ -522,6 +732,7 @@ if ($category) {
         <div class="map-view-header">
             <div class="text-muted fs-xs mb-1">خرید، فروش و اجاره انواع <?= $category ? h($category['name']) : 'کالا' ?> در <?= h($city) ?></div>
             <h1 class="fs-lg text-dark"><?= fmt_num($total) ?> آگهی در این محدوده</h1>
+            <span class="map-view-header__hint">برای دیدن لیست آگهی‌ها بالا بکشید</span>
         </div>
 
         <div class="map-view-listings-content">
@@ -570,10 +781,15 @@ if ($category) {
     <!-- Left: Map (Last in HTML for RTL Left position) -->
     <div class="map-view-map-container">
         <div id="map"></div>
+        <button type="button" class="map-view-filters-btn" id="map-view-filters-btn">
+            <i class="bi bi-sliders2"></i> فیلترها
+        </button>
         <button class="map-view-close-btn" onclick="window.location.href='<?= APP_URL ?>/'">
             <i class="bi bi-x-lg"></i> بستن نقشه
         </button>
     </div>
+
+    <div class="map-view-overlay" id="map-view-overlay"></div>
 </div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -619,6 +835,88 @@ if ($category) {
             const group = new L.featureGroup(markers);
             map.fitBounds(group.getBounds().pad(0.1));
         }
+
+        /* ── رفتار موبایل: ارتفاع دقیق، شیت آگهی‌ها و کشوی فیلترها ── */
+        const layout     = document.querySelector('.map-view-layout');
+        const sheet      = document.querySelector('.map-view-middle');
+        const sheetHead  = document.querySelector('.map-view-header');
+        const sheetHint  = document.querySelector('.map-view-header__hint');
+        const sidebar    = document.getElementById('map-view-sidebar');
+        const overlay    = document.getElementById('map-view-overlay');
+        const filtersBtn = document.getElementById('map-view-filters-btn');
+        const drawerClose = document.getElementById('map-view-drawer-close');
+        const isMobile   = () => window.innerWidth <= 991;
+
+        function sizeMapLayout() {
+            if (!layout) return;
+            if (!isMobile()) {
+                layout.style.height = '';
+                map.invalidateSize();
+                return;
+            }
+            const bottomNav = document.querySelector('.mobile-bottom-nav');
+            const bottomNavVisible = bottomNav && getComputedStyle(bottomNav).display !== 'none';
+            const bottomNavHeight = bottomNavVisible ? bottomNav.getBoundingClientRect().height : 0;
+            const top = layout.getBoundingClientRect().top + window.scrollY;
+            layout.style.height = Math.max(320, window.innerHeight - top - bottomNavHeight) + 'px';
+            map.invalidateSize();
+        }
+
+        function setDrawer(open) {
+            sidebar.classList.toggle('is-open', open);
+            overlay.classList.toggle('is-open', open);
+        }
+
+        function setSheet(expanded) {
+            sheet.classList.toggle('is-expanded', expanded);
+            if (sheetHint) {
+                sheetHint.textContent = expanded
+                    ? 'برای بستن لیست، پایین بکشید'
+                    : 'برای دیدن لیست آگهی‌ها بالا بکشید';
+            }
+        }
+
+        filtersBtn?.addEventListener('click', () => setDrawer(true));
+        drawerClose?.addEventListener('click', () => setDrawer(false));
+        overlay?.addEventListener('click', () => setDrawer(false));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') setDrawer(false);
+        });
+
+        // کشیدن (Drag) شیت با لمس هدر
+        let sheetStartY = 0, sheetDragY = 0, sheetDragging = false, suppressClick = false;
+
+        sheetHead?.addEventListener('touchstart', (e) => {
+            sheetStartY = e.touches[0].clientY;
+            sheetDragY = 0;
+            sheetDragging = true;
+            sheet.classList.add('is-dragging');
+        }, { passive: true });
+
+        sheetHead?.addEventListener('touchmove', (e) => {
+            if (!sheetDragging) return;
+            sheetDragY = e.touches[0].clientY - sheetStartY;
+        }, { passive: true });
+
+        sheetHead?.addEventListener('touchend', () => {
+            if (!sheetDragging) return;
+            sheetDragging = false;
+            sheet.classList.remove('is-dragging');
+            if (Math.abs(sheetDragY) > 40) {
+                setSheet(sheetDragY < 0);
+                suppressClick = true;
+                setTimeout(() => { suppressClick = false; }, 350);
+            }
+        });
+
+        sheetHead?.addEventListener('click', () => {
+            if (suppressClick || !isMobile()) return;
+            setSheet(!sheet.classList.contains('is-expanded'));
+        });
+
+        sizeMapLayout();
+        window.addEventListener('resize', sizeMapLayout);
+        window.addEventListener('orientationchange', () => setTimeout(sizeMapLayout, 150));
     });
 </script>
 
