@@ -1201,6 +1201,55 @@ a.store-product__offers:hover {
 
 .store-message__attachment--image { background: #FEF3C7; color: #D97706; }
 
+/* Clickable conversation rows */
+a.store-message {
+  text-decoration: none;
+  color: inherit;
+}
+
+a.store-message:focus-visible {
+  outline: 2px solid var(--store-gold);
+  outline-offset: -2px;
+}
+
+.store-message__avatar {
+  background: none;
+  width: auto;
+  height: auto;
+  padding: 0;
+}
+
+.store-message__listing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .75rem;
+  color: var(--store-text-muted);
+  margin-bottom: 4px;
+  min-width: 0;
+}
+
+.store-message__listing span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.store-message__badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--store-gold);
+  color: var(--store-navy);
+  font-size: .7rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .store-chat-actions {
   display: flex;
   align-items: center;

@@ -505,4 +505,172 @@ if ($path === 'trades' && $method === 'GET') {
     api_ok(['items' => $items, 'pending_offers' => $pending]);
 }
 
+if ($path === 'store/listings' && $method === 'POST') {
+    require_once __DIR__ . '/../../includes/iso.php';
+    require_once __DIR__ . '/../../includes/ai_moderation.php';
+
+    $store = store_api_auth();
+    if (!$store) {
+        api_error('invalid_api_key', 401, 'کلید API نامعتبر یا غیرفعال است.');
+    }
+
+    $input = api_body();
+
+    $title = clean((string)($input['title'] ?? ''));
+    $description = clean((string)($input['description'] ?? ''));
+    $categoryId = (int)($input['category_id'] ?? 0);
+    $condition = clean((string)($input['condition'] ?? 'good'));
+    if (!in_array($condition, ['new', 'like_new', 'good', 'fair', 'poor'], true)) {
+        $condition = 'good';
+    }
+    $want = clean((string)($input['want_description'] ?? ''));
+    $estimatedValue = max(0, (int)($input['estimated_value'] ?? 0));
+    $sellPrice = max(0, (float)($input['sell_price'] ?? 0));
+    $modeRaw = (string)($input['listing_mode'] ?? 'both');
+    $listingMode = in_array($modeRaw, ['swap', 'sell', 'both'], true) ? $modeRaw : 'both';
+
+    $errors = [];
+    if (mb_strlen($title) < 5) {
+        $errors['title'] = 'عنوان باید حداقل ۵ کاراکتر باشد';
+    }
+    if (!$categoryId || !wizard_validate_category_id($categoryId)) {
+        $errors['category_id'] = 'دسته‌بندی نامعتبر است';
+    }
+    if (mb_strlen($description) < 20) {
+        $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
+    }
+
+    $location = listing_location_from_request($input);
+    foreach (validate_listing_location($location) as $field => $msg) {
+        $errors[$field] = $msg;
+    }
+
+    // Images: multipart "images[]" files, or base64 strings in "images_base64".
+    $imageFiles = [];
+    if (!empty($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
+        foreach ($_FILES['images']['name'] as $i => $name) {
+            if (!$name || ($_FILES['images']['error'][$i] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                continue;
+            }
+            $imageFiles[] = [
+                'name' => $name,
+                'tmp_name' => $_FILES['images']['tmp_name'][$i],
+                'error' => $_FILES['images']['error'][$i],
+                'size' => $_FILES['images']['size'][$i],
+            ];
+        }
+    }
+
+    $tempFiles = [];
+    if (!$imageFiles) {
+        $b64 = $input['images_base64'] ?? [];
+        if (is_string($b64)) {
+            $b64 = [$b64];
+        }
+        if (is_array($b64)) {
+            foreach ($b64 as $chunk) {
+                if (!is_string($chunk) || trim($chunk) === '') {
+                    continue;
+                }
+                $chunk = trim($chunk);
+                if (preg_match('#^data:image/[a-zA-Z0-9.+-]+;base64,#', $chunk)) {
+                    $chunk = substr($chunk, strpos($chunk, ',') + 1);
+                }
+                $binary = base64_decode(str_replace(' ', '+', $chunk), true);
+                if ($binary === false || $binary === '') {
+                    continue;
+                }
+                $tmp = tempnam(sys_get_temp_dir(), 'swk');
+                if ($tmp === false || @file_put_contents($tmp, $binary) === false) {
+                    if (is_string($tmp)) {
+                        @unlink($tmp);
+                    }
+                    continue;
+                }
+                $tempFiles[] = $tmp;
+                $imageFiles[] = [
+                    'name' => 'upload.jpg',
+                    'tmp_name' => $tmp,
+                    'error' => UPLOAD_ERR_OK,
+                    'size' => strlen($binary),
+                ];
+            }
+        }
+    }
+
+    if (!$imageFiles) {
+        $errors['images'] = 'حداقل یک تصویر لازم است (images[] یا images_base64[]).';
+    }
+
+    if ($errors) {
+        foreach ($tempFiles as $tmp) {
+            @unlink($tmp);
+        }
+        api_json(['ok' => false, 'error' => 'validation', 'fields' => $errors], 422);
+    }
+
+    $provider = is_store_seller($store) ? user_provider_type($store) : 'normal_store';
+    $listingAttrs = listing_attrs_from_input($provider, is_array($input) ? $input : []);
+    $listingId = DB::insert('listings', array_merge([
+        'user_id' => (int)$store['id'],
+        'category_id' => $categoryId,
+        'title' => $title,
+        'description' => $description,
+        'condition' => $condition,
+        'estimated_value' => $estimatedValue,
+        'want_in_return' => $want,
+        'want_type' => 'any',
+        'listing_mode' => $listingMode,
+        'sell_price' => $sellPrice,
+        'needs_inspection' => 0,
+        'city' => $location['city'] ?: ($store['city'] ?? null),
+        'status' => 'active',
+        'review_status' => 'pending',
+    ], listing_location_db_payload($location), listing_attrs_db_payload($listingAttrs)));
+
+    $uploaded = 0;
+    foreach ($imageFiles as $file) {
+        if ($uploaded >= MAX_IMAGES) {
+            break;
+        }
+        $filename = upload_image($file, 'listing');
+        if ($filename) {
+            DB::insert('listing_images', [
+                'listing_id' => $listingId,
+                'filename' => $filename,
+                'is_primary' => $uploaded === 0 ? 1 : 0,
+                'sort_order' => $uploaded,
+            ]);
+            $uploaded++;
+        }
+    }
+    foreach ($tempFiles as $tmp) {
+        @unlink($tmp);
+    }
+
+    if ($uploaded === 0) {
+        DB::query('DELETE FROM listings WHERE id = ? AND user_id = ?', [$listingId, (int)$store['id']]);
+        api_error('upload_failed', 422, 'آپلود تصاویر ناموفق بود.');
+    }
+
+    try {
+        if (function_exists('iso_process_new_listing_matches')) {
+            iso_process_new_listing_matches((int)$listingId);
+        }
+    } catch (Throwable) {
+    }
+    try {
+        if (function_exists('ai_mod_review_listing')) {
+            ai_mod_review_listing((int)$listingId);
+        }
+    } catch (Throwable) {
+    }
+
+    api_ok([
+        'id' => (int)$listingId,
+        'store_id' => (int)$store['id'],
+        'url' => listing_url((int)$listingId),
+    ], 201);
+}
+
 api_error('not_found', 404, 'مسیر API یافت نشد.');

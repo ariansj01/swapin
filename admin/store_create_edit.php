@@ -28,6 +28,25 @@ if ($isEdit) {
 
 $error = '';
 
+// Store API key actions (issued / rotated / revoked from this page, without leaving it).
+$apiKeyPlain = '';
+$apiKeyNotice = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_api_action']) && $isEdit) {
+    csrf_verify_or_fail();
+    $apiAction = (string)$_POST['store_api_action'];
+    if ($apiAction === 'generate') {
+        $issued = store_api_generate_key($userId, (string)($_POST['store_api_label'] ?? ''), (int)($admin['id'] ?? 0));
+        if ($issued) {
+            $apiKeyPlain = $issued['key'];
+        } else {
+            $apiKeyNotice = 'تولید کلید API ناموفق بود. لطفاً دوباره تلاش کنید.';
+        }
+    } elseif ($apiAction === 'revoke') {
+        store_api_revoke($userId);
+        $apiKeyNotice = 'کلید API فروشگاه غیرفعال شد.';
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES)) {
     $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
     if ($contentLength > 0) {
@@ -37,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES)) {
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '' && !isset($_POST['store_api_action'])) {
     csrf_verify_or_fail();
 
     if ($isEdit) {
@@ -590,6 +609,66 @@ if ($panelLogin === '' && !empty($storeUser['store_slug'])) {
 </div>
 
 </form>
+
+<?php if ($isEdit): ?>
+<?php
+$activeApiKey = store_api_active_key($userId);
+?>
+<form method="POST" class="card" style="padding:30px;margin-top:24px">
+<?= csrf_field() ?>
+<input type="hidden" name="store_api_action" value="generate">
+
+<div class="admin-header" style="margin-bottom:15px">
+<h1 style="font-size:20px"><i class="bi bi-key-fill"></i> کلید API فروشگاه</h1>
+</div>
+
+<?php if ($apiKeyPlain !== ''): ?>
+<div class="alert alert-warning" style="border:2px solid #f0ad4e">
+<div style="font-weight:700;margin-bottom:6px"><i class="bi bi-exclamation-triangle"></i> کلید API جدید — فقط همین یک‌بار نمایش داده می‌شود</div>
+<code dir="ltr" style="display:block;background:#fff;padding:10px;border-radius:6px;user-select:all;word-break:break-all"><?= h($apiKeyPlain) ?></code>
+<p class="fs-sm" style="margin:8px 0 0">این کلید را همین حالا کپی و در محل امن ذخیره کنید. بعد از ترک این صفحه دیگر قابل مشاهده نیست.</p>
+</div>
+<?php elseif ($apiKeyNotice !== ''): ?>
+<div class="alert alert-info"><?= h($apiKeyNotice) ?></div>
+<?php endif; ?>
+
+<?php if ($activeApiKey): ?>
+<p class="fs-sm">کلید فعال فعلی: <code dir="ltr"><?= h($activeApiKey['key_prefix']) ?>••••••••••••••••</code></p>
+<p class="fs-sm text-muted">
+ساخته‌شده در <?= h(persian_date((string)$activeApiKey['created_at'])) ?>
+<?= !empty($activeApiKey['last_used_at']) ? ' — آخرین استفاده: ' . h(timeago((string)$activeApiKey['last_used_at'])) : ' — هنوز استفاده نشده' ?>
+</p>
+<?php else: ?>
+<div class="alert alert-info">برای این فروشگاه هنوز کلید API تعریف نشده است.</div>
+<?php endif; ?>
+
+<div class="form-group">
+<label for="store_api_label">برچسب (اختیاری)</label>
+<input class="form-control" name="store_api_label" id="store_api_label" placeholder="مثلاً: سیستم انبار، سایت فروشگاه">
+<small style="color:#888">فقط برای شناسایی کلید در پنل ادمین.</small>
+</div>
+
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+<button type="submit" class="btn btn-primary"><i class="bi bi-arrow-repeat"></i> <?= $activeApiKey ? 'تولید و تعویض کلید جدید' : 'تولید کلید API' ?></button>
+</div>
+<p class="fs-sm text-muted" style="margin-top:8px">با تولید کلید جدید، کلید قبلی بلافاصله غیرفعال می‌شود.</p>
+</form>
+
+<?php if ($activeApiKey): ?>
+<form method="POST" class="card" style="padding:20px;margin-top:16px">
+<?= csrf_field() ?>
+<input type="hidden" name="store_api_action" value="revoke">
+<button type="submit" class="btn btn-secondary" onclick="return confirm('کلید API فعال این فروشگاه غیرفعال شود؟')">
+<i class="bi bi-slash-circle"></i> غیرفعال کردن کلید فعلی
+</button>
+</form>
+<?php endif; ?>
+
+<p class="fs-sm text-muted" style="margin-top:16px">
+مستندات استفاده از این کلید برای افزودن محصول:
+<code dir="ltr">docs/store-api.md</code>
+</p>
+<?php endif; ?>
 
 <?php
 $content = ob_get_clean();

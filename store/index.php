@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/user_chat.php';
 
 $user   = require_auth();
 $uid    = (int)$user['id'];
@@ -9,6 +10,10 @@ $providerType = user_provider_type($user);
 $panelCopy = store_panel_copy($providerType);
 $success = '';
 $error   = '';
+
+user_chat_ensure_tables();
+$storeConversations = user_chat_list($uid, 100);
+$storeUnreadMessages = user_chat_unread_count($uid);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_listings'])) {
     csrf_verify_or_fail();
@@ -91,6 +96,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_add_product']))
     if (mb_strlen($description) < 20) $validationErrors[] = 'توضیحات محصول باید حداقل ۲۰ کاراکتر باشد';
     if (!$category_id) $validationErrors[] = 'لطفاً دسته‌بندی محصول را انتخاب کنید';
 
+    $location = listing_location_from_request($_POST);
+    foreach (validate_listing_location($location) as $msg) {
+        $validationErrors[] = $msg;
+    }
+
     if (!empty($validationErrors)) {
         $error = implode(' | ', $validationErrors);
     } else {
@@ -121,8 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_add_product']))
                 'condition'       => 'good',
                 'status'          => 'active',
                 'review_status'   => 'pending',
-                'city'            => $user['city'] ?? null,
-            ], listing_attrs_db_payload($listingAttrs)));
+                'city'            => $location['city'] ?: ($user['city'] ?? null),
+            ], listing_location_db_payload($location), listing_attrs_db_payload($listingAttrs)));
 
             $uploadedImages = 0;
             if (!empty($_FILES['images']['name'][0])) {
@@ -303,7 +313,6 @@ foreach ($inventory as $item) {
 $storeReports   = store_reports_stats($uid);
 $storeChartData = store_monthly_chart_data($uid);
 $storeTopProducts = store_top_products($uid, 5);
-$storeCategories  = store_category_breakdown($uid);
 $kycUi = kyc_store_status_ui($user);
 $chartViews    = array_column($storeChartData, 'views');
 $chartRequests = array_column($storeChartData, 'requests');
@@ -385,6 +394,8 @@ render_head($panelCopy['panel_title']);
 render_navbar($user);
 ?>
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/store.css?v=<?= @filemtime(__DIR__ . '/../src/css/store.css') ?: time() ?>">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-location.css?v=<?= @filemtime(__DIR__ . '/../src/css/listing-location.css') ?: time() ?>">
 
 <div class="store-page">
   <div class="store-container">
@@ -760,6 +771,29 @@ render_navbar($user);
                 <textarea class="store-form-input" name="want_description" rows="3" placeholder="مثلا: فقط گوشی آیفون ۱۴ به بالا با سلامت باتری بالای ۹۰٪..."><?= h($_POST['want_description'] ?? '') ?></textarea>
               </div>
               <div class="store-form-group">
+                <label class="store-form-label">شهر <?= h($panelCopy['item_singular']) ?> *</label>
+                <select class="store-form-input" name="city" id="store-product-city">
+                  <option value="">انتخاب شهر</option>
+                  <?= render_city_options((string)($_POST['city'] ?? ($user['city'] ?? ''))) ?>
+                </select>
+              </div>
+
+              <?php
+              $picker = [
+                  'prefix'         => 'storeProduct',
+                  'city'           => (string)($_POST['city'] ?? ($user['city'] ?? '')),
+                  'latitude'       => (string)($_POST['latitude'] ?? ''),
+                  'longitude'      => (string)($_POST['longitude'] ?? ''),
+                  'neighborhood'   => (string)($_POST['neighborhood'] ?? ''),
+                  'city_select_id' => 'store-product-city',
+                  'control_class'  => 'store-form-input',
+                  'label_class'    => 'store-form-label',
+                  'input_class'    => 'store-form-input',
+              ];
+              include __DIR__ . '/../includes/listing_location_picker.php';
+              ?>
+
+              <div class="store-form-group">
                 <label class="store-form-label">تصاویر محصول (حداقل ۱، حداکثر <?= MAX_IMAGES ?> تصویر)</label>
                 <input type="file" class="store-form-input" name="images[]" multiple accept="image/jpeg,image/png,image/webp">
               </div>
@@ -1061,59 +1095,60 @@ render_navbar($user);
     <div class="store-tab-panel" data-tab-panel="messages">
       <div class="store-card">
         <div class="store-card__header">
-          <h3 class="store-card__title"><i class="bi bi-chat-dots"></i> پیام‌های مشتریان</h3>
+          <h3 class="store-card__title">
+            <i class="bi bi-chat-dots"></i> پیام‌های مشتریان
+            <?php if ($storeUnreadMessages > 0): ?>
+            <span class="store-tab__badge"><?= persian_digits((string)$storeUnreadMessages) ?></span>
+            <?php endif; ?>
+          </h3>
+          <a href="<?= APP_URL ?>/chat" class="store-btn store-btn--sm store-btn--outline">
+            <i class="bi bi-box-arrow-up-left"></i> همه گفتگوها
+          </a>
         </div>
         <div class="store-card__body store-card__body--nopad">
+          <?php if (empty($storeConversations)): ?>
+          <div class="store-empty">
+            <i class="bi bi-chat-dots"></i>
+            <p>هنوز پیامی از مشتریان دریافت نکرده‌اید</p>
+          </div>
+          <?php else: ?>
           <div class="store-messages">
-            <div class="store-message is-unread">
-              <div class="store-message__avatar">ع</div>
+            <?php foreach ($storeConversations as $conv): ?>
+            <?php
+              $convUnread  = (int)($conv['unread'] ?? 0);
+              $convLastAt  = $conv['last_at'] ?: ($conv['last_message_at'] ?: $conv['created_at']);
+              $convBody    = trim((string)($conv['last_body'] ?? ''));
+              $convName    = (string)($conv['other_name'] ?? 'کاربر');
+            ?>
+            <a class="store-message <?= $convUnread > 0 ? 'is-unread' : '' ?>"
+               href="<?= APP_URL ?>/chat/view?id=<?= (int)$conv['id'] ?>">
+              <div class="store-message__avatar">
+                <?= avatar_html($conv['other_avatar'] ?? null, $convName, 'md') ?>
+              </div>
               <div class="store-message__content">
                 <div class="store-message__header">
-                  <span class="store-message__name">علی رضایی</span>
-                  <span class="store-message__time">۱۴:۳۰</span>
+                  <span class="store-message__name"><?= h($convName) ?></span>
+                  <span class="store-message__time"><?= h($convLastAt ? timeago($convLastAt) : '') ?></span>
                 </div>
-                <div class="store-message__preview">سلام، میشه در مورد قیمت لپ‌تاپ کمی توضیح بدید؟</div>
+                <?php if (!empty($conv['listing_title'])): ?>
+                <div class="store-message__listing">
+                  <i class="bi bi-tag"></i> <span><?= h(mb_strimwidth((string)$conv['listing_title'], 0, 40, '…')) ?></span>
+                </div>
+                <?php endif; ?>
+                <div class="store-message__preview">
+                  <?= $convBody !== '' ? h(mb_strimwidth($convBody, 0, 70, '…')) : 'شروع گفتگو' ?>
+                </div>
               </div>
+              <?php if ($convUnread > 0): ?>
+              <span class="store-message__badge"><?= persian_digits((string)$convUnread) ?></span>
+              <?php endif; ?>
               <div class="store-message__attachment">
                 <i class="bi bi-chat-left-text"></i>
               </div>
-            </div>
-            <div class="store-message is-unread">
-              <div class="store-message__avatar store-avatar--orange">م</div>
-              <div class="store-message__content">
-                <div class="store-message__header">
-                  <span class="store-message__name">مریم احمدی</span>
-                  <span class="store-message__time">۱۲:۱۵</span>
-                </div>
-                <div class="store-message__preview">عکس کالا رو میتونستم بفرستم براتون ببینید؟</div>
-              </div>
-              <div class="store-message__attachment store-message__attachment--image">
-                <i class="bi bi-image"></i>
-              </div>
-            </div>
-            <div class="store-message">
-              <div class="store-message__avatar store-avatar--green">ر</div>
-              <div class="store-message__content">
-                <div class="store-message__header">
-                  <span class="store-message__name">رضا کریمی</span>
-                  <span class="store-message__time">دیروز</span>
-                </div>
-                <div class="store-message__preview">ممنون، کالا دستم رسید و عالیه!</div>
-              </div>
-              <div class="store-message__attachment">
-                <i class="bi bi-geo-alt"></i>
-              </div>
-            </div>
+            </a>
+            <?php endforeach; ?>
           </div>
-          <div class="store-chat-actions">
-            <div class="store-chat-tools">
-              <button class="store-btn store-btn--icon store-btn--outline"><i class="bi bi-image"></i></button>
-              <button class="store-btn store-btn--icon store-btn--outline"><i class="bi bi-geo-alt"></i></button>
-              <button class="store-btn store-btn--icon store-btn--outline"><i class="bi bi-paperclip"></i></button>
-            </div>
-            <input type="text" class="store-form-input store-chat-input" placeholder="پیام خود را بنویسید...">
-            <button class="store-btn store-btn--gradient"><i class="bi bi-send"></i> ارسال</button>
-          </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>
@@ -1211,32 +1246,6 @@ render_navbar($user);
               </a>
             </div>
             <?php endif; ?>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ========== TAB: CATEGORIES ========== -->
-    <div class="store-tab-panel" data-tab-panel="categories">
-      <div class="store-card">
-        <div class="store-card__header">
-          <h3 class="store-card__title"><i class="bi bi-grid-3x3-gap"></i> دسته‌بندی‌های فروشگاه</h3>
-        </div>
-        <div class="store-card__body">
-          <div class="store-categories-grid">
-            <?php
-            foreach ($storeCategories as $cat):
-            ?>
-            <div class="store-category-card <?= $cat['color'] === 'empty' ? 'is-empty' : '' ?>">
-              <div class="store-category-card__icon store-category-card__icon--<?= $cat['color'] ?>">
-                <i class="bi <?= $cat['icon'] ?>"></i>
-              </div>
-              <div class="store-category-card__name"><?= $cat['name'] ?></div>
-              <?php if ($cat['count'] !== null): ?>
-              <div class="store-category-card__count"><?= $cat['count'] ?> محصول</div>
-              <?php endif; ?>
-            </div>
-            <?php endforeach; ?>
           </div>
         </div>
       </div>
@@ -1664,5 +1673,8 @@ render_navbar($user);
   window.addEventListener('pageshow', () => window.scrollTo(0, 0));
 })();
 </script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="<?= APP_URL ?>/src/js/listing-location.js?v=<?= @filemtime(__DIR__ . '/../src/js/listing-location.js') ?: time() ?>"></script>
 
 <?php render_footer(); ?>

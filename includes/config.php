@@ -2140,6 +2140,7 @@ require_once __DIR__ . '/kyc_service.php';
 require_once __DIR__ . '/v2.php';
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/store_orders.php';
+require_once __DIR__ . '/store_api.php';
 require_once __DIR__ . '/saved_searches.php';
 require_once __DIR__ . '/admin.php';
 require_once __DIR__ . '/support.php';

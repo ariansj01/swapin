@@ -56,7 +56,6 @@ function store_panel_tabs(string $providerType, int $requestBadge = 0, int $orde
         'orders'        => ['id' => 'orders',        'icon' => 'bi-bag-check',       'label' => 'سفارش‌های فروش',    'show' => true, 'badge' => $orderBadge],
         'messages'      => ['id' => 'messages',      'icon' => 'bi-chat-dots',       'label' => 'پیام‌ها',           'show' => true],
         'management'    => ['id' => 'management',    'icon' => 'bi-gear',            'label' => 'مدیریت فروشگاه',    'show' => true],
-        'categories'    => ['id' => 'categories',    'icon' => 'bi-grid-3x3-gap',    'label' => 'دسته‌بندی‌ها',      'show' => true],
         'reports'       => ['id' => 'reports',       'icon' => 'bi-graph-up-arrow',  'label' => 'گزارش‌ها',          'show' => true],
         'notifications' => ['id' => 'notifications', 'icon' => 'bi-bell',            'label' => 'اعلان‌ها',          'show' => true],
         'settings'      => ['id' => 'settings',      'icon' => 'bi-sliders',         'label' => 'تنظیمات',           'show' => true],
@@ -70,7 +69,6 @@ function store_panel_tabs(string $providerType, int $requestBadge = 0, int $orde
             $tabs['orders']['show'] = false;
             $tabs['messages']['label'] = 'مشتریان';
             $tabs['management']['show'] = false;
-            $tabs['categories']['show'] = false;
             $tabs['notifications']['show'] = false;
             break;
         case 'car_dealer':
@@ -79,7 +77,6 @@ function store_panel_tabs(string $providerType, int $requestBadge = 0, int $orde
             $tabs['requests']['label'] = 'پیشنهادهای معاوضه';
             $tabs['messages']['label'] = 'مشتریان';
             $tabs['management']['show'] = false;
-            $tabs['categories']['show'] = false;
             $tabs['notifications']['show'] = false;
             break;
         case 'corporate':
