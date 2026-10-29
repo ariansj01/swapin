@@ -270,31 +270,6 @@ if ($shouldMigrate) {
     if (!in_array('permissions', $usersColumns)) {
         DB::query('ALTER TABLE `users` ADD COLUMN `permissions` JSON DEFAULT NULL AFTER `role`');
     }
-
-    // Force update admin credentials if migrate=1 is requested
-    if (isset($_GET['migrate']) && $_GET['migrate'] === '1') {
-        $adminPass = getenv('SWAPIN_ADMIN_PASS') ?: 'Yekta@2026!Secure#Swapin';
-        $passHash = password_hash($adminPass, PASSWORD_BCRYPT);
-        $email = 'Yekta.akramsani@gmail.com';
-        
-        $exists = DB::fetch("SELECT id FROM users WHERE id = 1");
-        if ($exists) {
-            DB::query("UPDATE users SET email = ?, password_hash = ?, role = 'admin', permissions = ?, is_active = 1, verification_level = 3 WHERE id = 1", 
-                [$email, $passHash, json_encode(['*'])]);
-        } else {
-            DB::insert('users', [
-                'id' => 1,
-                'email' => $email,
-                'password_hash' => $passHash,
-                'role' => 'admin',
-                'permissions' => json_encode(['*']),
-                'is_active' => 1,
-                'verification_level' => 3,
-                'name' => 'مدیر اصلی'
-            ]);
-        }
-        die("Admin Fixed! Please login with: $email");
-    }
     if (!db_has_index('users', 'uq_google_id')) {
         DB::query('ALTER TABLE `users` ADD UNIQUE KEY `uq_google_id` (`google_id`)');
     }
