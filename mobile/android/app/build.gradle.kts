@@ -1,15 +1,9 @@
 import java.util.Properties
-import java.io.File
 import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("dev.flutter.flutter-gradle-plugin")
-}
-
-flutter {
-    source = "../.."
 }
 
 android {
@@ -23,15 +17,12 @@ android {
         localProperties.load(FileInputStream(localFile))
     }
 
-    val flutterVersionCode = (localProperties.getProperty("flutter.versionCode") ?: "5").toInt()
-    val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0.2"
-
     defaultConfig {
         applicationId = "ir.swaapin.mobile"
         minSdk = 24
         targetSdk = 37
-        versionCode = flutterVersionCode
-        versionName = flutterVersionName
+        versionCode = 6
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

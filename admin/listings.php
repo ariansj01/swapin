@@ -4,6 +4,7 @@ require_once __DIR__ . '/../includes/admin_layout.php';
 require_once __DIR__ . '/../includes/ai_moderation.php';
 
 $admin = require_admin();
+admin_require_permission('listings');
 $id    = (int)($_GET['id'] ?? 0);
 $filter = clean($_GET['filter'] ?? 'pending');
 

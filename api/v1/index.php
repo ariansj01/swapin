@@ -3,6 +3,121 @@ require_once __DIR__ . '/_bootstrap.php';
 require_once __DIR__ . '/../../includes/geo.php';
 require_once __DIR__ . '/../../includes/sms.php';
 
+/** Compact card used in GET /store/listings lists. */
+function api_store_listing_card(array $row): array
+{
+    return [
+        'id' => (int)$row['id'],
+        'title' => (string)$row['title'],
+        'status' => $row['status'] ?? null,
+        'review_status' => $row['review_status'] ?? null,
+        'city' => $row['city'] ?? null,
+        'neighborhood' => $row['neighborhood'] ?? null,
+        'category' => $row['cat_name'] ?? null,
+        'category_slug' => $row['cat_slug'] ?? null,
+        'estimated_value' => (int)($row['estimated_value'] ?? 0),
+        'sell_price' => (float)($row['sell_price'] ?? 0),
+        'listing_mode' => $row['listing_mode'] ?? null,
+        'thumb' => api_image_url($row['thumb'] ?? null),
+        'created_at' => $row['created_at'] ?? null,
+        'updated_at' => $row['updated_at'] ?? null,
+        'url' => listing_url((int)$row['id']),
+    ];
+}
+
+/** Full payload for a single store listing. */
+function api_store_listing_detail(array $listing, array $images): array
+{
+    return [
+        'id' => (int)$listing['id'],
+        'title' => (string)$listing['title'],
+        'description' => (string)($listing['description'] ?? ''),
+        'status' => $listing['status'] ?? null,
+        'review_status' => $listing['review_status'] ?? null,
+        'review_note' => $listing['review_note'] ?? null,
+        'category_id' => (int)($listing['category_id'] ?? 0),
+        'category' => $listing['cat_name'] ?? null,
+        'category_slug' => $listing['cat_slug'] ?? null,
+        'condition' => $listing['condition'] ?? null,
+        'listing_mode' => $listing['listing_mode'] ?? 'swap',
+        'estimated_value' => (int)($listing['estimated_value'] ?? 0),
+        'sell_price' => (float)($listing['sell_price'] ?? 0),
+        'want_description' => $listing['want_in_return'] ?? '',
+        'city' => $listing['city'] ?? null,
+        'neighborhood' => $listing['neighborhood'] ?? null,
+        'latitude' => isset($listing['latitude']) ? (float)$listing['latitude'] : null,
+        'longitude' => isset($listing['longitude']) ? (float)$listing['longitude'] : null,
+        'attributes' => listing_attrs_decode($listing['listing_attrs'] ?? null),
+        'images' => $images,
+        'created_at' => $listing['created_at'] ?? null,
+        'updated_at' => $listing['updated_at'] ?? null,
+        'url' => listing_url((int)$listing['id']),
+    ];
+}
+
+/**
+ * Normalises incoming image payloads (multipart "images[]" files and/or
+ * "images_base64" strings) into a list of upload-ready file arrays.
+ *
+ * @return array{0:array<int,array>,1:array<int,string>} [files, tempFiles]
+ */
+function api_store_image_files(array $input): array
+{
+    $files = [];
+    if (!empty($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
+        foreach ($_FILES['images']['name'] as $i => $name) {
+            if (!$name || ($_FILES['images']['error'][$i] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                continue;
+            }
+            $files[] = [
+                'name' => $name,
+                'tmp_name' => $_FILES['images']['tmp_name'][$i],
+                'error' => $_FILES['images']['error'][$i],
+                'size' => $_FILES['images']['size'][$i],
+            ];
+        }
+    }
+    if ($files) {
+        return [$files, []];
+    }
+
+    $temp = [];
+    $chunks = $input['images_base64'] ?? [];
+    if (is_string($chunks)) {
+        $chunks = [$chunks];
+    }
+    if (is_array($chunks)) {
+        foreach ($chunks as $chunk) {
+            if (!is_string($chunk) || trim($chunk) === '') {
+                continue;
+            }
+            $chunk = trim($chunk);
+            if (preg_match('#^data:image/[a-zA-Z0-9.+-]+;base64,#', $chunk)) {
+                $chunk = substr($chunk, strpos($chunk, ',') + 1);
+            }
+            $binary = base64_decode(str_replace(' ', '+', $chunk), true);
+            if ($binary === false || $binary === '') {
+                continue;
+            }
+            $tmp = tempnam(sys_get_temp_dir(), 'swk');
+            if ($tmp === false || @file_put_contents($tmp, $binary) === false) {
+                if (is_string($tmp)) {
+                    @unlink($tmp);
+                }
+                continue;
+            }
+            $temp[] = $tmp;
+            $files[] = [
+                'name' => 'upload.jpg',
+                'tmp_name' => $tmp,
+                'error' => UPLOAD_ERR_OK,
+                'size' => strlen($binary),
+            ];
+        }
+    }
+    return [$files, $temp];
+}
+
 $path = api_path();
 $method = api_method();
 $segments = $path === '' ? [] : explode('/', $path);
@@ -671,6 +786,325 @@ if ($path === 'store/listings' && $method === 'POST') {
         'store_id' => (int)$store['id'],
         'url' => listing_url((int)$listingId),
     ], 201);
+}
+
+if ($path === 'store/listings' && $method === 'GET') {
+    $store = store_api_auth();
+    if (!$store) {
+        api_error('invalid_api_key', 401, 'کلید API نامعتبر یا غیرفعال است.');
+    }
+
+    $page = max(1, (int)($_GET['page'] ?? 1));
+    $limit = min(50, max(1, (int)($_GET['limit'] ?? 20)));
+    $offset = ($page - 1) * $limit;
+    $status = clean((string)($_GET['status'] ?? ''));
+    $reviewStatus = clean((string)($_GET['review_status'] ?? ''));
+    $search = clean((string)($_GET['q'] ?? ''));
+
+    $where = ['l.user_id = ?'];
+    $params = [(int)$store['id']];
+    if ($status !== '') {
+        $where[] = 'l.status = ?';
+        $params[] = $status;
+    } else {
+        $where[] = 'l.status != "deleted"';
+    }
+    if ($reviewStatus !== '') {
+        $where[] = 'l.review_status = ?';
+        $params[] = $reviewStatus;
+    }
+    if ($search !== '') {
+        $where[] = '(l.title LIKE ? OR l.description LIKE ?)';
+        $params[] = "%{$search}%";
+        $params[] = "%{$search}%";
+    }
+    $sqlWhere = 'WHERE ' . implode(' AND ', $where);
+
+    $total = (int)(DB::fetch("SELECT COUNT(*) AS c FROM listings l {$sqlWhere}", $params)['c'] ?? 0);
+    $rows = DB::fetchAll(
+        "SELECT l.id, l.title, l.status, l.review_status, l.city, l.neighborhood,
+                l.estimated_value, l.sell_price, l.listing_mode, l.created_at, l.updated_at,
+                c.name AS cat_name, c.slug AS cat_slug,
+                (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+         FROM listings l
+         JOIN categories c ON c.id = l.category_id
+         {$sqlWhere}
+         ORDER BY l.updated_at DESC, l.id DESC
+         LIMIT ? OFFSET ?",
+        [...$params, $limit, $offset]
+    );
+
+    api_ok([
+        'page' => $page,
+        'limit' => $limit,
+        'total' => $total,
+        'items' => array_map('api_store_listing_card', $rows),
+    ]);
+}
+
+if (preg_match('#^store/listings/(\d+)$#', $path, $m)) {
+    $store = store_api_auth();
+    if (!$store) {
+        api_error('invalid_api_key', 401, 'کلید API نامعتبر یا غیرفعال است.');
+    }
+    $storeId = (int)$store['id'];
+    $listingId = (int)$m[1];
+
+    // POST + X-HTTP-Method-Override (or _method field) supports PUT/PATCH/DELETE
+    // from clients that cannot send those verbs directly (e.g. multipart uploads).
+    $effectiveMethod = $method;
+    if ($method === 'POST') {
+        $override = strtoupper(trim((string)($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '')));
+        if ($override === '') {
+            $override = strtoupper(trim((string)($_POST['_method'] ?? '')));
+        }
+        if (in_array($override, ['PUT', 'PATCH', 'DELETE'], true)) {
+            $effectiveMethod = $override;
+        }
+    }
+
+    $listing = DB::fetch(
+        'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug
+         FROM listings l
+         JOIN categories c ON c.id = l.category_id
+         WHERE l.id = ? AND l.user_id = ?',
+        [$listingId, $storeId]
+    );
+    if (!$listing || ($listing['status'] ?? '') === 'deleted') {
+        api_error('not_found', 404, 'محصول یافت نشد.');
+    }
+
+    if ($effectiveMethod === 'GET') {
+        $rows = DB::fetchAll(
+            'SELECT id, filename, is_primary FROM listing_images WHERE listing_id = ? ORDER BY is_primary DESC, sort_order',
+            [$listingId]
+        );
+        $images = [];
+        foreach ($rows as $img) {
+            $images[] = [
+                'id' => (int)$img['id'],
+                'url' => api_image_url($img['filename']),
+                'is_primary' => (bool)$img['is_primary'],
+            ];
+        }
+        api_ok(['listing' => api_store_listing_detail($listing, $images)]);
+    }
+
+    if (in_array($effectiveMethod, ['PUT', 'PATCH'], true)) {
+        require_once __DIR__ . '/../../includes/iso.php';
+        require_once __DIR__ . '/../../includes/ai_moderation.php';
+
+        $input = api_body();
+        $errors = [];
+
+        if (array_key_exists('title', $input)) {
+            $title = clean((string)$input['title']);
+            if (mb_strlen($title) < 5) {
+                $errors['title'] = 'عنوان باید حداقل ۵ کاراکتر باشد';
+            } elseif (mb_strlen($title) > 200) {
+                $errors['title'] = 'عنوان باید کمتر از ۲۰۰ کاراکتر باشد';
+            }
+        } else {
+            $title = (string)$listing['title'];
+        }
+
+        if (array_key_exists('description', $input)) {
+            $description = clean((string)$input['description']);
+            if (mb_strlen($description) < 20) {
+                $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
+            }
+        } else {
+            $description = (string)$listing['description'];
+        }
+
+        if (array_key_exists('category_id', $input)) {
+            $categoryId = (int)$input['category_id'];
+            if (!$categoryId || !wizard_validate_category_id($categoryId)) {
+                $errors['category_id'] = 'دسته‌بندی نامعتبر است';
+            }
+        } else {
+            $categoryId = (int)$listing['category_id'];
+        }
+
+        if (array_key_exists('condition', $input)) {
+            $condition = clean((string)$input['condition']);
+            if (!in_array($condition, ['new', 'like_new', 'good', 'fair', 'poor'], true)) {
+                $errors['condition'] = 'وضعیت نامعتبر است';
+                $condition = (string)($listing['condition'] ?? 'good');
+            }
+        } else {
+            $condition = (string)($listing['condition'] ?? 'good');
+        }
+
+        if (array_key_exists('listing_mode', $input)) {
+            $modeRaw = clean((string)$input['listing_mode']);
+            if (!in_array($modeRaw, ['swap', 'sell', 'both'], true)) {
+                $errors['listing_mode'] = 'حالت آگهی نامعتبر است';
+                $listingMode = (string)($listing['listing_mode'] ?? 'both');
+            } else {
+                $listingMode = $modeRaw;
+            }
+        } else {
+            $listingMode = (string)($listing['listing_mode'] ?? 'both');
+        }
+
+        $estimatedValue = array_key_exists('estimated_value', $input)
+            ? max(0, (int)$input['estimated_value'])
+            : (int)($listing['estimated_value'] ?? 0);
+        $sellPrice = array_key_exists('sell_price', $input)
+            ? max(0, (float)$input['sell_price'])
+            : (float)($listing['sell_price'] ?? 0);
+        $want = array_key_exists('want_description', $input)
+            ? clean((string)$input['want_description'])
+            : (string)($listing['want_in_return'] ?? '');
+
+        $location = listing_location_from_request([
+            'city' => array_key_exists('city', $input) ? (string)$input['city'] : (string)($listing['city'] ?? ''),
+            'neighborhood' => array_key_exists('neighborhood', $input) ? (string)$input['neighborhood'] : (string)($listing['neighborhood'] ?? ''),
+            'latitude' => array_key_exists('latitude', $input) ? (string)$input['latitude'] : (string)($listing['latitude'] ?? ''),
+            'longitude' => array_key_exists('longitude', $input) ? (string)$input['longitude'] : (string)($listing['longitude'] ?? ''),
+        ]);
+        foreach (validate_listing_location($location) as $field => $msg) {
+            $errors[$field] = $msg;
+        }
+
+        $currentImages = DB::fetchAll(
+            'SELECT id FROM listing_images WHERE listing_id = ?',
+            [$listingId]
+        );
+        $existingIds = array_map(static fn ($r) => (int)$r['id'], $currentImages);
+
+        $deleteIds = [];
+        $rawDelete = $input['delete_image_ids'] ?? [];
+        if (is_string($rawDelete)) {
+            $rawDelete = preg_split('/[\s,]+/', $rawDelete) ?: [];
+        }
+        if (is_array($rawDelete)) {
+            foreach ($rawDelete as $imgId) {
+                $imgId = (int)$imgId;
+                if ($imgId > 0 && in_array($imgId, $existingIds, true)) {
+                    $deleteIds[$imgId] = $imgId;
+                }
+            }
+        }
+        $deleteIds = array_values($deleteIds);
+
+        [$imageFiles, $tempFiles] = api_store_image_files($input);
+
+        $finalCount = count($currentImages) - count($deleteIds) + count($imageFiles);
+        if ($finalCount < 1) {
+            $errors['images'] = 'حداقل یک تصویر الزامی است.';
+        } elseif ($finalCount > MAX_IMAGES) {
+            $errors['images'] = 'حداکثر ' . MAX_IMAGES . ' تصویر مجاز است.';
+        }
+
+        if ($errors) {
+            foreach ($tempFiles as $tmp) {
+                @unlink($tmp);
+            }
+            api_json(['ok' => false, 'error' => 'validation', 'fields' => $errors], 422);
+        }
+
+        foreach ($deleteIds as $imgId) {
+            $img = DB::fetch('SELECT filename FROM listing_images WHERE id = ? AND listing_id = ?', [$imgId, $listingId]);
+            if ($img) {
+                $path = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . $img['filename'];
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+                DB::query('DELETE FROM listing_images WHERE id = ?', [$imgId]);
+            }
+        }
+
+        $provider = is_store_seller($store) ? user_provider_type($store) : 'normal_store';
+        $existingAttrs = listing_attrs_decode($listing['listing_attrs'] ?? null);
+        $newAttrs = listing_attrs_from_input($provider, $input);
+        $attrsPayload = $newAttrs ? listing_attrs_db_payload(array_merge($existingAttrs, $newAttrs)) : [];
+
+        $reviewUpdate = [];
+        if (($listing['review_status'] ?? '') === 'approved') {
+            $reviewUpdate['review_status'] = 'pending';
+            if (db_has_column('listings', 'review_note')) {
+                $reviewUpdate['review_note'] = null;
+            }
+        }
+
+        DB::update('listings', array_merge([
+            'category_id' => $categoryId,
+            'title' => $title,
+            'description' => $description,
+            'condition' => $condition,
+            'estimated_value' => $estimatedValue,
+            'want_in_return' => $want,
+            'listing_mode' => $listingMode,
+            'sell_price' => in_array($listingMode, ['sell', 'both'], true) ? $sellPrice : 0,
+            'city' => $location['city'] ?: null,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], listing_location_db_payload($location), $attrsPayload, $reviewUpdate), 'id = ? AND user_id = ?', [$listingId, $storeId]);
+
+        $imgCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listing_images WHERE listing_id = ?', [$listingId])['c'] ?? 0);
+        foreach ($imageFiles as $file) {
+            if ($imgCount >= MAX_IMAGES) {
+                break;
+            }
+            $filename = upload_image($file, 'listing');
+            if ($filename) {
+                DB::insert('listing_images', [
+                    'listing_id' => $listingId,
+                    'filename' => $filename,
+                    'is_primary' => $imgCount === 0 ? 1 : 0,
+                    'sort_order' => $imgCount,
+                ]);
+                $imgCount++;
+            }
+        }
+        foreach ($tempFiles as $tmp) {
+            @unlink($tmp);
+        }
+
+        if ($imgCount < 1) {
+            api_error('upload_failed', 422, 'آپلود تصاویر ناموفق بود.');
+        }
+
+        $hasPrimary = DB::fetch('SELECT id FROM listing_images WHERE listing_id = ? AND is_primary = 1 LIMIT 1', [$listingId]);
+        if (!$hasPrimary) {
+            $first = DB::fetch('SELECT id FROM listing_images WHERE listing_id = ? ORDER BY sort_order, id LIMIT 1', [$listingId]);
+            if ($first) {
+                DB::query('UPDATE listing_images SET is_primary = 1 WHERE id = ?', [(int)$first['id']]);
+            }
+        }
+
+        $listing = DB::fetch(
+            'SELECT l.*, c.name AS cat_name, c.slug AS cat_slug
+             FROM listings l JOIN categories c ON c.id = l.category_id
+             WHERE l.id = ?',
+            [$listingId]
+        );
+        $rows = DB::fetchAll(
+            'SELECT id, filename, is_primary FROM listing_images WHERE listing_id = ? ORDER BY is_primary DESC, sort_order',
+            [$listingId]
+        );
+        $images = [];
+        foreach ($rows as $img) {
+            $images[] = [
+                'id' => (int)$img['id'],
+                'url' => api_image_url($img['filename']),
+                'is_primary' => (bool)$img['is_primary'],
+            ];
+        }
+        api_ok(['listing' => api_store_listing_detail($listing, $images)]);
+    }
+
+    if ($effectiveMethod === 'DELETE') {
+        $set = ['status' => 'deleted', 'updated_at' => date('Y-m-d H:i:s')];
+        if (db_has_column('listings', 'deleted_at')) {
+            $set['deleted_at'] = date('Y-m-d H:i:s');
+        }
+        DB::update('listings', $set, 'id = ? AND user_id = ?', [$listingId, $storeId]);
+        api_ok(['id' => $listingId, 'deleted' => true]);
+    }
+
+    api_error('method_not_allowed', 405, 'متد HTTP پشتیبانی نمی‌شود.');
 }
 
 api_error('not_found', 404, 'مسیر API یافت نشد.');

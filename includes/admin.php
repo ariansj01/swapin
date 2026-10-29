@@ -29,6 +29,49 @@ function require_admin(): array {
     return $user;
 }
 
+/**
+ * Check if the current admin has permission for a specific section.
+ * Super admin (ID 1) has all permissions.
+ */
+function admin_has_permission(string $section, ?array $user = null): bool {
+    if ($user === null) {
+        $user = auth_user();
+    }
+    if (!$user || ($user['role'] ?? 'user') !== 'admin') {
+        return false;
+    }
+
+    // Super admin (ID 1) always has all permissions
+    if ((int)$user['id'] === 1) {
+        return true;
+    }
+
+    $permissions = [];
+    if (!empty($user['permissions'])) {
+        $permissions = is_array($user['permissions']) 
+            ? $user['permissions'] 
+            : json_decode($user['permissions'], true);
+    }
+
+    if (empty($permissions)) {
+        return false;
+    }
+
+    return in_array('*', $permissions) || in_array($section, $permissions);
+}
+
+/**
+ * Enforce permission for a specific section.
+ */
+function admin_require_permission(string $section): void {
+    $user = require_admin();
+    if (!admin_has_permission($section, $user)) {
+        http_response_code(403);
+        include __DIR__ . '/../admin/forbidden.php'; // We'll create this or use a simple message
+        exit;
+    }
+}
+
 function admin_pending_counts(): array {
     $tickets = 0;
     $errors  = 0;
@@ -206,7 +249,7 @@ function admin_sync_credentials(bool $resetPassword = false): void {
     $user  = DB::fetch('SELECT id FROM users WHERE email = ?', [$email]);
 
     if ($user) {
-        $update = ['role' => 'admin', 'is_active' => 1];
+        $update = ['role' => 'admin', 'is_active' => 1, 'permissions' => json_encode(['*'])];
         if ($resetPassword) {
             $pass = getenv('SWAPIN_ADMIN_PASS') ?: '';
             if ($pass === '') {

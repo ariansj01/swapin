@@ -82,11 +82,18 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'notifications'  => ['/notifications.php', 'ارسال اعلان', 'bi-megaphone', 0],
     ];
 
+    if ((int)$admin['id'] === 1) {
+        $nav['manage_admins'] = ['/manage_admins.php', 'مدیریت ادمین‌ها', 'bi-shield-check', 0];
+    }
+
     echo '<div class="admin-layout">';
     echo '<aside class="admin-sidebar">';
     echo '<div class="admin-sidebar__brand"><i class="bi bi-shield-lock"></i> پنل مدیریت</div>';
     echo '<nav class="admin-nav">';
     foreach ($nav as $key => [$href, $label, $icon, $badge]) {
+        if (!admin_has_permission($key, $admin)) {
+            continue;
+        }
         $cls = $active === $key ? ' admin-nav__link--active' : '';
         $badgeHtml = $badge > 0 ? '<span class="admin-nav__badge">' . $badge . '</span>' : '';
         echo "<a href=\"{$url}/admin{$href}\" class=\"admin-nav__link{$cls}\"><i class=\"bi {$icon}\"></i> {$label}{$badgeHtml}</a>";

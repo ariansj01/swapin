@@ -1,5 +1,11 @@
 # مستندات API فروشگاه (Store API)
 
+> ⚠️ **توجه:** این مستندات به مکان جدیدی منتقل شده است. برای مشاهده آخرین نسخه و راهنمای کامل، به پوشه جدید مراجعه کنید:
+>
+> ### 🔗 [مشاهده مستندات جدید API نسخه ۱.۰](./api/v1/introduction.md)
+
+---
+
 این API به هر فروشگاه اجازه می‌دهد محصولات خود را از یک سیستم بیرونی (سایت، انبار، نرم‌افزار حسابداری، ربات و ...) به‌صورت خودکار در سواَپین ثبت کند.
 
 - Base URL: `https://swaapin.ir/api/v1`
@@ -153,9 +159,140 @@ Content-Type: application/json
 
 ---
 
-## ۵) پاسخ‌ها
+## ۵) فهرست و مشاهده محصولات (Select)
 
-### موفق — `201 Created`
+### ۵‑۱) دریافت لیست محصولات فروشگاه
+این اندپوینت لیست محصولاتی که توسط این فروشگاه ثبت شده‌اند را برمی‌گرداند.
+
+```
+GET /api/v1/store/listings
+```
+
+**پارامترهای Query:**
+| پارامتر | نوع | پیش‌فرض | توضیح |
+|---|---|---|---|
+| `page` | int | 1 | شماره صفحه |
+| `limit` | int | 20 | تعداد در هر صفحه (حداکثر ۵۰) |
+| `status` | string | – | فیلتر وضعیت محصول (active, archived) |
+| `review_status` | string | – | فیلتر وضعیت بازبینی (pending, approved, rejected) |
+| `q` | string | – | جستجو در عنوان و توضیحات |
+
+**نمونه پاسخ:**
+```json
+{
+  "ok": true,
+  "page": 1,
+  "limit": 20,
+  "total": 45,
+  "items": [
+    {
+      "id": 4213,
+      "title": "لپ‌تاپ ایسوس Vivobook 15",
+      "status": "active",
+      "review_status": "approved",
+      "city": "تهران",
+      "neighborhood": "ونک",
+      "category": "لپ‌تاپ",
+      "estimated_value": 30000000,
+      "sell_price": 28500000,
+      "listing_mode": "both",
+      "thumb": "https://swaapin.ir/uploads/listing/thumb_abc.jpg",
+      "created_at": "2023-10-27 10:00:00",
+      "url": "https://swaapin.ir/listings/view?id=4213"
+    }
+  ]
+}
+```
+
+### ۵‑۲) دریافت جزئیات یک محصول
+```
+GET /api/v1/store/listings/{id}
+```
+
+**نمونه پاسخ:**
+```json
+{
+  "ok": true,
+  "listing": {
+    "id": 4213,
+    "title": "لپ‌تاپ ایسوس Vivobook 15",
+    "description": "لپ‌تاپ در حد نو...",
+    "status": "active",
+    "review_status": "approved",
+    "category_id": 12,
+    "category": "لپ‌تاپ",
+    "condition": "like_new",
+    "listing_mode": "both",
+    "estimated_value": 30000000,
+    "sell_price": 28500000,
+    "city": "تهران",
+    "neighborhood": "ونک",
+    "latitude": 35.6892,
+    "longitude": 51.3890,
+    "images": [
+      { "id": 101, "url": "...", "is_primary": true },
+      { "id": 102, "url": "...", "is_primary": false }
+    ],
+    "created_at": "2023-10-27 10:00:00",
+    "url": "https://swaapin.ir/listings/view?id=4213"
+  }
+}
+```
+
+---
+
+## ۶) ویرایش محصول (Edit)
+
+```
+PUT /api/v1/store/listings/{id}
+```
+یا
+```
+PATCH /api/v1/store/listings/{id}
+```
+
+**نکات مهم:**
+- این عملیات به‌صورت **Partial Update** عمل می‌کند؛ یعنی فقط فیلدهایی که ارسال می‌کنید به‌روز می‌شوند.
+- در صورت تغییر فیلدهای اصلی (عنوان، توضیحات و ...)، وضعیت بازبینی محصول به `pending` تغییر می‌کند.
+- برای مدیریت تصاویر در ویرایش، از فیلدهای زیر استفاده کنید:
+    - `images[]`: افزودن تصاویر جدید (فایل).
+    - `images_base64[]`: افزودن تصاویر جدید (base64).
+    - `delete_image_ids`: لیست شناسه‌های تصاویری که باید حذف شوند (به‌صورت آرایه یا رشته جدا شده با کاما).
+
+**نمونه درخواست (JSON):**
+```json
+{
+  "title": "عنوان جدید محصول",
+  "sell_price": 29000000,
+  "delete_image_ids": [102]
+}
+```
+
+---
+
+## ۷) حذف محصول (Delete)
+
+```
+DELETE /api/v1/store/listings/{id}
+```
+
+**توضیح:**
+این عملیات محصول را به‌صورت نرم (Soft Delete) حذف می‌کند. محصول در دیتابیس باقی می‌ماند اما وضعیت آن به `deleted` تغییر کرده و دیگر در لیست‌ها نمایش داده نمی‌شود.
+
+**نمونه پاسخ:**
+```json
+{
+  "ok": true,
+  "id": 4213,
+  "deleted": true
+}
+```
+
+---
+
+## ۸) پاسخ‌ها
+
+### موفق — `200 OK` یا `201 Created`
 
 ```json
 {
@@ -201,7 +338,7 @@ Content-Type: application/json
 
 ---
 
-## ۶) نمونه کد (PHP)
+## ۹) نمونه کد (PHP)
 
 ```php
 $payload = [
@@ -234,7 +371,7 @@ echo $response;
 
 ---
 
-## ۷) محدودیت‌ها و نکات مهم
+## ۱۰) محدودیت‌ها و نکات مهم
 
 - حداکثر تصویر در هر محصول: **۸ عدد**، هر تصویر حداکثر **۵ مگابایت**.
 - فرمت‌های مجاز تصویر: `jpg`, `jpeg`, `png`, `webp`, `gif`.

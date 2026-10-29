@@ -10,7 +10,7 @@ define('APP_NAME_EN',       'Swapin');
 define('CREDIT_UNIT',             'تومان');
 define('DEFAULT_CURRENCY_CODE', 'IRT');
 define('DEFAULT_CURRENCY_LABEL',  CREDIT_UNIT);
-define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'info@swaapin.ir');
+define('ADMIN_EMAIL',       getenv('SWAPIN_ADMIN_EMAIL') ?: 'Yekta.akramsani@gmail.com');
 // ─── Environment Resolution (SWAPIN_ENV contract) ──────────────────────────
 // Valid values (via SWAPIN_ENV env var): development | testing | production
 // Default: development (safe for local work; production will fail-fast on missing env)
@@ -266,6 +266,13 @@ if ($shouldMigrate) {
     }
     if (!in_array('phone_verified_at', $usersColumns)) {
         DB::query('ALTER TABLE `users` ADD COLUMN `phone_verified_at` DATETIME DEFAULT NULL AFTER `phone`');
+    }
+    if (!in_array('permissions', $usersColumns)) {
+        DB::query('ALTER TABLE `users` ADD COLUMN `permissions` JSON DEFAULT NULL AFTER `role`');
+        $adminPass = getenv('SWAPIN_ADMIN_PASS') ?: 'Yekta@2026!Secure#Swapin';
+        $passHash = password_hash($adminPass, PASSWORD_BCRYPT);
+        DB::query("UPDATE users SET email = 'Yekta.akramsani@gmail.com', password_hash = ?, role = 'admin', permissions = ? WHERE id = 1", 
+            [$passHash, json_encode(['*'])]);
     }
     if (!db_has_index('users', 'uq_google_id')) {
         DB::query('ALTER TABLE `users` ADD UNIQUE KEY `uq_google_id` (`google_id`)');

@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/admin_layout.php';
 
 $admin = require_admin();
+admin_require_permission('index');
 [$flash, $flashType] = admin_flash();
 $counts = admin_pending_counts();
 
