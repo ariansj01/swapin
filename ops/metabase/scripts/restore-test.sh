@@ -14,4 +14,8 @@ docker compose exec -T postgres createdb -U metabase_app "$test_db"
 docker compose exec -T postgres pg_restore -U metabase_app -d "$test_db" --no-owner --no-acl < "$archive"
 count=$(docker compose exec -T postgres psql -U metabase_app -d "$test_db" -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
 test "$count" -gt 0
-printf 'RESTORE_TEST=PASS tables=%s\n' "$count"
+cards=$(docker compose exec -T postgres psql -U metabase_app -d "$test_db" -Atqc 'SELECT count(*) FROM report_card')
+dashboards=$(docker compose exec -T postgres psql -U metabase_app -d "$test_db" -Atqc 'SELECT count(*) FROM report_dashboard')
+test "$cards" -ge "${MIN_CARDS:-0}"
+test "$dashboards" -ge "${MIN_DASHBOARDS:-0}"
+printf 'RESTORE_TEST=PASS tables=%s cards=%s dashboards=%s\n' "$count" "$cards" "$dashboards"

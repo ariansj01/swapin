@@ -19,6 +19,7 @@ docker compose ps
 docker compose logs --tail=100 metabase
 docker compose logs --tail=100 postgres
 curl -fsS http://127.0.0.1:3000/api/health
+./scripts/healthcheck.sh
 systemctl status swaapin-metabase-backup.timer
 ```
 
@@ -26,7 +27,7 @@ The first admin uses `darazedr@gmail.com`. To hand the password to the owner, ha
 
 ## Backups and upgrades
 
-`swaapin-metabase-backup.timer` runs daily at 03:15 Asia/Tehran. `scripts/backup.sh` creates a custom-format `pg_dump`, verifies it with `pg_restore -l`, retains seven daily and four weekly copies, and writes files root-only under `/opt/swaapin-metabase/backups`. `scripts/restore-test.sh` restores to a temporary database, checks that tables exist, and removes the temporary database. A restore test succeeded before handover. Arrange an encrypted off-host copy separately; local copies do not cover total host loss.
+`swaapin-metabase-backup.timer` runs daily at 03:15 Asia/Tehran. `scripts/backup.sh` creates a custom-format `pg_dump`, verifies it with `pg_restore -l`, retains seven daily and four weekly copies, and writes files root-only under `/opt/swaapin-metabase/backups`. `scripts/restore-test.sh` restores to a temporary database, checks tables, cards and dashboards, and removes the temporary database. A restore test succeeded with all 69 questions before handover. Arrange an encrypted off-host copy separately; local copies do not cover total host loss.
 
 Before every Metabase upgrade: run `scripts/backup.sh` and `scripts/restore-test.sh`, verify the official stable release and release notes, change the pinned tag in Git, deploy the Compose file, check migrations and health, then run browser and Swaapin regression checks. Do not use `latest` or beta/RC tags.
 
