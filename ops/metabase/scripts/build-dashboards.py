@@ -64,6 +64,15 @@ dashboards = [
           UNION ALL SELECT 'First offer to first listing conversation',COUNT(*),ROUND(AVG(TIMESTAMPDIFF(HOUR,o.first_at,c.first_at)),1)
           FROM (SELECT from_user_id,MIN(created_at) AS first_at FROM trade_offers GROUP BY from_user_id) o JOIN (SELECT user_a_id AS user_id,MIN(created_at) AS first_at FROM user_conversations GROUP BY user_a_id UNION ALL SELECT user_b_id,MIN(created_at) FROM user_conversations GROUP BY user_b_id) c ON c.user_id=o.from_user_id WHERE c.first_at>=o.first_at
           UNION ALL SELECT 'Trade start to completion',COUNT(*),ROUND(AVG(TIMESTAMPDIFF(HOUR,created_at,completed_at)),1) FROM trades WHERE status='completed' AND completed_at>=created_at""", description='Observed paired timestamps only; not visitor tracking or causal cohort conversion.'),
+        card('Full product funnel — instrumentation required', """SELECT 'Visitor' AS stage,'page_view' AS required_event,'NOT_INSTRUMENTED' AS status,CAST(NULL AS UNSIGNED) AS event_count
+          UNION ALL SELECT 'Signup','signup','NOT_INSTRUMENTED',NULL
+          UNION ALL SELECT 'Listing','listing_create','NOT_INSTRUMENTED',NULL
+          UNION ALL SELECT 'Match','match_view','NOT_INSTRUMENTED',NULL
+          UNION ALL SELECT 'Offer View','offer_view','NOT_INSTRUMENTED',NULL
+          UNION ALL SELECT 'Offer','offer_create','NOT_INSTRUMENTED',NULL
+          UNION ALL SELECT 'Negotiation','chat_start','NOT_INSTRUMENTED',NULL
+          UNION ALL SELECT 'Agreement','agreement_accept','NOT_INSTRUMENTED',NULL
+          UNION ALL SELECT 'Successful Swap','transaction_complete','NOT_INSTRUMENTED',NULL""", description='Design placeholder only. No user_events table or historical event backfill exists. Counts, conversion and durations are intentionally NULL.'),
     ]),
     ('Swaapin — Users & Growth', 'Approximate activity based on last_seen. No event-based DAU/WAU/MAU or retention is claimed.', [
         card('Users, activity and onboarding', """SELECT COUNT(*) AS total_users,
