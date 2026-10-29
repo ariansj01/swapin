@@ -35,6 +35,16 @@ backups/
 
 # OS / editor temporary files
 .DS_Store
+
+# Metabase runtime secrets and data
+ops/metabase/.env
+ops/metabase/secrets/
+ops/metabase/backups/
+ops/metabase/pg_data/
+
+# Local task artifacts
+output/
+tmp/
 Thumbs.db
 *.swp
 *.tmp
