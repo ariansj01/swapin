@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user && password_verify($pass, $user['password_hash'])) {
         // Check if user is admin - safely handle missing role column
         $isAdmin = ($user['email'] === ADMIN_EMAIL) || 
-                   (($user['role'] ?? 'user') === 'admin');
+        (($user['role'] ?? 'user') === 'admin');
         
         if ($isAdmin) {
             login_user((int)$user['id']);

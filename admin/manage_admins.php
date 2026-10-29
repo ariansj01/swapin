@@ -4,8 +4,8 @@ require_once __DIR__ . '/../includes/admin.php';
 require_once __DIR__ . '/../includes/admin_layout.php';
 
 $admin = require_admin();
-// Only super admin (ID 1) can access this page
-if ((int)$admin['id'] !== 1) {
+// مدیر اصلی (ID 1) یا هر ادمینی با دسترسی «مدیریت ادمین‌ها»
+if (!admin_has_permission('manage_admins', $admin)) {
     http_response_code(403);
     include __DIR__ . '/forbidden.php';
     exit;

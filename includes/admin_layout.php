@@ -82,7 +82,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'notifications'  => ['/notifications.php', 'ارسال اعلان', 'bi-megaphone', 0],
     ];
 
-    if ((int)$admin['id'] === 1) {
+    if (admin_has_permission('manage_admins', $admin)) {
         $nav['manage_admins'] = ['/manage_admins.php', 'مدیریت ادمین‌ها', 'bi-shield-check', 0];
     }
 
