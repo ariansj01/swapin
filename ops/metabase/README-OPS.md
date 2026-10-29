@@ -50,4 +50,4 @@ Metabase OSS does not support the Pro/Enterprise View data and Download results 
 
 ## Rollback
 
-Follow [ROLLBACK.md](ROLLBACK.md). The preflight archive is in `/root/swaapin-metabase-preflight/`. It contains verified Nginx and `swapin` backups. Do not place Nginx backups in `sites-enabled`.
+Follow [ROLLBACK.md](ROLLBACK.md). The preflight archive is in `/root/swaapin-metabase-preflight/`. It contains verified Nginx and `swapin` backups. `scripts/rollback-dry-run.sh <backup-dir>` syntax-tests both the archived and deployed configs without reloading Nginx; it passed before handover. A live rollback was not performed because it would interrupt the new analytics route. Do not place Nginx backups in `sites-enabled`.
