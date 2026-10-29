@@ -15,6 +15,7 @@ Disallow: /dashboard
 Disallow: /dashboard.php
 Disallow: /auth/
 Disallow: /api/
+Disallow: /meta/base/
 Disallow: /storage/
 Disallow: /includes/
 Disallow: /vendor/

@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up Swaapin Metabase application database
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/swaapin-metabase/scripts/backup.sh
+User=root
+Group=root

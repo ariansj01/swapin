@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Swaapin Metabase application database backup
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 Asia/Tehran
+Persistent=true
+Unit=swaapin-metabase-backup.service
+
+[Install]
+WantedBy=timers.target
