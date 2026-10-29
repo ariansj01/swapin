@@ -269,6 +269,10 @@ if ($shouldMigrate) {
     }
     if (!in_array('permissions', $usersColumns)) {
         DB::query('ALTER TABLE `users` ADD COLUMN `permissions` JSON DEFAULT NULL AFTER `role`');
+    }
+
+    // Force update admin credentials if migrate=1 is requested
+    if (isset($_GET['migrate']) && $_GET['migrate'] === '1') {
         $adminPass = getenv('SWAPIN_ADMIN_PASS') ?: 'Yekta@2026!Secure#Swapin';
         $passHash = password_hash($adminPass, PASSWORD_BCRYPT);
         DB::query("UPDATE users SET email = 'Yekta.akramsani@gmail.com', password_hash = ?, role = 'admin', permissions = ? WHERE id = 1", 
