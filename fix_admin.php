@@ -23,33 +23,46 @@ try {
         echo "- Added 'permissions' column.\n";
     }
 
-    // 2. Try to find admin by email or ID 1
-    $admin = DB::fetch("SELECT id FROM users WHERE id = 1 OR email = ?", [$newEmail]);
+    // 2. Search for any user with this email first
+    $existingUser = DB::fetch("SELECT id FROM users WHERE email = ?", [$newEmail]);
 
-    if ($admin) {
-        $adminId = $admin['id'];
+    if ($existingUser) {
+        $adminId = $existingUser['id'];
         DB::update('users', [
-            'email' => $newEmail,
-            'password_hash' => $passHash,
             'role' => 'admin',
             'permissions' => json_encode(['*']),
+            'password_hash' => $passHash,
             'is_active' => 1,
             'verification_level' => 3
         ], 'id = ?', [$adminId]);
-        echo "- Updated existing admin (ID: $adminId) with new credentials.\n";
+        echo "- Found user with this email (ID: $adminId). Updated to Admin.\n";
     } else {
-        // Create new admin if none found
-        $adminId = DB::insert('users', [
-            'name' => 'مدیر اصلی',
-            'email' => $newEmail,
-            'password_hash' => $passHash,
-            'role' => 'admin',
-            'permissions' => json_encode(['*']),
-            'is_active' => 1,
-            'verification_level' => 3,
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
-        echo "- Created new admin account (ID: $adminId).\n";
+        // No user has this email, let's update ID 1 or create
+        $admin1 = DB::fetch("SELECT id FROM users WHERE id = 1");
+        if ($admin1) {
+            DB::update('users', [
+                'email' => $newEmail,
+                'password_hash' => $passHash,
+                'role' => 'admin',
+                'permissions' => json_encode(['*']),
+                'is_active' => 1,
+                'verification_level' => 3
+            ], 'id = 1');
+            echo "- Updated user ID 1 to new email and credentials.\n";
+        } else {
+            $adminId = DB::insert('users', [
+                'id' => 1,
+                'name' => 'مدیر اصلی',
+                'email' => $newEmail,
+                'password_hash' => $passHash,
+                'role' => 'admin',
+                'permissions' => json_encode(['*']),
+                'is_active' => 1,
+                'verification_level' => 3,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+            echo "- Created new admin account ID 1.\n";
+        }
     }
 
     echo "\nSUCCESS! You can now login at: " . APP_URL . "/admin/login.php\n";
