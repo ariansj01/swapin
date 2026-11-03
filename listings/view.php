@@ -394,9 +394,9 @@ render_navbar($user);
 
     <?php if ($images): ?>
     <div class="lv-gallery__track">
-      <?php foreach ($images as $img): ?>
+      <?php foreach ($images as $i => $img): ?>
       <div class="lv-gallery__slide" style="cursor: zoom-in;" onclick="openImageLightbox('<?= UPLOAD_URL . h($img['filename']) ?>')">
-        <img src="<?= UPLOAD_URL . h($img['filename']) ?>" alt="<?= h($listing['title']) ?>" loading="lazy">
+        <img src="<?= UPLOAD_URL . h($img['filename']) ?>" alt="<?= h($listing['title']) ?>" width="400" height="300" decoding="async" <?= $i === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"' ?>>
       </div>
       <?php endforeach; ?>
     </div>
@@ -561,7 +561,7 @@ render_navbar($user);
   <section class="lv-related" aria-label="آگهی‌های مشابه">
     <h2 class="lv-section__title" style="padding-inline:16px">آگهی‌های مشابه</h2>
     <div class="listings-grid">
-      <?php $cardLayout = 'horizontal'; foreach ($related as $l): ?>
+      <?php listing_card_prefetch($related); $cardLayout = 'horizontal'; foreach ($related as $l): ?>
       <?php include __DIR__ . '/../includes/listing_card.php'; ?>
       <?php endforeach; unset($cardLayout); ?>
     </div>
@@ -744,7 +744,7 @@ render_navbar($user);
         <section class="lv-gallery-section">
           <div class="lv-gallery-main" style="cursor: zoom-in;" onclick="openImageLightbox(this.querySelector('img').src)">
             <?php if ($images): ?>
-            <img id="lv-main-img" src="<?= UPLOAD_URL . h($images[0]['filename']) ?>" alt="<?= h($listing['title']) ?>" style="object-fit: contain;">
+            <img id="lv-main-img" src="<?= UPLOAD_URL . h($images[0]['filename']) ?>" alt="<?= h($listing['title']) ?>" width="800" height="500" fetchpriority="high" decoding="async" style="object-fit: contain;">
             <?php else: ?>
             <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--lv-muted);font-size:3rem"><i class="bi bi-image"></i></div>
             <?php endif; ?>
@@ -754,6 +754,7 @@ render_navbar($user);
             <?php foreach ($images as $i => $img): ?>
             <img src="<?= UPLOAD_URL . h($img['filename']) ?>"
                  alt="تصویر <?= $i + 1 ?>"
+                 width="80" height="60" loading="lazy" decoding="async"
                  class="lv-gallery-thumb<?= $i === 0 ? ' active' : '' ?>"
                  onclick="event.stopPropagation();document.getElementById('lv-main-img').src='<?= UPLOAD_URL . h($img['filename']) ?>';document.querySelectorAll('.lv-gallery-thumb').forEach(function(t){t.classList.remove('active')});this.classList.add('active')">
             <?php endforeach; ?>
@@ -903,7 +904,7 @@ render_navbar($user);
         <section class="lv-related-section" aria-label="آگهی‌های مشابه">
           <h3 class="lv-related-title">آگهی‌های مشابه</h3>
           <div class="listings-grid">
-            <?php $cardLayout = 'horizontal'; foreach ($related as $l): ?>
+            <?php listing_card_prefetch($related); $cardLayout = 'horizontal'; foreach ($related as $l): ?>
             <?php include __DIR__ . '/../includes/listing_card.php'; ?>
             <?php endforeach; unset($cardLayout); ?>
           </div>

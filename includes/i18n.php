@@ -624,14 +624,27 @@ function swaapin_ensure_category_tree(): array {
 }
 
 function swaapin_category_descendant_ids(int $categoryId): array {
+    // نقشه فرزندان فقط یک‌بار در هر درخواست ساخته می‌شود (به‌جای یک کوئری به‌ازای هر گره)
+    static $childrenMap = null;
+    if ($childrenMap === null) {
+        $childrenMap = [];
+        try {
+            $rows = DB::fetchAll('SELECT id, parent_id FROM categories WHERE is_active = 1');
+        } catch (Throwable $e) {
+            $rows = [];
+        }
+        foreach ($rows as $r) {
+            $pid = (int)($r['parent_id'] ?? 0);
+            $childrenMap[$pid][] = (int)$r['id'];
+        }
+    }
+
     $ids = [$categoryId];
     $queue = [$categoryId];
     $safety = 2000;
     while (!empty($queue) && $safety-- > 0) {
         $pid = (int)array_shift($queue);
-        $children = DB::fetchAll('SELECT id FROM categories WHERE parent_id = ? AND is_active = 1', [$pid]);
-        foreach ($children as $c) {
-            $cid = (int)$c['id'];
+        foreach ($childrenMap[$pid] ?? [] as $cid) {
             if (!in_array($cid, $ids, true)) {
                 $ids[] = $cid;
                 $queue[] = $cid;

@@ -133,6 +133,7 @@ $listings = DB::fetchAll(
      LIMIT ? OFFSET ?",
     [...$params, $displayLimit, $pag['offset']]
 );
+listing_card_prefetch($listings);
 
 // ─── Premium / promoted listings (before filters on home page 1) ─────────────
 $premiumListings = [];
@@ -155,6 +156,7 @@ if (!$search && !$catSlug && $page === 1) {
          ORDER BY {$premiumOrderBy}
          LIMIT 20"
     );
+    listing_card_prefetch($premiumListings);
 }
 
 $cities = iran_cities();
@@ -1130,6 +1132,12 @@ render_navbar($user);
     }
   }
 
+  // افزودن یک صفر به اعداد تخمینی ارزش‌گذاری (درخواست کاربر)
+  function appendZero(amount) {
+    const n = Number(amount) || 0;
+    return n === 0 ? 0 : Math.round(n * 10);
+  }
+
   function getCsrfToken() {
     const inp = document.querySelector('input[name="_csrf"]');
     if (inp && inp.value) return inp.value;
@@ -1356,9 +1364,13 @@ render_navbar($user);
           throw new Error('متاسفانه تخمین قیمت برای این کالا ممکن نشد. لطفاً توضیحات بیشتری وارد کنید.');
         }
 
-        const min = result.range_low || Math.round(result.value * 0.85);
-        const max = result.range_high || Math.round(result.value * 1.15);
-        const mid = result.value || Math.round((min + max) / 2);
+        const baseMin = result.range_low || Math.round(result.value * 0.85);
+        const baseMax = result.range_high || Math.round(result.value * 1.15);
+        const baseMid = result.value || Math.round((baseMin + baseMax) / 2);
+        // افزودن یک صفر به اعداد تخمینی نمایش‌داده‌شده
+        const min = appendZero(baseMin);
+        const max = appendZero(baseMax);
+        const mid = appendZero(baseMid);
 
         estMin.textContent = fmtCreditLocal(min);
         estMax.textContent = fmtCreditLocal(max);

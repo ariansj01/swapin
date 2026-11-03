@@ -267,6 +267,7 @@ if (!empty($storeUser['store_banner'])) {
                     </div>
                     <?php else: ?>
                     <div class="all-listings-grid">
+                        <?php listing_card_prefetch($listings); ?>
                         <?php foreach ($listings as $l): ?>
                         <div class="all-page-listing-card">
                             <?php include __DIR__ . '/../includes/listing_card.php'; ?>

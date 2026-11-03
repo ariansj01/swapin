@@ -25,16 +25,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = clean($_POST['action'] ?? '');
 
     if ($action === 'send_otp') {
-        // First check overall limit (3 requests / 10 min)
-        // $overallStatus = rate_limit_ip_status('otp_request', MAX_OTP_REQUESTS, OTP_BAN_SECONDS);
-        // if (!$overallStatus['allowed']) {
-        //     $error = 'تعداد درخواست‌های شما بیش از حد زیاد است! لطفاً ' . max(1, ceil($overallStatus['retry_after'] / 60)) . ' دقیقه دیگر دوباره تلاش کنید.';
-        // } else {
-            // Then check cooldown
-            // if (isset($_SESSION['last_otp_send']) && (time() - (int)$_SESSION['last_otp_send'] < OTP_COOLDOWN_SECONDS)) {
-            //     $cooldownSecs = OTP_COOLDOWN_SECONDS - (time() - (int)$_SESSION['last_otp_send']);
-            //     $error = 'لطفاً ' . $cooldownSecs . ' ثانیه دیگر دوباره تلاش کنید!';
-            // } else {
+        // محدودیت کلی: ۳ درخواست در ۱۰ دقیقه برای هر IP
+        $overallStatus = rate_limit_ip_status('otp_request', MAX_OTP_REQUESTS, OTP_BAN_SECONDS);
+        if (!$overallStatus['allowed']) {
+            $error = 'تعداد درخواست‌های شما بیش از حد زیاد است! لطفاً ' . max(1, ceil($overallStatus['retry_after'] / 60)) . ' دقیقه دیگر دوباره تلاش کنید.';
+        } else {
+            // فاصله اجباری بین درخواست‌ها
+            if (isset($_SESSION['last_otp_send']) && (time() - (int)$_SESSION['last_otp_send'] < OTP_COOLDOWN_SECONDS)) {
+                $cooldownSecs = OTP_COOLDOWN_SECONDS - (time() - (int)$_SESSION['last_otp_send']);
+                $error = 'لطفاً ' . $cooldownSecs . ' ثانیه دیگر دوباره تلاش کنید!';
+            } else {
                 $phoneRaw = preg_replace('/\D+/', '', normalize_digits(clean($_POST['phone'] ?? '')));
                 
                 if (!$phoneRaw || !preg_match('/^09[0-9]{9}$/', $phoneRaw)) {
@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Convert to international format for DB
                     $phoneIntl = '+' . preg_replace('/[^0-9]/', '', '98' . substr($phoneRaw, 1));
                     
-                    // Increment overall rate limit
-                    // rate_limit_ip('otp_request', MAX_OTP_REQUESTS, OTP_BAN_SECONDS);
+                    // افزایش شمارنده محدودیت نرخ
+                    rate_limit_ip('otp_request', MAX_OTP_REQUESTS, OTP_BAN_SECONDS);
                     
                     $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     DB::query('DELETE FROM otp_codes WHERE phone = ?', [$phoneIntl]);
@@ -55,10 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         [$phoneIntl, password_hash($code, PASSWORD_BCRYPT), OTP_EXPIRE]
                     );
                     
-                    swapin_debug_log('otp-code-generated', [
-                        'phone' => sms_mask_phone($phoneIntl),
-                        'code' => $code,
-                    ]);
+                    // در پروداکشن، کد OTP هرگز در لاگ ثبت نمی‌شود (جلوگیری از افشای کد)
+                    $otpLogContext = ['phone' => sms_mask_phone($phoneIntl)];
+                    if (!app_is_production()) {
+                        $otpLogContext['code'] = $code;
+                    }
+                    swapin_debug_log('otp-code-generated', $otpLogContext);
                     
                     $smsSent = send_otp_sms($phoneIntl, $code);
                     $_SESSION['otp_phone_raw'] = $phoneRaw;
@@ -82,8 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Always go to OTP step, even if SMS failed (dev fallback)
                     header('Location: ?step=otp&phone=' . urlencode($phoneRaw) . ($redir ? '&redirect=' . urlencode($redir) : '')); exit;
                 }
-            // }
-        // }
+            }
+        }
     } elseif ($action === 'verify_otp') {
         rate_limit_ip_or_fail('otp_verify', 15, 900);
         $phoneIntl = $_SESSION['otp_phone_intl'] ?? '';

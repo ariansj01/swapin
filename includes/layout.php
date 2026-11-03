@@ -192,6 +192,9 @@ GA;
 <meta name="twitter:image" content="{$ogImage}">
 <meta name="theme-color" content="#0a2540">
 {$keywords}{$jsonLd}
+<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+<link rel="dns-prefetch" href="https://www.google-analytics.com">
+<link rel="preload" as="font" type="font/woff2" href="{$url}/src/fonts/iransans/fonts/woff2/IRANSansX-Medium.woff2" crossorigin>
 <link rel="stylesheet" href="{$url}/src/css/fonts.css?v={$fontsCssVer}">
 <link rel="stylesheet" href="{$url}/src/vendor/bootstrap-icons/bootstrap-icons.css?v={$biCssVer}">
 <link rel="stylesheet" href="{$url}/src/css/main.css?v={$mainCssVer}">
@@ -692,7 +695,7 @@ function render_footer(): void {
 HTML;
     render_support_widget($user);
     if ($user) {
-        echo '<script src="' . $url . '/src/js/push-alerts.js?v=' . (@filemtime(__DIR__ . '/../src/js/push-alerts.js') ?: time()) . '"></script>';
+        echo '<script defer src="' . $url . '/src/js/push-alerts.js?v=' . (@filemtime(__DIR__ . '/../src/js/push-alerts.js') ?: time()) . '"></script>';
     }
     $appJsVer = @filemtime(__DIR__ . '/../src/js/app.js') ?: time();
     $pwaDetVer = @filemtime(__DIR__ . '/../src/js/pwa/platform-detector.js') ?: time();
@@ -700,11 +703,11 @@ HTML;
     $pwaAndroidVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-android.js') ?: time();
     $pwaIosVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-ios.js') ?: time();
     echo <<<HTML
-<script src="{$url}/src/js/app.js?v={$appJsVer}"></script>
-<script src="{$url}/src/js/pwa/platform-detector.js?v={$pwaDetVer}"></script>
-<script src="{$url}/src/js/pwa/pwa-core.js?v={$pwaCoreVer}"></script>
+<script defer src="{$url}/src/js/app.js?v={$appJsVer}"></script>
+<script defer src="{$url}/src/js/pwa/platform-detector.js?v={$pwaDetVer}"></script>
+<script defer src="{$url}/src/js/pwa/pwa-core.js?v={$pwaCoreVer}"></script>
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
   if (!window.SwaapinPWA || !window.SwaapinPlatform) return;
   var platform = window.SwaapinPlatform.getPlatform();
   window.SwaapinPWA.init();
@@ -719,7 +722,7 @@ HTML;
     s2.onload = function () { if (window.SwaapinPWAIos) window.SwaapinPWAIos.init(); };
     document.head.appendChild(s2);
   }
-})();
+});
 </script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
@@ -809,7 +812,7 @@ HTML;
 
     render_support_widget($user);
     if ($user) {
-        echo '<script src="' . $url . '/src/js/push-alerts.js?v=' . (@filemtime(__DIR__ . '/../src/js/push-alerts.js') ?: time()) . '"></script>';
+        echo '<script defer src="' . $url . '/src/js/push-alerts.js?v=' . (@filemtime(__DIR__ . '/../src/js/push-alerts.js') ?: time()) . '"></script>';
     }
     $appJsVer = @filemtime(__DIR__ . '/../src/js/app.js') ?: time();
     $pwaDetVer = @filemtime(__DIR__ . '/../src/js/pwa/platform-detector.js') ?: time();
@@ -817,11 +820,11 @@ HTML;
     $pwaAndroidVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-android.js') ?: time();
     $pwaIosVer = @filemtime(__DIR__ . '/../src/js/pwa/pwa-ios.js') ?: time();
     echo <<<HTML
-<script src="{$url}/src/js/app.js?v={$appJsVer}"></script>
-<script src="{$url}/src/js/pwa/platform-detector.js?v={$pwaDetVer}"></script>
-<script src="{$url}/src/js/pwa/pwa-core.js?v={$pwaCoreVer}"></script>
+<script defer src="{$url}/src/js/app.js?v={$appJsVer}"></script>
+<script defer src="{$url}/src/js/pwa/platform-detector.js?v={$pwaDetVer}"></script>
+<script defer src="{$url}/src/js/pwa/pwa-core.js?v={$pwaCoreVer}"></script>
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
   if (!window.SwaapinPWA || !window.SwaapinPlatform) return;
   var platform = window.SwaapinPlatform.getPlatform();
   window.SwaapinPWA.init();
@@ -836,7 +839,7 @@ HTML;
     s2.onload = function () { if (window.SwaapinPWAIos) window.SwaapinPWAIos.init(); };
     document.head.appendChild(s2);
   }
-})();
+});
 </script>
 </body>
 </html>

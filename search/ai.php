@@ -113,6 +113,7 @@ render_navbar($user);
       </div></div>
       <?php else: ?>
       <div class="listings-grid">
+        <?php listing_card_prefetch($result['listings']); ?>
         <?php foreach ($result['listings'] as $l): ?>
           <?php include __DIR__ . '/../includes/listing_card.php'; ?>
         <?php endforeach; ?>

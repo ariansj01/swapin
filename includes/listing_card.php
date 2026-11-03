@@ -21,6 +21,9 @@ if ($_savedListingIds === null) {
     }
 }
 
+// نقشه‌ی فروشگاه‌ها؛ توسط listing_card_prefetch() پر می‌شود تا کوئری per-card حذف شود
+$GLOBALS['lc_store_map'] = $GLOBALS['lc_store_map'] ?? [];
+
 $storeName = null;
 $storeSlug = null;
 if (isset($l['store_name']) && isset($l['store_slug'])) {
@@ -28,25 +31,24 @@ if (isset($l['store_name']) && isset($l['store_slug'])) {
     $storeSlug = trim((string)$l['store_slug']);
 }
 if ((!$storeName || !$storeSlug) && !empty($l['user_id'])) {
-    static $storeCache = [];
     $uid = (int)$l['user_id'];
-    if (!isset($storeCache[$uid])) {
+    if (!array_key_exists($uid, $GLOBALS['lc_store_map'])) {
         $usersCols = db_table_columns('users');
         $cols = [];
         if (in_array('store_name', $usersCols)) $cols[] = 'store_name';
         if (in_array('store_slug', $usersCols)) $cols[] = 'store_slug';
         if ($cols) {
             $row = DB::fetch('SELECT ' . implode(', ', $cols) . ' FROM users WHERE id = ?', [$uid]);
-            $storeCache[$uid] = $row ? [
+            $GLOBALS['lc_store_map'][$uid] = $row ? [
                 'name' => trim((string)($row['store_name'] ?? '')),
                 'slug' => trim((string)($row['store_slug'] ?? '')),
             ] : ['name' => '', 'slug' => ''];
         } else {
-            $storeCache[$uid] = ['name' => '', 'slug' => ''];
+            $GLOBALS['lc_store_map'][$uid] = ['name' => '', 'slug' => ''];
         }
     }
-    if (empty($storeName)) $storeName = $storeCache[$uid]['name'];
-    if (empty($storeSlug)) $storeSlug = $storeCache[$uid]['slug'];
+    if (empty($storeName)) $storeName = $GLOBALS['lc_store_map'][$uid]['name'];
+    if (empty($storeSlug)) $storeSlug = $GLOBALS['lc_store_map'][$uid]['slug'];
 }
 $hasStore = $storeName && $storeSlug;
 
@@ -80,20 +82,13 @@ $hasPromo = !empty($allPromotions);
 $cardLayout = isset($cardLayout) ? $cardLayout : 'vertical';
 $isHorizontal = $cardLayout === 'horizontal';
 $isPremiumHorizontal = $cardLayout === 'premium-horizontal';
-
-// Image count for badge
-$imgCount = 0;
-if ($isHorizontal) {
-    $resCount = DB::fetch('SELECT COUNT(*) as cnt FROM listing_images WHERE listing_id = ?', [(int)$l['id']]);
-    $imgCount = (int)($resCount['cnt'] ?? 0);
-}
 ?>
 <article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= $isPremiumHorizontal ? 'listing-card--premium-horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
 
   <!-- ========== IMAGE SECTION (TOP) ========== -->
   <div class="lc-media-wrapper">
     <?php if (!empty($l['thumb'])): ?>
-    <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>" class="listing-card__media-img" loading="lazy">
+    <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>" class="listing-card__media-img" width="360" height="230" loading="lazy" decoding="async">
     <?php else: ?>
     <div class="listing-card__media-placeholder">
       <i class="bi bi-image"></i>

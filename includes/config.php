@@ -142,6 +142,10 @@ ini_set('error_log', STORAGE_DIR . '/logs/error.log');
 if (!defined('SWAPIN_REQUEST_ID')) {
     define('SWAPIN_REQUEST_ID', bin2hex(random_bytes(6)));
 }
+// زمان شروع درخواست برای اندازه‌گیری زمان پاسخ (فاز مانیتورینگ)
+if (!defined('SWAPIN_REQ_START')) {
+    define('SWAPIN_REQ_START', microtime(true));
+}
 
 // ─── Auto-run migrations ───────────────────────────────────────────────────
 // Run only in CLI, or when explicitly requested (?migrate=1), or occasionally ONLY in development
@@ -1382,6 +1386,20 @@ function swapin_debug_log(string $message, array $context = []): void {
     error_log(implode(' ', $parts));
 }
 
+// ─── مانیتورینگ زمان پاسخ: ثبت درخواست‌های کند ──────────────────────────────
+register_shutdown_function(function (): void {
+    $elapsed = microtime(true) - SWAPIN_REQ_START;
+    $threshold = 1.5; // ثانیه
+    if ($elapsed < $threshold) {
+        return;
+    }
+    swapin_debug_log('slow-request', [
+        'ms'     => (int) round($elapsed * 1000),
+        'uri'    => $_SERVER['REQUEST_URI'] ?? '',
+        'method' => $_SERVER['REQUEST_METHOD'] ?? '',
+    ]);
+});
+
 set_exception_handler(function (Throwable $e): void {
     swapin_debug_log('uncaught-exception', [
         'type' => get_class($e),
@@ -1491,6 +1509,64 @@ function db_table_columns(string $table): array {
 
 function db_has_column(string $table, string $column): bool {
     return in_array($column, db_table_columns($table), true);
+}
+
+/**
+ * پیش‌واکشی اطلاعات فروشگاه برای مجموعه‌ای از آگهی‌ها در یک کوئری.
+ * پیش از رندر حلقه کارت‌های آگهی یک‌بار صدا زده شود تا N+1 حذف شود.
+ *
+ * @param array<int,array<string,mixed>> $listings
+ */
+function listing_card_prefetch(array $listings): void {
+    if (empty($listings)) {
+        return;
+    }
+    $GLOBALS['lc_store_map'] = $GLOBALS['lc_store_map'] ?? [];
+
+    $userIds = [];
+    foreach ($listings as $row) {
+        if (!is_array($row) || empty($row['id'])) {
+            continue;
+        }
+        if ((empty($row['store_name']) || empty($row['store_slug'])) && !empty($row['user_id'])) {
+            $uid = (int)$row['user_id'];
+            if (!array_key_exists($uid, $GLOBALS['lc_store_map'])) {
+                $userIds[$uid] = $uid;
+            }
+        }
+    }
+    if (!$userIds) {
+        return;
+    }
+
+    $userCols = db_table_columns('users');
+    $hasName  = in_array('store_name', $userCols, true);
+    $hasSlug  = in_array('store_slug', $userCols, true);
+    if (!$hasName && !$hasSlug) {
+        foreach ($userIds as $uid) {
+            $GLOBALS['lc_store_map'][$uid] = ['name' => '', 'slug' => ''];
+        }
+        return;
+    }
+
+    $select = 'id';
+    if ($hasName) $select .= ', store_name';
+    if ($hasSlug) $select .= ', store_slug';
+
+    $ids = array_values($userIds);
+    $ph  = implode(',', array_fill(0, count($ids), '?'));
+    $rows = DB::fetchAll("SELECT {$select} FROM users WHERE id IN ($ph)", $ids);
+    foreach ($rows as $r) {
+        $GLOBALS['lc_store_map'][(int)$r['id']] = [
+            'name' => trim((string)($r['store_name'] ?? '')),
+            'slug' => trim((string)($r['store_slug'] ?? '')),
+        ];
+    }
+    foreach ($ids as $uid) {
+        if (!isset($GLOBALS['lc_store_map'][$uid])) {
+            $GLOBALS['lc_store_map'][$uid] = ['name' => '', 'slug' => ''];
+        }
+    }
 }
 
 function db_has_table(string $table): bool {

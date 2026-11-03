@@ -29,6 +29,7 @@ $listings = DB::fetchAll(
      LIMIT ? OFFSET ?',
     [$user['id'], LISTINGS_PER_PAGE, $pag['offset']]
 );
+listing_card_prefetch($listings);
 
 render_head('علاقه‌مندی‌ها', 'آگهی‌های ذخیره‌شده شما در ' . APP_NAME, ['canonical' => APP_URL . '/listings/saved']);
 render_panel_styles();

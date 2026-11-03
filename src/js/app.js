@@ -184,6 +184,12 @@ function swaapinFormatCreditLocal(amount) {
   return new Intl.NumberFormat('fa-IR').format(n) + ' ' + unit;
 }
 
+/** افزودن یک صفر به اعداد تخمینی ارزش‌گذاری (درخواست کاربر) */
+function swaapinAppendZero(amount) {
+  const n = Number(amount) || 0;
+  return n === 0 ? 0 : Math.round(n * 10);
+}
+
 /** Normalize LLM pricing JSON into UI fields. Returns null if not a pricing payload. */
 function swaapinNormalisePricingFromAi(parsed) {
   if (!parsed || typeof parsed !== 'object') return null;
@@ -1481,6 +1487,19 @@ function initAiChat() {
 
       if (!data) {
         data = buildValuationFallback(title, desc, cond, catId);
+      }
+
+      // افزودن یک صفر به اعداد تخمینی نمایش‌داده‌شده
+      if (data) {
+        if (data.value != null)     data.value     = swaapinAppendZero(data.value);
+        if (data.range_low != null) data.range_low = swaapinAppendZero(data.range_low);
+        if (data.range_high != null) data.range_high = swaapinAppendZero(data.range_high);
+        if (data.value != null) {
+          data.value_fmt = swaapinFormatCreditLocal(data.value);
+        }
+        if (data.range_low != null && data.range_high != null) {
+          data.range_fmt = swaapinFormatCreditLocal(data.range_low) + ' — ' + swaapinFormatCreditLocal(data.range_high);
+        }
       }
 
       try {

@@ -143,6 +143,7 @@ $listings = DB::fetchAll(
      LIMIT ? OFFSET ?",
     [...$params, $perPage, $pag['offset']]
 );
+listing_card_prefetch($listings);
 
 // متادیتا — طبق قوانین سئو سواَپین 
 // الگو عنوان: معاوضه [عنوان] | در [شهر] | سواَپین  (حداکثر ۶۵ کاراکتر)

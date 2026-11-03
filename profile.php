@@ -176,6 +176,7 @@ render_navbar($currentUser);
           <?php
           $seller_name   = $profile['name'];
           $seller_rating = $profile['rating'];
+          listing_card_prefetch($listings);
           foreach ($listings as $l):
             $l['seller_name']   = $seller_name;
             $l['seller_rating'] = $seller_rating;

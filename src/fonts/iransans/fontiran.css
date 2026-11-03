@@ -30,6 +30,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 100;
 	src: url('fonts/woff/IRANSansX-Thin.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-Thin.woff2') format('woff2');		
@@ -38,6 +39,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 200;
 	src: url('fonts/woff/IRANSansX-UltraLight.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-UltraLight.woff2') format('woff2');	
@@ -46,6 +48,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 300;
 	src: url('fonts/woff/IRANSansX-Light.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-Light.woff2') format('woff2');		 
@@ -54,6 +57,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 500;
 	src: url('fonts/woff/IRANSansX-Medium.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-Medium.woff2') format('woff2');		 
@@ -62,6 +66,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 600;
 	src: url('fonts/woff/IRANSansX-Medium.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-Medium.woff2') format('woff2');	 
@@ -70,6 +75,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 800;
 	src: url('fonts/woff/IRANSansX-Bold.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-Bold.woff2') format('woff2');		 
@@ -78,6 +84,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 900;
 	src: url('fonts/woff/IRANSansX-ExtraBold.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-ExtraBold.woff2') format('woff2');		 
@@ -86,6 +93,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 950;
 	src: url('fonts/woff/IRANSansX-Black.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-Black.woff2') format('woff2');		 
@@ -94,6 +102,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: 1000;
 	src: url('fonts/woff/IRANSansX-ExtraBlack.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-ExtraBlack.woff2') format('woff2');		 
@@ -102,6 +111,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: bold;
 	src: url('fonts/woff/IRANSansX-DemiBold.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-DemiBold.woff2') format('woff2');	 
@@ -110,6 +120,7 @@ This set of fonts are used in this project under the license: (.....)
 @font-face {
 	font-family: IRANSansX;
 	font-style: normal;
+	font-display: swap;
 	font-weight: normal;
 	src: url('fonts/woff/IRANSansX-Regular.woff') format('woff'),   
 	url('fonts/woff2/IRANSansX-Regular.woff2') format('woff2');	
