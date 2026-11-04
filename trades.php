@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
-require_once __DIR__ . '/includes/dashboard_layout.php';
 require_once __DIR__ . '/includes/multi_trade.php';
 
 $user = require_auth();
@@ -272,10 +271,8 @@ try {
     }
 }
 
-render_head('اتاق امن معاملات', '', ['canonical' => APP_URL . '/trades']);
-render_panel_styles();
+render_head('اتاق امن معاملات', '', ['canonical' => APP_URL . '/trades', 'robots' => 'noindex, nofollow']);
 render_navbar($user);
-render_user_panel_open($user, 'trades');
 ?>
 <style>
 .rating-stars { display:flex;gap:.5rem;justify-content:center; }
@@ -402,7 +399,7 @@ render_user_panel_open($user, 'trades');
         <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
           <?php foreach ($receivedOffers as $offer):
             $statusColors = ['pending' => 'warning', 'accepted' => 'success', 'rejected' => 'danger', 'cancelled' => 'info', 'completed' => 'success'];
-            $statusColor  = $statusColors[$offer['status']] ?? 'info';
+            $statusColor  = $statusColors[(string)($offer['status'] ?? '')] ?? 'info';
           ?>
           <div class="card" style="<?= $offer['status'] === 'pending' ? 'border-inline-start:4px solid var(--warning)' : '' ?>">
             <div class="card-body">
@@ -663,4 +660,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<?php render_user_panel_close(); render_footer(); ?>
+<?php render_footer(); ?>

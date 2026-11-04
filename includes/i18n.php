@@ -65,7 +65,9 @@ function condition_label(string $cond): string {
     };
 }
 
-function category_label(string $slug, string $name = ''): string {
+function category_label(?string $slug = '', ?string $name = ''): string {
+    $slug = (string)($slug ?? '');
+    $name = (string)($name ?? '');
     $labels = [
         'electronics'     => 'دیجیتال',
         'clothing'        => 'پوشاک',

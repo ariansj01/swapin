@@ -1415,7 +1415,8 @@ set_exception_handler(function (Throwable $e): void {
     }
     if (PHP_SAPI !== 'cli' && empty($GLOBALS['_swapin_error_page'])) {
         $GLOBALS['_swapin_error_page'] = true;
-        echo '<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>خطا</title></head><body style="font-family:Tahoma,sans-serif;padding:2rem;text-align:center"><h1>خطایی رخ داد</h1><p>لطفاً صفحه را دوباره بارگذاری کنید.</p></body></html>';
+        $detail = htmlspecialchars($e->getMessage() . ' — ' . $e->getFile() . ':' . $e->getLine(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        echo '<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>خطا</title></head><body style="font-family:Tahoma,sans-serif;padding:2rem;text-align:center"><h1>خطایی رخ داد</h1><p>لطفاً صفحه را دوباره بارگذاری کنید.</p><p style="margin-top:1.5rem;color:#666;font-size:13px;direction:ltr;text-align:left;max-width:720px;margin-inline:auto;word-break:break-all">' . $detail . '</p></body></html>';
     }
 });
 
@@ -1442,7 +1443,8 @@ register_shutdown_function(function (): void {
             http_response_code(500);
             header('Content-Type: text/html; charset=utf-8');
         }
-        echo '<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>خطا</title></head><body style="font-family:Tahoma,sans-serif;padding:2rem;text-align:center"><h1>خطایی رخ داد</h1><p>لطفاً صفحه را دوباره بارگذاری کنید.</p></body></html>';
+        $detail = htmlspecialchars((string)($error['message'] ?? '') . ' — ' . (string)($error['file'] ?? '') . ':' . (string)($error['line'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        echo '<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>خطا</title></head><body style="font-family:Tahoma,sans-serif;padding:2rem;text-align:center"><h1>خطایی رخ داد</h1><p>لطفاً صفحه را دوباره بارگذاری کنید.</p><p style="margin-top:1.5rem;color:#666;font-size:13px;direction:ltr;text-align:left;max-width:720px;margin-inline:auto;word-break:break-all">' . $detail . '</p></body></html>';
     }
 });
 // #endregion
@@ -1998,8 +2000,11 @@ function credit_transact(int $userId, string $type, float $amount, string $note 
 // ══════════════════════════════════════════════════════════════════════════════
 // Utility helpers
 // ══════════════════════════════════════════════════════════════════════════════
-function clean(string $val): string {
-    return trim(htmlspecialchars_decode(strip_tags($val)));
+function clean(mixed $val): string {
+    if (!is_string($val) && !is_numeric($val)) {
+        return '';
+    }
+    return trim(htmlspecialchars_decode(strip_tags((string)$val)));
 }
 
 function is_valid_phone(string $phone): bool {

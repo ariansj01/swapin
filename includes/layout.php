@@ -252,7 +252,7 @@ function render_navbar(?array $user = null): void {
     }
     $notifTotal = $pendOffers;
     $notifClass = $notifTotal > 0 ? 'notif-dot' : '';
-    $navAvatar  = $user ? avatar_html($user['avatar'] ?? null, $user['name'], 'sm') : '';
+    $navAvatar  = $user ? avatar_html($user['avatar'] ?? null, (string)($user['name'] ?? ''), 'sm') : '';
     $loggedIn   = $user !== null;
     $GLOBALS['_nav_user'] = $user;
 
