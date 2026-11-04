@@ -3,9 +3,11 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/asset_valuation.php';
 require_once __DIR__ . '/../includes/negotiator_service.php';
+require_once __DIR__ . '/../includes/multi_trade.php';
 
 $user = require_auth();
 $uid  = $user['id'];
+multi_trade_ensure_tables();
 
 $listingId = (int)($_GET['id'] ?? 0);
 $success   = '';
@@ -18,7 +20,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action  = clean($_POST['action'] ?? '');
     $message = clean($_POST['message'] ?? '');
 
-    if ($offerId && in_array($action, ['accept', 'reject'], true)) {
+    if ($offerId && $action === 'request_group') {
+        $res = multi_trade_request_on_offer($offerId, $uid);
+        if (isset($res['error'])) {
+            $error = $res['error'];
+        } else {
+            $success = 'درخواست مبادله چندنفره ثبت شد و به طرف مقابل اطلاع داده شد.';
+        }
+    } elseif ($offerId && in_array($action, ['accept', 'reject'], true)) {
         // Verify this offer belongs to user's listing
         $offer = DB::fetch(
             'SELECT o.*, l.user_id AS listing_owner, l.title AS listing_title
@@ -34,11 +43,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($message)) {
                 $error = 'لطفاً پیامی برای طرفین بنویسید.';
             } else {
+                $asGroup = ((int)($_POST['as_group'] ?? 0) === 1) || ((int)($offer['group_requested_by'] ?? 0) > 0);
                 $result = accept_trade_offer($offerId, $uid, $message);
                 if (isset($result['error'])) {
                     $error = $result['error'];
                 } else {
-                    header('Location: ' . APP_URL . '/trades/view?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
+                    $redirect = APP_URL . '/trades/view?id=' . $result['trade_id'] . '&accepted=1&tab=fee';
+                    if ($asGroup) {
+                        $gr = multi_trade_create_from_trade((int)$result['trade_id'], $uid, true);
+                        if (!empty($gr['room_id'])) {
+                            $redirect = multi_trade_room_url((int)$gr['room_id']);
+                        }
+                    }
+                    header('Location: ' . $redirect);
                     exit;
                 }
             }
@@ -239,8 +256,25 @@ render_navbar($user);
                   <label class="form-label">پیام پذیرش:</label>
                   <textarea name="message" class="form-control negotiator-msg-accept" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم. برای هماهنگی بیشتر پیام بده."></textarea>
                 </div>
+                <div class="form-check" style="margin-bottom:10px;">
+                  <input type="checkbox" name="as_group" value="1" id="asGroup<?= (int)$offer['id'] ?>" class="form-check-input" <?= (int)($offer['group_requested_by'] ?? 0) > 0 ? 'checked' : '' ?>>
+                  <label class="form-check-label" for="asGroup<?= (int)$offer['id'] ?>" style="font-size:13px;">
+                    انجام این معامله به‌صورت <b>مبادله چندنفره</b> (۳ تا ۵ نفر)
+                  </label>
+                </div>
+                <?php if ((int)($offer['group_requested_by'] ?? 0) > 0): ?>
+                <div class="alert alert-info" style="font-size:12px;padding:8px 10px;">طرف مقابل درخواست مبادله چندنفره داده است.</div>
+                <?php endif; ?>
                 <button type="submit" class="btn btn-primary w-100">
                   <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
+                </button>
+              </form>
+              <form method="POST" class="mb-3">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="request_group">
+                <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
+                <button type="submit" class="btn btn-ghost w-100" style="border:1px solid #FFC928;color:#071A33;">
+                  <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
                 </button>
               </form>
               <form method="POST" class="mb-3">

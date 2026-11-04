@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/geo.php';
 require_once __DIR__ . '/../includes/iso.php';
+require_once __DIR__ . '/../includes/multi_trade.php';
 
 $user = auth_user();
 $id   = (int)($_GET['id'] ?? 0);
@@ -456,6 +457,17 @@ render_navbar($user);
         <span class="lv-badge-swap is-sell"><i class="bi bi-cart-check"></i> فروش</span>
         <?php elseif ($isStoreSwappable || ($listing['listing_mode'] ?? 'swap') !== 'sell'): ?>
         <span class="lv-badge-swap is-swap"><i class="bi bi-arrow-left-right"></i> معاوضه</span>
+        <?php endif; ?>
+
+        <?php
+        // بدج «مبادله چندنفره» — نقطه ورود برای درخواست پیوستن به اتاق گروهی در حال تشکیل
+        $mtListingRoom = multi_trade_open_rooms_by_listing()[(int)$listing['id']] ?? null;
+        if ($mtListingRoom):
+        ?>
+        <a href="<?= h(multi_trade_room_url((int)$mtListingRoom)) ?>" class="lv-badge-swap"
+           style="background:linear-gradient(135deg,rgba(0,102,255,.9),rgba(13,148,136,.9));color:#fff;border:none;text-decoration:none;">
+          <i class="bi bi-people-fill"></i> مبادله چندنفره
+        </a>
         <?php endif; ?>
       </div>
     </div>

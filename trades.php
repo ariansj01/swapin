@@ -1,9 +1,11 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/multi_trade.php';
 
 $user = require_auth();
 $uid  = $user['id'];
+multi_trade_ensure_tables();
 
 $tab = clean($_GET['tab'] ?? 'active');
 if ($tab === 'sent') {
@@ -19,7 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
     $action  = clean($_POST['action'] ?? '');
     $message = clean($_POST['message'] ?? '');
 
-    if ($offerId && in_array($action, ['accept', 'reject'], true)) {
+    if ($offerId && $action === 'request_group') {
+        $res = multi_trade_request_on_offer($offerId, $uid);
+        if (isset($res['error'])) {
+            $error = $res['error'];
+        } else {
+            $success = 'درخواست مبادله چندنفره ثبت شد و به طرف مقابل اطلاع داده شد.';
+        }
+    } elseif ($offerId && in_array($action, ['accept', 'reject'], true)) {
         $offer = DB::fetch(
             'SELECT o.*, l.user_id AS listing_owner
              FROM trade_offers o
@@ -34,11 +43,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
             if (empty($message)) {
                 $error = 'لطفاً پیامی برای طرفین بنویسید.';
             } else {
+                $asGroup = ((int)($_POST['as_group'] ?? 0) === 1) || ((int)($offer['group_requested_by'] ?? 0) > 0);
                 $result = accept_trade_offer($offerId, $uid, $message);
                 if (isset($result['error'])) {
                     $error = $result['error'];
                 } else {
-                    header('Location: ' . APP_URL . '/trades/view?id=' . $result['trade_id'] . '&accepted=1&tab=fee');
+                    $redirect = APP_URL . '/trades/view?id=' . $result['trade_id'] . '&accepted=1&tab=fee';
+                    if ($asGroup) {
+                        $gr = multi_trade_create_from_trade((int)$result['trade_id'], $uid, true);
+                        if (!empty($gr['room_id'])) {
+                            $redirect = multi_trade_room_url((int)$gr['room_id']);
+                        }
+                    }
+                    header('Location: ' . $redirect);
                     exit;
                 }
             }
@@ -446,8 +463,25 @@ render_navbar($user);
                       <label class="form-label">پیام پذیرش:</label>
                       <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم."></textarea>
                     </div>
+                    <?php if ((int)($offer['group_requested_by'] ?? 0) > 0): ?>
+                    <div class="fs-xs mb-2" style="color:var(--primary)">
+                      <i class="bi bi-people-fill"></i> طرف مقابل درخواست «مبادله چندنفره» داده است.
+                    </div>
+                    <?php endif; ?>
+                    <label class="fs-sm" style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem;cursor:pointer">
+                      <input type="checkbox" name="as_group" value="1" <?= (int)($offer['group_requested_by'] ?? 0) > 0 ? 'checked' : '' ?>>
+                      تبدیل به مبادله چندنفره (۳ تا ۵ نفر)
+                    </label>
                     <button type="submit" class="btn btn-primary w-100">
                       <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
+                    </button>
+                  </form>
+                  <form method="POST" class="mb-3">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="request_group">
+                    <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
+                    <button type="submit" class="btn btn-ghost w-100">
+                      <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
                     </button>
                   </form>
                   <form method="POST" class="mb-3">
@@ -505,6 +539,15 @@ render_navbar($user);
                 <div class="mt-3">
                   <a href="<?= APP_URL ?>/trades/view?id=<?= (int)$o['trade_id'] ?>" class="btn btn-primary btn-sm">ورود به اتاق امن</a>
                 </div>
+              <?php elseif (in_array($o['status'], ['pending', 'negotiating', 'counter_offered'], true)): ?>
+                <form method="POST" class="mt-3">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="request_group">
+                  <input type="hidden" name="offer_id" value="<?= (int)$o['id'] ?>">
+                  <button type="submit" class="btn btn-ghost btn-sm">
+                    <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
+                  </button>
+                </form>
               <?php endif; ?>
             </div>
           </div>

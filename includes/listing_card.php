@@ -107,6 +107,25 @@ $isPremiumHorizontal = $cardLayout === 'premium-horizontal';
       </span>
         <?php endforeach; ?>
       <?php endif; ?>
+      <?php
+      // بدج «مبادله چندنفره» — نقطه ورود برای درخواست پیوستن به اتاق گروهی در حال تشکیل
+      if (!isset($GLOBALS['lc_mt_rooms'])) {
+          require_once __DIR__ . '/multi_trade.php';
+          $GLOBALS['lc_mt_rooms'] = multi_trade_open_rooms_by_listing();
+      }
+      $mtRoomId     = $GLOBALS['lc_mt_rooms'][(int)$l['id']] ?? null;
+      $mtBadgeUser  = $currentUser ?? auth_user();
+      if ($mtRoomId && (int)($l['user_id'] ?? 0) !== (int)($mtBadgeUser['id'] ?? 0)):
+      ?>
+      <a class="lc-badge lc-badge--group"
+         style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;"
+         href="<?= h(multi_trade_room_url((int)$mtRoomId)) ?>"
+         title="مبادله چندنفره — درخواست پیوستن"
+         onclick="event.stopPropagation()">
+        <i class="bi bi-people-fill"></i>
+        مبادله چندنفره
+      </a>
+      <?php endif; ?>
     </div>
 
     <!-- Favorite Button - Top Left (Only for standard vertical) -->
@@ -486,6 +505,16 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   border: 1px solid rgba(7, 26, 51, 0.4);
 }
 .lc-badge--swap i { color: #FBBF24; }
+
+/* Multi-party swap Badge — blue/teal distinguishing entry point */
+.lc-badge--group {
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.62) 0%, rgba(13, 148, 136, 0.62) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(2, 132, 199, 0.5);
+  text-decoration: none;
+}
+.lc-badge--group i { color: #ffffff; }
+.lc-badge--group:hover { color: #ffffff; filter: brightness(1.08); }
 
 /* ---------- Content ---------- */
 .lc-content {
