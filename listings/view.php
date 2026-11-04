@@ -270,6 +270,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 );
             }
         }
+    } elseif ($_POST['action'] === 'request_group') {
+        $offerId = (int)($_POST['offer_id'] ?? 0);
+        if ($offerId) {
+            $res = multi_trade_request_on_offer($offerId, $user['id']);
+            if (isset($res['error'])) {
+                $offerError = $res['error'];
+            } else {
+                $offerSuccess = 'درخواست مبادله چندنفره ثبت شد و به طرف مقابل اطلاع داده شد.';
+            }
+        }
     } elseif ($_POST['action'] === 'save_listing') {
         if ($isSaved) {
             DB::query('DELETE FROM saved_listings WHERE user_id = ? AND listing_id = ?', [$user['id'], $id]);
@@ -971,10 +981,31 @@ render_navbar($user);
             <a href="<?= $storeOfferViewUrl ?>" class="alert-link">مشاهده پیشنهاد</a>
           </div>
         </section>
-        <?php elseif ($myOffer): ?>
+        <?php elseif ($myOffer): 
+          $requestedBy = (int)($myOffer['group_requested_by'] ?? 0);
+        ?>
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-hourglass-split"></i> وضعیت پیشنهاد</h3>
-          <div class="alert alert-success" style="margin:0">پیشنهاد شما در انتظار پاسخ فروشنده است.</div>
+          <div class="alert alert-success" style="margin-bottom:12px">پیشنهاد شما در انتظار پاسخ فروشنده است.</div>
+          
+          <?php if ($requestedBy === 0): ?>
+            <form method="POST">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="request_group">
+              <input type="hidden" name="offer_id" value="<?= (int)$myOffer['id'] ?>">
+              <button type="submit" class="lv-btn lv-btn--outline w-100" style="border-color:#FFC928;color:#071A33;">
+                <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
+              </button>
+            </form>
+          <?php elseif ($requestedBy === $user['id']): ?>
+            <div class="alert alert-info py-2 px-3" style="font-size:13px; margin:0">
+              <i class="bi bi-info-circle"></i> درخواست مبادله چندنفره توسط شما ثبت شده است.
+            </div>
+          <?php else: ?>
+            <div class="alert alert-warning py-2 px-3" style="font-size:13px; margin:0">
+              <i class="bi bi-people-fill"></i> طرف مقابل درخواست مبادله چندنفره داده است.
+            </div>
+          <?php endif; ?>
         </section>
         <?php elseif ($listingIsReserved): ?>
         <section class="lv-offer-card">

@@ -454,41 +454,60 @@ render_navbar($user);
                 </div>
 
                 <?php if ($offer['status'] === 'pending'): ?>
-                <div style="width:100%;min-width:280px;max-width:420px">
-                  <form method="POST" class="mb-3">
+                <div style="display:flex;flex-direction:column;gap:10px;width:100%;min-width:280px;max-width:420px">
+                  <form method="POST">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="accept">
                     <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
-                    <div class="form-group">
+                    <div class="form-group mb-2">
                       <label class="form-label">پیام پذیرش:</label>
                       <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم."></textarea>
                     </div>
-                    <?php if ((int)($offer['group_requested_by'] ?? 0) > 0): ?>
-                    <div class="fs-xs mb-2" style="color:var(--primary)">
-                      <i class="bi bi-people-fill"></i> طرف مقابل درخواست «مبادله چندنفره» داده است.
+                    <?php 
+                    $requestedBy = (int)($offer['group_requested_by'] ?? 0);
+                    ?>
+                    <div class="form-check mb-3">
+                      <input type="checkbox" name="as_group" value="1" id="asGroupT<?= (int)$offer['id'] ?>" class="form-check-input" <?= $requestedBy > 0 ? 'checked' : '' ?>>
+                      <label class="form-check-label" for="asGroupT<?= (int)$offer['id'] ?>" style="font-size:13px;">
+                        تبدیل به مبادله چندنفره (۳ تا ۵ نفر)
+                      </label>
                     </div>
+
+                    <?php if ($requestedBy === 0): ?>
+                      <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
+                      </button>
+                    </form>
+                    <form method="POST">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="action" value="request_group">
+                      <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
+                      <button type="submit" class="btn w-100 mb-2" style="background:#fff;border:1px solid #FFC928;color:#071A33;font-weight:700;">
+                        <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
+                      </button>
+                    </form>
+                    <?php elseif ($requestedBy === $uid): ?>
+                      <div class="alert alert-info py-2 px-3 mb-2" style="font-size:12px;">
+                        <i class="bi bi-info-circle"></i> درخواست مبادله چندنفره توسط شما ثبت شده است.
+                      </div>
+                      <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
+                      </button>
+                    </form>
+                    <?php else: ?>
+                      <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:12px;">
+                        <i class="bi bi-people-fill"></i> طرف مقابل درخواست مبادله چندنفره داده است.
+                      </div>
+                      <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
+                      </button>
+                    </form>
                     <?php endif; ?>
-                    <label class="fs-sm" style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem;cursor:pointer">
-                      <input type="checkbox" name="as_group" value="1" <?= (int)($offer['group_requested_by'] ?? 0) > 0 ? 'checked' : '' ?>>
-                      تبدیل به مبادله چندنفره (۳ تا ۵ نفر)
-                    </label>
-                    <button type="submit" class="btn btn-primary w-100">
-                      <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
-                    </button>
-                  </form>
-                  <form method="POST" class="mb-3">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="action" value="request_group">
-                    <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
-                    <button type="submit" class="btn btn-ghost w-100">
-                      <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
-                    </button>
-                  </form>
-                  <form method="POST" class="mb-3">
+                  <form method="POST">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="reject">
                     <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
-                    <div class="form-group">
+                    <div class="form-group mb-2">
                       <label class="form-label">پیام رد:</label>
                       <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: متشکرم، اما این بار نمی‌تونم."></textarea>
                     </div>
@@ -539,15 +558,23 @@ render_navbar($user);
                 <div class="mt-3">
                   <a href="<?= APP_URL ?>/trades/view?id=<?= (int)$o['trade_id'] ?>" class="btn btn-primary btn-sm">ورود به اتاق امن</a>
                 </div>
-              <?php elseif (in_array($o['status'], ['pending', 'negotiating', 'counter_offered'], true)): ?>
-                <form method="POST" class="mt-3">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="action" value="request_group">
-                  <input type="hidden" name="offer_id" value="<?= (int)$o['id'] ?>">
-                  <button type="submit" class="btn btn-ghost btn-sm">
-                    <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
-                  </button>
-                </form>
+              <?php elseif (in_array($o['status'], ['pending', 'negotiating', 'counter_offered'], true)): 
+                $reqBy = (int)($o['group_requested_by'] ?? 0);
+              ?>
+                <?php if ($reqBy === 0): ?>
+                  <form method="POST" class="mt-3">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="request_group">
+                    <input type="hidden" name="offer_id" value="<?= (int)$o['id'] ?>">
+                    <button type="submit" class="btn btn-sm" style="background:#fff;border:1px solid #FFC928;color:#071A33;font-weight:700;">
+                      <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
+                    </button>
+                  </form>
+                <?php elseif ($reqBy === $uid): ?>
+                  <div class="alert alert-info py-1 px-2 mt-2" style="font-size:11px;">درخواست مبادله چندنفره توسط شما ثبت شده.</div>
+                <?php else: ?>
+                  <div class="alert alert-warning py-1 px-2 mt-2" style="font-size:11px;">طرف مقابل درخواست مبادله چندنفره داده است.</div>
+                <?php endif; ?>
               <?php endif; ?>
             </div>
           </div>
