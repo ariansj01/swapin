@@ -77,6 +77,12 @@ Options -MultiViews -Indexes
   RewriteRule ^chat/?$ chat/index.php [L,NC,QSA]
   RewriteRule ^chat/view/?$ chat/view.php [L,NC,QSA]
 
+  # /trades با پوشه trades/ تداخل دارد؛ بدون این قانون ?tab=received صفحه سفید می‌شود
+  RewriteRule ^trades/?$ trades.php [L,NC,QSA]
+  RewriteRule ^trades/view/?$ trades/view.php [L,NC,QSA]
+  RewriteRule ^trades/group/?$ trades/group.php [L,NC,QSA]
+  RewriteRule ^trades/fee/?$ trades/fee.php [L,NC,QSA]
+
   RewriteRule ^store-offers/?$ store-offers/index.php [L,NC,QSA]
   RewriteRule ^store-offers/create/?$ store-offers/create.php [L,NC,QSA]
   RewriteRule ^store-offers/view/?$ store-offers/view.php [L,NC,QSA]

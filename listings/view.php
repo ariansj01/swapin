@@ -226,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 } elseif ($offerType === 'buy') {
                     $offerTypeInsert = 'buy';
                 }
-                DB::insert('trade_offers', [
+                $newOfferId = DB::insert('trade_offers', [
                     'listing_id'       => $id,
                     'from_user_id'     => $user['id'],
                     'offer_listing_id' => $offerListingId,
@@ -243,10 +243,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     'thread_id'    => $threadId,
                     'from_user_id' => $user['id'],
                     'to_user_id'   => $listing['user_id'],
-                    'offer_id'     => DB::lastId(),
+                    'offer_id'     => $newOfferId,
                     'body'         => $offerBody,
                 ]);
                 $offerSuccess = 'پیشنهاد ارسال شد! فروشنده مطلع می‌شود.';
+                if ((int)($_POST['as_group'] ?? 0) === 1) {
+                    $res = multi_trade_request_on_offer($newOfferId, (int)$user['id']);
+                    if (!isset($res['error'])) {
+                        $offerSuccess = 'پیشنهاد ارسال شد و درخواست مبادله چندنفره ثبت شد.';
+                    }
+                }
                 $myOffer = DB::fetch('SELECT * FROM trade_offers WHERE listing_id = ? AND from_user_id = ? ORDER BY id DESC LIMIT 1', [$id, $user['id']]);
             }
         }
@@ -279,6 +285,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } else {
                 $offerSuccess = 'درخواست مبادله چندنفره ثبت شد و به طرف مقابل اطلاع داده شد.';
             }
+            $myOffer = DB::fetch(
+                'SELECT * FROM trade_offers
+                 WHERE listing_id = ? AND from_user_id = ? AND (flow_type IS NULL OR flow_type = "user_to_user")
+                   AND status = "pending" LIMIT 1',
+                [$id, $user['id']]
+            );
         }
     } elseif ($_POST['action'] === 'save_listing') {
         if ($isSaved) {
@@ -738,6 +750,12 @@ render_navbar($user);
           <textarea class="lv-sheet__textarea" name="message" rows="4"
                     placeholder="پیام خود را برای فروشنده بنویسید..."></textarea>
         </div>
+        <div class="lv-sheet__section">
+          <label class="form-check" style="display:flex;align-items:flex-start;gap:8px;margin:0">
+            <input type="checkbox" name="as_group" value="1" class="form-check-input" style="margin-top:3px">
+            <span style="font-size:13px;line-height:1.6">این معامله به‌صورت <b>مبادله چندنفره</b> (۳ تا ۵ نفر) انجام شود</span>
+          </label>
+        </div>
       </div>
 
       <div class="lv-sheet__footer">
@@ -981,30 +999,33 @@ render_navbar($user);
             <a href="<?= $storeOfferViewUrl ?>" class="alert-link">مشاهده پیشنهاد</a>
           </div>
         </section>
-        <?php elseif ($myOffer): 
+        <?php elseif ($myOffer):
           $requestedBy = (int)($myOffer['group_requested_by'] ?? 0);
         ?>
         <section class="lv-offer-card">
           <h3 class="lv-offer-title"><i class="bi bi-hourglass-split"></i> وضعیت پیشنهاد</h3>
-          <div class="alert alert-success" style="margin-bottom:12px">پیشنهاد شما در انتظار پاسخ فروشنده است.</div>
-          
-          <?php if ($requestedBy === 0): ?>
-            <form method="POST">
-              <?= csrf_field() ?>
-              <input type="hidden" name="action" value="request_group">
-              <input type="hidden" name="offer_id" value="<?= (int)$myOffer['id'] ?>">
-              <button type="submit" class="lv-btn lv-btn--outline w-100" style="border-color:#FFC928;color:#071A33;">
-                <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
-              </button>
-            </form>
-          <?php elseif ($requestedBy === $user['id']): ?>
-            <div class="alert alert-info py-2 px-3" style="font-size:13px; margin:0">
-              <i class="bi bi-info-circle"></i> درخواست مبادله چندنفره توسط شما ثبت شده است.
-            </div>
+          <?php if ($offerSuccess): ?>
+          <div class="alert alert-success" style="margin-bottom:12px"><i class="bi bi-check-circle"></i> <?= h($offerSuccess) ?></div>
           <?php else: ?>
-            <div class="alert alert-warning py-2 px-3" style="font-size:13px; margin:0">
-              <i class="bi bi-people-fill"></i> طرف مقابل درخواست مبادله چندنفره داده است.
-            </div>
+          <div class="alert alert-success" style="margin-bottom:12px">پیشنهاد شما در انتظار پاسخ فروشنده است.</div>
+          <?php endif; ?>
+          <?php if ($requestedBy === 0): ?>
+          <form method="POST">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="request_group">
+            <input type="hidden" name="offer_id" value="<?= (int)$myOffer['id'] ?>">
+            <button type="submit" class="lv-btn lv-btn--outline w-100" style="border-color:#FFC928;color:#071A33;">
+              <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
+            </button>
+          </form>
+          <?php elseif ($requestedBy === (int)$user['id']): ?>
+          <div class="alert alert-info py-2 px-3" style="font-size:13px;margin:0">
+            <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره ثبت شد. در انتظار پاسخ طرف مقابل هستید.
+          </div>
+          <?php else: ?>
+          <div class="alert alert-warning py-2 px-3" style="font-size:13px;margin:0">
+            <i class="bi bi-people-fill"></i> طرف مقابل درخواست مبادله چندنفره داده است.
+          </div>
           <?php endif; ?>
         </section>
         <?php elseif ($listingIsReserved): ?>
@@ -1128,6 +1149,13 @@ render_navbar($user);
             <div class="form-group" style="margin-top:12px">
               <label class="form-label">پیام</label>
               <textarea class="lv-offer-textarea" name="message" id="lv-offer-message" placeholder="در مورد پیشنهادتان کمی توضیح بدهید..."></textarea>
+            </div>
+
+            <div class="form-check" style="margin:12px 0">
+              <input type="checkbox" name="as_group" value="1" id="lv-as-group" class="form-check-input">
+              <label class="form-check-label" for="lv-as-group" style="font-size:13px;">
+                این معامله به‌صورت <b>مبادله چندنفره</b> (۳ تا ۵ نفر) انجام شود
+              </label>
             </div>
 
             <button type="submit" class="lv-btn lv-btn--outline lv-btn--swap" data-trade-gate>

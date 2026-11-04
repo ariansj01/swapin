@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/dashboard_layout.php';
 require_once __DIR__ . '/includes/multi_trade.php';
 
 $user = require_auth();
@@ -43,19 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
             if (empty($message)) {
                 $error = 'لطفاً پیامی برای طرفین بنویسید.';
             } else {
-                $asGroup = ((int)($_POST['as_group'] ?? 0) === 1);
+                $asGroup = ((int)($_POST['as_group'] ?? 0) === 1) || ((int)($offer['group_requested_by'] ?? 0) > 0);
                 $result = accept_trade_offer($offerId, $uid, $message);
                 if (isset($result['error'])) {
                     $error = $result['error'];
                 } else {
-                    $redirect = APP_URL . '/trades/view?id=' . $result['trade_id'] . '&accepted=1&tab=fee';
-                    if ($asGroup) {
-                        $gr = multi_trade_create_from_trade((int)$result['trade_id'], $uid, true);
-                        if (!empty($gr['room_id'])) {
-                            $redirect = multi_trade_room_url((int)$gr['room_id']);
-                        }
-                    }
-                    header('Location: ' . $redirect);
+                    header('Location: ' . multi_trade_redirect_after_accept((int)$result['trade_id'], $uid, $asGroup));
                     exit;
                 }
             }
@@ -271,7 +265,9 @@ $pendingReceivedCount = (int)(DB::fetch(
 )['c'] ?? 0);
 
 render_head('اتاق امن معاملات', '', ['canonical' => APP_URL . '/trades']);
+render_panel_styles();
 render_navbar($user);
+render_user_panel_open($user, 'trades');
 ?>
 <style>
 .rating-stars { display:flex;gap:.5rem;justify-content:center; }
@@ -455,6 +451,7 @@ render_navbar($user);
 
                 <?php if ($offer['status'] === 'pending'): ?>
                 <div style="display:flex;flex-direction:column;gap:10px;width:100%;min-width:280px;max-width:420px">
+                  <?php $requestedBy = (int)($offer['group_requested_by'] ?? 0); ?>
                   <form method="POST">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="accept">
@@ -463,14 +460,24 @@ render_navbar($user);
                       <label class="form-label">پیام پذیرش:</label>
                       <textarea name="message" class="form-control" rows="2" required placeholder="مثلاً: سلام! پیشنهاد شما را می‌پذیرم."></textarea>
                     </div>
-                    <?php 
-                    $requestedBy = (int)($offer['group_requested_by'] ?? 0);
-                    ?>
+                    <?php if ($requestedBy > 0): ?>
+                    <input type="hidden" name="as_group" value="1">
+                    <div class="alert alert-info py-2 px-3 mb-2" style="font-size:12px;">
+                      <i class="bi bi-people-fill"></i>
+                      طرف مقابل خواسته این معامله به‌صورت «مبادله چندنفره» انجام شود.
+                    </div>
+                    <?php else: ?>
+                    <div class="form-check mb-3">
+                      <input type="checkbox" name="as_group" value="1" id="asGroupT<?= (int)$offer['id'] ?>" class="form-check-input">
+                      <label class="form-check-label" for="asGroupT<?= (int)$offer['id'] ?>" style="font-size:13px;">
+                        تبدیل به مبادله چندنفره (۳ تا ۵ نفر)
+                      </label>
+                    </div>
+                    <?php endif; ?>
                     <button type="submit" class="btn btn-primary w-100 mb-2">
                       <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
                     </button>
                   </form>
-
                   <?php if ($requestedBy === 0): ?>
                   <form method="POST">
                     <?= csrf_field() ?>
@@ -478,23 +485,6 @@ render_navbar($user);
                     <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
                     <button type="submit" class="btn w-100 mb-2" style="background:#fff;border:1px solid #FFC928;color:#071A33;font-weight:700;">
                       <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
-                    </button>
-                  </form>
-                  <?php else: ?>
-                  <div class="alert alert-info py-2 px-3 mb-2" style="font-size:12px;">
-                    <i class="bi bi-people-fill"></i>
-                    <?= $requestedBy === $uid
-                        ? 'درخواست مبادله چندنفره توسط شما ثبت شده؛ برای نهایی‌شدن روی «تأیید مبادله چندنفره» بزنید.'
-                        : 'طرف مقابل خواسته این معامله به‌صورت «مبادله چندنفره» انجام شود.' ?>
-                  </div>
-                  <form method="POST">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="action" value="accept">
-                    <input type="hidden" name="offer_id" value="<?= $offer['id'] ?>">
-                    <input type="hidden" name="as_group" value="1">
-                    <input type="hidden" name="message" value="مبادله چندنفره تأیید شد.">
-                    <button type="submit" class="btn w-100 mb-2" style="background:#FFC928;border:none;color:#071A33;font-weight:800;">
-                      <i class="bi bi-people-fill"></i> تأیید مبادله چندنفره
                     </button>
                   </form>
                   <?php endif; ?>
@@ -553,22 +543,22 @@ render_navbar($user);
                 <div class="mt-3">
                   <a href="<?= APP_URL ?>/trades/view?id=<?= (int)$o['trade_id'] ?>" class="btn btn-primary btn-sm">ورود به اتاق امن</a>
                 </div>
-              <?php elseif (in_array($o['status'], ['pending', 'negotiating', 'counter_offered'], true)): 
+              <?php elseif (in_array($o['status'], ['pending', 'negotiating', 'counter_offered'], true)):
                 $reqBy = (int)($o['group_requested_by'] ?? 0);
               ?>
                 <?php if ($reqBy === 0): ?>
-                  <form method="POST" class="mt-3">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="action" value="request_group">
-                    <input type="hidden" name="offer_id" value="<?= (int)$o['id'] ?>">
-                    <button type="submit" class="btn btn-sm" style="background:#fff;border:1px solid #FFC928;color:#071A33;font-weight:700;">
-                      <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
-                    </button>
-                  </form>
+                <form method="POST" class="mt-3">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="request_group">
+                  <input type="hidden" name="offer_id" value="<?= (int)$o['id'] ?>">
+                  <button type="submit" class="btn btn-sm" style="background:#fff;border:1px solid #FFC928;color:#071A33;font-weight:700;">
+                    <i class="bi bi-people-fill"></i> درخواست مبادله چندنفره
+                  </button>
+                </form>
                 <?php elseif ($reqBy === $uid): ?>
-                  <div class="alert alert-info py-1 px-2 mt-2" style="font-size:11px;">درخواست مبادله چندنفره توسط شما ثبت شده.</div>
+                <div class="alert alert-info py-1 px-2 mt-2" style="font-size:12px;">درخواست مبادله چندنفره ثبت شده است.</div>
                 <?php else: ?>
-                  <div class="alert alert-warning py-1 px-2 mt-2" style="font-size:11px;">طرف مقابل درخواست مبادله چندنفره داده است.</div>
+                <div class="alert alert-warning py-1 px-2 mt-2" style="font-size:12px;">طرف مقابل درخواست مبادله چندنفره داده است.</div>
                 <?php endif; ?>
               <?php endif; ?>
             </div>
@@ -665,4 +655,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<?php render_footer(); ?>
+<?php render_user_panel_close(); render_footer(); ?>

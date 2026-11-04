@@ -511,6 +511,14 @@ function accept_trade_offer(int $offerId, int $ownerId, string $message): array 
         ]);
     }
 
+    if (function_exists('multi_trade_create_from_accepted_offer')) {
+        try {
+            multi_trade_create_from_accepted_offer($offerId, $tradeId, $ownerId);
+        } catch (Throwable $e) {
+            swapin_debug_log('multi-trade-from-accepted-offer', ['msg' => $e->getMessage(), 'offer_id' => $offerId]);
+        }
+    }
+
     return ['trade_id' => $tradeId];
 }
 

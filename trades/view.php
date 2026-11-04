@@ -262,6 +262,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success = 'تایید شما ثبت شد. در انتظار تایید طرف مقابل.';
             }
         }
+    } elseif ($action === 'request_multi_trade') {
+        $res = multi_trade_create_from_trade($tradeId, $uid, false);
+        if (isset($res['error'])) {
+            $error = $res['error'];
+        } else {
+            header('Location: ' . multi_trade_room_url((int)$res['room_id']));
+            exit;
+        }
     }
 
     $trade    = fetch_trade_room($tradeId, $uid) ?? $trade;
@@ -549,6 +557,17 @@ render_user_panel_open($user, 'trades');
           <span class="trade-room__badge"><?= $pendingCount ?></span>
         <?php endif; ?>
       </button>
+
+      <?php if (!in_array((string)$trade['status'], ['completed', 'cancelled'], true)): ?>
+      <form method="post" style="display:inline;">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="request_multi_trade">
+        <button type="submit" class="trade-room__hero-btn" onclick="return confirm('درخواست تبدیل این معامله به «مبادله چندنفره» (۳ تا ۵ نفر) ثبت شود؟');">
+          <i class="bi bi-people-fill"></i>
+          مبادله چندنفره
+        </button>
+      </form>
+      <?php endif; ?>
 
       <a href="<?= APP_URL ?>/fraud-prevention" class="trade-room__hero-btn">
         <i class="bi bi-question-circle"></i>

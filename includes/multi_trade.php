@@ -449,13 +449,41 @@ function multi_trade_request_on_offer(int $offerId, int $userId): array
     DB::query('UPDATE trade_offers SET group_requested_by = ? WHERE id = ?', [$userId, $offerId]);
 
     $otherId = $userId === $owner ? $from : $owner;
+    $listingId = (int)$offer['listing_id'];
+    $notifyUrl = ($otherId === $owner && $listingId > 0)
+        ? APP_URL . '/listings/offers?id=' . $listingId
+        : ($listingId > 0 ? APP_URL . '/listings/view?id=' . $listingId : APP_URL . '/trades?tab=received');
     multi_trade_notify(
         $otherId,
         'درخواست مبادله چندنفره',
         'طرف مقابل پیشنهاد داد این معامله به‌صورت «مبادله چندنفره» (۳ تا ۵ نفر) انجام شود.',
-        APP_URL . '/trades?tab=received'
+        $notifyUrl
     );
     return ['ok' => true];
+}
+
+/**
+ * پس از پذیرش پیشنهاد، اگر مبادله چندنفره باشد به اتاق گروهی می‌رود.
+ */
+function multi_trade_redirect_after_accept(int $tradeId, int $userId, bool $asGroup): string
+{
+    $fallback = APP_URL . '/trades/view?id=' . $tradeId . '&accepted=1&tab=fee';
+    if (!$asGroup) {
+        return $fallback;
+    }
+    try {
+        $gr = multi_trade_create_from_trade($tradeId, $userId, true);
+        if (!empty($gr['room_id'])) {
+            return multi_trade_room_url((int)$gr['room_id']);
+        }
+    } catch (Throwable $e) {
+        swapin_debug_log('multi-trade-create-from-accept', ['msg' => $e->getMessage(), 'trade_id' => $tradeId]);
+    }
+    $existing = multi_trade_room_for_seed_trade($tradeId);
+    if ($existing) {
+        return multi_trade_room_url((int)$existing['id']);
+    }
+    return $fallback;
 }
 
 /**
