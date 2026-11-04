@@ -439,6 +439,20 @@ function get_trade_contract(int $tradeId): ?array {
 }
 
 function accept_trade_offer(int $offerId, int $ownerId, string $message): array {
+    if (function_exists('db_ensure_enum_values')) {
+        db_ensure_enum_values(
+            'listings',
+            'status',
+            ['active', 'reserved', 'expired', 'traded', 'deleted', 'inactive', 'sold', 'paused', 'draft'],
+            'active'
+        );
+        db_ensure_enum_values(
+            'trades',
+            'status',
+            ['pending', 'in_progress', 'user_a_confirmed', 'user_b_confirmed', 'completed', 'cancelled', 'canceled', 'disputed'],
+            'in_progress'
+        );
+    }
     $flowCol = db_has_column('trade_offers', 'flow_type') ? ', o.flow_type' : '';
     $offer = DB::fetch(
         'SELECT o.*, l.user_id AS listing_owner, l.title AS listing_title, l.estimated_value AS listing_a_value,

@@ -210,6 +210,32 @@ function multi_trade_ensure_tables(): bool
         if (db_has_table('trade_offers') && !db_has_column('trade_offers', 'group_requested_by')) {
             DB::query("ALTER TABLE `trade_offers` ADD COLUMN `group_requested_by` INT UNSIGNED DEFAULT NULL COMMENT 'کاربری که درخواست مبادله چندنفره داده'");
         }
+        if (function_exists('db_ensure_enum_values')) {
+            db_ensure_enum_values(
+                'multi_trade_rooms',
+                'status',
+                ['awaiting_seed', 'forming', 'locked', 'active', 'completed', 'cancelled'],
+                'awaiting_seed'
+            );
+            db_ensure_enum_values(
+                'multi_trade_members',
+                'status',
+                ['invited', 'active', 'declined', 'left'],
+                'active'
+            );
+            db_ensure_enum_values(
+                'listings',
+                'status',
+                ['active', 'reserved', 'expired', 'traded', 'deleted', 'inactive', 'sold', 'paused', 'draft'],
+                'active'
+            );
+            db_ensure_enum_values(
+                'trades',
+                'status',
+                ['pending', 'in_progress', 'user_a_confirmed', 'user_b_confirmed', 'completed', 'cancelled', 'canceled', 'disputed'],
+                'in_progress'
+            );
+        }
         $done = true;
     } catch (Throwable $e) {
         swapin_debug_log('multi-trade-ensure-tables', ['msg' => $e->getMessage()]);

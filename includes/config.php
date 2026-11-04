@@ -1527,6 +1527,43 @@ function db_has_column(string $table, string $column): bool {
 }
 
 /**
+ * اگر ستون ENUM باشد و مقدارهای لازم را نداشته باشد، به VARCHAR تبدیل می‌شود
+ * تا INSERT/UPDATE با خطای 1265 (Data truncated) نخوابد.
+ */
+function db_ensure_enum_values(string $table, string $column, array $values, string $default): void
+{
+    $table = preg_replace('/[^a-z0-9_]/', '', $table);
+    $column = preg_replace('/[^a-z0-9_]/', '', $column);
+    $default = preg_replace('/[^a-z0-9_]/', '', $default);
+    if ($table === '' || $column === '' || $default === '' || !db_has_column($table, $column)) {
+        return;
+    }
+    try {
+        $col = DB::fetch("SHOW COLUMNS FROM `{$table}` LIKE '{$column}'");
+        if (!$col) {
+            return;
+        }
+        $type = strtolower((string)($col['Type'] ?? ''));
+        if (!str_starts_with($type, 'enum(')) {
+            return;
+        }
+        foreach ($values as $v) {
+            $v = strtolower((string)$v);
+            if ($v !== '' && !str_contains($type, "'" . $v . "'")) {
+                DB::query("ALTER TABLE `{$table}` MODIFY COLUMN `{$column}` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '{$default}'");
+                return;
+            }
+        }
+    } catch (Throwable $e) {
+        swapin_debug_log('db-ensure-enum-values', [
+            'table' => $table,
+            'column' => $column,
+            'msg' => $e->getMessage(),
+        ]);
+    }
+}
+
+/**
  * پیش‌واکشی اطلاعات فروشگاه برای مجموعه‌ای از آگهی‌ها در یک کوئری.
  * پیش از رندر حلقه کارت‌های آگهی یک‌بار صدا زده شود تا N+1 حذف شود.
  *
@@ -1696,13 +1733,23 @@ function auto_expire_listings(): int {
     if (!db_has_table('listings')) {
         return 0;
     }
-
-    $stmt = DB::query(
-        "UPDATE listings
-         SET status = 'expired', updated_at = NOW()
-         WHERE status = 'active' AND created_at < DATE_SUB(NOW(), INTERVAL 60 DAY)"
-    );
-    return $stmt->rowCount();
+    try {
+        db_ensure_enum_values(
+            'listings',
+            'status',
+            ['active', 'reserved', 'expired', 'traded', 'deleted', 'inactive', 'sold', 'paused', 'draft'],
+            'active'
+        );
+        $stmt = DB::query(
+            "UPDATE listings
+             SET status = 'expired', updated_at = NOW()
+             WHERE status = 'active' AND created_at < DATE_SUB(NOW(), INTERVAL 60 DAY)"
+        );
+        return $stmt->rowCount();
+    } catch (Throwable $e) {
+        swapin_debug_log('auto-expire-listings', ['msg' => $e->getMessage()]);
+        return 0;
+    }
 }
 
 function db_filter_row(string $table, array $data): array {
