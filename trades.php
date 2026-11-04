@@ -195,74 +195,82 @@ if ($detailTradeId) {
     }
 }
 
-// Active trades
-$activeTrades = DB::fetchAll(
-    'SELECT t.*, 
-            ua.name AS user_a_name, ub.name AS user_b_name,
-            la.title AS listing_a_title, lb.title AS listing_b_title,
-            (SELECT filename FROM listing_images WHERE listing_id=la.id AND is_primary=1 LIMIT 1) AS la_thumb
-     FROM trades t
-     JOIN users ua ON ua.id = t.user_a_id
-     JOIN users ub ON ub.id = t.user_b_id
-     JOIN listings la ON la.id = t.listing_a_id
-     LEFT JOIN listings lb ON lb.id = t.listing_b_id
-     WHERE (t.user_a_id = ? OR t.user_b_id = ?)
-       AND t.status IN ("in_progress","user_a_confirmed","user_b_confirmed","disputed")
-     ORDER BY t.created_at DESC',
-    [$uid, $uid]
-);
-
-// Completed trades
-$completedTrades = DB::fetchAll(
-    'SELECT t.*,
-            ua.name AS user_a_name, ub.name AS user_b_name,
-            la.title AS listing_a_title, lb.title AS listing_b_title,
-            (SELECT rating FROM reviews WHERE trade_id = t.id AND from_user_id = ?) AS my_rating
-     FROM trades t
-     JOIN users ua ON ua.id = t.user_a_id
-     JOIN users ub ON ub.id = t.user_b_id
-     JOIN listings la ON la.id = t.listing_a_id
-     LEFT JOIN listings lb ON lb.id = t.listing_b_id
-     WHERE (t.user_a_id = ? OR t.user_b_id = ?)
-       AND t.status = "completed"
-     ORDER BY t.completed_at DESC',
-    [$uid, $uid, $uid]
-);
-
-// Sent offers
-$sentOffers = DB::fetchAll(
-    'SELECT o.*, l.title AS listing_title, u.name AS seller_name,
-            ol.title AS my_listing_title,
-            (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
-     FROM trade_offers o
-     JOIN listings l ON l.id = o.listing_id
-     JOIN users u ON u.id = l.user_id
-     LEFT JOIN listings ol ON ol.id = o.offer_listing_id
-     WHERE o.from_user_id = ?
-     ORDER BY o.created_at DESC',
-    [$uid]
-);
-
-// Received offers (on my listings)
-$receivedOffers = DB::fetchAll(
-    'SELECT o.*, l.title AS listing_title, l.id AS listing_id_v,
-            u.name AS from_name, u.avatar AS from_avatar, u.rating AS from_rating,
-            ol.title AS offer_listing_title, ol.id AS offer_listing_id_v,
-            (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb,
-            (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
-     FROM trade_offers o
-     JOIN listings l ON l.id = o.listing_id
-     JOIN users u ON u.id = o.from_user_id
-     LEFT JOIN listings ol ON ol.id = o.offer_listing_id
-     WHERE l.user_id = ? AND o.status = "pending"
-     ORDER BY o.created_at DESC',
-    [$uid]
-);
-
-$pendingReceivedCount = (int)(DB::fetch(
-    'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "pending"',
-    [$uid]
-)['c'] ?? 0);
+$activeTrades = [];
+$completedTrades = [];
+$sentOffers = [];
+$receivedOffers = [];
+$pendingReceivedCount = 0;
+try {
+    $activeTrades = DB::fetchAll(
+        'SELECT t.*,
+                ua.name AS user_a_name, ub.name AS user_b_name,
+                la.title AS listing_a_title, lb.title AS listing_b_title,
+                (SELECT filename FROM listing_images WHERE listing_id=la.id AND is_primary=1 LIMIT 1) AS la_thumb
+         FROM trades t
+         JOIN users ua ON ua.id = t.user_a_id
+         JOIN users ub ON ub.id = t.user_b_id
+         JOIN listings la ON la.id = t.listing_a_id
+         LEFT JOIN listings lb ON lb.id = t.listing_b_id
+         WHERE (t.user_a_id = ? OR t.user_b_id = ?)
+           AND t.status IN ("in_progress","user_a_confirmed","user_b_confirmed","disputed")
+         ORDER BY t.created_at DESC',
+        [$uid, $uid]
+    );
+    $completedTrades = DB::fetchAll(
+        'SELECT t.*,
+                ua.name AS user_a_name, ub.name AS user_b_name,
+                la.title AS listing_a_title, lb.title AS listing_b_title,
+                (SELECT rating FROM reviews WHERE trade_id = t.id AND from_user_id = ?) AS my_rating
+         FROM trades t
+         JOIN users ua ON ua.id = t.user_a_id
+         JOIN users ub ON ub.id = t.user_b_id
+         JOIN listings la ON la.id = t.listing_a_id
+         LEFT JOIN listings lb ON lb.id = t.listing_b_id
+         WHERE (t.user_a_id = ? OR t.user_b_id = ?)
+           AND t.status = "completed"
+         ORDER BY t.completed_at DESC',
+        [$uid, $uid, $uid]
+    );
+    $sentOffers = DB::fetchAll(
+        'SELECT o.*, l.title AS listing_title, u.name AS seller_name,
+                ol.title AS my_listing_title,
+                (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
+         FROM trade_offers o
+         JOIN listings l ON l.id = o.listing_id
+         JOIN users u ON u.id = l.user_id
+         LEFT JOIN listings ol ON ol.id = o.offer_listing_id
+         WHERE o.from_user_id = ?
+         ORDER BY o.created_at DESC',
+        [$uid]
+    );
+    $receivedOffers = DB::fetchAll(
+        'SELECT o.*, l.title AS listing_title, l.id AS listing_id_v,
+                u.name AS from_name, u.avatar AS from_avatar, u.rating AS from_rating,
+                ol.title AS offer_listing_title, ol.id AS offer_listing_id_v,
+                (SELECT filename FROM listing_images WHERE listing_id=ol.id AND is_primary=1 LIMIT 1) AS offer_listing_thumb,
+                (SELECT t.id FROM trades t WHERE t.offer_id = o.id LIMIT 1) AS trade_id
+         FROM trade_offers o
+         JOIN listings l ON l.id = o.listing_id
+         JOIN users u ON u.id = o.from_user_id
+         LEFT JOIN listings ol ON ol.id = o.offer_listing_id
+         WHERE l.user_id = ? AND o.status = "pending"
+         ORDER BY o.created_at DESC',
+        [$uid]
+    );
+    $pendingReceivedCount = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM trade_offers o JOIN listings l ON l.id = o.listing_id WHERE l.user_id = ? AND o.status = "pending"',
+        [$uid]
+    )['c'] ?? 0);
+} catch (Throwable $e) {
+    swapin_debug_log('trades-list-query', [
+        'msg' => $e->getMessage(),
+        'tab' => $tab,
+        'uid' => $uid,
+    ]);
+    if ($error === '') {
+        $error = 'بارگذاری فهرست معاملات با مشکل مواجه شد. دوباره تلاش کنید.';
+    }
+}
 
 render_head('اتاق امن معاملات', '', ['canonical' => APP_URL . '/trades']);
 render_panel_styles();
@@ -401,16 +409,16 @@ render_user_panel_open($user, 'trades');
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap">
                 <div style="flex:1;min-width:0">
                   <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-                    <?= avatar_html($offer['from_avatar'] ?? null, $offer['from_name'], 'md') ?>
+                    <?= avatar_html($offer['from_avatar'] ?? null, (string)($offer['from_name'] ?? ''), 'md') ?>
                     <div>
-                      <div style="font-weight:700;font-size:1.0625rem"><?= h($offer['from_name']) ?></div>
-                      <?php if ($offer['from_rating'] > 0): ?>
+                      <div style="font-weight:700;font-size:1.0625rem"><?= h((string)($offer['from_name'] ?? '')) ?></div>
+                      <?php if ((float)($offer['from_rating'] ?? 0) > 0): ?>
                       <div class="fs-xs" style="color:var(--accent-dark)">
                         <i class="bi bi-star-fill"></i> <?= number_format((float)$offer['from_rating'], 1) ?>
                       </div>
                       <?php endif; ?>
                     </div>
-                    <span class="badge badge-<?= $statusColor ?> fs-xs" style="margin-inline-start:auto"><?= offer_status_label($offer['status']) ?></span>
+                    <span class="badge badge-<?= $statusColor ?> fs-xs" style="margin-inline-start:auto"><?= offer_status_label((string)($offer['status'] ?? '')) ?></span>
                   </div>
 
                   <div class="fs-sm mb-2" style="color:var(--text-muted)">
@@ -445,7 +453,7 @@ render_user_panel_open($user, 'trades');
                   <?php endif; ?>
 
                   <div class="fs-xs mt-4" style="color:var(--text-muted)">
-                    <i class="bi bi-clock"></i> <?= persian_datetime($offer['created_at']) ?>
+                    <i class="bi bi-clock"></i> <?= persian_datetime($offer['created_at'] ?? null) ?>
                   </div>
                 </div>
 

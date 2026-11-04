@@ -36,7 +36,8 @@ function user_initial(string $name): string {
 }
 
 /** Avatar markup: photo (local or external URL), letter initial, or person icon (never broken "?"). */
-function avatar_html(?string $avatar, string $name, string $size = 'md'): string {
+function avatar_html(?string $avatar, ?string $name = '', string $size = 'md'): string {
+    $name = (string)($name ?? '');
     $sizeClass = 'avatar-' . preg_replace('/[^a-z]/', '', $size);
 
     if ($avatar !== null && trim($avatar) !== '') {
@@ -861,8 +862,14 @@ function persian_date(string|int $datetime): string {
  * @param string|int $datetime DateTime string or timestamp
  * @return string Formatted Persian datetime
  */
-function persian_datetime(string|int $datetime): string {
-  $timestamp = is_int($datetime) ? $datetime : strtotime($datetime);
+function persian_datetime(string|int|null $datetime): string {
+  if ($datetime === null || $datetime === '') {
+    return '—';
+  }
+  $timestamp = is_int($datetime) ? $datetime : strtotime((string)$datetime);
+  if ($timestamp === false) {
+    return '—';
+  }
   [$jy, $jm, $jd] = gregorian_to_jalali(date('Y', $timestamp), date('m', $timestamp), date('d', $timestamp));
   return persian_digits(persian_jalali_month($jm) . ' ' . $jd . '، ' . $jy . ' — ' . date('G:i', $timestamp));
 }

@@ -1411,6 +1411,11 @@ set_exception_handler(function (Throwable $e): void {
     ]);
     if (!headers_sent()) {
         http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+    }
+    if (PHP_SAPI !== 'cli' && empty($GLOBALS['_swapin_error_page'])) {
+        $GLOBALS['_swapin_error_page'] = true;
+        echo '<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>خطا</title></head><body style="font-family:Tahoma,sans-serif;padding:2rem;text-align:center"><h1>خطایی رخ داد</h1><p>لطفاً صفحه را دوباره بارگذاری کنید.</p></body></html>';
     }
 });
 
@@ -1431,6 +1436,14 @@ register_shutdown_function(function (): void {
         'uri' => $_SERVER['REQUEST_URI'] ?? '',
         'method' => $_SERVER['REQUEST_METHOD'] ?? '',
     ]);
+    if (PHP_SAPI !== 'cli' && empty($GLOBALS['_swapin_error_page'])) {
+        $GLOBALS['_swapin_error_page'] = true;
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: text/html; charset=utf-8');
+        }
+        echo '<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>خطا</title></head><body style="font-family:Tahoma,sans-serif;padding:2rem;text-align:center"><h1>خطایی رخ داد</h1><p>لطفاً صفحه را دوباره بارگذاری کنید.</p></body></html>';
+    }
 });
 // #endregion
 
