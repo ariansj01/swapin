@@ -1,0 +1,51 @@
+name: Deploy Staging to VPS
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            set -Eeuo pipefail
+
+            APP_DIR="/var/www/swapin-staging"
+
+            echo "========================================"
+            echo "SWAAPIN STAGING DEPLOY"
+            echo "========================================"
+
+            echo "[1/4] Fetching staging..."
+            sudo -n -H git -C "$APP_DIR" fetch origin staging
+
+            echo "[2/4] Syncing staging..."
+            sudo -n -H git -C "$APP_DIR" reset --hard origin/staging
+
+            echo "[3/4] Restoring ownership..."
+            sudo chown -R deploy:www-data "$APP_DIR"
+
+            echo "[4/4] Installing dependencies..."
+            cd "$APP_DIR"
+
+            if [ -f composer.json ]; then
+              /usr/bin/composer install \
+                --no-dev \
+                --no-interaction \
+                --prefer-dist \
+                --optimize-autoloader
+            fi
+
+            echo "========================================"
+            echo "STAGING DEPLOY SUCCESSFUL"
+            echo "========================================"
