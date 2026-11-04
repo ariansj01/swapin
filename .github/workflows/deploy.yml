@@ -30,6 +30,10 @@ jobs:
 
             cd "$APP_DIR"
 
+            echo "=== DEPLOY USER CHECK ==="
+            whoami
+            id
+
             echo "[1/8] Fetching main..."
             git fetch origin
 
