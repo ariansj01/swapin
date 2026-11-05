@@ -294,26 +294,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $trade    = fetch_trade_room($tradeId, $uid) ?? $trade;
     $multiRoom = multi_trade_room_for_seed_trade($tradeId);
-    
-    $mtPendingRequests = [];
-    $mtMyMember = null;
-    $mtIsInvited = false;
-    $mtActiveCount = 0;
-    if ($multiRoom) {
-        $roomId = (int)$multiRoom['id'];
-        $mtMyMember = multi_trade_member($roomId, $uid);
-        $mtIsInvited = $mtMyMember && $mtMyMember['status'] === 'invited';
-        $mtActiveCount = multi_trade_active_count($roomId);
-        if ($mtMyMember && $multiRoom['status'] === 'forming') {
-            $mtPendingRequests = multi_trade_join_requests_pending($roomId);
-        }
-    }
 
     $contract = get_trade_contract($tradeId) ?? $contract;
     $myReview = DB::fetch(
         'SELECT id FROM reviews WHERE trade_id = ? AND from_user_id = ? LIMIT 1',
         [$tradeId, $uid]
     );
+}
+
+// وضعیت مبادله چندنفره باید در هر بارگذاری صفحه (GET و POST) محاسبه شود
+$mtPendingRequests = [];
+$mtMyMember        = null;
+$mtIsInvited       = false;
+$mtActiveCount     = 0;
+if ($multiRoom) {
+    $roomId        = (int)$multiRoom['id'];
+    $mtMyMember    = multi_trade_member($roomId, $uid);
+    $mtIsInvited   = (bool)($mtMyMember && $mtMyMember['status'] === 'invited');
+    $mtActiveCount = multi_trade_active_count($roomId);
+    if ($mtMyMember && $multiRoom['status'] === 'forming') {
+        $mtPendingRequests = multi_trade_join_requests_pending($roomId);
+    }
 }
 
 $messages = DB::fetchAll(
