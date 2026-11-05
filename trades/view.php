@@ -2700,6 +2700,34 @@ render_user_panel_open($user, 'trades');
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Keep side columns (وضعیت / جزئیات) height aligned with center tabs column
+  (function syncTradeRoomSideHeights() {
+    const layout = document.querySelector('.trade-room__layout');
+    const content = layout && layout.querySelector('.trade-room__content');
+    if (!layout || !content) return;
+
+    const desktopMq = window.matchMedia('(min-width: 1201px)');
+
+    const apply = () => {
+      if (!desktopMq.matches) {
+        layout.style.removeProperty('--trade-room-side-h');
+        return;
+      }
+      const h = Math.ceil(content.getBoundingClientRect().height);
+      if (h > 0) {
+        layout.style.setProperty('--trade-room-side-h', h + 'px');
+      }
+    };
+
+    apply();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(apply);
+      ro.observe(content);
+    }
+    window.addEventListener('resize', apply);
+    desktopMq.addEventListener('change', apply);
+  })();
+
   // Modal handlers
   function openModal(modalId) {
     const modal = document.getElementById(modalId);

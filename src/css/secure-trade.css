@@ -643,9 +643,21 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  .trade-room__details-column { order: 3; }
+  .trade-room__details-column {
+    order: 3;
+    max-height: none;
+    overflow: visible;
+  }
   .trade-room__content { order: 2; }
-  .trade-room__timeline-column { order: 1; position: static; }
+  .trade-room__timeline-column {
+    order: 1;
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .trade-room__timeline-column > .trade-room__timeline-card:not(.trade-room__support) {
+    overflow: visible;
+  }
 }
 
 @media (max-width: 900px) {
@@ -796,11 +808,32 @@
 }
 
 .trade-room__timeline-column {
-  /* position: sticky; */
-  /* top: calc(var(--navbar-h) + 16px); */
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: var(--trade-room-side-h, calc(100vh - var(--navbar-h, 72px) - 180px));
+  min-height: 0;
+  overflow: hidden;
+}
+
+.trade-room__timeline-column > .trade-room__timeline-card:not(.trade-room__support) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.trade-room__timeline-column > .trade-room__support {
+  flex: 0 0 auto;
+}
+
+.trade-room__details-column {
+  max-height: var(--trade-room-side-h, calc(100vh - var(--navbar-h, 72px) - 180px));
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .trade-room__content {
@@ -1456,9 +1489,9 @@
   margin-right: 4px;
 }
 
-/* Layout: Equal height columns */
+/* Side columns match center (tabs) height; overflow scrolls */
 .trade-room__layout {
-  align-items: stretch; /* Makes all columns equal height */
+  align-items: start;
 }
 .trade-room__timeline-column,
 .trade-room__content,
@@ -1466,10 +1499,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-.trade-room__timeline-card,
-.trade-room__panel {
-  flex: 1; /* Makes cards take available space */
 }
 
 /* Summary cards layout: full width stack */
@@ -1671,6 +1700,8 @@
   }
   .trade-room__details-column {
     order: 3;
+    max-height: none;
+    overflow: visible;
   }
   .trade-room__content {
     order: 2;
@@ -1678,6 +1709,11 @@
   .trade-room__timeline-column {
     order: 1;
     position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .trade-room__timeline-column > .trade-room__timeline-card:not(.trade-room__support) {
+    overflow: visible;
   }
 }
 
