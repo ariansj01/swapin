@@ -124,6 +124,7 @@ function multi_trade_ensure_tables(): bool
                     `close_voted_at` DATETIME DEFAULT NULL,
                     `target_member_id` INT UNSIGNED DEFAULT NULL,
                     `fee_amount` DECIMAL(15,0) NOT NULL DEFAULT 0,
+                    `fee_receive` DECIMAL(15,0) NOT NULL DEFAULT 0,
                     `fee_paid` TINYINT(1) NOT NULL DEFAULT 0,
                     `fee_paid_at` DATETIME DEFAULT NULL,
                     `diff_amount` DECIMAL(15,0) NOT NULL DEFAULT 0,
@@ -215,6 +216,9 @@ function multi_trade_ensure_tables(): bool
         }
         if (db_has_table('trade_offers') && !db_has_column('trade_offers', 'group_requested_by')) {
             DB::query("ALTER TABLE `trade_offers` ADD COLUMN `group_requested_by` INT UNSIGNED DEFAULT NULL COMMENT 'کاربری که درخواست مبادله چندنفره داده'");
+        }
+        if (db_has_table('multi_trade_members') && !db_has_column('multi_trade_members', 'fee_receive')) {
+            DB::query("ALTER TABLE `multi_trade_members` ADD COLUMN `fee_receive` DECIMAL(15,0) NOT NULL DEFAULT 0 COMMENT 'کارمزد معامله دریافتی (کالایی که می‌گیرد)'");
         }
         if (function_exists('db_ensure_enum_values')) {
             db_ensure_enum_values(
@@ -1044,32 +1048,45 @@ function multi_trade_activate_room(int $roomId): array
 
     $existing = (int)(DB::fetch('SELECT COUNT(*) AS c FROM multi_trade_tracks WHERE room_id = ?', [$roomId])['c'] ?? 0);
 
+    // محاسبه‌ی کارمزد هر آگهی (با کش تا کوئری تکراری نزنیم)
+    $feeCache = [];
+    $feeOfListing = function (int $listingId) use (&$feeCache): int {
+        if ($listingId <= 0) {
+            return 0;
+        }
+        if (array_key_exists($listingId, $feeCache)) {
+            return $feeCache[$listingId];
+        }
+        $listing = DB::fetch(
+            'SELECT l.category_id, l.estimated_value, u.provider_type
+             FROM listings l JOIN users u ON u.id = l.user_id WHERE l.id = ?',
+            [$listingId]
+        );
+        $fee = 0;
+        if ($listing) {
+            $rate = get_commission_rate_for((int)$listing['category_id'], (string)($listing['provider_type'] ?? ''));
+            $val  = (float)$listing['estimated_value'];
+            $fee  = $val > 0 ? max(1, (int)round($val * $rate)) : 0;
+        }
+        return $feeCache[$listingId] = $fee;
+    };
+
     foreach ($members as $m) {
         $mid    = (int)$m['id'];
         $target = (int)$m['target_member_id'];
 
-        // کارمزد این عضو بر اساس ارزش آگهی خودش
-        $ownListingId = (int)($m['listing_id'] ?? 0);
-        $fee = 0;
-        if ($ownListingId > 0) {
-            $listing = DB::fetch(
-                'SELECT l.category_id, l.estimated_value, u.provider_type
-                 FROM listings l JOIN users u ON u.id = l.user_id WHERE l.id = ?',
-                [$ownListingId]
-            );
-            if ($listing) {
-                $rate = get_commission_rate_for((int)$listing['category_id'], (string)($listing['provider_type'] ?? ''));
-                $val  = (float)$listing['estimated_value'];
-                $fee  = $val > 0 ? max(1, (int)round($val * $rate)) : 0;
-            }
-        }
-        // ماب‌تفاوت = ارزش کالای دریافتی − ارزش کالای خودم
+        // کارمزد کالایی که این عضو پس می‌دهد (آگهی خودش)
+        $feeGive = $feeOfListing((int)($m['listing_id'] ?? 0));
+        // کارمزد کالایی که این عضو می‌گیرد (آگهی عضوی که به او تحویل می‌دهد)
         $receivedFrom = $giverToMe[$mid] ?? 0;
+        $feeGet       = isset($byId[$receivedFrom]) ? $feeOfListing((int)($byId[$receivedFrom]['listing_id'] ?? 0)) : 0;
+        // ماب‌تفاوت = ارزش کالای دریافتی − ارزش کالای خودم
         $receivedVal  = isset($byId[$receivedFrom]) ? $valOf($byId[$receivedFrom]) : 0.0;
         $diff = (int)round($receivedVal - $valOf($m));
 
         DB::update('multi_trade_members', [
-            'fee_amount'  => $fee,
+            'fee_amount'  => $feeGive,
+            'fee_receive' => $feeGet,
             'diff_amount' => $diff,
         ], 'id = ?', [$mid]);
 
@@ -1083,6 +1100,9 @@ function multi_trade_activate_room(int $roomId): array
     }
 
     DB::update('multi_trade_rooms', ['status' => 'active', 'diff_settled' => 0], 'id = ?', [$roomId]);
+
+    // اگر هیچ‌کس بدهکار ماب‌تفاوت نیست، همان لحظه تسویه اعلام شود.
+    multi_trade_settle_diff_if_ready($roomId);
     multi_trade_system_message($roomId, 'چرخه‌ی معامله تأیید شد و مسیرهای جفتی ساخته شدند. فرآیند معامله آغاز شد.');
     foreach ($members as $m) {
         multi_trade_notify((int)$m['user_id'], 'چرخه‌ی معامله تأیید شد',
@@ -1142,11 +1162,11 @@ function multi_trade_track_step(array $track, array $room, array $memberById): s
     if (!((int)$d['fee_paid'] && (int)$r['fee_paid'])) {
         return MT_STEP_FEE;
     }
-    if (!(int)$room['diff_settled']) {
-        return MT_STEP_DIFF;
-    }
     if (!((int)$track['deliverer_signed'] && (int)$track['receiver_signed'])) {
         return MT_STEP_CONTRACT;
+    }
+    if (!(int)$room['diff_settled']) {
+        return MT_STEP_DIFF;
     }
     if (empty($track['shipping_date'])) {
         return MT_STEP_SHIPPING;
@@ -1176,7 +1196,8 @@ function multi_trade_pay_fee(int $roomId, int $userId): array
     if ((int)$member['fee_paid']) {
         return ['ok' => true, 'already' => true];
     }
-    $fee = (float)$member['fee_amount'];
+    // کارمزد هر دو معامله‌ی این عضو: کالایی که پس می‌دهد + کالایی که می‌گیرد
+    $fee = (float)$member['fee_amount'] + (float)$member['fee_receive'];
     if ($fee > 0) {
         $u = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$userId]);
         if ((float)($u['credit_balance'] ?? 0) < $fee) {
@@ -1277,6 +1298,40 @@ function multi_trade_sign_track(int $trackId, int $userId): array
     }
     multi_trade_system_message((int)$track['room_id'], $member['user_name'] . ' قرارداد را امضا کرد.');
     multi_trade_maybe_complete((int)$track['room_id']);
+    return ['ok' => true];
+}
+
+/**
+ * امضای یکپارچه‌ی قرارداد: یک بار امضا، هر دو مسیرِ عضو (ارسال و دریافت) امضا می‌شود.
+ */
+function multi_trade_sign_contract(int $roomId, int $userId): array
+{
+    $room = multi_trade_room($roomId);
+    if (!$room || $room['status'] !== 'active') {
+        return ['error' => 'اتاق در وضعیت امضای قرارداد نیست.'];
+    }
+    $member = multi_trade_member($roomId, $userId);
+    if (!$member || $member['status'] !== 'active') {
+        return ['error' => 'شما عضو این اتاق نیستید.'];
+    }
+    $mid    = (int)$member['id'];
+    $tracks = multi_trade_tracks($roomId);
+    $touched = 0;
+    foreach ($tracks as $t) {
+        if ((int)$t['deliverer_member_id'] === $mid) {
+            DB::query('UPDATE multi_trade_tracks SET deliverer_signed = 1 WHERE id = ?', [(int)$t['id']]);
+            $touched++;
+        }
+        if ((int)$t['receiver_member_id'] === $mid) {
+            DB::query('UPDATE multi_trade_tracks SET receiver_signed = 1 WHERE id = ?', [(int)$t['id']]);
+            $touched++;
+        }
+    }
+    if (!$touched) {
+        return ['error' => 'مسیری برای شما یافت نشد.'];
+    }
+    multi_trade_system_message($roomId, $member['user_name'] . ' قرارداد را امضا کرد.');
+    multi_trade_maybe_complete($roomId);
     return ['ok' => true];
 }
 
