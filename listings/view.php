@@ -145,6 +145,9 @@ $isSaved = $user ? (bool)DB::fetch(
     'SELECT 1 FROM saved_listings WHERE user_id = ? AND listing_id = ?', [$user['id'], $id]
 ) : false;
 
+// Multi-trade check
+$mtListingRoom = multi_trade_open_rooms_by_listing()[(int)$listing['id']] ?? null;
+
 // Related listings
 $related = DB::fetchAll(
     'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating,
@@ -291,6 +294,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                    AND status = "pending" LIMIT 1',
                 [$id, $user['id']]
             );
+        }
+    } elseif ($_POST['action'] === 'mt_join_request') {
+        $roomId = (int)($_POST['room_id'] ?? 0);
+        $offerListingId = (int)($_POST['offer_listing_id'] ?? 0);
+        if (!$roomId) {
+            $offerError = 'اتاق معتبر یافت نشد.';
+        } elseif (!$offerListingId) {
+            $offerError = 'لطفاً یکی از کالاهای خود را انتخاب کنید.';
+        } else {
+            $res = multi_trade_join_request($roomId, $user['id'], $offerListingId);
+            if (isset($res['error'])) {
+                $offerError = $res['error'];
+            } else {
+                $offerSuccess = 'درخواست پیوستن شما ثبت شد و به اعضای اتاق اطلاع داده شد.';
+            }
         }
     } elseif ($_POST['action'] === 'save_listing') {
         if ($isSaved) {
@@ -679,12 +697,15 @@ render_navbar($user);
         <button type="button" class="lv-sheet__close" aria-label="بستن">&times;</button>
         <h2 class="lv-sheet__title" id="lv-sheet-title">ارسال پیشنهاد برای <?= h($listing['seller_name']) ?></h2>
       </div>
-      <p class="lv-sheet__subtitle">شما در ازای این کالا چه پیشنهادی دارید؟</p>
+      <p class="lv-sheet__subtitle"><?= $mtListingRoom ? 'با انتخاب کالای خود، درخواست پیوستن به مبادله چندنفره را ارسال کنید.' : 'شما در ازای این کالا چه پیشنهادی دارید؟' ?></p>
     </div>
 
     <form method="POST" id="lv-offer-form" class="lv-sheet__form">
       <?= csrf_field() ?>
-      <input type="hidden" name="action" value="make_offer">
+      <input type="hidden" name="action" value="<?= $mtListingRoom ? 'mt_join_request' : 'make_offer' ?>">
+      <?php if ($mtListingRoom): ?>
+        <input type="hidden" name="room_id" value="<?= (int)$mtListingRoom ?>">
+      <?php endif; ?>
       <input type="hidden" name="offer_type" value="item">
       <input type="hidden" name="credit_amount" value="">
 
@@ -1112,9 +1133,20 @@ render_navbar($user);
 
           <form method="POST" id="offer-form">
             <?= csrf_field() ?>
-            <input type="hidden" name="action" value="make_offer">
-            <input type="hidden" name="offer_type" id="lv-offer-type-input" value="<?= $myListings ? 'item' : 'message' ?>">
+            <input type="hidden" name="action" value="<?= $mtListingRoom ? 'mt_join_request' : 'make_offer' ?>">
+            <?php if ($mtListingRoom): ?>
+              <input type="hidden" name="room_id" value="<?= (int)$mtListingRoom ?>">
+            <?php endif; ?>
+            <input type="hidden" name="offer_type" id="lv-offer-type-input" value="<?= ($mtListingRoom || $myListings) ? 'item' : 'message' ?>">
 
+            <?php if ($mtListingRoom): ?>
+            <div class="alert alert-info mb-4" style="font-size:13px; border:1px solid var(--lv-blue); background:rgba(0,102,255,.05);">
+              <i class="bi bi-people-fill"></i>
+              این کالا در یک <b>مبادله چندنفره</b> حضور دارد. با انتخاب کالای خود، درخواست پیوستن به این گروه را ارسال می‌کنید.
+            </div>
+            <?php endif; ?>
+
+            <?php if (!$mtListingRoom): ?>
             <div class="lv-offer-types">
               <button type="button" class="lv-offer-type<?= $myListings ? ' active' : '' ?>" data-type="item">
                 <div class="lv-offer-icon"><i class="bi bi-box-seam"></i></div>
@@ -1131,6 +1163,7 @@ render_navbar($user);
                 </div>
               </button>
             </div>
+            <?php endif; ?>
 
             <div id="lv-offer-item-section">
               <?php if ($myListings): ?>
