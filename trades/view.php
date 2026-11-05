@@ -13,10 +13,9 @@ if (!$tradeId) {
     exit;
 }
 
-function fetch_trade_room(int $tradeId, int $uid): ?array
+function fetch_trade_room(int $tradeId, ?int $uid = null): ?array
 {
-    return DB::fetch(
-        'SELECT t.*, ua.name AS user_a_name, ub.name AS user_b_name,
+    $sql = 'SELECT t.*, ua.name AS user_a_name, ub.name AS user_b_name,
                 la.title AS listing_a_title, lb.title AS listing_b_title,
                 la.estimated_value AS listing_a_val, lb.estimated_value AS listing_b_val,
                 (SELECT filename FROM listing_images WHERE listing_id = la.id AND is_primary = 1 LIMIT 1) AS img_a,
@@ -26,24 +25,41 @@ function fetch_trade_room(int $tradeId, int $uid): ?array
          JOIN users ub ON ub.id = t.user_b_id
          JOIN listings la ON la.id = t.listing_a_id
          LEFT JOIN listings lb ON lb.id = t.listing_b_id
-         WHERE t.id = ? AND (t.user_a_id = ? OR t.user_b_id = ?)',
-        [$tradeId, $uid, $uid]
-    ) ?: null;
+         WHERE t.id = ?';
+    $params = [$tradeId];
+    if ($uid !== null) {
+        $sql .= ' AND (t.user_a_id = ? OR t.user_b_id = ?)';
+        $params[] = $uid;
+        $params[] = $uid;
+    }
+    return DB::fetch($sql, $params) ?: null;
 }
+
+// اتاق مبادله چندنفره داخل همین صفحه (اتاق امن) نمایش داده می‌شود.
+multi_trade_ensure_tables();
+$multiRoom = multi_trade_room_for_seed_trade($tradeId);
+
+// عضویت کاربر در اتاق مبادله چندنفره (برای دسترسی اعضای جدید نفر ۳ تا ۵)
+$mtViewMember   = $multiRoom ? multi_trade_member((int)$multiRoom['id'], $uid) : null;
+$mtViewIsMember = (bool)($mtViewMember && in_array((string)$mtViewMember['status'], ['active', 'invited'], true));
 
 $trade = fetch_trade_room($tradeId, $uid);
 if (!$trade) {
-    header('Location: ' . APP_URL . '/trades');
-    exit;
+    if ($mtViewIsMember) {
+        // عضو اتاق که طرف معامله‌ی پایه نیست؛ امکان مشاهده‌ی اتاق امن را دارد.
+        $trade = fetch_trade_room($tradeId, null);
+    }
+    if (!$trade) {
+        // کاربر نه طرف معامله است و نه عضو اتاق؛ به فرم پیوستن هدایت می‌شود.
+        if ($multiRoom && in_array((string)$multiRoom['status'], ['awaiting_seed', 'forming'], true)) {
+            header('Location: ' . APP_URL . '/trades/group?id=' . (int)$multiRoom['id']);
+            exit;
+        }
+        header('Location: ' . APP_URL . '/trades');
+        exit;
+    }
 }
-
-// اگر این معامله به «مبادله چندنفره» تبدیل شده باشد، کاربر به اتاق معامله هدایت می‌شود.
-multi_trade_ensure_tables();
-$multiRoom = multi_trade_room_for_seed_trade($tradeId);
-if ($multiRoom && in_array((string)$multiRoom['status'], ['awaiting_seed', 'forming', 'locked', 'active'], true)) {
-    header('Location: ' . multi_trade_room_url((int)$multiRoom['id']));
-    exit;
-}
+$isParty = in_array($uid, [(int)$trade['user_a_id'], (int)$trade['user_b_id']], true);
 
 $isA       = (int)$trade['user_a_id'] === $uid;
 $otherName = $isA ? $trade['user_b_name'] : $trade['user_a_name'];
@@ -267,12 +283,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($res['error'])) {
             $error = $res['error'];
         } else {
-            $roomId = (int)($res['room_id'] ?? 0);
-            if ($roomId > 0) {
-                header('Location: ' . multi_trade_room_url($roomId));
-                exit;
-            }
-            $success = 'درخواست مبادله چندنفره با موفقیت ثبت شد.';
+            $success = 'درخواست مبادله چندنفره ثبت شد. در انتظار تأیید طرف مقابل.';
+            $multiRoom = multi_trade_room_for_seed_trade($tradeId);
         }
     } elseif ($action === 'accept_invite') {
         if ($multiRoom) {
@@ -292,6 +304,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $res = multi_trade_vote_join($requestId, $uid, $approve);
         if (isset($res['error'])) $error = $res['error'];
         else $success = 'نظر شما با موفقیت ثبت شد.';
+    } elseif ($action === 'vote_close') {
+        if ($multiRoom) {
+            $res = multi_trade_vote_close((int)$multiRoom['id'], $uid);
+            if (isset($res['error'])) $error = $res['error'];
+            else $success = 'تأیید شما ثبت شد.';
+        }
+    } elseif ($action === 'select_target') {
+        if ($multiRoom) {
+            $res = multi_trade_select_target((int)$multiRoom['id'], $uid, (int)($_POST['target_member_id'] ?? 0));
+            if (isset($res['error'])) {
+                $error = $res['error'];
+            } elseif (!empty($res['cycle_error'])) {
+                $error = $res['cycle_error'];
+            } else {
+                $success = !empty($res['activated'])
+                    ? 'همه انتخاب‌ها کامل شد؛ چرخه معامله فعال شد.'
+                    : 'انتخاب شما ثبت شد.';
+            }
+        }
+    } elseif ($action === 'leave_room') {
+        if ($multiRoom) {
+            $res = multi_trade_leave_room((int)$multiRoom['id'], $uid);
+            if (isset($res['error'])) {
+                $error = $res['error'];
+            } else {
+                header('Location: ' . APP_URL . '/trades');
+                exit;
+            }
+        }
+    } elseif ($action === 'mt_pay_fee') {
+        if ($multiRoom) {
+            $res = multi_trade_pay_fee((int)$multiRoom['id'], $uid);
+            if (isset($res['error'])) $error = $res['error']; else $success = 'کارمزد شما پرداخت شد.';
+        }
+    } elseif ($action === 'mt_pay_diff') {
+        if ($multiRoom) {
+            $res = multi_trade_pay_diff((int)$multiRoom['id'], $uid);
+            if (isset($res['error'])) $error = $res['error']; else $success = 'ماب‌تفاوت شما پرداخت شد.';
+        }
+    } elseif ($action === 'mt_sign_track') {
+        $res = multi_trade_sign_track((int)($_POST['track_id'] ?? 0), $uid);
+        if (isset($res['error'])) $error = $res['error']; else $success = 'قرارداد این مسیر امضا شد.';
+    } elseif ($action === 'mt_set_shipping') {
+        $res = multi_trade_set_track_shipping(
+            (int)($_POST['track_id'] ?? 0), $uid,
+            clean($_POST['method'] ?? ''), clean($_POST['shipping_date'] ?? ''), clean($_POST['shipping_time'] ?? '')
+        );
+        if (isset($res['error'])) $error = $res['error']; else $success = 'زمان و روش ارسال ثبت شد.';
+    } elseif ($action === 'mt_mark_shipped') {
+        $res = multi_trade_mark_shipped((int)($_POST['track_id'] ?? 0), $uid, clean($_POST['tracking_code'] ?? ''));
+        if (isset($res['error'])) $error = $res['error']; else $success = 'ارسال کالا ثبت شد.';
+    } elseif ($action === 'mt_confirm_received') {
+        $res = multi_trade_confirm_received((int)($_POST['track_id'] ?? 0), $uid);
+        if (isset($res['error'])) $error = $res['error']; else $success = 'دریافت کالا تأیید شد.';
+    } elseif ($action === 'mt_rate_track') {
+        $res = multi_trade_rate_track((int)($_POST['track_id'] ?? 0), $uid, (int)($_POST['score'] ?? 0), clean($_POST['comment'] ?? ''));
+        if (isset($res['error'])) $error = $res['error']; else $success = 'امتیاز شما ثبت شد.';
+    } elseif ($action === 'mt_send_message') {
+        if ($multiRoom) {
+            $res = multi_trade_send_message((int)$multiRoom['id'], $uid, (string)($_POST['body'] ?? ''));
+            if (isset($res['error'])) $error = $res['error'];
+        }
     }
 
     $trade    = fetch_trade_room($tradeId, $uid) ?? $trade;
@@ -309,13 +383,39 @@ $mtPendingRequests = [];
 $mtMyMember        = null;
 $mtIsInvited       = false;
 $mtActiveCount     = 0;
+$mtMembersAll      = [];
+$mtLocked          = false;
+$mtTakenTargets    = [];
+$mtStatus          = '';
+$mtIAmActive       = false;
+$mtBoard           = null;
+$mtMessages        = [];
+$mtMyTracks        = [];
 if ($multiRoom) {
     $roomId        = (int)$multiRoom['id'];
+    $mtStatus      = (string)$multiRoom['status'];
     $mtMyMember    = multi_trade_member($roomId, $uid);
     $mtIsInvited   = (bool)($mtMyMember && $mtMyMember['status'] === 'invited');
+    $mtIAmActive   = (bool)($mtMyMember && $mtMyMember['status'] === 'active');
     $mtActiveCount = multi_trade_active_count($roomId);
-    if ($mtMyMember && $multiRoom['status'] === 'forming') {
+    $mtMembersAll  = multi_trade_members($roomId, false);
+    $mtLocked      = in_array($mtStatus, ['active', 'completed'], true);
+    $mtMessages    = multi_trade_messages($roomId);
+    if ($mtMyMember && $mtStatus === 'forming') {
         $mtPendingRequests = multi_trade_join_requests_pending($roomId);
+    }
+    if ($mtLocked) {
+        $mtBoard    = multi_trade_board($roomId);
+        $mtMyTracks = array_values(array_filter($mtBoard['tracks'], function ($t) use ($uid) {
+            return (int)$t['deliverer_user_id'] === $uid || (int)$t['receiver_user_id'] === $uid;
+        }));
+    }
+    // هدف‌های انتخاب‌شده توسط سایر اعضا (برای قفل‌کردن انتخاب‌های تکراری)
+    foreach ($mtMembersAll as $m) {
+        $t = (int)($m['target_member_id'] ?? 0);
+        if ($t > 0 && (int)$m['id'] !== (int)($mtMyMember['id'] ?? 0)) {
+            $mtTakenTargets[$t] = (int)$m['id'];
+        }
     }
 }
 
@@ -556,6 +656,38 @@ echo '<link rel="stylesheet" href="' . APP_URL . '/src/css/secure-trade.css">' .
 .mt-pill--locked  { background: rgba(255,201,40,.18); color:#8a6d00; }
 .mt-pill--active  { background: rgba(7,26,51,.08); color:#071A33; }
 .mt-pill--completed { background: rgba(20,160,90,.12); color:#128a4d; }
+.mt-notify { display:flex; align-items:center; gap:10px; background: linear-gradient(135deg, #FFF6DC 0%, #FFEDB8 100%); border:1px solid #FFC928; color:#7a6100; border-radius:14px; padding:12px 14px; font-size:13px; font-weight:700; margin-bottom:14px; }
+.mt-notify i { font-size:18px; }
+.mt-member-row { display:flex; align-items:center; gap:10px; padding:10px; background:#f8fafd; border-radius:12px; margin-bottom:8px; }
+.mt-member-av { width:34px; height:34px; border-radius:10px; background:#071A33; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex:0 0 auto; }
+.mt-member-name { font-weight:700; font-size:13px; color:#071A33; }
+.mt-member-meta { font-size:11px; color:#6c7a92; }
+.mt-blur-wrap { position:relative; border-radius:14px; overflow:hidden; }
+.mt-blur-body { filter: blur(4px); opacity:.55; pointer-events:none; user-select:none; }
+.mt-blur-note { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; font-size:12px; font-weight:700; color:#7a6100; background:rgba(255,255,255,.55); padding:10px; }
+.mt-target-option { display:flex; align-items:center; gap:8px; padding:9px 11px; border:1px solid #e6ebf3; border-radius:12px; margin-bottom:8px; font-size:13px; }
+.mt-target-option.is-taken { opacity:.5; background:#f4f6fa; }
+.mt-cycle { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; }
+.mt-cycle .mt-node { background:#f1f4f9; border-radius:10px; padding:5px 9px; font-weight:700; color:#071A33; }
+.mt-track-mini { display:flex; justify-content:space-between; align-items:center; gap:8px; border:1px solid #e6ebf3; border-radius:12px; padding:9px 11px; margin-bottom:8px; font-size:12px; background:#fbfcfe; }
+.mt-track-mini__flow { font-weight:700; color:#071A33; }
+.mt-badge { font-size:11px; padding:2px 8px; border-radius:999px; font-weight:700; white-space:nowrap; }
+.mt-badge--ok { background:rgba(20,160,90,.12); color:#128a4d; }
+.mt-badge--wait { background:rgba(255,102,0,.12); color:#c25200; }
+.mt-tabs { display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid #e6ebf3; }
+.mt-tab { border:none; background:transparent; cursor:pointer; padding:10px 14px; font-size:14px; font-weight:700; color:#6c7a92; border-bottom:3px solid transparent; font-family:inherit; }
+.mt-tab.is-active { color:#071A33; border-bottom-color:#FFC928; }
+.mt-track { border:1px solid #e6ebf3; border-radius:14px; padding:14px; margin-bottom:12px; background:#fff; }
+.mt-track--mine { border-color:#FFC928; box-shadow:0 4px 16px rgba(255,201,40,.18); }
+.mt-track__head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+.mt-track__flow { display:flex; align-items:center; gap:8px; font-weight:700; color:#071A33; font-size:13px; }
+.mt-track__step { font-size:12px; color:#6c7a92; margin-top:6px; }
+.mt-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.mt-input, .mt-select { border:1px solid #dbe3ee; border-radius:10px; padding:8px 10px; font-size:13px; font-family:inherit; }
+.mt-btn { display:inline-flex; align-items:center; gap:6px; border:none; cursor:pointer; border-radius:12px; padding:9px 15px; font-weight:700; font-size:13px; font-family:inherit; }
+.mt-btn--primary { background:#071A33; color:#fff; }
+.mt-btn--gold { background:#FFC928; color:#071A33; }
+.mt-btn--danger { background:#ffe9e6; color:#c0392b; }
 </style>
 <?php
 render_navbar($user);
@@ -606,7 +738,7 @@ render_user_panel_open($user, 'trades');
         <?php endif; ?>
       </button>
 
-      <?php if (!in_array((string)$trade['status'], ['completed', 'cancelled'], true)): ?>
+      <?php if (!in_array((string)$trade['status'], ['completed', 'cancelled'], true) && !$multiRoom): ?>
       <form method="post" style="display:inline;">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="request_multi_trade">
@@ -624,16 +756,31 @@ render_user_panel_open($user, 'trades');
     </div>
   </header>
 
-  <?php if ($multiRoom): ?>
+  <?php if ($multiRoom && !$mtLocked && $mtStatus !== 'cancelled'): ?>
     <section class="trade-room__card" style="margin-bottom: var(--sp-4); border: 2px solid #FFC928;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
         <h2 style="font-size:18px; color:#071A33; margin:0;">
           <i class="bi bi-people-fill" style="color:#FFC928;"></i>
           وضعیت مبادله چندنفره
         </h2>
-        <span class="mt-pill mt-pill--<?= h($multiRoom['status'] === 'awaiting_seed' ? 'forming' : $multiRoom['status']) ?>">
-          <?= h(multi_trade_room_status_label((string)$multiRoom['status'])) ?>
-        </span>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <span class="mt-pill mt-pill--<?= h($mtStatus === 'awaiting_seed' ? 'forming' : $mtStatus) ?>">
+            <?= h(multi_trade_room_status_label($mtStatus)) ?>
+          </span>
+          <?php if ($mtIAmActive && in_array($mtStatus, ['awaiting_seed', 'forming'], true)): ?>
+            <?php if ($mtActiveCount <= 2): ?>
+            <form method="post" onsubmit="return confirm('با این کار معامله به‌طور کامل بسته می‌شود و آگهی‌ها به حالت فعال برمی‌گردند. مطمئن هستید؟');">
+              <?= csrf_field() ?><input type="hidden" name="action" value="leave_room">
+              <button type="submit" class="trade-room__hero-btn" style="background:#ffe9e6; color:#c0392b; border:none;"><i class="bi bi-x-octagon"></i> ترک و بستن معامله</button>
+            </form>
+            <?php else: ?>
+            <form method="post" onsubmit="return confirm('آیا از ترک این معامله مطمئن هستید؟ فقط شما از گروه خارج می‌شوید.');">
+              <?= csrf_field() ?><input type="hidden" name="action" value="leave_room">
+              <button type="submit" class="trade-room__hero-btn" style="background:#ffe9e6; color:#c0392b; border:none;"><i class="bi bi-box-arrow-right"></i> ترک معامله</button>
+            </form>
+            <?php endif; ?>
+          <?php endif; ?>
+        </div>
       </div>
 
       <?php if ($mtIsInvited): ?>
@@ -648,53 +795,111 @@ render_user_panel_open($user, 'trades');
             </form>
           </div>
         </div>
-      <?php elseif ($multiRoom['status'] === 'awaiting_seed'): ?>
+      <?php elseif ($mtStatus === 'awaiting_seed'): ?>
         <div class="trade-room__alert trade-room__alert--info">
           در انتظار تأیید طرف مقابل برای تبدیل به مبادله چندنفره...
         </div>
       <?php else: ?>
-        <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
-          <div style="font-size:14px;">تعداد اعضای فعلی: <b><?= $mtActiveCount ?> نفر</b></div>
-          <a href="<?= h(multi_trade_room_url((int)$multiRoom['id'])) ?>" class="trade-room__hero-btn" style="padding: 6px 12px; font-size: 12px;">
-            <i class="bi bi-box-arrow-in-right"></i> ورود به اتاق گروهی
-          </a>
-        </div>
-        
+
         <?php if ($mtPendingRequests): ?>
-          <div style="margin-top:15px; border-top:1px solid #e6ebf3; padding-top:15px;">
-            <h3 style="font-size:15px; margin-bottom:10px;"><i class="bi bi-inbox"></i> درخواست‌های جدید برای پیوستن:</h3>
-            <?php foreach ($mtPendingRequests as $r): ?>
-              <div style="background:#fff; border:1px solid #e6ebf3; border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:13px;">
-                  <b><?= h($r['user_name']) ?></b> قصد پیوستن با آگهی «<?= h($r['listing_title']) ?>» را دارد.
-                </div>
-                <div style="display:flex; gap:5px;">
-                  <?php 
-                    $myVote = DB::fetch('SELECT decision FROM multi_trade_join_votes WHERE request_id = ? AND member_id = ?', [(int)$r['id'], (int)$mtMyMember['id']]);
-                  ?>
-                  <?php if ($myVote): ?>
-                    <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:<?= $myVote['decision'] === 'approve' ? '#e8f5e9;color:#2e7d32' : '#ffebee;color:#c62828' ?>;">
-                      نظر شما: <?= $myVote['decision'] === 'approve' ? 'موافق' : 'مخالف' ?>
-                    </span>
-                  <?php else: ?>
-                    <form method="post"><?= csrf_field() ?>
-                      <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="1">
-                      <button class="trade-room__hero-btn" style="padding:4px 8px; font-size:11px; background:#e8f5e9; color:#2e7d32; border:none;" type="submit">موافقم</button>
-                    </form>
-                    <form method="post"><?= csrf_field() ?>
-                      <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="0">
-                      <button class="trade-room__hero-btn" style="padding:4px 8px; font-size:11px; background:#ffebee; color:#c62828; border:none;" type="submit">مخالفم</button>
-                    </form>
-                  <?php endif; ?>
-                </div>
+        <!-- نوتیف بالای اتاق -->
+        <div class="mt-notify">
+          <i class="bi bi-bell-fill"></i>
+          <span><b><?= count($mtPendingRequests) ?></b> درخواست پیوستن جدید در انتظار تأیید شماست؛ برای بررسی به پایین همین کارت نگاه کنید.</span>
+        </div>
+        <?php endif; ?>
+
+        <!-- درخواست‌های پیوستن (بالای لیست اعضا) -->
+        <?php if ($mtPendingRequests): ?>
+          <h3 style="font-size:15px; margin:0 0 10px;"><i class="bi bi-inbox"></i> درخواست‌های پیوستن</h3>
+          <?php foreach ($mtPendingRequests as $r): ?>
+            <div style="background:#fff; border:1px solid #e6ebf3; border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div style="font-size:13px;">
+                <b><?= h($r['user_name']) ?></b> قصد پیوستن با آگهی «<?= h($r['listing_title']) ?>» را دارد.
+                <span style="color:#6c7a92; font-size:11px;">(تأییدها: <?= (int)$r['approve_count'] ?>/<?= $mtActiveCount ?>)</span>
               </div>
-            <?php endforeach; ?>
+              <div style="display:flex; gap:5px;">
+                <?php $myVote = DB::fetch('SELECT decision FROM multi_trade_join_votes WHERE request_id = ? AND member_id = ?', [(int)$r['id'], (int)$mtMyMember['id']]); ?>
+                <?php if ($myVote): ?>
+                  <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:<?= $myVote['decision'] === 'approve' ? '#e8f5e9;color:#2e7d32' : '#ffebee;color:#c62828' ?>;">
+                    نظر شما: <?= $myVote['decision'] === 'approve' ? 'موافق' : 'مخالف' ?>
+                  </span>
+                <?php else: ?>
+                  <form method="post"><?= csrf_field() ?>
+                    <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="1">
+                    <button class="trade-room__hero-btn" style="padding:4px 10px; font-size:11px; background:#e8f5e9; color:#2e7d32; border:none;" type="submit"><i class="bi bi-check2"></i> موافقم</button>
+                  </form>
+                  <form method="post"><?= csrf_field() ?>
+                    <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="0">
+                    <button class="trade-room__hero-btn" style="padding:4px 10px; font-size:11px; background:#ffebee; color:#c62828; border:none;" type="submit"><i class="bi bi-x"></i> مخالفم</button>
+                  </form>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
+
+        <!-- لیست اعضا -->
+        <h3 style="font-size:15px; margin:14px 0 10px;"><i class="bi bi-people"></i> اعضای اتاق (<?= $mtActiveCount ?> از <?= (int)$multiRoom['members_max'] ?>)</h3>
+        <?php foreach ($mtMembersAll as $m): ?>
+          <div class="mt-member-row">
+            <div class="mt-member-av"><?= h(mb_substr((string)$m['user_name'], 0, 1)) ?></div>
+            <div style="flex:1;">
+              <div class="mt-member-name"><?= h($m['user_name']) ?> <?= (int)$m['user_id'] === $uid ? '(شما)' : '' ?></div>
+              <div class="mt-member-meta">
+                <?= h($m['listing_title'] ?? 'بدون آگهی') ?>
+                —
+                <?= $m['status'] === 'active' ? 'عضو فعال' : ($m['status'] === 'invited' ? 'در انتظار تأیید' : 'خارج‌شده') ?>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+
+        <!-- بستن اتاق (۳ تا ۵ عضو) -->
+        <?php if ($mtStatus === 'forming' && $mtActiveCount >= 3 && $mtIAmActive): ?>
+          <div style="margin-top:14px; border-top:1px solid #e6ebf3; padding-top:14px;">
+            <p style="font-size:13px; color:#42536e; margin-bottom:10px;">با تأیید <b>همه‌ی</b> اعضا، اتاق بسته می‌شود. تا آن زمان تأیید درخواست‌های پیوستن همچنان ممکن است.</p>
+            <?php if ((int)$mtMyMember['close_vote']): ?>
+              <button class="trade-room__hero-btn" disabled><i class="bi bi-hourglass-split"></i> منتظر تأیید بقیه اعضا</button>
+            <?php else: ?>
+              <form method="post" onsubmit="return confirm('با تأیید شما، اتاق تنها در صورت موافقت همه‌ی اعضا بسته می‌شود. مطمئن هستید؟');"><?= csrf_field() ?>
+                <input type="hidden" name="action" value="vote_close">
+                <button class="trade-room__hero-btn" style="background:#FFC928; color:#071A33; border:none;" type="submit"><i class="bi bi-lock-fill"></i> بستن اتاق</button>
+              </form>
+            <?php endif; ?>
           </div>
         <?php endif; ?>
+
+        <!-- انتخاب طرف معامله (پس از بستن اتاق) -->
+        <?php if ($mtStatus === 'locked' && $mtIAmActive): ?>
+          <div style="margin-top:14px; border-top:1px solid #e6ebf3; padding-top:14px;">
+            <h3 style="font-size:15px; margin-bottom:8px;"><i class="bi bi-arrow-left-right"></i> انتخاب طرف معامله</h3>
+            <p style="font-size:13px; color:#42536e; margin-bottom:12px;">دقیقاً یک نفر را انتخاب کنید؛ هر عضو فقط یک‌بار می‌تواند انتخاب شود.</p>
+            <form method="post">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="select_target">
+              <?php foreach ($mtMembersAll as $m): ?>
+                <?php
+                  if ($m['status'] !== 'active' || (int)$m['id'] === (int)$mtMyMember['id']) continue;
+                  $taken = isset($mtTakenTargets[(int)$m['id']]);
+                  $isMine = (int)($mtMyMember['target_member_id'] ?? 0) === (int)$m['id'];
+                ?>
+                <label class="mt-target-option <?= $taken ? 'is-taken' : '' ?>">
+                  <input type="radio" name="target_member_id" value="<?= (int)$m['id'] ?>" <?= $isMine ? 'checked' : '' ?> <?= $taken ? 'disabled' : '' ?> required>
+                  <span><b><?= h($m['user_name']) ?></b> — <?= h($m['listing_title'] ?? 'بدون آگهی') ?></span>
+                  <?php if ($taken): ?><span style="margin-inline-start:auto; font-size:11px; color:#6c7a92;">قبلاً انتخاب شده</span><?php endif; ?>
+                </label>
+              <?php endforeach; ?>
+              <button type="submit" class="trade-room__hero-btn" style="background:#FFC928; color:#071A33; border:none; margin-top:6px;"><i class="bi bi-check2-circle"></i> ثبت انتخاب</button>
+            </form>
+          </div>
+        <?php endif; ?>
+
       <?php endif; ?>
     </section>
   <?php endif; ?>
 
+  <?php if ($isParty): ?>
   <!-- Parties Header moved up -->
   <section class="trade-room__card" style="margin-bottom: var(--sp-4);display: flex;justify-content: center;">
     <div class="trade-room__parties" style="display: grid; grid-template-columns: 37% 15% 30%; gap: 20px;align-items: center;width: 100%;">
@@ -720,6 +925,7 @@ render_user_panel_open($user, 'trades');
       </div>
     </div>
   </section>
+  <?php endif; ?>
 
   <!-- Mobile Steps Button -->
   <div class="trade-room__mobile-steps-btn-container">
@@ -760,28 +966,29 @@ render_user_panel_open($user, 'trades');
   <?php endif; ?>
 
   <div class="trade-room__layout">
-    <?php if ($multiRoom && $multiRoom['status'] !== 'cancelled'): ?>
-      <!-- Multi-trade view: Show chat and group status -->
+    <?php if ($multiRoom && !$mtLocked && $mtStatus !== 'cancelled'): ?>
+      <!-- نمای مبادله چندنفره: اتاق هنوز بسته نشده؛ «وضعیت معامله» و «جزئیات/مراحل» blur است -->
       <aside class="trade-room__timeline-column">
-        <section class="trade-room__timeline-card" style="border:1px solid #FFC928;">
-          <h3 class="trade-room__card-title"><i class="bi bi-people-fill"></i> اعضای گروه</h3>
-          <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
-            <?php 
-            $mtMembers = multi_trade_members((int)$multiRoom['id'], false);
-            foreach ($mtMembers as $m): 
-            ?>
-              <div style="display:flex; align-items:center; gap:8px; font-size:13px; padding:8px; background:#f8fafd; border-radius:10px;">
-                <div style="width:28px; height:28px; border-radius:8px; background:#071A33; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;">
-                  <?= h(mb_substr((string)$m['user_name'], 0, 1)) ?>
-                </div>
-                <div style="flex:1;">
-                  <div style="font-weight:700;"><?= h($m['user_name']) ?> <?= (int)$m['user_id'] === $uid ? '(شما)' : '' ?></div>
-                  <div style="font-size:11px; color:#6c7a92;"><?= h(multi_trade_step_label($m['status'] === 'active' ? 'active' : 'invited')) ?></div>
-                </div>
+        <section class="trade-room__timeline-card">
+          <h3 class="trade-room__card-title">وضعیت معامله</h3>
+          <div class="mt-blur-wrap">
+            <div class="mt-blur-body">
+              <div class="trade-room__timeline">
+                <?php foreach ($timelineItems as $item): ?>
+                  <div class="trade-room__timeline-item trade-room__timeline-item--readonly">
+                    <div class="trade-room__timeline-dot"></div>
+                    <div class="trade-room__timeline-body">
+                      <div class="trade-room__timeline-title"><?= h($item['title']) ?></div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
               </div>
-            <?php endforeach; ?>
+            </div>
+            <div class="mt-blur-note">
+              <i class="bi bi-lock-fill" style="font-size:18px;"></i>
+              پس از بسته‌شدن اتاق و انتخاب طرف معامله فعال می‌شود.
+            </div>
           </div>
-          <a href="<?= h(multi_trade_room_url((int)$multiRoom['id'])) ?>" class="btn btn-primary w-100 mt-3" style="font-size:13px;">ورود به پنل مدیریت گروه</a>
         </section>
 
         <section class="trade-room__timeline-card trade-room__support">
@@ -791,31 +998,284 @@ render_user_panel_open($user, 'trades');
         </section>
       </aside>
 
-      <main class="trade-room__main-column">
-        <section class="trade-room__card" style="height: 500px; display: flex; flex-direction: column;">
-          <h3 class="trade-room__card-title"><i class="bi bi-chat-dots"></i> گفتگوی دو نفره (امن)</h3>
+      <div class="trade-room__content">
+        <!-- چت امن (فعال) -->
+        <section class="trade-room__card" style="height: 420px; display: flex; flex-direction: column; margin-bottom: var(--sp-3);">
+          <h3 class="trade-room__card-title"><i class="bi bi-chat-dots"></i> گفتگوی امن</h3>
           <div class="trade-room__chat-messages" id="chatContainer" style="flex: 1; overflow-y: auto; padding: 15px; background: #fbfcfe;">
-            <?php if (empty($messages)): ?>
+            <?php if (empty($mtMessages)): ?>
               <div style="text-align:center; color:#93a1b8; margin-top:50px;">هنوز پیامی ارسال نشده است.</div>
             <?php else: ?>
-              <?php foreach ($messages as $msg): $isMine = (int)$msg['user_id'] === $uid; ?>
+              <?php foreach ($mtMessages as $msg): $isMine = (int)($msg['user_id'] ?? 0) === $uid; ?>
                 <div class="trade-room__chat-msg <?= $isMine ? 'trade-room__chat-msg--mine' : '' ?>" style="margin-bottom:12px; display:flex; flex-direction:column; align-items:<?= $isMine ? 'flex-end' : 'flex-start' ?>;">
                   <div style="background:<?= $isMine ? '#071A33; color:#fff' : '#fff; border:1px solid #e6ebf3' ?>; padding:8px 12px; border-radius:12px; max-width:80%; font-size:13px;">
                     <?= nl2br(h($msg['body'])) ?>
                   </div>
-                  <div style="font-size:10px; color:#93a1b8; margin-top:4px;"><?= persian_datetime($msg['created_at']) ?></div>
+                  <div style="font-size:10px; color:#93a1b8; margin-top:4px;">
+                    <?= $msg['type'] === 'system' ? '' : h($msg['user_name'] ?? '') . ' · ' ?><?= persian_datetime($msg['created_at']) ?>
+                  </div>
                 </div>
               <?php endforeach; ?>
             <?php endif; ?>
           </div>
           <form method="post" class="trade-room__chat-form" style="padding:15px; border-top:1px solid #e6ebf3; display:flex; gap:10px;">
             <?= csrf_field() ?>
-            <input type="hidden" name="action" value="send_message">
-            <input type="text" name="message" class="form-control" placeholder="پیامی بنویسید..." required autocomplete="off">
+            <input type="hidden" name="action" value="mt_send_message">
+            <input type="text" name="body" class="form-control" placeholder="پیامی بنویسید..." required autocomplete="off">
             <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i></button>
           </form>
         </section>
-      </main>
+
+        <!-- مراحل معامله (تب‌ها) — تا فعال‌شدن چرخه blur است -->
+        <div class="mt-blur-wrap">
+          <div class="mt-blur-body">
+            <nav class="trade-room__tabs" aria-label="مراحل معامله">
+              <?php foreach ($tabLabels as $tabKey => $label): ?>
+                <span class="trade-room__tab">
+                  <i class="bi <?= ['chat' => 'bi-chat-dots', 'fee' => 'bi-credit-card', 'contract' => 'bi-file-earmark-text', 'diff' => 'bi-cash', 'shipping' => 'bi-truck', 'details' => 'bi-box-seam', 'final' => 'bi-check-circle'][$tabKey] ?? 'bi-circle' ?> trade-room__tab-icon"></i>
+                  <span><?= h($label) ?></span>
+                </span>
+              <?php endforeach; ?>
+            </nav>
+            <section class="trade-room__panel" style="min-height: 180px;"></section>
+          </div>
+          <div class="mt-blur-note">
+            <i class="bi bi-lock-fill" style="font-size:18px;"></i>
+            مراحل معامله پس از بسته‌شدن اتاق و انتخاب طرف معامله فعال می‌شود.
+          </div>
+        </div>
+      </div>
+
+      <aside class="trade-room__details-column">
+        <section class="trade-room__card">
+          <h3 class="trade-room__card-title">جزئیات معامله</h3>
+          <div class="mt-blur-wrap">
+            <div class="mt-blur-body">
+              <?php foreach ($mtMembersAll as $m): ?>
+                <div class="mt-member-row">
+                  <div class="mt-member-av"><?= h(mb_substr((string)$m['user_name'], 0, 1)) ?></div>
+                  <div style="flex:1;">
+                    <div class="mt-member-name"><?= h($m['user_name']) ?></div>
+                    <div class="mt-member-meta"><?= h($m['listing_title'] ?? 'بدون آگهی') ?></div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+            <div class="mt-blur-note">
+              <i class="bi bi-lock-fill" style="font-size:18px;"></i>
+              پس از فعال‌شدن چرخه معامله نمایش داده می‌شود.
+            </div>
+          </div>
+        </section>
+      </aside>
+
+    <?php elseif ($multiRoom): ?>
+      <!-- مبادله چندنفره فعال: چرخه معامله باز شده و هر عضو مسیر خودش را پیش می‌برد -->
+      <aside class="trade-room__timeline-column">
+        <section class="trade-room__timeline-card">
+          <h3 class="trade-room__card-title">وضعیت معامله</h3>
+          <?php if (!empty($mtBoard['cycle'])): ?>
+            <div class="mt-cycle" style="margin-bottom:12px;">
+              <?php
+                $cycleNames = [];
+                foreach ($mtBoard['cycle'] as $cid) { $cycleNames[] = h($mtBoard['memberById'][$cid]['user_name'] ?? '?'); }
+              ?>
+              <span class="mt-node"><?= implode(' ← ', $cycleNames) ?></span>
+              <span class="mt-node"><?= $cycleNames[0] ?? '' ?></span>
+            </div>
+          <?php endif; ?>
+          <?php foreach ($mtBoard['tracks'] as $t): $tStep = $mtBoard['stepByTrack'][(int)$t['id']] ?? ''; ?>
+            <div class="mt-track-mini">
+              <div class="mt-track-mini__flow"><?= h($t['deliverer_name']) ?> ← <?= h($t['receiver_name']) ?></div>
+              <span class="mt-badge <?= $tStep === MT_STEP_DONE ? 'mt-badge--ok' : 'mt-badge--wait' ?>"><?= h(multi_trade_step_label($tStep)) ?></span>
+            </div>
+          <?php endforeach; ?>
+        </section>
+
+        <section class="trade-room__timeline-card trade-room__support">
+          <h3 class="trade-room__card-title"><i class="bi bi-headset"></i> پشتیبانی</h3>
+          <p class="trade-room__muted">این معامله به‌صورت گروهی در حال انجام است.</p>
+          <a href="<?= APP_URL ?>/support" class="btn btn-outline-secondary w-100 btn-sm">تماس با ما</a>
+        </section>
+      </aside>
+
+      <div class="trade-room__content">
+        <!-- چت گروهی (فعال) -->
+        <section class="trade-room__card" style="height: 340px; display: flex; flex-direction: column; margin-bottom: var(--sp-3);">
+          <h3 class="trade-room__card-title"><i class="bi bi-chat-dots"></i> گفتگوی گروهی</h3>
+          <div class="trade-room__chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; background: #fbfcfe;">
+            <?php if (empty($mtMessages)): ?>
+              <div style="text-align:center; color:#93a1b8; margin-top:50px;">هنوز پیامی ارسال نشده است.</div>
+            <?php else: ?>
+              <?php foreach ($mtMessages as $msg): $isMine = (int)($msg['user_id'] ?? 0) === $uid; ?>
+                <div style="margin-bottom:12px; display:flex; flex-direction:column; align-items:<?= $isMine ? 'flex-end' : 'flex-start' ?>;">
+                  <div style="background:<?= $isMine ? '#071A33; color:#fff' : '#fff; border:1px solid #e6ebf3' ?>; padding:8px 12px; border-radius:12px; max-width:80%; font-size:13px;">
+                    <?= nl2br(h($msg['body'])) ?>
+                  </div>
+                  <div style="font-size:10px; color:#93a1b8; margin-top:4px;">
+                    <?= $msg['type'] === 'system' ? '' : h($msg['user_name'] ?? '') . ' · ' ?><?= persian_datetime($msg['created_at']) ?>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+          <form method="post" class="trade-room__chat-form" style="padding:15px; border-top:1px solid #e6ebf3; display:flex; gap:10px;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="mt_send_message">
+            <input type="text" name="body" class="form-control" placeholder="پیامی بنویسید..." required autocomplete="off">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i></button>
+          </form>
+        </section>
+
+        <!-- اقدام‌های من: دو معامله‌ی در جریان (تحویل من / دریافت من) -->
+        <section class="trade-room__card">
+          <h3 class="trade-room__card-title"><i class="bi bi-list-check"></i> اقدام‌های من</h3>
+          <?php if (!$mtIAmActive || !$mtMyTracks): ?>
+            <p class="trade-room__muted">مسیری برای شما ثبت نشده است.</p>
+          <?php else: ?>
+            <div class="mt-tabs" id="mtMyTabs">
+              <button type="button" class="mt-tab is-active" data-pane="deliver"><i class="bi bi-box-seam"></i> تحویل من</button>
+              <button type="button" class="mt-tab" data-pane="receive"><i class="bi bi-inbox"></i> دریافت من</button>
+            </div>
+            <?php foreach ($mtMyTracks as $t):
+              $tStep = $mtBoard['stepByTrack'][(int)$t['id']] ?? '';
+              $iAmDeliverer = (int)$t['deliverer_user_id'] === $uid;
+              $peerName = $iAmDeliverer ? $t['receiver_name'] : $t['deliverer_name'];
+              $myMemberId = (int)($iAmDeliverer ? $t['deliverer_member_id'] : $t['receiver_member_id']);
+              $didFee  = (int)($mtBoard['memberById'][$myMemberId]['fee_paid'] ?? 0) === 1;
+              $didDiff = (int)($mtBoard['memberById'][$myMemberId]['diff_paid'] ?? 0) === 1;
+              $myDiff  = (float)($mtMyMember['diff_amount'] ?? 0);
+            ?>
+              <div class="mt-track mt-track--mine" data-pane="<?= $iAmDeliverer ? 'deliver' : 'receive' ?>">
+                <div class="mt-track__head">
+                  <div class="mt-track__flow">
+                    <?= $iAmDeliverer ? 'تحویل کالای شما به ' : 'دریافت کالا از ' ?><b><?= h($peerName) ?></b>
+                    <?php if ($iAmDeliverer): ?><span style="color:#6c7a92;font-weight:400;">(<?= h($t['deliverer_listing_title'] ?? '—') ?>)</span><?php endif; ?>
+                  </div>
+                  <span class="mt-badge <?= $tStep === MT_STEP_DONE ? 'mt-badge--ok' : 'mt-badge--wait' ?>"><?= h(multi_trade_step_label($tStep)) ?></span>
+                </div>
+
+                <?php if ($tStep === MT_STEP_FEE): ?>
+                  <div class="mt-track__step">
+                    <?php if ($didFee): ?>کارمزد شما پرداخت شد؛ منتظر پرداخت کارمزد طرف مقابل هستید.
+                    <?php else: ?>کارمزد این مسیر: <?= h(fmt_credit((float)$mtMyMember['fee_amount'])) ?>
+                    <?php endif; ?>
+                  </div>
+                  <?php if (!$didFee): ?>
+                  <div class="mt-actions">
+                    <form method="post"><?= csrf_field() ?>
+                      <input type="hidden" name="action" value="mt_pay_fee">
+                      <button class="mt-btn mt-btn--gold" type="submit"><i class="bi bi-wallet2"></i> پرداخت کارمزد</button>
+                    </form>
+                  </div>
+                  <?php endif; ?>
+
+                <?php elseif ($tStep === MT_STEP_DIFF): ?>
+                  <div class="mt-track__step">
+                    ماب‌تفاوت شما: <b><?= h(fmt_credit($myDiff)) ?></b>
+                    <?php if ($myDiff > 0 && $didDiff): ?> — پرداخت شد؛ منتظر تسویه گروه.
+                    <?php elseif ($myDiff > 0): ?> — باید پرداخت شود.
+                    <?php else: ?> — طلبکارید؛ پس از واریز سایر اعضا تسویه می‌شود.
+                    <?php endif; ?>
+                  </div>
+                  <?php if ($myDiff > 0 && !$didDiff): ?>
+                  <div class="mt-actions">
+                    <form method="post"><?= csrf_field() ?>
+                      <input type="hidden" name="action" value="mt_pay_diff">
+                      <button class="mt-btn mt-btn--gold" type="submit"><i class="bi bi-cash-coin"></i> پرداخت ماب‌تفاوت</button>
+                    </form>
+                  </div>
+                  <?php endif; ?>
+
+                <?php elseif ($tStep === MT_STEP_CONTRACT): ?>
+                  <div class="mt-track__step">هر دو طرف باید قرارداد این مسیر را امضا کنند.</div>
+                  <div class="mt-actions">
+                    <form method="post"><?= csrf_field() ?>
+                      <input type="hidden" name="action" value="mt_sign_track"><input type="hidden" name="track_id" value="<?= (int)$t['id'] ?>">
+                      <button class="mt-btn mt-btn--primary" type="submit"><i class="bi bi-pen"></i> امضای قرارداد</button>
+                    </form>
+                  </div>
+
+                <?php elseif ($tStep === MT_STEP_SHIPPING): ?>
+                  <?php if ($iAmDeliverer): ?>
+                    <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;"><?= csrf_field() ?>
+                      <input type="hidden" name="action" value="mt_set_shipping"><input type="hidden" name="track_id" value="<?= (int)$t['id'] ?>">
+                      <select name="method" class="mt-select" required>
+                        <option value="in_person">حضوری</option>
+                        <option value="post">پست</option>
+                        <option value="tipax">تیپاکس</option>
+                        <option value="courier">پیک</option>
+                      </select>
+                      <input type="text" name="shipping_date" class="mt-input" placeholder="تاریخ (میلادی YYYY-MM-DD)" required>
+                      <input type="text" name="shipping_time" class="mt-input" placeholder="ساعت (مثلاً 14:30)">
+                      <button class="mt-btn mt-btn--primary" type="submit"><i class="bi bi-calendar-check"></i> ثبت زمان ارسال</button>
+                    </form>
+                  <?php else: ?>
+                    <div class="mt-track__step">منتظر تعیین زمان و روش ارسال توسط طرف مقابل هستید.</div>
+                  <?php endif; ?>
+
+                <?php elseif ($tStep === MT_STEP_DELIVERED): ?>
+                  <?php if ($iAmDeliverer): ?>
+                    <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;"><?= csrf_field() ?>
+                      <input type="hidden" name="action" value="mt_mark_shipped"><input type="hidden" name="track_id" value="<?= (int)$t['id'] ?>">
+                      <input type="text" name="tracking_code" class="mt-input" placeholder="کد رهگیری (اختیاری)">
+                      <button class="mt-btn mt-btn--primary" type="submit"><i class="bi bi-truck"></i> ثبت ارسال</button>
+                    </form>
+                  <?php else: ?>
+                    <div class="mt-track__step">منتظر ارسال کالا توسط طرف مقابل هستید.</div>
+                  <?php endif; ?>
+
+                <?php elseif ($tStep === MT_STEP_RECEIVED): ?>
+                  <?php if (!$iAmDeliverer): ?>
+                    <div class="mt-actions">
+                      <form method="post" onsubmit="return confirm('دریافت کالا را تأیید می‌کنید؟');"><?= csrf_field() ?>
+                        <input type="hidden" name="action" value="mt_confirm_received"><input type="hidden" name="track_id" value="<?= (int)$t['id'] ?>">
+                        <button class="mt-btn mt-btn--gold" type="submit"><i class="bi bi-check2-circle"></i> تأیید دریافت کالا</button>
+                      </form>
+                    </div>
+                  <?php else: ?>
+                    <div class="mt-track__step">منتظر تأیید دریافت توسط طرف مقابل هستید.</div>
+                  <?php endif; ?>
+
+                <?php elseif ($tStep === MT_STEP_RATING): ?>
+                  <?php $myRated = $iAmDeliverer ? (int)$t['deliverer_rated'] : (int)$t['receiver_rated']; ?>
+                  <?php if (!$myRated): ?>
+                    <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;"><?= csrf_field() ?>
+                      <input type="hidden" name="action" value="mt_rate_track"><input type="hidden" name="track_id" value="<?= (int)$t['id'] ?>">
+                      <select name="score" class="mt-select" required>
+                        <option value="5">۵ - عالی</option><option value="4">۴ - خوب</option>
+                        <option value="3">۳ - متوسط</option><option value="2">۲ - ضعیف</option><option value="1">۱ - بد</option>
+                      </select>
+                      <input type="text" name="comment" class="mt-input" placeholder="نظر (اختیاری)">
+                      <button class="mt-btn mt-btn--primary" type="submit"><i class="bi bi-star"></i> ثبت امتیاز</button>
+                    </form>
+                  <?php else: ?>
+                    <div class="mt-track__step">امتیاز شما ثبت شد.</div>
+                  <?php endif; ?>
+
+                <?php else: ?>
+                  <div class="mt-track__step" style="color:#128a4d;font-weight:700;">این مسیر تکمیل شده است.</div>
+                <?php endif; ?>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </section>
+      </div>
+
+      <aside class="trade-room__details-column">
+        <section class="trade-room__card">
+          <h3 class="trade-room__card-title">جزئیات معامله</h3>
+          <?php foreach ($mtBoard['members'] as $m): ?>
+            <div class="mt-member-row">
+              <div class="mt-member-av"><?= h(mb_substr((string)$m['user_name'], 0, 1)) ?></div>
+              <div style="flex:1;">
+                <div class="mt-member-name"><?= h($m['user_name']) ?> <?= (int)$m['user_id'] === $uid ? '(شما)' : '' ?></div>
+                <div class="mt-member-meta"><?= h($m['listing_title'] ?? 'بدون آگهی') ?></div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </section>
+      </aside>
 
     <?php else: ?>
       <!-- Original 2-person trade flow -->
@@ -1913,6 +2373,22 @@ document.addEventListener('DOMContentLoaded', function() {
   wireOfferNegotiator();
   wireOfferReplyBtns();
 });
+
+// تب‌های «تحویل من» / «دریافت من» در اتاق مبادله چندنفره
+(function () {
+  var tabs = document.getElementById('mtMyTabs');
+  if (!tabs) return;
+  var buttons = [].slice.call(tabs.querySelectorAll('.mt-tab'));
+  var items = [].slice.call(document.querySelectorAll('.mt-track--mine[data-pane]'));
+  function activate(pane) {
+    buttons.forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-pane') === pane); });
+    items.forEach(function (it) { it.style.display = it.getAttribute('data-pane') === pane ? '' : 'none'; });
+  }
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () { activate(b.getAttribute('data-pane')); });
+  });
+  activate('deliver');
+})();
 </script>
 
 <?php render_user_panel_close(); ?>

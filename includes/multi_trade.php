@@ -25,6 +25,12 @@ const MT_STEP_DONE      = 'done';
 
 function multi_trade_room_url(int $roomId): string
 {
+    // اتاق مبادله چندنفره داخل «اتاق امن معامله» (view) نمایش داده می‌شود؛
+    // فقط اتاق‌هایی که معامله‌ی پایه ندارند به اتاق گروهی می‌روند.
+    $room = multi_trade_room($roomId);
+    if ($room && (int)($room['seed_trade_id'] ?? 0) > 0) {
+        return APP_URL . '/trades/view?id=' . (int)$room['seed_trade_id'];
+    }
     return APP_URL . '/trades/group?id=' . $roomId;
 }
 
@@ -897,6 +903,15 @@ function multi_trade_select_target(int $roomId, int $userId, int $targetMemberId
     $target = DB::fetch("SELECT id FROM multi_trade_members WHERE id = ? AND room_id = ? AND status = 'active'", [$targetMemberId, $roomId]);
     if (!$target) {
         return ['error' => 'عضو انتخابی معتبر نیست.'];
+    }
+    // هر عضو فقط یک‌بار می‌تواند به‌عنوان طرف معامله انتخاب شود.
+    $dup = DB::fetch(
+        "SELECT id FROM multi_trade_members
+         WHERE room_id = ? AND target_member_id = ? AND id <> ? AND status = 'active'",
+        [$roomId, $targetMemberId, (int)$member['id']]
+    );
+    if ($dup) {
+        return ['error' => 'این عضو قبلاً توسط عضو دیگری انتخاب شده است؛ لطفاً گزینه دیگری را انتخاب کنید.'];
     }
     DB::update('multi_trade_members', ['target_member_id' => $targetMemberId], 'id = ?', [(int)$member['id']]);
 

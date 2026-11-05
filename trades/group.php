@@ -36,6 +36,14 @@ if ((string)$room['status'] === 'cancelled' || ($myMember && $myMember['status']
     exit;
 }
 
+// اعضای اتاق به «اتاق امن معامله» هدایت می‌شوند؛ این صفحه فقط برای فرم پیوستن غیراعضا می‌ماند.
+$isPostReq = $_SERVER['REQUEST_METHOD'] === 'POST';
+$isAjaxReq = ($_GET['action'] ?? '') === 'messages';
+if (!$isPostReq && !$isAjaxReq && ($isMember || $isInvited) && (int)($room['seed_trade_id'] ?? 0) > 0) {
+    header('Location: ' . APP_URL . '/trades/view?id=' . (int)$room['seed_trade_id']);
+    exit;
+}
+
 // ─── AJAX: دریافت پیام‌های چت گروهی ─────────────────────────────────────────
 if (($_GET['action'] ?? '') === 'messages' && $isMember) {
     header('Content-Type: application/json; charset=utf-8');
