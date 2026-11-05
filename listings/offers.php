@@ -10,6 +10,7 @@ $uid  = $user['id'];
 multi_trade_ensure_tables();
 
 $listingId = (int)($_GET['id'] ?? 0);
+$mtListingRoom = multi_trade_open_rooms_by_listing()[$listingId] ?? null;
 $success   = '';
 $error     = '';
 
@@ -259,6 +260,8 @@ render_navbar($user);
                     <i class="bi bi-people-fill"></i>
                     طرف مقابل خواسته این معامله به‌صورت «مبادله چندنفره» انجام شود.
                   </div>
+                  <?php elseif ($mtListingRoom): ?>
+                    <!-- Listing already in multi-trade, don't show checkbox -->
                   <?php else: ?>
                   <div class="form-check mb-3">
                     <input type="checkbox" name="as_group" value="1" id="asGroup<?= (int)$offer['id'] ?>" class="form-check-input">
@@ -273,7 +276,7 @@ render_navbar($user);
                   </button>
                 </form>
 
-                <?php if ($requestedBy === 0): ?>
+                <?php if ($requestedBy === 0 && !$mtListingRoom): ?>
                 <form method="POST">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="request_group">

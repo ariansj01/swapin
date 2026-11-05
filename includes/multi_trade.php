@@ -499,15 +499,8 @@ function multi_trade_redirect_after_accept(int $tradeId, int $userId, bool $asGr
     }
     try {
         $gr = multi_trade_create_from_trade($tradeId, $userId, true);
-        if (!empty($gr['room_id'])) {
-            return multi_trade_room_url((int)$gr['room_id']);
-        }
     } catch (Throwable $e) {
         swapin_debug_log('multi-trade-create-from-accept', ['msg' => $e->getMessage(), 'trade_id' => $tradeId]);
-    }
-    $existing = multi_trade_room_for_seed_trade($tradeId);
-    if ($existing) {
-        return multi_trade_room_url((int)$existing['id']);
     }
     return $fallback;
 }
@@ -582,14 +575,14 @@ function multi_trade_create_from_trade(int $tradeId, int $initiatorId, bool $bot
             $otherId,
             'دعوت به مبادله چندنفره',
             'طرف مقابل درخواست تبدیل این معامله به «مبادله چندنفره» داده است. تأیید کنید تا اتاق فعال شود.',
-            multi_trade_room_url($roomId)
+            APP_URL . '/trades/view?id=' . $tradeId
         );
     } else {
         multi_trade_notify(
             $otherId,
             'مبادله چندنفره آغاز شد',
             'این معامله به اتاق مبادله چندنفره تبدیل شد.',
-            multi_trade_room_url($roomId)
+            APP_URL . '/trades/view?id=' . $tradeId
         );
     }
     return ['ok' => true, 'room_id' => $roomId];
@@ -703,15 +696,20 @@ function multi_trade_join_request(int $roomId, int $userId, int $listingId): arr
     ]);
     $user = DB::fetch('SELECT name FROM users WHERE id = ?', [$userId]);
     $name = $user['name'] ?? 'کاربر';
-    foreach (multi_trade_members($roomId) as $m) {
+    
+    // Notify all members (active and invited) so they can vote or know someone is joining
+    $members = multi_trade_members($roomId, false);
+    foreach ($members as $m) {
+        if ((int)$m['user_id'] === $userId) continue;
+        
         multi_trade_notify(
             (int)$m['user_id'],
             'درخواست عضویت در مبادله چندنفره',
-            $name . ' درخواست پیوستن به اتاق شما را دارد. تأیید همه اعضا لازم است.',
+            $name . ' درخواست پیوستن به اتاق مبادله شما را دارد. لطفاً برای بررسی و تأیید وارد اتاق شوید.',
             multi_trade_room_url($roomId)
         );
     }
-    multi_trade_system_message($roomId, $name . ' درخواست پیوستن داد؛ در انتظار تأیید همه اعضا.');
+    multi_trade_system_message($roomId, $name . ' درخواست پیوستن داد؛ در انتظار تأیید اعضا.');
     return ['ok' => true, 'request_id' => $requestId];
 }
 

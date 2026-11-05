@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/multi_trade.php';
 $user = require_auth();
 $uid  = $user['id'];
 multi_trade_ensure_tables();
+$mtOpenRoomsMap = multi_trade_open_rooms_by_listing();
 
 $tab = clean($_GET['tab'] ?? 'active');
 if ($tab === 'sent') {
@@ -497,6 +498,8 @@ render_navbar($user);
                       <i class="bi bi-people-fill"></i>
                       طرف مقابل خواسته این معامله به‌صورت «مبادله چندنفره» انجام شود.
                     </div>
+                    <?php elseif (isset($mtOpenRoomsMap[(int)$offer['listing_id']])): ?>
+                      <!-- Listing already in multi-trade room -->
                     <?php else: ?>
                     <div class="form-check mb-3">
                       <input type="checkbox" name="as_group" value="1" id="asGroupT<?= (int)$offer['id'] ?>" class="form-check-input">
@@ -505,11 +508,12 @@ render_navbar($user);
                       </label>
                     </div>
                     <?php endif; ?>
+
                     <button type="submit" class="btn btn-primary w-100 mb-2">
                       <i class="bi bi-check-lg"></i> پذیرش و ورود به اتاق امن
                     </button>
                   </form>
-                  <?php if ($requestedBy === 0): ?>
+                  <?php if ($requestedBy === 0 && !isset($mtOpenRoomsMap[(int)$offer['listing_id']])): ?>
                   <form method="POST">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="request_group">

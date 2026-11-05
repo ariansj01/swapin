@@ -750,12 +750,14 @@ render_navbar($user);
           <textarea class="lv-sheet__textarea" name="message" rows="4"
                     placeholder="پیام خود را برای فروشنده بنویسید..."></textarea>
         </div>
+        <?php if (!$mtListingRoom): ?>
         <div class="lv-sheet__section">
           <label class="form-check" style="display:flex;align-items:flex-start;gap:8px;margin:0">
             <input type="checkbox" name="as_group" value="1" class="form-check-input" style="margin-top:3px">
             <span style="font-size:13px;line-height:1.6">این معامله به‌صورت <b>مبادله چندنفره</b> (۳ تا ۵ نفر) انجام شود</span>
           </label>
         </div>
+        <?php endif; ?>
       </div>
 
       <div class="lv-sheet__footer">
@@ -1151,12 +1153,14 @@ render_navbar($user);
               <textarea class="lv-offer-textarea" name="message" id="lv-offer-message" placeholder="در مورد پیشنهادتان کمی توضیح بدهید..."></textarea>
             </div>
 
+            <?php if (!$mtListingRoom): ?>
             <div class="form-check" style="margin:12px 0">
               <input type="checkbox" name="as_group" value="1" id="lv-as-group" class="form-check-input">
               <label class="form-check-label" for="lv-as-group" style="font-size:13px;">
                 این معامله به‌صورت <b>مبادله چندنفره</b> (۳ تا ۵ نفر) انجام شود
               </label>
             </div>
+            <?php endif; ?>
 
             <button type="submit" class="lv-btn lv-btn--outline lv-btn--swap" data-trade-gate>
               <i class="bi bi-send"></i> ارسال پیشنهاد

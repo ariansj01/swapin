@@ -37,13 +37,16 @@ if (!$trade) {
     exit;
 }
 
-// اگر این معامله به «مبادله چندنفره» تبدیل شده باشد، کاربر به اتاق گروهی می‌رود.
+// اگر این معامله به «مبادله چندنفره» تبدیل شده باشد، وضعیت آن در اتاق امن نمایش داده می‌شود.
 multi_trade_ensure_tables();
 $multiRoom = multi_trade_room_for_seed_trade($tradeId);
+// حذف ریدایرکت خودکار به اتاق گروهی برای تمرکز بر اتاق امن در مراحل اولیه
+/*
 if ($multiRoom) {
     header('Location: ' . multi_trade_room_url((int)$multiRoom['id']));
     exit;
 }
+*/
 
 $isA       = (int)$trade['user_a_id'] === $uid;
 $otherName = $isA ? $trade['user_b_name'] : $trade['user_a_name'];
@@ -267,12 +270,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($res['error'])) {
             $error = $res['error'];
         } else {
-            header('Location: ' . multi_trade_room_url((int)$res['room_id']));
-            exit;
+            $success = 'درخواست مبادله چندنفره با موفقیت ثبت شد.';
         }
+    } elseif ($action === 'accept_invite') {
+        if ($multiRoom) {
+            $res = multi_trade_accept_invite((int)$multiRoom['id'], $uid);
+            if (isset($res['error'])) $error = $res['error'];
+            else $success = 'دعوت با موفقیت پذیرفته شد. اکنون اعضای جدید می‌توانند درخواست دهند.';
+        }
+    } elseif ($action === 'decline_invite') {
+        if ($multiRoom) {
+            $res = multi_trade_decline_invite((int)$multiRoom['id'], $uid);
+            if (isset($res['error'])) $error = $res['error'];
+            else $success = 'دعوت رد شد و اتاق لغو گردید.';
+        }
+    } elseif ($action === 'vote_join') {
+        $requestId = (int)($_POST['request_id'] ?? 0);
+        $approve   = ((int)($_POST['approve'] ?? 0)) === 1;
+        $res = multi_trade_vote_join($requestId, $uid, $approve);
+        if (isset($res['error'])) $error = $res['error'];
+        else $success = 'نظر شما با موفقیت ثبت شد.';
     }
 
     $trade    = fetch_trade_room($tradeId, $uid) ?? $trade;
+    $multiRoom = multi_trade_room_for_seed_trade($tradeId);
+    
+    $mtPendingRequests = [];
+    $mtMyMember = null;
+    $mtIsInvited = false;
+    $mtActiveCount = 0;
+    if ($multiRoom) {
+        $roomId = (int)$multiRoom['id'];
+        $mtMyMember = multi_trade_member($roomId, $uid);
+        $mtIsInvited = $mtMyMember && $mtMyMember['status'] === 'invited';
+        $mtActiveCount = multi_trade_active_count($roomId);
+        if ($mtMyMember && $multiRoom['status'] === 'forming') {
+            $mtPendingRequests = multi_trade_join_requests_pending($roomId);
+        }
+    }
+
     $contract = get_trade_contract($tradeId) ?? $contract;
     $myReview = DB::fetch(
         'SELECT id FROM reviews WHERE trade_id = ? AND from_user_id = ? LIMIT 1',
@@ -510,6 +546,15 @@ render_head('اتاق امن معامله #' . $tradeId, 'اتاق امن معا
 ]);
 render_panel_styles();
 echo '<link rel="stylesheet" href="' . APP_URL . '/src/css/secure-trade.css">' . "\n";
+?>
+<style>
+.mt-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+.mt-pill--forming { background: rgba(0,102,255,.10); color:#0066ff; }
+.mt-pill--locked  { background: rgba(255,201,40,.18); color:#8a6d00; }
+.mt-pill--active  { background: rgba(7,26,51,.08); color:#071A33; }
+.mt-pill--completed { background: rgba(20,160,90,.12); color:#128a4d; }
+</style>
+<?php
 render_navbar($user);
 render_user_panel_open($user, 'trades');
 ?>
@@ -576,6 +621,77 @@ render_user_panel_open($user, 'trades');
     </div>
   </header>
 
+  <?php if ($multiRoom): ?>
+    <section class="trade-room__card" style="margin-bottom: var(--sp-4); border: 2px solid #FFC928;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h2 style="font-size:18px; color:#071A33; margin:0;">
+          <i class="bi bi-people-fill" style="color:#FFC928;"></i>
+          وضعیت مبادله چندنفره
+        </h2>
+        <span class="mt-pill mt-pill--<?= h($multiRoom['status'] === 'awaiting_seed' ? 'forming' : $multiRoom['status']) ?>">
+          <?= h(multi_trade_room_status_label((string)$multiRoom['status'])) ?>
+        </span>
+      </div>
+
+      <?php if ($mtIsInvited): ?>
+        <div style="background:#f8fafd; border-radius:12px; padding:15px; border:1px dashed #dbe3ee;">
+          <p style="font-size:14px; margin-bottom:12px;">طرف مقابل درخواست داده این معامله به‌صورت <b>«مبادله چندنفره» (۳ تا ۵ نفر)</b> انجام شود. با تأیید شما، این اتاق برای پذیرش اعضای جدید باز می‌شود.</p>
+          <div style="display:flex; gap:10px;">
+            <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="accept_invite">
+              <button class="trade-room__hero-btn" style="background:#FFC928; color:#071A33; border:none;" type="submit"><i class="bi bi-check2-circle"></i> تأیید و فعال‌سازی</button>
+            </form>
+            <form method="post" onsubmit="return confirm('با رد دعوت، اتاق لغو می‌شود. مطمئن هستید؟');"><?= csrf_field() ?><input type="hidden" name="action" value="decline_invite">
+              <button class="trade-room__hero-btn" style="background:#ffe9e6; color:#c0392b; border:none;" type="submit"><i class="bi bi-x-circle"></i> رد درخواست</button>
+            </form>
+          </div>
+        </div>
+      <?php elseif ($multiRoom['status'] === 'awaiting_seed'): ?>
+        <div class="trade-room__alert trade-room__alert--info">
+          در انتظار تأیید طرف مقابل برای تبدیل به مبادله چندنفره...
+        </div>
+      <?php else: ?>
+        <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+          <div style="font-size:14px;">تعداد اعضای فعلی: <b><?= $mtActiveCount ?> نفر</b></div>
+          <a href="<?= h(multi_trade_room_url((int)$multiRoom['id'])) ?>" class="trade-room__hero-btn" style="padding: 6px 12px; font-size: 12px;">
+            <i class="bi bi-box-arrow-in-right"></i> ورود به اتاق گروهی
+          </a>
+        </div>
+        
+        <?php if ($mtPendingRequests): ?>
+          <div style="margin-top:15px; border-top:1px solid #e6ebf3; padding-top:15px;">
+            <h3 style="font-size:15px; margin-bottom:10px;"><i class="bi bi-inbox"></i> درخواست‌های جدید برای پیوستن:</h3>
+            <?php foreach ($mtPendingRequests as $r): ?>
+              <div style="background:#fff; border:1px solid #e6ebf3; border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:13px;">
+                  <b><?= h($r['user_name']) ?></b> قصد پیوستن با آگهی «<?= h($r['listing_title']) ?>» را دارد.
+                </div>
+                <div style="display:flex; gap:5px;">
+                  <?php 
+                    $myVote = DB::fetch('SELECT decision FROM multi_trade_join_votes WHERE request_id = ? AND member_id = ?', [(int)$r['id'], (int)$mtMyMember['id']]);
+                  ?>
+                  <?php if ($myVote): ?>
+                    <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:<?= $myVote['decision'] === 'approve' ? '#e8f5e9;color:#2e7d32' : '#ffebee;color:#c62828' ?>;">
+                      نظر شما: <?= $myVote['decision'] === 'approve' ? 'موافق' : 'مخالف' ?>
+                    </span>
+                  <?php else: ?>
+                    <form method="post"><?= csrf_field() ?>
+                      <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="1">
+                      <button class="trade-room__hero-btn" style="padding:4px 8px; font-size:11px; background:#e8f5e9; color:#2e7d32; border:none;" type="submit">موافقم</button>
+                    </form>
+                    <form method="post"><?= csrf_field() ?>
+                      <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="0">
+                      <button class="trade-room__hero-btn" style="padding:4px 8px; font-size:11px; background:#ffebee; color:#c62828; border:none;" type="submit">مخالفم</button>
+                    </form>
+                  <?php endif; ?>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      <?php endif; ?>
+    </section>
+  <?php endif; ?>
+
   <!-- Parties Header moved up -->
   <section class="trade-room__card" style="margin-bottom: var(--sp-4);display: flex;justify-content: center;">
     <div class="trade-room__parties" style="display: grid; grid-template-columns: 37% 15% 30%; gap: 20px;align-items: center;width: 100%;">
@@ -641,9 +757,67 @@ render_user_panel_open($user, 'trades');
   <?php endif; ?>
 
   <div class="trade-room__layout">
-    <!-- Right Column: Timeline (next to dashboard sidebar) -->
-    <aside class="trade-room__timeline-column">
-      <section class="trade-room__timeline-card">
+    <?php if ($multiRoom && $multiRoom['status'] !== 'cancelled'): ?>
+      <!-- Multi-trade view: Show chat and group status -->
+      <aside class="trade-room__timeline-column">
+        <section class="trade-room__timeline-card" style="border:1px solid #FFC928;">
+          <h3 class="trade-room__card-title"><i class="bi bi-people-fill"></i> اعضای گروه</h3>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+            <?php 
+            $mtMembers = multi_trade_members((int)$multiRoom['id'], false);
+            foreach ($mtMembers as $m): 
+            ?>
+              <div style="display:flex; align-items:center; gap:8px; font-size:13px; padding:8px; background:#f8fafd; border-radius:10px;">
+                <div style="width:28px; height:28px; border-radius:8px; background:#071A33; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;">
+                  <?= h(mb_substr((string)$m['user_name'], 0, 1)) ?>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-weight:700;"><?= h($m['user_name']) ?> <?= (int)$m['user_id'] === $uid ? '(شما)' : '' ?></div>
+                  <div style="font-size:11px; color:#6c7a92;"><?= h(multi_trade_step_label($m['status'] === 'active' ? 'active' : 'invited')) ?></div>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+          <a href="<?= h(multi_trade_room_url((int)$multiRoom['id'])) ?>" class="btn btn-primary w-100 mt-3" style="font-size:13px;">ورود به پنل مدیریت گروه</a>
+        </section>
+
+        <section class="trade-room__timeline-card trade-room__support">
+          <h3 class="trade-room__card-title"><i class="bi bi-headset"></i> پشتیبانی</h3>
+          <p class="trade-room__muted">این معامله به‌صورت گروهی در حال انجام است.</p>
+          <a href="<?= APP_URL ?>/support" class="btn btn-outline-secondary w-100 btn-sm">تماس با ما</a>
+        </section>
+      </aside>
+
+      <main class="trade-room__main-column">
+        <section class="trade-room__card" style="height: 500px; display: flex; flex-direction: column;">
+          <h3 class="trade-room__card-title"><i class="bi bi-chat-dots"></i> گفتگوی دو نفره (امن)</h3>
+          <div class="trade-room__chat-messages" id="chatContainer" style="flex: 1; overflow-y: auto; padding: 15px; background: #fbfcfe;">
+            <?php if (empty($messages)): ?>
+              <div style="text-align:center; color:#93a1b8; margin-top:50px;">هنوز پیامی ارسال نشده است.</div>
+            <?php else: ?>
+              <?php foreach ($messages as $msg): $isMine = (int)$msg['user_id'] === $uid; ?>
+                <div class="trade-room__chat-msg <?= $isMine ? 'trade-room__chat-msg--mine' : '' ?>" style="margin-bottom:12px; display:flex; flex-direction:column; align-items:<?= $isMine ? 'flex-end' : 'flex-start' ?>;">
+                  <div style="background:<?= $isMine ? '#071A33; color:#fff' : '#fff; border:1px solid #e6ebf3' ?>; padding:8px 12px; border-radius:12px; max-width:80%; font-size:13px;">
+                    <?= nl2br(h($msg['body'])) ?>
+                  </div>
+                  <div style="font-size:10px; color:#93a1b8; margin-top:4px;"><?= persian_datetime($msg['created_at']) ?></div>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+          <form method="post" class="trade-room__chat-form" style="padding:15px; border-top:1px solid #e6ebf3; display:flex; gap:10px;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="send_message">
+            <input type="text" name="message" class="form-control" placeholder="پیامی بنویسید..." required autocomplete="off">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i></button>
+          </form>
+        </section>
+      </main>
+
+    <?php else: ?>
+      <!-- Original 2-person trade flow -->
+      <aside class="trade-room__timeline-column">
+        <section class="trade-room__timeline-card">
         <h3 class="trade-room__card-title">
           <!-- <i class="bi bi-list-check"></i> -->
           وضعیت معامله
@@ -1169,10 +1343,13 @@ render_user_panel_open($user, 'trades');
         <?php endif; ?>
       </section>
     </aside>
+    <?php endif; // End of original 2-person flow else block ?>
   </div>
-  <?php
-    // Determine if payment method can be changed
-    $feePaid = trade_fees_fully_paid($trade);
+
+  <?php if (!$multiRoom || $multiRoom['status'] === 'cancelled'): ?>
+    <?php
+      // Determine if payment method can be changed
+      $feePaid = trade_fees_fully_paid($trade);
     $diffPaid = !empty($trade['diff_paid']);
     $contractSigned = !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
     $shippingReady = trade_shipping_fully_scheduled($trade);
@@ -1291,6 +1468,7 @@ render_user_panel_open($user, 'trades');
       this.submit();
     });
   </script>
+  <?php endif; // End of payment/shipping methods condition ?>
 </div>
 
 <!-- Offers Modal -->
