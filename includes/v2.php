@@ -491,10 +491,14 @@ function accept_trade_offer(int $offerId, int $ownerId, string $message): array 
     $valueB     = (float)($offer['listing_b_value'] ?? 0);
     $creditDiff = $valueA - ($valueB + (float)$offer['offer_credit']);
 
+    $asGroup = ((int)($offer['group_requested_by'] ?? 0) > 0);
+
     DB::query('UPDATE trade_offers SET status = "accepted" WHERE id = ?', [$offerId]);
-    DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$offer['listing_id']]);
-    if (!empty($offer['offer_listing_id'])) {
-        DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$offer['offer_listing_id']]);
+    if (!$asGroup) {
+        DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$offer['listing_id']]);
+        if (!empty($offer['offer_listing_id'])) {
+            DB::update('listings', ['status' => 'reserved'], 'id = ? AND status = "active"', [(int)$offer['offer_listing_id']]);
+        }
     }
 
     $tradeId = DB::insert('trades', [

@@ -73,8 +73,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['offer_id'])) {
 // Auto redirect to latest trade only when browsing default tab (not received/offers/etc.)
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['trade']) && ($tab === 'active' || $tab === '')) {
     $latestTrade = DB::fetch("SELECT id FROM trades WHERE user_a_id = ? OR user_b_id = ? ORDER BY created_at DESC LIMIT 1", [$uid, $uid]);
+    
+    // اولویت با آخرین اتاق گروهی اگر جدیدتر باشد
+    $latestGroup = DB::fetch(
+        "SELECT r.id FROM multi_trade_rooms r
+         JOIN multi_trade_members m ON m.room_id = r.id
+         WHERE m.user_id = ? AND r.status <> 'cancelled'
+         ORDER BY r.created_at DESC LIMIT 1",
+        [$uid]
+    );
+
+    if ($latestGroup && (!$latestTrade || (int)$latestGroup['id'] > (int)$latestTrade['id'])) {
+        header('Location: ' . multi_trade_room_url((int)$latestGroup['id']));
+        exit;
+    }
+
     if ($latestTrade) {
-        header('Location: ' . APP_URL . '/trades/view?id=' . $latestTrade['id']);
+        $mtRoom = multi_trade_room_for_seed_trade((int)$latestTrade['id']);
+        if ($mtRoom) {
+            header('Location: ' . multi_trade_room_url((int)$mtRoom['id']));
+        } else {
+            header('Location: ' . APP_URL . '/trades/view?id=' . $latestTrade['id']);
+        }
         exit;
     }
 }
@@ -333,19 +353,25 @@ render_navbar($user);
           <?php foreach ($activeTrades as $t):
             $isA = (int)$t['user_a_id'] === $uid;
             $otherName = $isA ? $t['user_b_name'] : $t['user_a_name'];
-            $otherId = $isA ? $t['user_b_id'] : $t['user_a_id'];
+            
+            // بررسی اینکه آیا این معامله بخشی از یک معامله چندنفره است
+            $mtRoom = multi_trade_room_for_seed_trade((int)$t['id']);
+            $tradeUrl = $mtRoom ? multi_trade_room_url((int)$mtRoom['id']) : APP_URL . '/trades/view?id=' . $t['id'];
           ?>
-          <a href="<?= APP_URL ?>/trades/view?id=<?= $t['id'] ?>" class="card" style="text-decoration:none;color:inherit">
+          <a href="<?= $tradeUrl ?>" class="card" style="text-decoration:none;color:inherit">
             <div class="card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
               <?php if ($t['la_thumb']): ?>
               <img src="<?= UPLOAD_URL . h($t['la_thumb']) ?>" alt="" style="width:60px;height:60px;border-radius:12px;object-fit:cover">
               <?php endif; ?>
               <div style="flex:1;min-width:0">
-                <div style="font-weight:700">معامله با <?= h($otherName) ?></div>
+                <div style="font-weight:700">
+                    <?php if ($mtRoom): ?><i class="bi bi-people-fill text-primary"></i> مبادله چندنفره: <?php else: ?>معامله با <?php endif; ?>
+                    <?= h($otherName) ?>
+                </div>
                 <div class="fs-sm" style="color:var(--text-muted)"><?= h($t['listing_a_title']) ?></div>
               </div>
               <span class="badge badge-<?= str_contains($t['status'], 'confirmed') ? 'success' : ($t['status'] === 'disputed' ? 'danger' : 'warning') ?>">
-                <?= trade_status_label($t['status']) ?>
+                <?= $mtRoom ? multi_trade_room_status_label($mtRoom['status']) : trade_status_label($t['status']) ?>
               </span>
             </div>
           </a>
@@ -506,9 +532,12 @@ render_navbar($user);
                     </button>
                   </form>
                 </div>
-                <?php elseif ($offer['status'] === 'accepted' && $offer['trade_id']): ?>
+                <?php elseif ($offer['status'] === 'accepted' && $offer['trade_id']):
+                  $mtRoom = multi_trade_room_for_seed_trade((int)$offer['trade_id']);
+                  $tradeUrl = $mtRoom ? multi_trade_room_url((int)$mtRoom['id']) : APP_URL . '/trades/view?id=' . (int)$offer['trade_id'];
+                ?>
                 <div style="width:100%">
-                  <a href="<?= APP_URL ?>/trades/view?id=<?= (int)$offer['trade_id'] ?>" class="btn btn-primary w-100">
+                  <a href="<?= $tradeUrl ?>" class="btn btn-primary w-100">
                     <i class="bi bi-shield-lock"></i> ورود به اتاق امن
                   </a>
                 </div>

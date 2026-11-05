@@ -75,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'vote_close':
             $result = multi_trade_vote_close($roomId, $uid);
             break;
+        case 'leave_room':
+            $result = multi_trade_leave_room($roomId, $uid);
+            if (!isset($result['error'])) { header('Location: ' . APP_URL . '/trades'); exit; }
+            break;
         case 'select_target':
             $result = multi_trade_select_target($roomId, $uid, (int)($_POST['target_member_id'] ?? 0));
             break;
@@ -235,6 +239,13 @@ $statusClass = 'mt-pill--' . ($room['status'] === 'awaiting_seed' ? 'forming' : 
     </div>
     <div>
       <span class="mt-pill <?= h($statusClass) ?>"><?= h(multi_trade_room_status_label((string)$room['status'])) ?></span>
+      <?php if ($isMember && in_array($room['status'], ['awaiting_seed', 'forming'], true)): ?>
+        <form method="post" style="display:inline-block; margin-inline-start:8px;" onsubmit="return confirm('آیا از خروج از این معامله مطمئن هستید؟');">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="leave_room">
+          <button type="submit" class="mt-btn mt-btn--danger"><i class="bi bi-box-arrow-right"></i> ترک معامله</button>
+        </form>
+      <?php endif; ?>
       <a href="<?= APP_URL ?>/trades" class="mt-btn mt-btn--ghost" style="margin-inline-start:8px;"><i class="bi bi-arrow-right"></i> بازگشت</a>
     </div>
   </div>

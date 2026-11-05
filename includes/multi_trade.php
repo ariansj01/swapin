@@ -32,7 +32,7 @@ function multi_trade_room_status_label(string $status): string
 {
     return [
         'awaiting_seed' => 'در انتظار تأیید طرف مقابل',
-        'forming'       => 'در حال تشکیل',
+        'forming'       => 'در انتظار عضو جدید (۳ تا ۵ نفر)',
         'locked'        => 'بسته شده — انتخاب طرف معامله',
         'active'        => 'در جریان',
         'completed'     => 'تکمیل شده',
@@ -827,6 +827,15 @@ function multi_trade_vote_close(int $roomId, int $userId): array
 
     if (multi_trade_all_close_votes($roomId)) {
         DB::update('multi_trade_rooms', ['status' => 'locked', 'locked_at' => date('Y-m-d H:i:s')], 'id = ?', [$roomId]);
+
+        // رزرو کردن تمامی آگهی‌های اعضای اتاق در زمان بسته شدن
+        $members = multi_trade_members($roomId);
+        foreach ($members as $m) {
+            if (!empty($m['listing_id'])) {
+                DB::update('listings', ['status' => 'reserved'], 'id = ?', [(int)$m['listing_id']]);
+            }
+        }
+
         multi_trade_system_message($roomId, 'همه اعضا موافقت کردند؛ اتاق بسته شد. اکنون هر عضو باید انتخاب کند کالایش را به چه کسی تحویل دهد.');
         foreach (multi_trade_members($roomId) as $m) {
             multi_trade_notify((int)$m['user_id'], 'اتاق بسته شد — انتخاب طرف معامله',
@@ -1329,6 +1338,34 @@ function multi_trade_maybe_complete(int $roomId): void
 /**
  * خلاصه‌ی وضعیت کل اتاق برای نمایش «تخته‌وضعیت».
  */
+function multi_trade_leave_room(int $roomId, int $userId): array
+{
+    $member = multi_trade_member($roomId, $userId);
+    if (!$member || $member['status'] !== 'active') {
+        return ['error' => 'شما عضو فعال این اتاق نیستید.'];
+    }
+    $room = multi_trade_room($roomId);
+    if (!$room || !in_array($room['status'], ['awaiting_seed', 'forming'], true)) {
+        return ['error' => 'در این مرحله امکان ترک معامله نیست.'];
+    }
+
+    if ((int)$member['is_seed']) {
+        // اگر یکی از دو نفر اصلی ترک کند، کل اتاق لغو می‌شود
+        DB::update('multi_trade_rooms', ['status' => 'cancelled'], 'id = ?', [$roomId]);
+        DB::update('multi_trade_members', ['status' => 'left'], 'room_id = ?', [$roomId]);
+        multi_trade_system_message($roomId, 'یکی از طرفین اصلی معامله را ترک کرد؛ اتاق لغو شد.');
+        return ['ok' => true, 'cancelled' => true];
+    }
+
+    DB::update('multi_trade_members', ['status' => 'left'], 'id = ?', [(int)$member['id']]);
+    multi_trade_system_message($roomId, $member['user_name'] . ' اتاق را ترک کرد.');
+    
+    // اگر تعداد اعضا به زیر ۳ رسید و قبلاً رأی داده بودند، رأی‌ها پاک شود
+    DB::query('UPDATE multi_trade_members SET close_vote = 0 WHERE room_id = ?', [$roomId]);
+    
+    return ['ok' => true];
+}
+
 function multi_trade_board(int $roomId): array
 {
     $room = multi_trade_room($roomId);
