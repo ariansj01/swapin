@@ -30,6 +30,12 @@ $myMember  = multi_trade_member($roomId, $uid);
 $isMember  = $myMember && $myMember['status'] === 'active';
 $isInvited = $myMember && $myMember['status'] === 'invited';
 
+// اتاق لغو‌شده یا عضوی که ترک کرده است، به لیست معاملات بازمی‌گردد
+if ((string)$room['status'] === 'cancelled' || ($myMember && $myMember['status'] === 'left')) {
+    header('Location: ' . APP_URL . '/trades');
+    exit;
+}
+
 // ─── AJAX: دریافت پیام‌های چت گروهی ─────────────────────────────────────────
 if (($_GET['action'] ?? '') === 'messages' && $isMember) {
     header('Content-Type: application/json; charset=utf-8');
@@ -218,6 +224,13 @@ render_user_panel_open($user, 'trades');
 .mt-chat-form { display:flex; gap:8px; margin-top:10px; }
 .mt-chat-form input { flex:1; }
 .mt-note { background:#f8fafd; border:1px dashed #dbe3ee; border-radius:12px; padding:12px; font-size:13px; color:#42536e; }
+.mt-steps-locked__note { display:flex; align-items:center; gap:8px; background:rgba(255,201,40,.14); border:1px solid rgba(255,201,40,.5); border-radius:12px; padding:10px 12px; font-size:13px; font-weight:600; color:#7a6100; margin-bottom:12px; }
+.mt-steps-locked__body { filter: blur(4px); opacity:.5; pointer-events:none; user-select:none; }
+.mt-tabs { display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid #e6ebf3; }
+.mt-tab { border:none; background:transparent; cursor:pointer; padding:10px 14px; font-size:14px; font-weight:700; color:#6c7a92; border-bottom:3px solid transparent; font-family:inherit; }
+.mt-tab.is-active { color:#071A33; border-bottom-color:#FFC928; }
+.mt-tab-pane { display:none; }
+.mt-tab-pane.is-active { display:block; }
 .mt-alert { border-radius:12px; padding:12px 14px; font-size:13px; margin-bottom:14px; font-weight:600; }
 .mt-alert--success { background:rgba(20,160,90,.10); color:#128a4d; }
 .mt-alert--danger  { background:rgba(200,40,40,.10); color:#c0392b; }
@@ -240,11 +253,19 @@ $statusClass = 'mt-pill--' . ($room['status'] === 'awaiting_seed' ? 'forming' : 
     <div>
       <span class="mt-pill <?= h($statusClass) ?>"><?= h(multi_trade_room_status_label((string)$room['status'])) ?></span>
       <?php if ($isMember && in_array($room['status'], ['awaiting_seed', 'forming'], true)): ?>
-        <form method="post" style="display:inline-block; margin-inline-start:8px;" onsubmit="return confirm('آیا از خروج از این معامله مطمئن هستید؟');">
+        <?php if ($activeCount <= 2): ?>
+        <form method="post" style="display:inline-block; margin-inline-start:8px;" onsubmit="return confirm('با این کار معامله به‌طور کامل بسته می‌شود و آگهی‌ها به حالت فعال برمی‌گردند. مطمئن هستید؟');">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="leave_room">
+          <button type="submit" class="mt-btn mt-btn--danger"><i class="bi bi-x-octagon"></i> ترک و بستن معامله</button>
+        </form>
+        <?php else: ?>
+        <form method="post" style="display:inline-block; margin-inline-start:8px;" onsubmit="return confirm('آیا از ترک این معامله مطمئن هستید؟ فقط شما از گروه خارج می‌شوید.');">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="leave_room">
           <button type="submit" class="mt-btn mt-btn--danger"><i class="bi bi-box-arrow-right"></i> ترک معامله</button>
         </form>
+        <?php endif; ?>
       <?php endif; ?>
       <a href="<?= APP_URL ?>/trades" class="mt-btn mt-btn--ghost" style="margin-inline-start:8px;"><i class="bi bi-arrow-right"></i> بازگشت</a>
     </div>
@@ -301,6 +322,43 @@ $statusClass = 'mt-pill--' . ($room['status'] === 'awaiting_seed' ? 'forming' : 
 <?php else: ?>
   <!-- ══════════ نمایش کامل اتاق برای اعضای فعال ══════════ -->
 
+  <!-- درخواست‌های پیوستن (بالای لیست اعضا) -->
+  <?php if ($pendingRequests): ?>
+  <div class="mt-card" style="border:2px solid #FFC928;">
+    <h2><i class="bi bi-inbox"></i> درخواست‌های پیوستن</h2>
+    <p class="mt-note" style="margin-bottom:12px;">با موافقت <b>همه‌ی</b> اعضای فعلی، این افراد به لیست اعضا اضافه می‌شوند.</p>
+    <?php foreach ($pendingRequests as $r): ?>
+      <div class="mt-track">
+        <div class="mt-track__head">
+          <div class="mt-track__flow">
+            <span class="mt-av" style="width:32px;height:32px;border-radius:10px;"><?= h(mb_substr((string)$r['user_name'], 0, 1)) ?></span>
+            <?= h($r['user_name']) ?>
+            <span style="color:#6c7a92;font-weight:400;">— <?= h($r['listing_title'] ?? 'بدون آگهی') ?></span>
+          </div>
+          <div style="font-size:12px;color:#6c7a92;">تأییدها: <?= (int)$r['approve_count'] ?>/<?= $activeCount ?></div>
+        </div>
+        <?php
+          $myVote = DB::fetch('SELECT decision FROM multi_trade_join_votes WHERE request_id = ? AND member_id = ?', [(int)$r['id'], (int)$myMember['id']]);
+        ?>
+        <div class="mt-actions">
+          <?php if ($myVote): ?>
+            <span class="mt-badge <?= $myVote['decision'] === 'approve' ? 'mt-badge--ok' : 'mt-badge--wait' ?>">نظر شما: <?= $myVote['decision'] === 'approve' ? 'موافق' : 'مخالف' ?></span>
+          <?php else: ?>
+            <form method="post"><?= csrf_field() ?>
+              <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="1">
+              <button class="mt-btn mt-btn--gold" type="submit"><i class="bi bi-check2"></i> موافقم</button>
+            </form>
+            <form method="post"><?= csrf_field() ?>
+              <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="0">
+              <button class="mt-btn mt-btn--danger" type="submit"><i class="bi bi-x"></i> مخالفم</button>
+            </form>
+          <?php endif; ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
   <div class="mt-card">
     <h2><i class="bi bi-people"></i> اعضای اتاق (<?= $activeCount ?> از <?= (int)$room['members_max'] ?>)</h2>
     <div class="mt-members">
@@ -339,14 +397,14 @@ $statusClass = 'mt-pill--' . ($room['status'] === 'awaiting_seed' ? 'forming' : 
     <?php if ($activeCount < MT_ROOM_MIN): ?>
       <div class="mt-note">برای بستن اتاق حداقل <?= MT_ROOM_MIN ?> عضو لازم است. تا رسیدن به ظرفیت، اعضای جدید می‌توانند با تأیید همه درخواست پیوستن بدهند.</div>
     <?php else: ?>
-      <p class="mt-note">با کلیک <b>همه‌ی</b> اعضا روی دکمه، اتاق بسته می‌شود و ورود افراد جدید غیرفعال می‌گردد. سپس هر عضو طرف معامله‌ی خود را انتخاب می‌کند.</p>
+      <p class="mt-note">با تأیید <b>همه‌ی</b> اعضا، اتاق بسته می‌شود و ورود افراد جدید غیرفعال می‌گردد. سپس هر عضو طرف معامله‌ی خود را انتخاب می‌کند. تا زمانی که همه تأیید نکنند، تأیید درخواست‌های پیوستن همچنان ممکن است.</p>
       <div class="mt-actions">
         <?php if ((int)$myMember['close_vote']): ?>
           <button class="mt-btn mt-btn--ghost" disabled><i class="bi bi-hourglass-split"></i> منتظر تأیید بقیه اعضا (<?= count(array_filter($members, fn($x) => (int)$x['close_vote'])) ?>/<?= $activeCount ?>)</button>
         <?php else: ?>
-          <form method="post"><?= csrf_field() ?>
+          <form method="post" onsubmit="return confirm('با تأیید شما، اتاق تنها در صورت موافقت همه‌ی اعضا بسته می‌شود. مطمئن هستید؟');"><?= csrf_field() ?>
             <input type="hidden" name="action" value="vote_close">
-            <button class="mt-btn mt-btn--gold" type="submit"><i class="bi bi-lock-fill"></i> موافقم؛ اتاق بسته شود</button>
+            <button class="mt-btn mt-btn--gold" type="submit"><i class="bi bi-lock-fill"></i> بستن اتاق</button>
           </form>
         <?php endif; ?>
       </div>
@@ -355,42 +413,27 @@ $statusClass = 'mt-pill--' . ($room['status'] === 'awaiting_seed' ? 'forming' : 
       <?php endif; ?>
     <?php endif; ?>
   </div>
-
-  <!-- درخواست‌های عضویت در انتظار تأیید -->
-  <?php if ($pendingRequests): ?>
-  <div class="mt-card">
-    <h2><i class="bi bi-inbox"></i> درخواست‌های پیوستن</h2>
-    <?php foreach ($pendingRequests as $r): ?>
-      <div class="mt-track">
-        <div class="mt-track__head">
-          <div class="mt-track__flow">
-            <span class="mt-av" style="width:32px;height:32px;border-radius:10px;"><?= h(mb_substr((string)$r['user_name'], 0, 1)) ?></span>
-            <?= h($r['user_name']) ?>
-            <span style="color:#6c7a92;font-weight:400;">— <?= h($r['listing_title'] ?? 'بدون آگهی') ?></span>
-          </div>
-          <div style="font-size:12px;color:#6c7a92;">تأییدها: <?= (int)$r['approve_count'] ?>/<?= $activeCount ?></div>
-        </div>
-        <?php
-          $myVote = DB::fetch('SELECT decision FROM multi_trade_join_votes WHERE request_id = ? AND member_id = ?', [(int)$r['id'], (int)$myMember['id']]);
-        ?>
-        <div class="mt-actions">
-          <?php if ($myVote): ?>
-            <span class="mt-badge <?= $myVote['decision'] === 'approve' ? 'mt-badge--ok' : 'mt-badge--wait' ?>">نظر شما: <?= $myVote['decision'] === 'approve' ? 'موافق' : 'مخالف' ?></span>
-          <?php else: ?>
-            <form method="post"><?= csrf_field() ?>
-              <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="1">
-              <button class="mt-btn mt-btn--gold" type="submit"><i class="bi bi-check2"></i> موافقم</button>
-            </form>
-            <form method="post"><?= csrf_field() ?>
-              <input type="hidden" name="action" value="vote_join"><input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="approve" value="0">
-              <button class="mt-btn mt-btn--danger" type="submit"><i class="bi bi-x"></i> مخالفم</button>
-            </form>
-          <?php endif; ?>
-        </div>
-      </div>
-    <?php endforeach; ?>
-  </div>
   <?php endif; ?>
+
+  <?php if (in_array($room['status'], ['awaiting_seed', 'forming'], true)): ?>
+  <!-- پیش‌نمایش مراحل — تا بسته‌شدن اتاق غیرفعال و blur است -->
+  <div class="mt-card">
+    <h2><i class="bi bi-list-check"></i> مراحل معامله</h2>
+    <div class="mt-steps-locked__note">
+      <i class="bi bi-lock-fill"></i>
+      تا زمانی که اتاق بسته نشود و طرف معامله‌ها انتخاب نشوند، این مراحل قابل انجام نیستند.
+    </div>
+    <div class="mt-steps-locked__body" aria-hidden="true">
+      <?php foreach ([MT_STEP_FEE, MT_STEP_DIFF, MT_STEP_CONTRACT, MT_STEP_SHIPPING, MT_STEP_DELIVERED, MT_STEP_RECEIVED, MT_STEP_RATING] as $i => $s): ?>
+        <div class="mt-track">
+          <div class="mt-track__head">
+            <div class="mt-track__flow"><i class="bi bi-circle"></i> مرحله <?= $i + 1 ?>: <?= h(multi_trade_step_label($s)) ?></div>
+            <span class="mt-badge mt-badge--wait">غیرفعال</span>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
   <?php endif; ?>
 
   <?php if ($room['status'] === 'locked'): ?>
@@ -456,6 +499,11 @@ $statusClass = 'mt-pill--' . ($room['status'] === 'awaiting_seed' ? 'forming' : 
     <h2><i class="bi bi-list-check"></i> اقدام‌های من</h2>
     <?php if (!$myTracks): ?>
       <div class="mt-note">مسیری برای شما ثبت نشده است.</div>
+    <?php else: ?>
+      <div class="mt-tabs" id="mtMyTabs">
+        <button type="button" class="mt-tab is-active" data-pane="deliver"><i class="bi bi-box-seam"></i> تحویل من</button>
+        <button type="button" class="mt-tab" data-pane="receive"><i class="bi bi-inbox"></i> دریافت من</button>
+      </div>
     <?php endif; ?>
     <?php foreach ($myTracks as $t):
       $step = $stepByTrack[(int)$t['id']] ?? '';
@@ -465,7 +513,7 @@ $statusClass = 'mt-pill--' . ($room['status'] === 'awaiting_seed' ? 'forming' : 
       $didDiff = (int)($memberById[(int)($iAmDeliverer ? $t['deliverer_member_id'] : $t['receiver_member_id'])]['diff_paid'] ?? 0) === 1;
       $myDiff = (float)($myMember['diff_amount'] ?? 0);
     ?>
-      <div class="mt-track mt-track--mine">
+      <div class="mt-track mt-track--mine" data-pane="<?= $iAmDeliverer ? 'deliver' : 'receive' ?>">
         <div class="mt-track__head">
           <div class="mt-track__flow">
             <?= $iAmDeliverer ? 'تحویل کالای شما به ' : 'دریافت کالا از ' ?>
@@ -646,6 +694,22 @@ $statusClass = 'mt-pill--' . ($room['status'] === 'awaiting_seed' ? 'forming' : 
 
   load();
   setInterval(load, 7000);
+})();
+
+// تب‌های «تحویل من» / «دریافت من» (دو معامله‌ی در جریان هر عضو)
+(function () {
+  var tabs = document.getElementById('mtMyTabs');
+  if (!tabs) return;
+  var buttons = [].slice.call(tabs.querySelectorAll('.mt-tab'));
+  var items = [].slice.call(document.querySelectorAll('.mt-track--mine[data-pane]'));
+  function activate(pane) {
+    buttons.forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-pane') === pane); });
+    items.forEach(function (it) { it.style.display = it.getAttribute('data-pane') === pane ? '' : 'none'; });
+  }
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () { activate(b.getAttribute('data-pane')); });
+  });
+  activate('deliver');
 })();
 </script>
 

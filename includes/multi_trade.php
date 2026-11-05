@@ -501,6 +501,11 @@ function multi_trade_redirect_after_accept(int $tradeId, int $userId, bool $asGr
         $gr = multi_trade_create_from_trade($tradeId, $userId, true);
     } catch (Throwable $e) {
         swapin_debug_log('multi-trade-create-from-accept', ['msg' => $e->getMessage(), 'trade_id' => $tradeId]);
+        return $fallback;
+    }
+    $roomId = (int)($gr['room_id'] ?? 0);
+    if ($roomId > 0) {
+        return multi_trade_room_url($roomId);
     }
     return $fallback;
 }
@@ -1364,8 +1369,8 @@ function multi_trade_leave_room(int $roomId, int $userId): array
         return ['error' => 'در این مرحله امکان ترک معامله نیست.'];
     }
 
-    if ((int)$member['is_seed']) {
-        // اگر یکی از دو نفر اصلی ترک کند، کل اتاق لغو می‌شود
+    // اگر فقط دو عضو فعال باقی مانده باشد، «ترک» به معنی بستن کامل معامله است.
+    if (multi_trade_active_count($roomId) <= 2) {
         DB::update('multi_trade_rooms', ['status' => 'cancelled'], 'id = ?', [$roomId]);
         DB::update('multi_trade_members', ['status' => 'left'], 'room_id = ?', [$roomId]);
 
@@ -1382,8 +1387,19 @@ function multi_trade_leave_room(int $roomId, int $userId): array
             }
         }
 
-        multi_trade_system_message($roomId, 'یکی از طرفین اصلی معامله را ترک کرد؛ اتاق لغو شد و آگهی‌ها به حالت عادی برگشتند.');
-        return ['ok' => true, 'cancelled' => true];
+        multi_trade_system_message($roomId, 'معامله بسته شد؛ آگهی‌ها به حالت فعال برگشتند.');
+        foreach ($allMembers as $m) {
+            if ((int)$m['user_id'] === $userId) {
+                continue;
+            }
+            multi_trade_notify(
+                (int)$m['user_id'],
+                'معامله چندنفره بسته شد',
+                'طرف مقابل معامله را بست؛ آگهی‌ها به حالت فعال برگشتند.',
+                APP_URL . '/trades'
+            );
+        }
+        return ['ok' => true, 'closed' => true];
     }
 
     DB::update('multi_trade_members', ['status' => 'left'], 'id = ?', [(int)$member['id']]);

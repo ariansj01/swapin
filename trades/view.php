@@ -37,16 +37,13 @@ if (!$trade) {
     exit;
 }
 
-// اگر این معامله به «مبادله چندنفره» تبدیل شده باشد، وضعیت آن در اتاق امن نمایش داده می‌شود.
+// اگر این معامله به «مبادله چندنفره» تبدیل شده باشد، کاربر به اتاق معامله هدایت می‌شود.
 multi_trade_ensure_tables();
 $multiRoom = multi_trade_room_for_seed_trade($tradeId);
-// حذف ریدایرکت خودکار به اتاق گروهی برای تمرکز بر اتاق امن در مراحل اولیه
-/*
-if ($multiRoom) {
+if ($multiRoom && in_array((string)$multiRoom['status'], ['awaiting_seed', 'forming', 'locked', 'active'], true)) {
     header('Location: ' . multi_trade_room_url((int)$multiRoom['id']));
     exit;
 }
-*/
 
 $isA       = (int)$trade['user_a_id'] === $uid;
 $otherName = $isA ? $trade['user_b_name'] : $trade['user_a_name'];
@@ -270,6 +267,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($res['error'])) {
             $error = $res['error'];
         } else {
+            $roomId = (int)($res['room_id'] ?? 0);
+            if ($roomId > 0) {
+                header('Location: ' . multi_trade_room_url($roomId));
+                exit;
+            }
             $success = 'درخواست مبادله چندنفره با موفقیت ثبت شد.';
         }
     } elseif ($action === 'accept_invite') {
