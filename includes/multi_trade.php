@@ -1370,11 +1370,31 @@ function multi_trade_leave_room(int $roomId, int $userId): array
         // اگر یکی از دو نفر اصلی ترک کند، کل اتاق لغو می‌شود
         DB::update('multi_trade_rooms', ['status' => 'cancelled'], 'id = ?', [$roomId]);
         DB::update('multi_trade_members', ['status' => 'left'], 'room_id = ?', [$roomId]);
-        multi_trade_system_message($roomId, 'یکی از طرفین اصلی معامله را ترک کرد؛ اتاق لغو شد.');
+
+        // لغو معامله دو نفره اصلی (اگر وجود داشته باشد)
+        if (!empty($room['seed_trade_id'])) {
+            DB::update('trades', ['status' => 'cancelled'], 'id = ?', [(int)$room['seed_trade_id']]);
+        }
+
+        // بازگرداندن وضعیت آگهی‌های تمامی اعضا به «فعال»
+        $allMembers = multi_trade_members($roomId, false);
+        foreach ($allMembers as $m) {
+            if (!empty($m['listing_id'])) {
+                DB::update('listings', ['status' => 'active'], 'id = ?', [(int)$m['listing_id']]);
+            }
+        }
+
+        multi_trade_system_message($roomId, 'یکی از طرفین اصلی معامله را ترک کرد؛ اتاق لغو شد و آگهی‌ها به حالت عادی برگشتند.');
         return ['ok' => true, 'cancelled' => true];
     }
 
     DB::update('multi_trade_members', ['status' => 'left'], 'id = ?', [(int)$member['id']]);
+    
+    // بازگرداندن آگهی کاربر خارج شده به وضعیت «فعال»
+    if (!empty($member['listing_id'])) {
+        DB::update('listings', ['status' => 'active'], 'id = ?', [(int)$member['listing_id']]);
+    }
+
     multi_trade_system_message($roomId, $member['user_name'] . ' اتاق را ترک کرد.');
     
     // اگر تعداد اعضا به زیر ۳ رسید و قبلاً رأی داده بودند، رأی‌ها پاک شود
