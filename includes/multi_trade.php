@@ -540,13 +540,6 @@ function multi_trade_create_from_trade(int $tradeId, int $initiatorId, bool $bot
         return ['ok' => true, 'room_id' => (int)$existing['id'], 'existing' => true];
     }
     $status = $bothAccepted ? 'forming' : 'awaiting_seed';
-    $roomId = DB::insert('multi_trade_rooms', [
-        'seed_trade_id' => $tradeId,
-        'initiated_by'  => $initiatorId,
-        'status'        => $status,
-        'members_min'   => MT_ROOM_MIN,
-        'members_max'   => MT_ROOM_MAX,
-    ]);
 
     $otherId = $initiatorId === $a ? $b : $a;
     $listingOf = function (int $uid) use ($trade): ?int {
@@ -554,6 +547,37 @@ function multi_trade_create_from_trade(int $tradeId, int $initiatorId, bool $bot
         if ($uid === (int)$trade['user_b_id']) return !empty($trade['listing_b_id']) ? (int)$trade['listing_b_id'] : null;
         return null;
     };
+
+    // هوشمندسازی: اگر یکی از طرفین در حال حاضر عضو اتاقی در وضعیت تشکیل است، نفر جدید به همان اتاق هدایت شود.
+    $checkIds = [$initiatorId, $otherId];
+    foreach ($checkIds as $uid) {
+        $activeRoom = DB::fetch(
+            "SELECT r.id FROM multi_trade_rooms r 
+             JOIN multi_trade_members m ON m.room_id = r.id 
+             WHERE m.user_id = ? AND m.status = 'active' AND r.status = 'forming' 
+             LIMIT 1",
+            [$uid]
+        );
+        if ($activeRoom) {
+            $existingRoomId = (int)$activeRoom['id'];
+            $newMemberId = $uid === $initiatorId ? $otherId : $initiatorId;
+            $newListingId = $listingOf($newMemberId);
+            
+            // اگر طرف مقابل از قبل عضو نیست، برایش درخواست پیوستن ثبت کن
+            if (!multi_trade_member($existingRoomId, $newMemberId) && $newListingId) {
+                multi_trade_join_request($existingRoomId, $newMemberId, $newListingId);
+            }
+            return ['ok' => true, 'room_id' => $existingRoomId, 'merged' => true];
+        }
+    }
+
+    $roomId = DB::insert('multi_trade_rooms', [
+        'seed_trade_id' => $tradeId,
+        'initiated_by'  => $initiatorId,
+        'status'        => $status,
+        'members_min'   => MT_ROOM_MIN,
+        'members_max'   => MT_ROOM_MAX,
+    ]);
 
     DB::insert('multi_trade_members', [
         'room_id'    => $roomId,

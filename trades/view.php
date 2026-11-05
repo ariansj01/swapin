@@ -976,7 +976,16 @@ render_user_panel_open($user, 'trades');
   <?php endif; ?>
 
   <div class="trade-room__layout">
-    <?php if ($multiRoom && !$mtLocked && $mtStatus !== 'cancelled'): ?>
+    <?php if ($multiRoom && (string)$multiRoom['status'] === 'cancelled'): ?>
+      <div style="grid-column: 1 / -1; background: #fff; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #eee; box-shadow: var(--st-card-shadow);">
+        <div style="width: 80px; height: 80px; background: #fff5f5; color: #e53e3e; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px;">
+          <i class="bi bi-x-circle"></i>
+        </div>
+        <h2 style="color: #071A33; margin-bottom: 10px;">این مبادله منحل شده است</h2>
+        <p style="color: #666; margin-bottom: 30px;">اتاق مبادله چندنفره توسط یکی از اعضا بسته شد و آگهی‌ها به حالت فعال بازگشتند.</p>
+        <a href="<?= APP_URL ?>/trades" class="btn btn-primary" style="padding: 10px 30px;">بازگشت به معاملات من</a>
+      </div>
+    <?php elseif ($multiRoom && !$mtLocked && $mtStatus !== 'cancelled'): ?>
       <!-- نمای مبادله چندنفره: اتاق هنوز بسته نشده؛ «وضعیت معامله» و «جزئیات/مراحل» blur است -->
       <aside class="trade-room__timeline-column">
         <section class="trade-room__timeline-card">
