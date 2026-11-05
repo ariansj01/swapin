@@ -568,6 +568,12 @@ function multi_trade_create_from_trade(int $tradeId, int $initiatorId, bool $bot
         'join_order' => 2,
     ]);
 
+    // Ensure seed listings are active (they might have been reserved if this was a regular trade before)
+    $lids = array_filter([$listingOf($initiatorId), $listingOf($otherId)]);
+    foreach ($lids as $lid) {
+        DB::query("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'reserved'", [(int)$lid]);
+    }
+
     multi_trade_system_message($roomId, 'اتاق مبادله چندنفره ساخته شد. با پیوستن حداقل '
         . MT_ROOM_MIN . ' عضو می‌توانید اتاق را ببندید و طرف معامله را انتخاب کنید.');
 
@@ -626,6 +632,14 @@ function multi_trade_accept_invite(int $roomId, int $userId): array
     }
     DB::update('multi_trade_members', ['status' => 'active'], 'id = ?', [(int)$member['id']]);
     DB::update('multi_trade_rooms', ['status' => 'forming'], 'id = ?', [$roomId]);
+
+    // Ensure listings are active when room moves to 'forming'
+    $roomMembers = multi_trade_members($roomId);
+    foreach ($roomMembers as $rm) {
+        if (!empty($rm['listing_id'])) {
+            DB::query("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'reserved'", [(int)$rm['listing_id']]);
+        }
+    }
 
     multi_trade_system_message($roomId, 'طرف مقابل دعوت را پذیرفت. اتاق اکنون برای پیوستن اعضای جدید باز است.');
     foreach (multi_trade_members($roomId) as $m) {
@@ -791,6 +805,9 @@ function multi_trade_vote_join(int $requestId, int $voterUserId, bool $approve):
         'join_order' => $maxOrder + 1,
     ]);
     DB::query("UPDATE multi_trade_join_requests SET status = 'approved' WHERE id = ?", [$requestId]);
+
+    // Ensure the joined listing is active
+    DB::query("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'reserved'", [(int)$req['listing_id']]);
 
     $uname = DB::fetch('SELECT name FROM users WHERE id = ?', [$applicantId]);
     multi_trade_system_message($roomId, ($uname['name'] ?? 'عضو جدید') . ' با تأیید همه اعضا به اتاق پیوست.');
