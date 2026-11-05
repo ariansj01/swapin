@@ -127,6 +127,7 @@ function multi_trade_ensure_tables(): bool
                     `fee_receive` DECIMAL(15,0) NOT NULL DEFAULT 0,
                     `fee_paid` TINYINT(1) NOT NULL DEFAULT 0,
                     `fee_paid_at` DATETIME DEFAULT NULL,
+                    `payment_method` ENUM('in_person','bnpl','cash') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
                     `diff_amount` DECIMAL(15,0) NOT NULL DEFAULT 0,
                     `diff_paid` TINYINT(1) NOT NULL DEFAULT 0,
                     `diff_settled` TINYINT(1) NOT NULL DEFAULT 0,
@@ -219,6 +220,9 @@ function multi_trade_ensure_tables(): bool
         }
         if (db_has_table('multi_trade_members') && !db_has_column('multi_trade_members', 'fee_receive')) {
             DB::query("ALTER TABLE `multi_trade_members` ADD COLUMN `fee_receive` DECIMAL(15,0) NOT NULL DEFAULT 0 COMMENT 'کارمزد معامله دریافتی (کالایی که می‌گیرد)'");
+        }
+        if (db_has_table('multi_trade_members') && !db_has_column('multi_trade_members', 'payment_method')) {
+            DB::query("ALTER TABLE `multi_trade_members` ADD COLUMN `payment_method` ENUM('in_person','bnpl','cash') COLLATE utf8mb4_unicode_ci DEFAULT NULL");
         }
         if (function_exists('db_ensure_enum_values')) {
             db_ensure_enum_values(
@@ -1232,6 +1236,19 @@ function multi_trade_pay_diff(int $roomId, int $userId): array
     if ((int)$member['diff_paid']) {
         return ['ok' => true, 'already' => true];
     }
+
+    $paymentMethod = $member['payment_method'] ?? '';
+    if (empty($paymentMethod)) {
+        return ['error' => 'لطفاً ابتدا روش پرداخت را انتخاب کنید.'];
+    }
+
+    if ($paymentMethod === 'in_person') {
+        DB::query('UPDATE multi_trade_members SET diff_paid = 1 WHERE id = ?', [(int)$member['id']]);
+        multi_trade_system_message($roomId, $member['user_name'] . ' روش پرداخت در محل را برای ماب‌تفاوت انتخاب کرد.');
+        multi_trade_settle_diff_if_ready($roomId);
+        return ['ok' => true];
+    }
+
     $u = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$userId]);
     if ((float)($u['credit_balance'] ?? 0) < $diff) {
         return ['error' => 'موجودی کیف پول برای ماب‌تفاوت کافی نیست. نیاز به ' . fmt_credit($diff - (float)($u['credit_balance'] ?? 0)) . ' دارید.'];

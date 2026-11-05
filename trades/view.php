@@ -39,6 +39,150 @@ function fetch_trade_room(int $tradeId, ?int $uid = null): ?array
 multi_trade_ensure_tables();
 $multiRoom = multi_trade_room_for_seed_trade($tradeId);
 
+// وضعیت مبادله چندنفره باید در هر بارگذاری صفحه (GET و POST) محاسبه شود
+$mtPendingRequests = [];
+$mtMyMember        = null;
+$mtIsInvited       = false;
+$mtActiveCount     = 0;
+$mtMembersAll      = [];
+$mtLocked          = false;
+$mtRoomClosed      = false;
+$mtTakenTargets    = [];
+$mtStatus          = '';
+$mtIAmActive       = false;
+$mtBoard           = null;
+$mtMessages        = [];
+$mtMyTracks        = [];
+$mtDeliverTrack    = null;
+$mtReceiveTrack    = null;
+$mtFeeByMember     = [];
+$mtSignedByMember  = [];
+$mtMyFeeTotal      = 0.0;
+$mtMyFeePaid       = false;
+$mtAllFeesPaid     = false;
+$mtMyDiff          = 0.0;
+$mtMyDiffPaid      = false;
+$mtDiffSettled     = false;
+$mtMySigned        = false;
+$mtAllSigned       = false;
+$mtMyShippingSet   = false;
+$mtMyShipped       = false;
+$mtMyReceived      = false;
+$mtAllReceived     = false;
+$mtMyRated         = false;
+$mtCompleted       = false;
+
+/**
+ * محاسبه وضعیت اتاق مبادله چندنفره و متغیرهای مربوطه
+ */
+$calculateMtState = function() use (
+    $multiRoom, $uid,
+    &$mtStatus, &$mtMyMember, &$mtIsInvited, &$mtIAmActive, &$mtActiveCount,
+    &$mtMembersAll, &$mtLocked, &$mtRoomClosed, &$mtMessages, &$mtPendingRequests,
+    &$mtBoard, &$mtMyTracks, &$mtFeeByMember, &$mtSignedByMember, &$mtAllFeesPaid,
+    &$mtAllSigned, &$mtDiffSettled, &$mtDeliverTrack, &$mtReceiveTrack,
+    &$mtMyFeeTotal, &$mtMyFeePaid, &$mtMyDiff, &$mtMyDiffPaid, &$mtMySigned,
+    &$mtMyShippingSet, &$mtMyShipped, &$mtMyReceived, &$mtMyRated, &$mtAllReceived,
+    &$mtCompleted, &$mtTakenTargets
+) {
+    if (!$multiRoom) return;
+
+    $roomId        = (int)$multiRoom['id'];
+    $mtStatus      = (string)$multiRoom['status'];
+    $mtMyMember    = multi_trade_member($roomId, $uid);
+    $mtIsInvited   = (bool)($mtMyMember && $mtMyMember['status'] === 'invited');
+    $mtIAmActive   = (bool)($mtMyMember && $mtMyMember['status'] === 'active');
+    $mtActiveCount = multi_trade_active_count($roomId);
+    $mtMembersAll  = multi_trade_members($roomId, false);
+    $mtLocked      = in_array($mtStatus, ['active', 'completed'], true);
+    $mtRoomClosed  = in_array($mtStatus, ['locked', 'active', 'completed'], true);
+    $mtMessages    = multi_trade_messages($roomId);
+
+    if ($mtMyMember && $mtStatus === 'forming') {
+        $mtPendingRequests = multi_trade_join_requests_pending($roomId);
+    }
+
+    if ($mtLocked) {
+        $mtBoard    = multi_trade_board($roomId);
+        $mtMyTracks = array_values(array_filter($mtBoard['tracks'], function ($t) use ($uid) {
+            return (int)$t['deliverer_user_id'] === $uid || (int)$t['receiver_user_id'] === $uid;
+        }));
+
+        $tracksByDeliverer = [];
+        $tracksByReceiver  = [];
+        $allReceived = true;
+        foreach ($mtBoard['tracks'] as $t) {
+            $tracksByDeliverer[(int)$t['deliverer_member_id']] = $t;
+            $tracksByReceiver[(int)$t['receiver_member_id']]   = $t;
+            if (!(int)$t['receiver_received']) {
+                $allReceived = false;
+            }
+        }
+        foreach ($mtBoard['members'] as $m) {
+            $mid = (int)$m['id'];
+            $mtFeeByMember[$mid] = (float)($m['fee_amount'] ?? 0) + (float)($m['fee_receive'] ?? 0);
+            $dSign = (int)($tracksByDeliverer[$mid]['deliverer_signed'] ?? 0) === 1;
+            $rSign = (int)($tracksByReceiver[$mid]['receiver_signed'] ?? 0) === 1;
+            $mtSignedByMember[$mid] = $dSign && $rSign;
+        }
+        $mtAllFeesPaid = true;
+        $mtAllSigned   = true;
+        foreach ($mtBoard['members'] as $m) {
+            if (!(int)$m['fee_paid']) {
+                $mtAllFeesPaid = false;
+            }
+            if (empty($mtSignedByMember[(int)$m['id']])) {
+                $mtAllSigned = false;
+            }
+        }
+        $mtDiffSettled = (int)($mtBoard['room']['diff_settled'] ?? 0) === 1;
+
+        foreach ($mtMyTracks as $t) {
+            if ((int)$t['deliverer_user_id'] === $uid) {
+                $mtDeliverTrack = $t;
+            }
+            if ((int)$t['receiver_user_id'] === $uid) {
+                $mtReceiveTrack = $t;
+            }
+        }
+        if ($mtMyMember) {
+            $mtMyFeeTotal  = (float)($mtMyMember['fee_amount'] ?? 0) + (float)($mtMyMember['fee_receive'] ?? 0);
+            $mtMyFeePaid   = (int)($mtMyMember['fee_paid'] ?? 0) === 1;
+            $mtMyDiff      = (float)($mtMyMember['diff_amount'] ?? 0);
+            $mtMyDiffPaid  = (int)($mtMyMember['diff_paid'] ?? 0) === 1;
+            $mtMySigned    = !empty($mtSignedByMember[(int)$mtMyMember['id']]);
+        }
+        if ($mtDeliverTrack) {
+            $mtMyShippingSet = !empty($mtDeliverTrack['shipping_date']);
+            $mtMyShipped     = (int)$mtDeliverTrack['deliverer_shipped'] === 1;
+        }
+        if ($mtReceiveTrack) {
+            $mtMyReceived = (int)$mtReceiveTrack['receiver_received'] === 1;
+        }
+        $mtMyRated = true;
+        foreach ($mtMyTracks as $t) {
+            $rated = ((int)$t['deliverer_user_id'] === $uid) ? (int)$t['deliverer_rated'] : (int)$t['receiver_rated'];
+            if (!$rated) {
+                $mtMyRated = false;
+            }
+        }
+        $mtAllReceived = $allReceived;
+        $mtCompleted   = $mtStatus === 'completed';
+    }
+
+    $mtTakenTargets = [];
+    foreach ($mtMembersAll as $m) {
+        $t = (int)($m['target_member_id'] ?? 0);
+        if ($t > 0 && (int)$m['id'] !== (int)($mtMyMember['id'] ?? 0)) {
+            $mtTakenTargets[$t] = (int)$m['id'];
+        }
+    }
+};
+
+// اجرای اولیه محاسبات
+$calculateMtState();
+
+
 // عضویت کاربر در اتاق مبادله چندنفره (برای دسترسی اعضای جدید نفر ۳ تا ۵)
 $mtViewMember   = $multiRoom ? multi_trade_member((int)$multiRoom['id'], $uid) : null;
 $mtViewIsMember = (bool)($mtViewMember && in_array((string)$mtViewMember['status'], ['active', 'invited'], true));
@@ -98,18 +242,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'select_payment_method') {
         $paymentMethod = clean($_POST['payment_method'] ?? '');
         if (in_array($paymentMethod, ['in_person', 'bnpl', 'cash'], true)) {
-            DB::update('trades', [
-                'selected_payment_method' => $paymentMethod,
-            ], 'id = ?', [$tradeId]);
+            if ($multiRoom && $mtMyMember) {
+                DB::update('multi_trade_members', [
+                    'payment_method' => $paymentMethod,
+                ], 'id = ?', [(int)$mtMyMember['id']]);
+            } else {
+                DB::update('trades', [
+                    'selected_payment_method' => $paymentMethod,
+                ], 'id = ?', [$tradeId]);
+            }
             $success = 'روش پرداخت با موفقیت انتخاب شد.';
             $trade = fetch_trade_room($tradeId, $uid) ?? $trade;
         }
     } elseif ($action === 'select_shipping_method') {
         $shippingMethod = clean($_POST['shipping_method'] ?? '');
         if (in_array($shippingMethod, ['courier', 'post', 'swapin_secure'], true)) {
-            DB::update('trades', [
-                'selected_shipping_method' => $shippingMethod,
-            ], 'id = ?', [$tradeId]);
+            if ($multiRoom && $mtDeliverTrack) {
+                $dbMethod = $shippingMethod === 'swapin_secure' ? 'in_person' : $shippingMethod;
+                DB::update('multi_trade_tracks', [
+                    'shipping_method' => $dbMethod,
+                ], 'id = ?', [(int)$mtDeliverTrack['id']]);
+            } else {
+                DB::update('trades', [
+                    'selected_shipping_method' => $shippingMethod,
+                ], 'id = ?', [$tradeId]);
+            }
             $success = 'روش ارسال با موفقیت انتخاب شد.';
             $trade = fetch_trade_room($tradeId, $uid) ?? $trade;
         }
@@ -388,38 +545,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 }
 
-// وضعیت مبادله چندنفره باید در هر بارگذاری صفحه (GET و POST) محاسبه شود
-$mtPendingRequests = [];
-$mtMyMember        = null;
-$mtIsInvited       = false;
-$mtActiveCount     = 0;
-$mtMembersAll      = [];
-$mtLocked          = false; // چرخه معامله در جریان است (active/completed)
-$mtRoomClosed      = false; // اتاق بسته شده (locked/active/completed)
-$mtTakenTargets    = [];
-$mtStatus          = '';
-$mtIAmActive       = false;
-$mtBoard           = null;
-$mtMessages        = [];
-$mtMyTracks        = [];
-$mtDeliverTrack    = null;  // مسیری که کاربر فرستنده (تحویل‌دهنده) است
-$mtReceiveTrack    = null;  // مسیری که کاربر گیرنده است
-$mtFeeByMember     = [];    // member_id => مجموع کارمزد دو معامله
-$mtSignedByMember  = [];    // member_id => آیا هر دو مسیر را امضا کرده
-$mtMyFeeTotal      = 0.0;
-$mtMyFeePaid       = false;
-$mtAllFeesPaid     = false;
-$mtMyDiff          = 0.0;
-$mtMyDiffPaid      = false;
-$mtDiffSettled     = false;
-$mtMySigned        = false;
-$mtAllSigned       = false;
-$mtMyShippingSet   = false;
-$mtMyShipped       = false;
-$mtMyReceived      = false;
-$mtAllReceived     = false;
-$mtMyRated         = false;
-$mtCompleted       = false;
 if ($multiRoom) {
     $roomId        = (int)$multiRoom['id'];
     $mtStatus      = (string)$multiRoom['status'];
@@ -829,6 +954,19 @@ echo '<link rel="stylesheet" href="' . APP_URL . '/src/css/secure-trade.css">' .
 .mt-btn--primary { background:#071A33; color:#fff; }
 .mt-btn--gold { background:#FFC928; color:#071A33; }
 .mt-btn--danger { background:#ffe9e6; color:#c0392b; }
+.mt-parties { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:14px 18px; width:100%; padding:12px 6px; }
+.mt-party { display:flex; flex-direction:row; align-items:center; gap:12px; text-align:right; background:#f7f9fc; border:1px solid #e6ebf3; border-radius:16px; padding:10px 16px; min-width:160px; box-shadow:0 2px 8px rgba(7,26,51,.04); }
+.mt-party__av { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; flex:0 0 auto; }
+.mt-party__name { font-size:14px; font-weight:800; color:#071A33; white-space:nowrap; }
+.mt-party__meta { font-size:11px; color:#6c7a92; margin-top:2px; }
+.mt-party__arrow { display:flex; flex-direction:column; align-items:center; gap:2px; color:#94a3b8; flex:0 0 auto; }
+.mt-party__arrow i { font-size:18px; }
+.mt-party__arrow span { font-size:9px; color:#8a6d00; white-space:nowrap; max-width:90px; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:1023px) {
+  .mt-parties { gap:10px 12px; }
+  .mt-party { min-width:0; padding:8px 12px; }
+  .mt-party__av { width:38px; height:38px; font-size:15px; }
+}
 </style>
 <?php
 render_navbar($user);
@@ -1074,22 +1212,23 @@ render_user_panel_open($user, 'trades');
             }
         }
       ?>
-      <div class="trade-room__parties" style="display: flex; justify-content: center; gap: 18px; align-items: center; width: 100%; flex-wrap: wrap; padding: 10px;">
+      <div class="mt-parties">
         <?php foreach ($mtHeaderMembers as $idx => $m): ?>
-          <div class="trade-room__party" style="display: flex; align-items: center; gap: 12px;">
-            <div class="trade-room__avatar" style="margin: 0; background: <?= (int)$m['user_id'] === $uid ? '#081B45' : '#f1f4f9' ?>; color: <?= (int)$m['user_id'] === $uid ? '#fff' : '#42536e' ?>;">
+          <?php $isMe = (int)$m['user_id'] === $uid; ?>
+          <div class="mt-party">
+            <div class="mt-party__av" style="background: <?= $isMe ? '#081B45' : '#eef2f8' ?>; color: <?= $isMe ? '#fff' : '#42536e' ?>;">
               <?= h(mb_substr($m['user_name'], 0, 1)) ?>
             </div>
-            <div style="text-align: right;">
-              <div class="trade-room__party-name" style="font-size: 14px; font-weight: 700;"><?= (int)$m['user_id'] === $uid ? 'شما' : h($m['user_name']) ?></div>
-              <div class="trade-room__party-meta" style="font-size: 11px;"><?= h($m['user_city'] ?? 'شهر نامشخص') ?></div>
+            <div>
+              <div class="mt-party__name"><?= $isMe ? 'شما' : h($m['user_name']) ?></div>
+              <div class="mt-party__meta"><?= h($m['user_city'] ?? 'شهر نامشخص') ?></div>
             </div>
           </div>
           <?php if ($idx < count($mtHeaderMembers) - 1): ?>
             <?php $giveTo = $mtGiveTo[(int)$m['id']] ?? null; ?>
-            <div style="display: flex; flex-direction: column; align-items: center; color: #94a3b8; gap: 2px;" title="<?= h($m['user_name'] . ($giveTo ? ' → ' . $giveTo : '')) ?>">
-              <i class="bi bi-arrow-left" style="font-size: 18px;"></i>
-              <?php if ($giveTo): ?><span style="font-size: 9px; color: #8a6d00; white-space: nowrap;"><?= h($giveTo) ?></span><?php endif; ?>
+            <div class="mt-party__arrow" title="<?= h($m['user_name'] . ($giveTo ? ' → ' . $giveTo : '')) ?>">
+              <i class="bi bi-arrow-left"></i>
+              <?php if ($giveTo): ?><span><?= h($giveTo) ?></span><?php endif; ?>
             </div>
           <?php endif; ?>
         <?php endforeach; ?>
@@ -1583,6 +1722,10 @@ render_user_panel_open($user, 'trades');
           <?php
             $mtDeliverByMember = [];
             $mtReceiveByMember = [];
+            $mtThumbByMember   = [];
+            foreach ($mtBoard['members'] as $mm) {
+                $mtThumbByMember[(int)$mm['id']] = (string)($mm['listing_thumb'] ?? '');
+            }
             foreach ($mtBoard['tracks'] as $t) {
                 $mtDeliverByMember[(int)$t['deliverer_member_id']] = $t;
                 $mtReceiveByMember[(int)$t['receiver_member_id']] = $t;
@@ -1594,35 +1737,97 @@ render_user_panel_open($user, 'trades');
               $giveTrack = $mtDeliverByMember[$mid] ?? null;
               $getTrack  = $mtReceiveByMember[$mid] ?? null;
               $isMe      = (int)$m['user_id'] === $uid;
+              $giveTitle = $giveTrack['deliverer_listing_title'] ?? ($m['listing_title'] ?? 'بدون آگهی');
+              $giveVal   = (float)($m['listing_value'] ?? 0);
+              $giveImg   = (string)($m['listing_thumb'] ?? '');
+              $getTitle  = $getTrack['deliverer_listing_title'] ?? '';
+              $getImg    = $getTrack ? ($mtThumbByMember[(int)$getTrack['deliverer_member_id']] ?? '') : '';
+              $getVal    = 0.0;
+              if ($getTrack) {
+                  $gm = $mtBoard['memberById'][(int)$getTrack['deliverer_member_id']] ?? null;
+                  $getVal = $gm ? (float)($gm['listing_value'] ?? 0) : 0.0;
+              }
             ?>
-            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:10px; margin-bottom:12px;">
-              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <div style="border:1px solid #ECEFF5; border-radius:14px; padding:12px; margin-bottom:12px; background:#fff;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                 <div class="mt-member-av"><?= h(mb_substr((string)$m['user_name'], 0, 1)) ?></div>
                 <div style="flex:1;">
                   <div class="mt-member-name"><?= h($m['user_name']) ?><?= $isMe ? ' (شما)' : '' ?></div>
                   <div class="mt-member-meta"><?= h($m['user_city'] ?? 'شهر نامشخص') ?></div>
                 </div>
               </div>
-              <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#6b4e00; background:#FFF6DC; border-radius:9px; padding:6px 9px; margin-bottom:6px;">
-                <i class="bi bi-box-arrow-up"></i>
-                <span style="font-weight:700; flex:0 0 auto;">پس می‌دهد:</span>
-                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= h($giveTrack['deliverer_listing_title'] ?? ($m['listing_title'] ?? 'بدون آگهی')) ?></span>
-                <?php if ($giveTrack): ?>
-                  <i class="bi bi-arrow-left"></i>
-                  <b style="flex:0 0 auto;"><?= h($giveTrack['receiver_name']) ?></b>
-                <?php endif; ?>
-              </div>
-              <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#0f5132; background:#E9F7EF; border-radius:9px; padding:6px 9px;">
-                <i class="bi bi-box-arrow-in-down"></i>
-                <span style="font-weight:700; flex:0 0 auto;">می‌گیرد:</span>
-                <?php if ($getTrack): ?>
-                  <b style="flex:0 0 auto;"><?= h($getTrack['deliverer_name']) ?></b>
-                  <i class="bi bi-arrow-left"></i>
-                  <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= h($getTrack['deliverer_listing_title'] ?? 'بدون آگهی') ?></span>
+
+              <div class="trade-room__product-card">
+                <?php if ($giveImg): ?>
+                  <img src="<?= h(UPLOAD_URL . $giveImg) ?>" alt="<?= h($giveTitle) ?>" class="trade-room__product-thumb">
                 <?php else: ?>
-                  <span>—</span>
+                  <div class="trade-room__product-thumb"><i class="bi bi-image"></i></div>
                 <?php endif; ?>
+                <div>
+                  <div class="trade-room__product-title"><?= h($giveTitle) ?></div>
+                  <div class="trade-room__product-meta">پس می‌دهد<?= $giveTrack ? ' · به ' . h($giveTrack['receiver_name']) : '' ?> · <?= $giveVal > 0 ? fmt_credit($giveVal) : 'بدون ارزش‌گذاری' ?></div>
+                </div>
               </div>
+
+              <div class="trade-room__swap-divider"><span class="trade-room__swap-divider-icon"><i class="bi bi-arrow-left-right"></i></span></div>
+
+              <div class="trade-room__product-card">
+                <?php if ($getImg): ?>
+                  <img src="<?= h(UPLOAD_URL . $getImg) ?>" alt="<?= h($getTitle) ?>" class="trade-room__product-thumb">
+                <?php else: ?>
+                  <div class="trade-room__product-thumb"><i class="bi bi-image"></i></div>
+                <?php endif; ?>
+                <div>
+                  <div class="trade-room__product-title"><?= h($getTitle ?: '—') ?></div>
+                  <div class="trade-room__product-meta">می‌گیرد<?= $getTrack ? ' · از ' . h($getTrack['deliverer_name']) : '' ?> · <?= $getVal > 0 ? fmt_credit($getVal) : 'بدون ارزش‌گذاری' ?></div>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </section>
+
+        <section class="trade-room__summary-card trade-room__summary-card--wide">
+          <h4 class="trade-room__summary-head">اختلاف قیمت</h4>
+          <?php foreach ($mtBoard['members'] as $m): $d = (float)($m['diff_amount'] ?? 0); ?>
+            <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
+              <span><?= h($m['user_name']) ?></span>
+              <span class="trade-room__summary-value <?= $d > 0 ? 'trade-room__summary-value--warning' : 'trade-room__summary-value--success' ?>">
+                <?= $d == 0.0 ? 'بدون اختلاف' : ($d > 0 ? 'بدهکار ' . fmt_credit($d) : 'طلبکار ' . fmt_credit(abs($d))) ?>
+              </span>
+            </div>
+          <?php endforeach; ?>
+        </section>
+
+        <section class="trade-room__summary-card trade-room__summary-card--wide">
+          <h4 class="trade-room__summary-head">کارمزد سواَپین (هر عضو)</h4>
+          <?php foreach ($mtBoard['members'] as $m): ?>
+            <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
+              <span><?= h($m['user_name']) ?></span>
+              <span class="trade-room__summary-value"><?= fmt_credit((float)($mtFeeByMember[(int)$m['id']] ?? 0)) ?></span>
+            </div>
+          <?php endforeach; ?>
+        </section>
+
+        <section class="trade-room__summary-card trade-room__summary-card--wide">
+          <h4 class="trade-room__summary-head">وضعیت پرداخت کارمزد</h4>
+          <?php foreach ($mtBoard['members'] as $m): ?>
+            <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
+              <span><?= h($m['user_name']) ?></span>
+              <span class="trade-room__pill <?= (int)($m['fee_paid'] ?? 0) ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
+                <?= (int)($m['fee_paid'] ?? 0) ? 'پرداخت شده' : 'در انتظار' ?>
+              </span>
+            </div>
+          <?php endforeach; ?>
+        </section>
+
+        <section class="trade-room__summary-card trade-room__summary-card--wide">
+          <h4 class="trade-room__summary-head"><i class="bi bi-cash-stack"></i> وضعیت پرداخت اختلاف قیمت</h4>
+          <?php foreach ($mtBoard['members'] as $m): $d = (float)($m['diff_amount'] ?? 0); ?>
+            <div class="trade-room__meta-line trade-room__meta-line--compact" style="direction: ltr;">
+              <span><?= h($m['user_name']) ?></span>
+              <span class="trade-room__pill <?= ($d <= 0 || (int)($m['diff_paid'] ?? 0)) ? 'trade-room__pill--success' : 'trade-room__pill--warning' ?>">
+                <?= $d <= 0 ? 'نیازی نیست' : ((int)($m['diff_paid'] ?? 0) ? 'پرداخت شده' : 'در انتظار') ?>
+              </span>
             </div>
           <?php endforeach; ?>
         </section>
@@ -2160,24 +2365,32 @@ render_user_panel_open($user, 'trades');
     <?php endif; // End of original 2-person flow else block ?>
   </div>
 
-  <?php if (!$multiRoom || $multiRoom['status'] === 'cancelled'): ?>
+  <?php if ((!$multiRoom || $multiRoom['status'] === 'cancelled') || ($multiRoom && $multiRoom['status'] === 'active')): ?>
     <?php
-      // Determine if payment method can be changed
-      $feePaid = trade_fees_fully_paid($trade);
-    $diffPaid = !empty($trade['diff_paid']);
-    $contractSigned = !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
-    $shippingReady = trade_shipping_fully_scheduled($trade);
-    $canChangePayment = !$diffPaid && $contractSigned && $amountToPay > 0;
-    $canChangeShipping = !$shippingReady && $contractSigned;
-  ?>
+      if ($multiRoom) {
+          $currentPaymentMethod = $mtMyMember['payment_method'] ?? '';
+          $currentShippingMethod = $mtDeliverTrack ? ($mtDeliverTrack['shipping_method'] === 'in_person' ? 'swapin_secure' : $mtDeliverTrack['shipping_method']) : '';
+          $canChangePayment = !$mtMyDiffPaid && $mtAllSigned && $mtMyDiff > 0;
+          $canChangeShipping = !$mtMyShippingSet && $mtAllSigned && $mtDeliverTrack;
+      } else {
+          $currentPaymentMethod = $trade['selected_payment_method'] ?? '';
+          $currentShippingMethod = $trade['selected_shipping_method'] ?? '';
+          $feePaid = trade_fees_fully_paid($trade);
+          $diffPaid = !empty($trade['diff_paid']);
+          $contractSigned = !empty($contract['user_a_signed']) && !empty($contract['user_b_signed']);
+          $shippingReady = trade_shipping_fully_scheduled($trade);
+          $canChangePayment = !$diffPaid && $contractSigned && $amountToPay > 0;
+          $canChangeShipping = !$shippingReady && $contractSigned;
+      }
+    ?>
   <div class="box-trade-room__layout">
     <form method="POST" class="pay-metod" id="paymentMethodForm" <?= !$canChangePayment ? 'data-disabled="true"' : '' ?>>
       <input type="hidden" name="action" value="select_payment_method">
       <?= csrf_field() ?>
       <h3 class="box-trade-room__title">تسویه اختلاف قیمت</h3>
       <div class="box-trade-room__cards">
-        <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'in_person' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="payment_method" value="in_person" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'in_person' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
+        <label class="box-trade-room__card <?= $currentPaymentMethod === 'in_person' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="payment_method" value="in_person" class="box-trade-room__radio" <?= $currentPaymentMethod === 'in_person' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-handbag"></i>
           </div>
@@ -2189,8 +2402,8 @@ render_user_panel_open($user, 'trades');
             <i class="bi bi-check-circle-fill"></i>
           </div>
         </label>
-        <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'bnpl' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="payment_method" value="bnpl" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'bnpl' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
+        <label class="box-trade-room__card <?= $currentPaymentMethod === 'bnpl' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="payment_method" value="bnpl" class="box-trade-room__radio" <?= $currentPaymentMethod === 'bnpl' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-calendar-check"></i>
           </div>
@@ -2202,8 +2415,8 @@ render_user_panel_open($user, 'trades');
             <i class="bi bi-check-circle-fill"></i>
           </div>
         </label>
-        <label class="box-trade-room__card <?= ($trade['selected_payment_method'] ?? '') === 'cash' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="payment_method" value="cash" class="box-trade-room__radio" <?= ($trade['selected_payment_method'] ?? '') === 'cash' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
+        <label class="box-trade-room__card <?= $currentPaymentMethod === 'cash' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="payment_method" value="cash" class="box-trade-room__radio" <?= $currentPaymentMethod === 'cash' ? 'checked' : '' ?> <?= !$canChangePayment ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-wallet2"></i>
           </div>
@@ -2222,8 +2435,8 @@ render_user_panel_open($user, 'trades');
       <?= csrf_field() ?>
       <h3 class="box-trade-room__title">روش ارسال</h3>
       <div class="box-trade-room__cards">
-        <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'courier' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="shipping_method" value="courier" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'courier' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
+        <label class="box-trade-room__card <?= $currentShippingMethod === 'courier' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="shipping_method" value="courier" class="box-trade-room__radio" <?= $currentShippingMethod === 'courier' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-motorcycle"></i>
           </div>
@@ -2235,8 +2448,8 @@ render_user_panel_open($user, 'trades');
             <i class="bi bi-check-circle-fill"></i>
           </div>
         </label>
-        <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'post' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="shipping_method" value="post" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'post' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
+        <label class="box-trade-room__card <?= $currentShippingMethod === 'post' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="shipping_method" value="post" class="box-trade-room__radio" <?= $currentShippingMethod === 'post' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-envelope-paper"></i>
           </div>
@@ -2248,8 +2461,8 @@ render_user_panel_open($user, 'trades');
             <i class="bi bi-check-circle-fill"></i>
           </div>
         </label>
-        <label class="box-trade-room__card <?= ($trade['selected_shipping_method'] ?? '') === 'swapin_secure' ? 'box-trade-room__card--selected' : '' ?>">
-          <input type="radio" name="shipping_method" value="swapin_secure" class="box-trade-room__radio" <?= ($trade['selected_shipping_method'] ?? '') === 'swapin_secure' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
+        <label class="box-trade-room__card <?= $currentShippingMethod === 'swapin_secure' ? 'box-trade-room__card--selected' : '' ?>">
+          <input type="radio" name="shipping_method" value="swapin_secure" class="box-trade-room__radio" <?= $currentShippingMethod === 'swapin_secure' ? 'checked' : '' ?> <?= !$canChangeShipping ? 'disabled' : '' ?>>
           <div class="box-trade-room__card-icon">
             <i class="bi bi-shield-check"></i>
           </div>
