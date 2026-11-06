@@ -1254,7 +1254,8 @@
 .trade-room__timeline-dot {
   position: absolute;
   inset-inline-start: 150px;
-  top: 2px;
+  top: 10px;
+  margin-right: 2%;
   width: 18px;
   height: 18px;
   border-radius: 50%;

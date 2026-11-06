@@ -465,6 +465,10 @@ if ($shouldMigrate) {
     if (!in_array('selected_shipping_method', $tradesColumns)) {
         DB::query("ALTER TABLE `trades` ADD COLUMN `selected_shipping_method` ENUM('courier','post','swapin_secure') DEFAULT NULL AFTER `selected_payment_method`");
     }
+    // credit_diff can be negative (B worth more than A) and listing values can exceed INT range.
+    db_ensure_signed_money_column('trades', 'credit_diff', 'مابه‌التفاوت ارزش آگهی‌ها (تومان)');
+    db_ensure_signed_money_column('listings', 'estimated_value', 'ارزش تقریبی آگهی (تومان)');
+    db_ensure_signed_money_column('trade_offers', 'offer_credit', 'مبلغ نقدی پیشنهاد (تومان)');
     
     // Create secure_room_messages table if it doesn't exist
     if (!db_has_table('secure_room_messages')) {
@@ -1524,6 +1528,54 @@ function db_table_columns(string $table): array {
 
 function db_has_column(string $table, string $column): bool {
     return in_array($column, db_table_columns($table), true);
+}
+
+/**
+ * Widen money columns that are INT/UNSIGNED/small DECIMAL so values like a
+ * negative credit_diff (or large listing prices) do not hit MySQL 1264.
+ */
+function db_ensure_signed_money_column(string $table, string $column, string $comment = ''): void
+{
+    $table = preg_replace('/[^a-z0-9_]/', '', $table);
+    $column = preg_replace('/[^a-z0-9_]/', '', $column);
+    if ($table === '' || $column === '' || !db_has_column($table, $column)) {
+        return;
+    }
+    try {
+        $col = DB::fetch(
+            "SELECT DATA_TYPE, NUMERIC_PRECISION, COLUMN_TYPE
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
+             LIMIT 1",
+            [$table, $column]
+        );
+        if (!$col) {
+            return;
+        }
+        $dataType = strtolower((string)($col['DATA_TYPE'] ?? ''));
+        $columnType = strtolower((string)($col['COLUMN_TYPE'] ?? ''));
+        $precision = (int)($col['NUMERIC_PRECISION'] ?? 0);
+        $isUnsigned = str_contains($columnType, 'unsigned');
+        $tooNarrowInt = in_array($dataType, ['tinyint', 'smallint', 'mediumint', 'int', 'integer', 'float', 'double', 'real'], true)
+            || ($dataType === 'bigint' && $isUnsigned);
+        $tooNarrowDecimal = $dataType === 'decimal' && ($precision > 0 && $precision < 15);
+        if (!$isUnsigned && !$tooNarrowInt && !$tooNarrowDecimal) {
+            return;
+        }
+        $commentSql = $comment !== '' ? " COMMENT '" . str_replace("'", '', $comment) . "'" : '';
+        DB::query("ALTER TABLE `{$table}` MODIFY COLUMN `{$column}` DECIMAL(15,0) NOT NULL DEFAULT 0{$commentSql}");
+        swapin_debug_log('migration-signed-money-column', [
+            'table' => $table,
+            'column' => $column,
+            'from' => $columnType,
+        ]);
+    } catch (Throwable $e) {
+        swapin_debug_log('migration-signed-money-column-failed', [
+            'table' => $table,
+            'column' => $column,
+            'msg' => $e->getMessage(),
+        ]);
+    }
 }
 
 /**

@@ -489,9 +489,14 @@ function accept_trade_offer(int $offerId, int $ownerId, string $message): array 
 
     $valueA     = (float)($offer['listing_a_value'] ?? 0);
     $valueB     = (float)($offer['listing_b_value'] ?? 0);
-    $creditDiff = $valueA - ($valueB + (float)$offer['offer_credit']);
+    $creditDiff = round($valueA - ($valueB + (float)$offer['offer_credit']), 0);
+    $creditDiff = max(-999999999999999, min(999999999999999, $creditDiff));
 
     $asGroup = ((int)($offer['group_requested_by'] ?? 0) > 0);
+
+    if (function_exists('db_ensure_signed_money_column')) {
+        db_ensure_signed_money_column('trades', 'credit_diff', 'مابه‌التفاوت ارزش آگهی‌ها (تومان)');
+    }
 
     DB::query('UPDATE trade_offers SET status = "accepted" WHERE id = ?', [$offerId]);
     if (!$asGroup) {
