@@ -109,3 +109,6 @@ mobile/*.ipa
 mobile/**/*.apk
 mobile/**/*.aab
 mobile/**/*.ipa
+
+# Public APK downloads (uploaded to server, too large for repo)
+downloads/*.apk

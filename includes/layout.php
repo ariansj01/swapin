@@ -453,7 +453,7 @@ HTML;
             سواَپین چگونه کار می‌کند؟ <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
           </button>
           <div class="dropdown-menu" id="how-dropdown">
-            <a href="{$url}/#home-steps" class="dropdown-item"><i class="bi bi-diagram-3"></i> نحوه کار سواَپین</a>
+            <!-- <a href="{$url}/#home-steps" class="dropdown-item"><i class="bi bi-diagram-3"></i> نحوه کار سواَپین</a> -->
             <a href="{$url}/installment-swap" class="dropdown-item"><i class="bi bi-calendar-check"></i> مبادله قسطی</a>
           </div>
         </div>
@@ -661,7 +661,7 @@ function render_footer(): void {
         <p>سواَپین بستری امن و آسان برای معاوضه‌ی کالاها و خدمات در سراسر ایران</p>
       </div>
       <div class="site-footer__compact-col site-footer__compact-col--links">
-        <a href="https://cafebazaar.ir/app/ir.swaapin.mobile">دانلود اپلیکیشن</a>
+        <a href="{$url}/download">دانلود اپلیکیشن</a>
         <span>|</span>
         <a href="{$url}/fraud-prevention">راهنمای امنیت</a>
         <span>|</span>

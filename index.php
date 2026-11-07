@@ -97,7 +97,7 @@ $where   = 'WHERE ' . implode(' AND ', $whereClauses);
 $orderBy = match($sort) {
     'old'   => 'l.created_at ASC, l.id ASC',
     'value' => 'l.estimated_value DESC, l.id DESC',
-    default => '(l.vip_until > NOW()) DESC, (l.featured_until > NOW()) DESC, (l.bump_until > NOW()) DESC, l.created_at DESC, l.id DESC',
+    default => 'l.created_at DESC, l.id DESC',
 };
 
 // #region debug-point homepage-500-before-queries
@@ -191,7 +191,7 @@ if (!$search && !$catSlug && $page === 1) {
                 (SELECT COUNT(*) FROM listings WHERE user_id = users.id AND status = 'active' AND review_status = 'approved') AS listings_count
          FROM users
          {$hWhere}
-         ORDER BY listings_count DESC, rating DESC, created_at DESC
+         ORDER BY created_at DESC, id DESC
          LIMIT 10"
     );
     $hStoresTypeCol = $hStoresType;
@@ -208,7 +208,7 @@ if (!$search && !$catSlug && $page === 1) {
                     (SELECT COUNT(*) FROM listings WHERE user_id = users.id AND status = 'active' AND review_status = 'approved') AS listings_count
              FROM users
              WHERE is_active = 1
-             ORDER BY listings_count DESC, rating DESC, created_at DESC
+             ORDER BY created_at DESC, id DESC
              LIMIT 6"
         );
         // Generate safe slug & name for users that don't have store fields filled.
