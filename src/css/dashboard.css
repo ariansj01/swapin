@@ -435,6 +435,21 @@
 }
 .promote-guide-btn:hover { border-color: var(--dash-navy); color: var(--dash-navy); }
 
+.promote-credit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--dash-gold-bg);
+  border: 1px solid rgba(255, 193, 7, 0.45);
+  color: #B45309;
+  font-weight: 700;
+  font-size: .875rem;
+  white-space: nowrap;
+}
+
 /* Benefits card */
 .promote-benefits {
   background: var(--dash-card-bg);
@@ -672,6 +687,15 @@
   color: var(--dash-navy);
 }
 .promote-plan__btn--gold:hover { box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4); transform: translateY(-1px); }
+
+.promote-plan__credit-form { margin-top: 10px; }
+
+.promote-plan__btn--credit {
+  background: var(--dash-gold-bg);
+  color: #B45309;
+  border: 1.5px dashed var(--dash-gold);
+}
+.promote-plan__btn--credit:hover { background: var(--dash-gold); color: var(--dash-navy); transform: translateY(-1px); }
 
 /* Banner */
 .promote-banner {

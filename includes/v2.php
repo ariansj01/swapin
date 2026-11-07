@@ -4,7 +4,7 @@
 const BUMP_PRICE_KBC    = ['bump' => 50, 'feature' => 150];
 const BUMP_DURATION_H   = ['bump' => 24, 'feature' => 72];
 const INSPECTION_KBC    = 300;
-const FREE_LISTING_MAX  = 5;
+const FREE_LISTING_MAX  = 20;
 
 const CATEGORY_COMMISSION_MAP = [
     'real-estate'        => 0.0075,
@@ -752,7 +752,7 @@ function approve_bnpl(int $requestId): void {
     ], 'id = ?', [$req['trade_id']]);
 }
 
-function subscribe_to_plan(int $userId, string $planSlug, int $months = 1, bool $paidByGateway = false): array {
+function subscribe_to_plan(int $userId, string $planSlug, int $months = 1, bool $paidByGateway = false, ?int $paymentId = null): array {
     $plan = DB::fetch('SELECT * FROM subscription_plans WHERE slug = ?', [$planSlug]);
     if (!$plan) return ['error' => 'پلن نامعتبر'];
 
@@ -777,17 +777,24 @@ function subscribe_to_plan(int $userId, string $planSlug, int $months = 1, bool 
         'status'      => 'active',
     ]);
 
-    if (!$paidByGateway) {
-        credit_transact($userId, 'fee', -$cost, "اشتراک {$plan['name']} ({$months} ماه)", [
-            'ref_type' => 'subscription_order',
-            'ref_id'   => $orderId,
-        ]);
-    }
+    // ثبت خرید اشتراک در تاریخچه تراکنش‌های کیف پول.
+    // پرداخت درگاهی فقط در دفتر ثبت می‌شود و موجودی کیف پول دست نمی‌خورد.
+    credit_transact($userId, 'subscription', -$cost, "خرید اشتراک {$plan['name']} ({$months} ماه)", [
+        'ref_type'       => 'subscription_order',
+        'ref_id'         => $orderId,
+        'payment_id'     => $paymentId,
+        'affect_balance' => !$paidByGateway,
+    ]);
 
-    DB::update('users', [
+    $userUpdate = [
         'subscription_plan'  => $planSlug,
         'subscription_until' => $ends,
-    ], 'id = ?', [$userId]);
+    ];
+    // اعتبار ارتقای رایگان آگهی متناسب با پلن و مدت خریداری‌شده
+    if (db_has_column('users', 'bump_credits')) {
+        $userUpdate['bump_credits'] = (int)$plan['bump_credits'] * $months;
+    }
+    DB::update('users', $userUpdate, 'id = ?', [$userId]);
 
     return ['success' => true, 'ends_at' => $ends, 'plan' => $plan['name'], 'order_id' => $orderId];
 }

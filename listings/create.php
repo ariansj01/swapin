@@ -19,6 +19,22 @@ if ($listingErr = kyc_check_listing_action($user)) {
     );
 }
 
+// سقف آگهی‌های فعال: کاربران رایگان تا ۲۰ آگهی و مشترکین تا سقف پلن
+if (!can_create_listing($user)) {
+    $limit     = get_listing_limit($user);
+    $activeSub = get_active_subscription($user);
+    $limitMsg  = $activeSub
+        ? 'شما به سقف ' . fmt_num($limit) . ' آگهی فعال پلن «' . h($activeSub['name']) . '» رسیده‌اید. برای ثبت آگهی بیشتر، یکی از آگهی‌های فعال خود را ببندید یا پلن بالاتری تهیه کنید.'
+        : 'شما به سقف ' . fmt_num($limit) . ' آگهی رایگان رسیده‌اید. برای ثبت آگهی جدید، یکی از آگهی‌های فعال خود را ببندید یا یکی از پلن‌های اشتراک را تهیه کنید.';
+    render_full_page_modal(
+        'سقف آگهی‌های فعال شما تکمیل شده',
+        $limitMsg,
+        'مشاهده پلن‌های اشتراک',
+        APP_URL . '/subscription',
+        'bi-gem'
+    );
+}
+
 $errors = [];
 $vals = [
     'title'           => '',

@@ -38,6 +38,7 @@ $planFeatures = [
 ];
 
 $plans = promotion_ui_plans();
+$showDiscount = discount_codes_available();
 
 $success = '';
 $error   = '';
@@ -52,6 +53,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (!isset($plans[$plan])) {
         $error = 'پلن انتخاب‌شده نامعتبر است';
+    } elseif ($paymentMethod === 'credit') {
+        // ارتقای رایگان با اعتبار اشتراک (bump_credits)
+        if (!db_has_column('users', 'bump_credits') || (int)($user['bump_credits'] ?? 0) <= 0) {
+            $error = 'اعتبار ارتقای رایگان شما کافی نیست. برای دریافت اعتبار، یکی از پلن‌های اشتراک را تهیه کنید.';
+        } else {
+            $normalized = normalize_promotion_duration($plan, $selectedDuration);
+            $selectedDuration = (int)$normalized['duration_hours'];
+            try {
+                apply_listing_promotion($listingId, $uid, $plan, $selectedDuration, 0.0);
+                DB::query('UPDATE users SET bump_credits = bump_credits - 1 WHERE id = ? AND bump_credits > 0', [$uid]);
+                $user['bump_credits'] = max(0, (int)$user['bump_credits'] - 1);
+                $success = 'ارتقای آگهی با استفاده از اعتبار اشتراک شما فعال شد!';
+            } catch (Throwable $e) {
+                $error = 'خطا در فعال‌سازی ارتقا: ' . $e->getMessage();
+            }
+        }
     } else {
         $normalized = normalize_promotion_duration($plan, $selectedDuration);
         $planData = $normalized['plan'];
@@ -59,38 +76,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $selectedDuration = (int)$normalized['duration_hours'];
         $price = (int)$normalized['price'];
 
-        // SEP payment
-        try {
-            $resNum = SEPPayment::generateResNum();
-            $meta = json_encode([
-                'listing_id' => $listingId,
-                'plan' => $plan,
-                'duration_hours' => $selectedDuration,
-            ], JSON_UNESCAPED_UNICODE);
-            
-            DB::insert('payments', [
-                'user_id' => $uid,
-                'type' => 'listing_promotion',
-                'amount' => $price,
-                'res_num' => $resNum,
-                'status' => 'pending',
-                'meta' => $meta,
-            ]);
-            
-            $redirectUrl = APP_URL . '/payment_callback';
-            $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
-            
-            if ($tokenResult && isset($tokenResult['token'])) {
-                echo SEPPayment::getPaymentForm($tokenResult['token']);
-                exit;
-            } else {
-                $error = 'خطا در اتصال به درگاه پرداخت';
+        $discountCode = discount_code_normalize((string)($_POST['discount_code'] ?? ''));
+        $discountResult = null;
+        if ($discountCode !== '') {
+            $discountResult = discount_code_validate($discountCode, $price);
+            if (!$discountResult['ok']) {
+                $error = $discountResult['error'];
             }
-        } catch (Throwable $e) {
-            $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
+        }
+
+        if (!$error) {
+            $discount  = (int)($discountResult['discount'] ?? 0);
+            $payAmount = $price - $discount;
+
+            if ($payAmount <= 0) {
+                // Fully covered by the discount code — activate without gateway
+                apply_listing_promotion($listingId, $uid, $plan, $selectedDuration, (float)$price);
+                if ($discountResult) {
+                    discount_code_mark_used((int)$discountResult['row']['id']);
+                }
+                $success = 'ارتقای آگهی با موفقیت فعال شد!';
+            } else {
+                // SEP payment
+                try {
+                    $resNum = SEPPayment::generateResNum();
+                    $metaArr = [
+                        'listing_id' => $listingId,
+                        'plan' => $plan,
+                        'duration_hours' => $selectedDuration,
+                    ];
+                    if ($discount > 0 && $discountResult) {
+                        $metaArr = array_merge($metaArr, discount_meta_from_result($discountResult, $price));
+                    }
+
+                    DB::insert('payments', [
+                        'user_id' => $uid,
+                        'type' => 'listing_promotion',
+                        'amount' => $payAmount,
+                        'res_num' => $resNum,
+                        'status' => 'pending',
+                        'meta' => json_encode($metaArr, JSON_UNESCAPED_UNICODE),
+                    ]);
+
+                    $redirectUrl = APP_URL . '/payment_callback';
+                    $tokenResult = SEPPayment::getToken($payAmount, $resNum, $redirectUrl, $user['phone'] ?? null);
+
+                    if ($tokenResult && isset($tokenResult['token'])) {
+                        echo SEPPayment::getPaymentForm($tokenResult['token']);
+                        exit;
+                    } else {
+                        $error = 'خطا در اتصال به درگاه پرداخت';
+                    }
+                } catch (Throwable $e) {
+                    $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
+                }
+            }
         }
     }
 }
+
+$bumpCredits = db_has_column('users', 'bump_credits') ? (int)($user['bump_credits'] ?? 0) : 0;
 
 $activePromos = DB::fetchAll(
     'SELECT plan, ends_at FROM listing_promotions
@@ -149,6 +194,11 @@ ob_start();
       <span class="promote-wallet-chip">
         <i class="bi bi-wallet2"></i> <?= fmt_credit((float)$user['credit_balance']) ?>
       </span>
+      <?php if ($bumpCredits > 0): ?>
+      <span class="promote-credit-chip" title="اعتبار ارتقای رایگان اشتراک">
+        <i class="bi bi-gem"></i> <?= fmt_num($bumpCredits) ?> اعتبار ارتقای رایگان
+      </span>
+      <?php endif; ?>
       <a href="<?= APP_URL ?>/support" class="promote-guide-btn">
         <i class="bi bi-book"></i> راهنمای ارتقا
       </a>
@@ -226,16 +276,32 @@ ob_start();
           <div class="promote-plan__price" id="price-<?= h($key) ?>"><?= fmt_credit($plan['base_price']) ?></div>
 
           <form method="POST" class="promote-plan__form"
+                <?= $showDiscount ? 'data-discount-form' : '' ?>
                 data-plan-name="<?= h($plan['name']) ?>"
                 data-plan-price="<?= h(fmt_credit($plan['base_price'])) ?>">
             <?= csrf_field() ?>
             <input type="hidden" name="plan" value="<?= h($key) ?>">
             <input type="hidden" name="duration" class="promote-selected-duration" value="<?= h($baseDuration) ?>">
             <input type="hidden" name="payment_method" value="wallet" class="payment-method-input">
+            <?php if ($showDiscount): ?>
+            <input type="hidden" name="discount_code" value="">
+            <?php endif; ?>
             <button type="submit" class="promote-plan__btn <?= $isGold ? 'promote-plan__btn--gold' : 'promote-plan__btn--default' ?>">
               <i class="bi bi-check2"></i> انتخاب
             </button>
           </form>
+          <?php if ($bumpCredits > 0): ?>
+          <form method="POST" class="promote-plan__credit-form"
+                data-plan-name="<?= h($plan['name']) ?>">
+            <?= csrf_field() ?>
+            <input type="hidden" name="plan" value="<?= h($key) ?>">
+            <input type="hidden" name="duration" class="promote-selected-duration" value="<?= h($baseDuration) ?>">
+            <input type="hidden" name="payment_method" value="credit">
+            <button type="submit" class="promote-plan__btn promote-plan__btn--credit">
+              <i class="bi bi-gem"></i> ارتقای رایگان (۱ از <?= fmt_num($bumpCredits) ?> اعتبار)
+            </button>
+          </form>
+          <?php endif; ?>
         </div>
       </article>
       <?php endforeach; ?>
@@ -328,5 +394,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <?php
-render_panel_scripts(['src/js/promote.js']);
+if ($showDiscount) {
+    echo render_discount_modal();
+    render_discount_assets();
+}
+$promoteScripts = ['src/js/promote.js'];
+if ($showDiscount) {
+    $promoteScripts[] = 'src/js/discount.js';
+}
+render_panel_scripts($promoteScripts);
 render_footer();

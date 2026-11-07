@@ -803,6 +803,9 @@ function tx_type_label(string $type): array {
         'trade_debit'  => ['arrow-up-circle', 'پرداخت معامله', 'danger'],
         'fee'          => ['dash-circle', 'کارمزد', 'warning'],
         'refund'       => ['arrow-counterclockwise', 'بازگشت وجه', 'info'],
+        'subscription' => ['gem', 'خرید اشتراک', 'warning'],
+        'promotion'    => ['rocket-takeoff', 'ارتقای آگهی', 'info'],
+        'store_order'  => ['bag-check', 'خرید از فروشگاه', 'success'],
         default        => ['circle', 'تراکنش', 'info'],
     };
 }

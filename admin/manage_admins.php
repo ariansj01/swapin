@@ -90,6 +90,7 @@ $sections = [
     'users'          => 'کاربران',
     'sms'            => 'پیامک',
     'notifications'  => 'اعلان‌ها',
+    'discounts'      => 'کد تخفیف',
     'manage_admins'  => 'مدیریت ادمین‌ها (فقط مدیر اصلی)'
 ];
 

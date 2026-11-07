@@ -175,7 +175,10 @@ if ($path === 'auth/otp/verify' && $method === 'POST') {
     }
     DB::query('UPDATE otp_codes SET used = 1 WHERE id = ?', [$row['id']]);
 
-    $user = DB::fetch('SELECT * FROM users WHERE phone = ? AND is_active = 1', [$intl]);
+    $user = DB::fetch('SELECT * FROM users WHERE phone = ? LIMIT 1', [$intl]);
+    if ($user && (int)$user['is_active'] !== 1) {
+        api_error('account_disabled', 403, 'حساب کاربری غیرفعال شده است.');
+    }
     $isNew = false;
     if ($user) {
         if (empty($user['phone_verified_at'])) {

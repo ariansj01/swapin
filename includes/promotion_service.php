@@ -120,7 +120,7 @@ function normalize_promotion_duration(string $plan, int $selectedDuration): arra
     ];
 }
 
-function apply_listing_promotion(int $listingId, int $userId, string $plan, int $durationHours, float $amountPaid): array {
+function apply_listing_promotion(int $listingId, int $userId, string $plan, int $durationHours, float $amountPaid, ?int $paymentId = null): array {
     $normalized = normalize_promotion_duration($plan, $durationHours);
     if (empty($normalized['valid'])) {
         throw new RuntimeException('پلن ارتقا نامعتبر است');
@@ -146,6 +146,19 @@ function apply_listing_promotion(int $listingId, int $userId, string $plan, int 
         'ends_at' => $endsAt,
         'amount_paid' => $amountPaid,
     ]);
+
+    // ثبت ارتقای آگهی در تاریخچه تراکنش‌های کیف پول.
+    // ارتقا همیشه از درگاه (یا اعتبار اشتراک) پرداخت می‌شود، پس موجودی کیف پول دست نمی‌خورد.
+    if ($amountPaid > 0) {
+        $planName = $normalized['plan']['name'] ?? $plan;
+        credit_transact($userId, 'promotion', -$amountPaid, "ارتقای آگهی (پلن {$planName})", [
+            'ref_type'       => 'listing',
+            'ref_id'         => $listingId,
+            'listing_id'     => $listingId,
+            'payment_id'     => $paymentId,
+            'affect_balance' => false,
+        ]);
+    }
 
     $updateData = [];
     if ($plan === 'boost') {

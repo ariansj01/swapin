@@ -123,7 +123,8 @@ try {
                         (int)$payment['user_id'],
                         (string)$meta['plan'],
                         (int)$meta['duration_hours'],
-                        (float)$payment['amount']
+                        (float)$payment['amount'],
+                        (int)$payment['id']
                     );
                 } elseif ($payment['type'] === 'subscription_purchase') {
                     if (!isset($meta['subscription_plan'], $meta['months'])) {
@@ -133,7 +134,8 @@ try {
                         (int)$payment['user_id'],
                         (string)$meta['subscription_plan'],
                         (int)$meta['months'],
-                        true
+                        true,
+                        (int)$payment['id']
                     );
                     if (empty($result['success'])) {
                         throw new Exception($result['error'] ?? 'خطا در فعال‌سازی اشتراک');
@@ -142,6 +144,10 @@ try {
                     finalize_store_order_payment((int)$payment['id']);
                 } else {
                     throw new Exception('نوع پرداخت نامعتبر');
+                }
+
+                if (!empty($meta['discount_code_id'])) {
+                    discount_code_mark_used((int)$meta['discount_code_id']);
                 }
 
                 $existingMeta = json_decode($payment['meta'] ?? '', true) ?: [];

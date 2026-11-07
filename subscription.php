@@ -18,6 +18,7 @@ $plans = DB::fetchAll('SELECT * FROM subscription_plans ORDER BY price_month ASC
 // unset($p);
 $activeSub = get_active_subscription($user);
 $activeCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM listings WHERE user_id = ? AND status = "active"', [$user['id']])['c'] ?? 0);
+$showDiscount = discount_codes_available();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
@@ -39,34 +40,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $price = (int)($selectedPlan['price_month'] * $months);
 
-        // SEP payment
-        try {
-            $resNum = SEPPayment::generateResNum();
-            $meta = json_encode([
-                'subscription_plan' => $plan,
-                'months' => $months,
-            ], JSON_UNESCAPED_UNICODE);
-            
-            DB::insert('payments', [
-                'user_id' => $user['id'],
-                'type' => 'subscription_purchase', // New type
-                'amount' => $price,
-                'res_num' => $resNum,
-                'status' => 'pending',
-                'meta' => $meta,
-            ]);
-            
-            $redirectUrl = APP_URL . '/payment_callback';
-            $tokenResult = SEPPayment::getToken($price, $resNum, $redirectUrl, $user['phone'] ?? null);
-            
-            if ($tokenResult && isset($tokenResult['token'])) {
-                echo SEPPayment::getPaymentForm($tokenResult['token']);
-                exit;
-            } else {
-                $error = 'خطا در اتصال به درگاه پرداخت';
+        $discountCode = discount_code_normalize((string)($_POST['discount_code'] ?? ''));
+        $discountResult = null;
+        if ($discountCode !== '') {
+            $discountResult = discount_code_validate($discountCode, $price);
+            if (!$discountResult['ok']) {
+                $error = $discountResult['error'];
             }
-        } catch (Throwable $e) {
-            $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
+        }
+
+        if (!$error) {
+            $discount  = (int)($discountResult['discount'] ?? 0);
+            $payAmount = $price - $discount;
+
+            if ($payAmount <= 0) {
+                // Fully covered by the discount code — activate without gateway
+                $result = subscribe_to_plan((int)$user['id'], $plan, $months, true);
+                if (!empty($result['success'])) {
+                    if ($discountResult) {
+                        discount_code_mark_used((int)$discountResult['row']['id']);
+                    }
+                    $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$user['id']]);
+                    $success = 'اشتراک شما با موفقیت فعال شد!';
+                } else {
+                    $error = $result['error'] ?? 'خطا در فعال‌سازی اشتراک';
+                }
+            } else {
+                // SEP payment
+                try {
+                    $resNum = SEPPayment::generateResNum();
+                    $metaArr = [
+                        'subscription_plan' => $plan,
+                        'months' => $months,
+                    ];
+                    if ($discount > 0 && $discountResult) {
+                        $metaArr = array_merge($metaArr, discount_meta_from_result($discountResult, $price));
+                    }
+
+                    DB::insert('payments', [
+                        'user_id' => $user['id'],
+                        'type' => 'subscription_purchase',
+                        'amount' => $payAmount,
+                        'res_num' => $resNum,
+                        'status' => 'pending',
+                        'meta' => json_encode($metaArr, JSON_UNESCAPED_UNICODE),
+                    ]);
+
+                    $redirectUrl = APP_URL . '/payment_callback';
+                    $tokenResult = SEPPayment::getToken($payAmount, $resNum, $redirectUrl, $user['phone'] ?? null);
+
+                    if ($tokenResult && isset($tokenResult['token'])) {
+                        echo SEPPayment::getPaymentForm($tokenResult['token']);
+                        exit;
+                    } else {
+                        $error = 'خطا در اتصال به درگاه پرداخت';
+                    }
+                } catch (Throwable $e) {
+                    $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
+                }
+            }
         }
     }
 }
@@ -128,11 +160,16 @@ render_navbar($user);
           <?php if ($isCurrent): ?>
           <button class="btn btn-outline w-100" disabled>پلن فعلی</button>
           <?php else: ?>
-          <form method="POST" style="margin-top:auto">
+          <form method="POST" style="margin-top:auto"<?= $showDiscount ? ' data-discount-form' : '' ?>>
             <?= csrf_field() ?>
             <input type="hidden" name="plan" value="<?= h($plan['slug']) ?>">
+            <?php if ($showDiscount): ?>
+            <input type="hidden" name="discount_code" value="">
+            <input type="hidden" data-discount-amount-input value="<?= (int)$plan['price_month'] ?>">
+            <?php endif; ?>
             <div style="display:flex;gap:var(--sp-2);align-items:center">
-              <select name="months" class="form-control" style="flex:1;margin:0">
+              <select name="months" class="form-control" style="flex:1;margin:0"
+                      <?= $showDiscount ? 'onchange="this.form.querySelector(\'[data-discount-amount-input]\').value = this.value * ' . (int)$plan['price_month'] . '"' : '' ?>>
                 <?php foreach ([1,3,6,12] as $m): ?>
                 <option value="<?= $m ?>"><?= fmt_num($m) ?> ماه — <?= fmt_credit((float)$plan['price_month'] * $m) ?></option>
                 <?php endforeach; ?>
@@ -150,7 +187,11 @@ render_navbar($user);
 
   </div>
 <?php render_user_panel_close(); ?>
-<?php render_panel_scripts(); ?>
+<?php if ($showDiscount): ?>
+<?= render_discount_modal() ?>
+<?php render_discount_assets(); ?>
+<?php endif; ?>
+<?php render_panel_scripts($showDiscount ? ['src/js/discount.js'] : []); ?>
 <?php render_footer(); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

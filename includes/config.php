@@ -359,6 +359,33 @@ if ($shouldMigrate) {
         }
     }
 
+    // Create discount_codes table (کد تخفیف)
+    if (!db_has_table('discount_codes')) {
+        try {
+            DB::query('
+                CREATE TABLE `discount_codes` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `code` VARCHAR(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `type` ENUM("amount","percent") COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT "percent",
+                    `value` DECIMAL(15,0) NOT NULL DEFAULT 0,
+                    `max_discount` DECIMAL(15,0) DEFAULT NULL COMMENT "سقف تخفیف درصدی (تومان)",
+                    `max_uses` INT UNSIGNED DEFAULT NULL COMMENT "حداکثر تعداد استفاده (NULL = نامحدود)",
+                    `used_count` INT UNSIGNED NOT NULL DEFAULT 0,
+                    `starts_at` DATETIME DEFAULT NULL,
+                    `expires_at` DATETIME DEFAULT NULL,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uq_discount_code` (`code`),
+                    KEY `idx_discount_active` (`is_active`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ');
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-discount-codes', ['msg' => $e->getMessage()]);
+        }
+    }
+
     if (db_has_table('wallet_transactions')) {
         $walletTableInfo = DB::fetch("SHOW CREATE TABLE `wallet_transactions`");
         if ($walletTableInfo && !empty($walletTableInfo['Create Table']) && strpos($walletTableInfo['Create Table'], "'payment'") === false) {
@@ -373,6 +400,13 @@ if ($shouldMigrate) {
                 DB::query("ALTER TABLE `wallet_transactions` ADD COLUMN `payment_id` INT UNSIGNED DEFAULT NULL AFTER `ref_id`");
             } catch (Throwable $e) {
                 swapin_debug_log('migration-error-wallet-payment-id', ['msg' => $e->getMessage()]);
+            }
+        }
+        if ($walletTableInfo && !empty($walletTableInfo['Create Table']) && strpos($walletTableInfo['Create Table'], "'promotion'") === false) {
+            try {
+                DB::query("ALTER TABLE `wallet_transactions` MODIFY COLUMN `type` ENUM('deposit','withdraw','trade_credit','trade_debit','fee','refund','subscription','promotion','store_order') COLLATE utf8mb4_unicode_ci NOT NULL");
+            } catch (Throwable $e) {
+                swapin_debug_log('migration-error-wallet-type', ['msg' => $e->getMessage()]);
             }
         }
         if (!db_has_column('wallet_transactions', 'bank_ref_num')) {
@@ -610,7 +644,7 @@ if ($shouldMigrate) {
                 CREATE TABLE `wallet_transactions` (
                     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `user_id` INT UNSIGNED NOT NULL,
-                    `type` ENUM('deposit','withdraw','trade_credit','trade_debit','fee','refund') COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `type` ENUM('deposit','withdraw','trade_credit','trade_debit','fee','refund','subscription','promotion','store_order') COLLATE utf8mb4_unicode_ci NOT NULL,
                     `ref_type` ENUM('none','trade','trade_offer','listing','subscription_order','listing_bump','inspection_request','external','payment') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none' COMMENT 'Entity type that ref_id points to',
                     `amount` DECIMAL(12,2) NOT NULL,
                     `balance_after` DECIMAL(12,2) NOT NULL,
@@ -644,6 +678,13 @@ if ($shouldMigrate) {
             DB::query("ALTER TABLE `users` ADD COLUMN `kyc_status` ENUM('none','pending','approved','rejected') COLLATE utf8mb4_unicode_ci DEFAULT 'none' AFTER `bank_account`");
         } catch (Throwable $e) {
             swapin_debug_log('migration-error-kyc-status', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('bump_credits', $usersCols)) {
+        try {
+            DB::query("ALTER TABLE `users` ADD COLUMN `bump_credits` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Remaining free listing-promotion credits from active subscription' AFTER `subscription_until`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-bump-credits', ['msg' => $e->getMessage()]);
         }
     }
     if (!in_array('seller_type', $usersCols)) {
@@ -1939,16 +1980,29 @@ function user_profile_is_complete(array $user): bool {
 }
 
 function register_phone_user(string $phoneIntl): int {
-    return (int) DB::insert('users', db_filter_row('users', [
-        'name'               => '',
-        'email'              => null,
-        'phone'              => $phoneIntl,
-        'phone_verified_at'  => date('Y-m-d H:i:s'),
-        'city'               => null,
-        'password_hash'      => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT),
-        'verification_level' => 1,
-        'credit_balance'     => 0,
-    ]));
+    $existing = DB::fetch('SELECT id FROM users WHERE phone = ? LIMIT 1', [$phoneIntl]);
+    if ($existing) {
+        return (int)$existing['id'];
+    }
+    try {
+        return (int) DB::insert('users', db_filter_row('users', [
+            'name'               => '',
+            'email'              => null,
+            'phone'              => $phoneIntl,
+            'phone_verified_at'  => date('Y-m-d H:i:s'),
+            'city'               => null,
+            'password_hash'      => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT),
+            'verification_level' => 1,
+            'credit_balance'     => 0,
+        ]));
+    } catch (Throwable $e) {
+        // درخواست هم‌زمان با همین شماره — ردیف موجود را برگردان
+        $existing = DB::fetch('SELECT id FROM users WHERE phone = ? LIMIT 1', [$phoneIntl]);
+        if ($existing) {
+            return (int)$existing['id'];
+        }
+        throw $e;
+    }
 }
 
 function notify_profile_completion(int $userId): void {
@@ -2038,6 +2092,9 @@ function credit_transact(int $userId, string $type, float $amount, string $note 
     $bankRefNum   = isset($ctx['bank_ref_num']) ? trim((string)$ctx['bank_ref_num']) : null;
     $currencyCode = $ctx['currency_code'] ?? DEFAULT_CURRENCY_CODE;
     $currency     = $ctx['currency'] ?? DEFAULT_CURRENCY_LABEL;
+    // When false, the ledger row is recorded without touching the wallet balance.
+    // Used for payments settled directly through the gateway (money did not come from the wallet).
+    $affectBalance = !array_key_exists('affect_balance', $ctx) || $ctx['affect_balance'] !== false;
 
     if ($tradeId && $refType === 'none') {
         $refType = 'trade';
@@ -2058,10 +2115,12 @@ function credit_transact(int $userId, string $type, float $amount, string $note 
         $pdo->beginTransaction();
     }
     try {
-        DB::query(
-            'UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?',
-            [$amount, $userId]
-        );
+        if ($affectBalance) {
+            DB::query(
+                'UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?',
+                [$amount, $userId]
+            );
+        }
         $user = DB::fetch('SELECT credit_balance FROM users WHERE id = ?', [$userId]);
         $row  = [
             'user_id'       => $userId,
@@ -2331,6 +2390,7 @@ function timeago(string $datetime): string {
 }
 
 require_once __DIR__ . '/i18n.php';
+require_once __DIR__ . '/discounts.php';
 require_once __DIR__ . '/listing_validator.php';
 require_once __DIR__ . '/kyc_service.php';
 require_once __DIR__ . '/v2.php';

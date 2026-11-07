@@ -54,7 +54,7 @@ $myActiveListings = DB::fetchAll(
     [$uid]
 );
 
-render_head('چیزهایی که دنبالش هستم', 'مدیریت نیازها و ISOهای خود در ' . APP_NAME, [
+render_head('دنبال چی می‌گردی؟', 'مدیریت نیازها و ISOهای خود در ' . APP_NAME, [
     'robots' => 'noindex, nofollow',
 ]);
 render_panel_styles();
@@ -93,7 +93,7 @@ render_navbar($user);
 
 <?php render_user_panel_open($user, 'iso'); ?>
 <div class="dash-panel">
-  <?php render_panel_page_header('چیزهایی که دنبالش هستم', 'نیازهای خود را ثبت کنید تا سیستم کالاهای مناسب را پیدا کند', APP_URL . '/', 'بازگشت به خانه'); ?>
+  <?php render_panel_page_header('دنبال چی می‌گردی؟', 'نیازهای خود را ثبت کنید، تا براساس آن کالاهای مناسب برای معاوضه را سواَپین هوشمندانه پیدا کند.', APP_URL . '/', 'بازگشت به خانه'); ?>
   <div class="dash-page-head__actions" style="justify-content:flex-end;margin-bottom:24px;display:flex;gap:.5rem;flex-wrap:wrap">
     <a href="<?= APP_URL ?>/iso/create" class="btn btn-primary btn-sm">
       <i class="bi bi-plus-lg"></i> ثبت نیاز جدید

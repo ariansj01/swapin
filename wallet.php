@@ -16,40 +16,64 @@ $error   = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deposit_amount'])) {
     csrf_verify_or_fail();
     $paymentType = clean($_POST['payment_type'] ?? 'sep');
-    
+
     $amount = (int)($_POST['deposit_amount'] ?? 0);
+    $discountCode = discount_code_normalize((string)($_POST['discount_code'] ?? ''));
+    $discountResult = null;
+    if ($discountCode !== '') {
+        $discountResult = discount_code_validate($discountCode, $amount);
+    }
+
     if ($amount < 1000 || $amount > 100000000) {
         $error = 'مبلغ واریز باید بین ۱٬۰۰۰ تا ۱۰۰٬۰۰۰٬۰۰۰ ' . CREDIT_UNIT . ' باشد.';
+    } elseif ($discountResult !== null && !$discountResult['ok']) {
+        $error = $discountResult['error'];
+    } elseif ($paymentType === 'demo' && WALLET_DEMO_DEPOSIT) {
+        // Demo mode
+        credit_transact($uid, 'deposit', $amount, 'واریز دستی (درگاه آزمایشی)', ['ref_type' => 'external']);
+        $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$uid]);
+        $success = 'با موفقیت ' . fmt_credit($amount) . ' به کیف پول شما اضافه شد!';
     } else {
-        if ($paymentType === 'demo' && WALLET_DEMO_DEPOSIT) {
-            // Demo mode
-            credit_transact($uid, 'deposit', $amount, 'واریز دستی (درگاه آزمایشی)', ['ref_type' => 'external']);
-            $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$uid]);
-            $success = 'با موفقیت ' . fmt_credit($amount) . ' به کیف پول شما اضافه شد!';
-        } else {
-            // SEP payment
-            try {
+        // SEP payment
+        $discount  = (int)($discountResult['discount'] ?? 0);
+        $payAmount = $amount - $discount;
+        try {
+            if ($payAmount <= 0) {
+                // Fully covered by the discount code — no gateway needed
+                credit_transact($uid, 'deposit', $amount, 'شارژ کیف پول (کد تخفیف: ' . $discountCode . ')', ['ref_type' => 'external']);
+                if ($discountResult) {
+                    discount_code_mark_used((int)$discountResult['row']['id']);
+                }
+                $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$uid]);
+                $success = 'با موفقیت ' . fmt_credit($amount) . ' به کیف پول شما اضافه شد!';
+            } elseif ($payAmount < 1000) {
+                $error = 'مبلغ نهایی پس از تخفیف باید حداقل ۱٬۰۰۰ ' . CREDIT_UNIT . ' باشد.';
+            } else {
                 $resNum = SEPPayment::generateResNum();
+                $meta = ($discount > 0 && $discountResult)
+                    ? json_encode(discount_meta_from_result($discountResult, $amount), JSON_UNESCAPED_UNICODE)
+                    : null;
                 DB::insert('payments', [
                     'user_id' => $uid,
                     'type' => 'wallet_topup',
-                    'amount' => $amount,
+                    'amount' => $payAmount,
                     'res_num' => $resNum,
                     'status' => 'pending',
+                    'meta' => $meta,
                 ]);
-                
+
                 $redirectUrl = APP_URL . '/payment_callback';
-                $tokenResult = SEPPayment::getToken($amount, $resNum, $redirectUrl, $user['phone'] ?? null);
-                
+                $tokenResult = SEPPayment::getToken($payAmount, $resNum, $redirectUrl, $user['phone'] ?? null);
+
                 if ($tokenResult && isset($tokenResult['token'])) {
                     echo SEPPayment::getPaymentForm($tokenResult['token']);
                     exit;
                 } else {
                     $error = 'خطا در اتصال به درگاه پرداخت';
                 }
-            } catch (Throwable $e) {
-                $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
             }
+        } catch (Throwable $e) {
+            $error = 'خطایی در فرآیند پرداخت: ' . $e->getMessage();
         }
     }
 }
@@ -215,6 +239,8 @@ render_user_panel_open($user, 'wallet');
                 <?php endforeach; ?>
               </div>
 
+              <?= render_discount_box('[name=deposit_amount]') ?>
+
               <div class="form-group">
                 <label class="form-label">درگاه پرداخت</label>
                 <div class="payment-gateway-select">
@@ -272,5 +298,6 @@ document.querySelector('[name=deposit_amount]')?.focus();
 <?php endif; ?>
 </script>
 
-<?php render_panel_scripts(); ?>
+<?php render_discount_assets(); ?>
+<?php render_panel_scripts(['src/js/discount.js']); ?>
 <?php render_footer(); ?>

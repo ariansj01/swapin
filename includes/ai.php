@@ -963,7 +963,7 @@ function ai_price_listing_fallback(array $listing): array {
         'confidence'  => 55,
         'uncertain'   => true,
         'reasons'     => $reasons,
-        'note'        => 'اتصال دستیار هوشمند برقرار نشد — از تخمین داخلی استفاده شد.',
+        // 'note'        => 'اتصال دستیار هوشمند برقرار نشد — از تخمین داخلی استفاده شد.',
         'ai_source'   => 'fallback',
     ];
 }

@@ -124,8 +124,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             DB::query('UPDATE otp_codes SET used = 1 WHERE id = ?', [$row['id']]);
             
-            $user = DB::fetch('SELECT id, name, phone_verified_at FROM users WHERE phone = ? AND is_active = 1', [$phoneIntl]);
-            if ($user) {
+            $user = DB::fetch('SELECT id, name, phone_verified_at, is_active FROM users WHERE phone = ? LIMIT 1', [$phoneIntl]);
+            if ($user && (int)$user['is_active'] !== 1) {
+                swapin_debug_log('otp-login-inactive-account', [
+                    'phone' => sms_mask_phone($phoneIntl),
+                ]);
+                $error = 'حساب کاربری شما غیرفعال شده است. برای پیگیری با پشتیبانی تماس بگیرید.';
+            } elseif ($user) {
                 if (empty($user['phone_verified_at'])) {
                     DB::update('users', [
                         'phone_verified_at' => date('Y-m-d H:i:s'),

@@ -80,6 +80,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'users'          => ['/users.php', 'کاربران', 'bi-people', 0],
         'sms'            => ['/sms.php', 'ارسال پیامک', 'bi-chat-left-text', 0],
         'notifications'  => ['/notifications.php', 'ارسال اعلان', 'bi-megaphone', 0],
+        'discounts'      => ['/discounts.php', 'کد تخفیف', 'bi-ticket-perforated', 0],
     ];
 
     if (admin_has_permission('manage_admins', $admin)) {

@@ -31,12 +31,12 @@
 
       const planCard = select.closest('.promote-plan');
       if (planCard) {
-        const form = planCard.querySelector('.promote-plan__form');
-        if (form) {
+        planCard.querySelectorAll('.promote-plan__form').forEach((form) => {
           form.dataset.planPrice = formatPrice(totalPrice);
-          const hiddenDuration = planCard.querySelector('.promote-selected-duration');
-          if (hiddenDuration) hiddenDuration.value = select.value;
-        }
+        });
+        planCard.querySelectorAll('.promote-selected-duration').forEach((hidden) => {
+          hidden.value = select.value;
+        });
       }
     };
 
@@ -49,6 +49,15 @@
       const name = form.dataset.planName || 'این پلن';
       const price = form.dataset.planPrice || '';
       if (!confirm(`پلن «${name}» به مبلغ ${price} فعال شود؟`)) {
+        e.preventDefault();
+      }
+    });
+  });
+
+  document.querySelectorAll('.promote-plan__credit-form').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      const name = form.dataset.planName || 'این پلن';
+      if (!confirm(`پلن «${name}» با ۱ اعتبار ارتقای رایگان فعال شود؟`)) {
         e.preventDefault();
       }
     });
