@@ -47,10 +47,10 @@ jobs:
           echo "========================================"
 
           echo "[1/4] Fetching staging..."
-          sudo -n -H git -C "$APP_DIR" fetch origin staging
+          sudo -n -H git -c safe.directory="$APP_DIR" -C "$APP_DIR" fetch origin staging
 
           echo "[2/4] Syncing staging..."
-          sudo -n -H git -C "$APP_DIR" reset --hard origin/staging
+          sudo -n -H git -c safe.directory="$APP_DIR" -C "$APP_DIR" reset --hard origin/staging
 
           echo "[3/4] Restoring ownership..."
           sudo chown -R deploy:www-data "$APP_DIR"
