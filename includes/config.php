@@ -53,6 +53,28 @@ if ($_swapinAppUrl === false || $_swapinAppUrl === '') {
     }
     $_swapinAppUrl = 'http://localhost/swaapin';
 }
+// محافظ چند‌دامنه‌ای (فقط محیط‌های غیر production):
+// اگر دامنه‌ی APP_URL با دامنه‌ی درخواست یکی نباشد (مثلاً .env پروداکشن روی
+// استیجینگ کپی شده باشد)، همه‌ی لینک‌ها و ریدایرکت‌ها کاربر را به دامنه‌ی
+// دیگری می‌فرستند و سشن از دست می‌رود. در این حالت دامنه/اسکیمای درخواست
+// جایگزین می‌شود و مسیر پایه‌ی تنظیم‌شده حفظ می‌گردد.
+if (APP_ENV !== 'production' && PHP_SAPI !== 'cli' && !empty($_SERVER['HTTP_HOST'])) {
+    $_swapinCfgHost = strtolower((string)parse_url((string)$_swapinAppUrl, PHP_URL_HOST));
+    $_swapinReqHost = strtolower((string)preg_replace('/:\d+$/', '', (string)$_SERVER['HTTP_HOST']));
+    if ($_swapinCfgHost !== '' && $_swapinReqHost !== '' && $_swapinCfgHost !== $_swapinReqHost) {
+        $_swapinHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443
+            || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+        $_swapinBasePath = rtrim((string)parse_url((string)$_swapinAppUrl, PHP_URL_PATH), '/');
+        error_log(sprintf(
+            '[config] APP_URL host mismatch (%s != %s); using request host instead.',
+            $_swapinCfgHost,
+            $_swapinReqHost
+        ));
+        $_swapinAppUrl = ($_swapinHttps ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $_swapinBasePath;
+    }
+    unset($_swapinCfgHost, $_swapinReqHost, $_swapinHttps, $_swapinBasePath);
+}
 define('APP_URL', rtrim((string)$_swapinAppUrl, '/'));
 unset($_swapinAppUrl);
 
