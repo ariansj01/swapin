@@ -242,6 +242,21 @@ if ($shouldMigrate) {
         }
     }
 
+    // Extend content_pages.index_status to support 410 Gone and 301 Redirect states
+    if (db_has_table('content_pages')) {
+        try {
+            $cpInfo = DB::fetch("SHOW CREATE TABLE `content_pages`");
+            if ($cpInfo && !empty($cpInfo['Create Table'])) {
+                $cpSql = $cpInfo['Create Table'];
+                if (strpos($cpSql, "'gone'") === false || strpos($cpSql, "'redirect'") === false) {
+                    DB::query("ALTER TABLE `content_pages` MODIFY COLUMN `index_status` ENUM('index','noindex','gone','redirect') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'index'");
+                }
+            }
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-content-pages-index-status', ['msg' => $e->getMessage()]);
+        }
+    }
+
     // Add onboarding columns to users table if they don't exist
     $usersColumns = db_table_columns('users');
     if (!in_array('onboarding_completed', $usersColumns)) {
@@ -2163,6 +2178,37 @@ function clean(mixed $val): string {
         return '';
     }
     return trim(htmlspecialchars_decode(strip_tags((string)$val)));
+}
+
+/**
+ * پاکسازی HTML محتوای صفحات CMS (خروجی CKEditor) با نگهداشتن تگهای مجاز.
+ * بلوکهای اجرایی، هندلرهای رویداد و پروتکلهای خطرناک حذف میشوند.
+ */
+function clean_page_html(mixed $html): string {
+    if (!is_string($html) || $html === '') {
+        return '';
+    }
+
+    // حذف کامل بلوکهای خطرناک همراه با محتوایشان
+    $html = preg_replace('#<(script|style|iframe|object|embed|form|noscript|svg|math)\b[^>]*>.*?</\1>#is', '', $html);
+    $html = preg_replace('#<(script|style|iframe|object|embed|form|noscript|svg|math)\b[^>]*/?>#is', '', $html);
+
+    // فقط تگهای مجاز باقی بمانند
+    $allowed = '<p><br><strong><b><em><i><u><s><del><ins><h1><h2><h3><h4><h5><h6>'
+        . '<ul><ol><li><a><table><thead><tbody><tfoot><tr><td><th><blockquote>'
+        . '<img><hr><span><div><figure><figcaption><sup><sub>';
+    $html = strip_tags((string)$html, $allowed);
+
+    // حذف هندلرهای رویداد (onclick، onerror، ...)
+    $html = preg_replace('#\son\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $html);
+
+    // خنثیسازی پروتکلهای خطرناک در href/src
+    $html = preg_replace('#(href|src|xlink:href|action|formaction)\s*=\s*(["\']?)\s*(?:javascript|vbscript|data)\s*:[^"\'>\s]*\2#i', '$1="#"', $html);
+
+    // حذف style برای جلوگیری از تزریق چیدمان
+    $html = preg_replace('#\sstyle\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $html);
+
+    return trim($html);
 }
 
 function is_valid_phone(string $phone): bool {

@@ -100,9 +100,9 @@ listing_location_enqueue_assets();
         <div class="form-group">
           <label class="form-label">وضعیت ISO</label>
           <select name="status" class="form-control">
-            <option value="active" <?= $vals['status'] === 'active' ? 'selected' : ?>>فعال — در حال جستجو</option>
-            <option value="paused" <?= $vals['status'] === 'paused' ? 'selected' : ?>>متوقف — موقتاً غیرفعال</option>
-            <option value="completed" <?= $vals['status'] === 'completed' ? 'selected' : ?>>تکمیل‌شده — پیدا شد</option>
+            <option value="active" <?= $vals['status'] === 'active' ? 'selected' : '' ?>>فعال — در حال جستجو</option>
+            <option value="paused" <?= $vals['status'] === 'paused' ? 'selected' : '' ?>>متوقف — موقتاً غیرفعال</option>
+            <option value="completed" <?= $vals['status'] === 'completed' ? 'selected' : '' ?>>تکمیل‌شده — پیدا شد</option>
           </select>
         </div>
 
@@ -110,7 +110,7 @@ listing_location_enqueue_assets();
           <label class="form-label">کالایی که دارید (ISO به این آگهی وصل است)</label>
           <select name="listing_id" class="form-control" required>
           <?php foreach ($myActiveListings as $l): ?>
-            <option value="<?= (int)$l['id'] ?>" <?= $vals['listing_id'] === (int)$l['id'] ? 'selected' : ?>>
+            <option value="<?= (int)$l['id'] ?>" <?= $vals['listing_id'] === (int)$l['id'] ? 'selected' : '' ?>>
               <?= h($l['title']) ?> · <?= h($l['cat_name']) ?><?php if (!empty($l['estimated_value'])): ?> · <?= fmt_num($l['estimated_value']) ?><?php endif; ?>
             </option>
           <?php endforeach; ?>
@@ -142,7 +142,7 @@ listing_location_enqueue_assets();
                     $lastParent = $c['id'];
                 }
             ?>
-              <option value="<?= (int)$c['id'] ?>" <?= $vals['category_id'] === (int)$c['id'] ? 'selected' : ?>>
+              <option value="<?= (int)$c['id'] ?>" <?= $vals['category_id'] === (int)$c['id'] ? 'selected' : '' ?>>
                 <?= $isParent ? h($c['name']) . ' (همه)' : h($c['name']) ?>
               </option>
             <?php endforeach; if ($lastParent !== null) echo '</optgroup>'; ?>

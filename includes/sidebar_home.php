@@ -36,7 +36,7 @@
       ];
       $catImgBase = APP_URL . '/src/img/category/';
       
-      // Ensure variables are defined for the anonymous function
+      // Ensure variables are defined for the filter form
       $f_search   = $search ?? '';
       $f_city     = $city ?? 'تهران';
       $f_wantType = $wantType ?? '';
@@ -45,26 +45,11 @@
       $f_pmin     = $pmin ?? 0;
       $f_pmax     = $pmax ?? 0;
       $f_catSlug  = $catSlug ?? '';
-
-      $buildSidebarQuery = function($overrides = []) use ($f_search, $f_city, $f_wantType, $f_sort, $f_timeAgo, $f_pmin, $f_pmax, $f_catSlug) {
-          $params = array_filter([
-              'cat'       => $overrides['cat']       ?? $f_catSlug,
-              'q'         => $overrides['q']         ?? $f_search,
-              'city'      => $overrides['city']      ?? $f_city,
-              'want'      => $overrides['want']      ?? $f_wantType,
-              'sort'      => $overrides['sort']      ?? $f_sort,
-              'time_ago'  => $overrides['time_ago']  ?? $f_timeAgo,
-              'price_min' => $overrides['price_min'] ?? ($f_pmin > 0 ? $f_pmin : null),
-              'price_max' => $overrides['price_max'] ?? ($f_pmax > 0 ? $f_pmax : null),
-          ]);
-          $queryString = $params ? '?' . http_build_query($params) : '';
-          return APP_URL . '/listings/map' . $queryString;
-      };
       ?>
       <?php foreach ($sidebarCats as $sc):
         $isCatActive = ($f_catSlug === $sc['slug']);
       ?>
-        <a href="<?= $buildSidebarQuery(['cat' => $sc['slug']]) ?>" class="home-sidebar-cats__item <?= $isCatActive ? 'is-active' : '' ?>">
+        <a href="<?= category_url($sc['slug']) ?>" class="home-sidebar-cats__item <?= $isCatActive ? 'is-active' : '' ?>">
           <span class="home-sidebar-cats__icon">
             <img src="<?= $catImgBase . $sc['img'] ?>" alt="<?= h($sc['name']) ?>" class="home-sidebar-cats__icon-img"
                  onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
@@ -76,7 +61,7 @@
     </nav>
 
     <!-- Filters: Real Dropdowns (همه شهرها، انواع معامله، جدیدترین) + جستجو -->
-    <form id="sidebar-filters-form" method="GET" action="<?= APP_URL ?>/listings/map" class="home-sidebar-filters-form">
+    <form id="sidebar-filters-form" method="GET" action="<?= APP_URL ?>/" class="home-sidebar-filters-form">
       <input type="hidden" name="cat" value="<?= h($f_catSlug) ?>">
       <input type="hidden" name="time_ago" value="<?= h($f_timeAgo) ?>">
 
@@ -174,25 +159,27 @@
         ];
         foreach ($timeChipList as $tc):
           $isActive = ($f_timeAgo === $tc['value']);
-          $chipQuery = [
-            'cat'       => $f_catSlug,
-            'q'         => $f_search,
-            'city'      => $f_city,
-            'want'      => $f_wantType,
-            'sort'      => $f_sort,
-            'time_ago'  => $tc['value'],
-            'price_min' => $f_pmin > 0 ? (int)$f_pmin : null,
-            'price_max' => $f_pmax > 0 ? (int)$f_pmax : null,
-          ];
-          $chipQuery = array_filter($chipQuery);
-          $chipUrl = APP_URL . '/listings/map' . ($chipQuery ? '?' . http_build_query($chipQuery) : '');
         ?>
-          <a href="<?= $chipUrl ?>" class="time-chip <?= $isActive ? 'time-chip--active' : '' ?>">
+          <button type="button" class="time-chip <?= $isActive ? 'time-chip--active' : '' ?>" data-time-ago="<?= h($tc['value']) ?>">
             <?= $tc['label'] ?>
-          </a>
+          </button>
         <?php endforeach; ?>
       </div>
     </div>
+
+    <script>
+    (function () {
+      var form = document.getElementById('sidebar-filters-form');
+      if (!form) return;
+      var field = form.querySelector('input[name="time_ago"]');
+      document.querySelectorAll('.home-sidebar-time .time-chip[data-time-ago]').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          if (field) field.value = chip.getAttribute('data-time-ago') || '';
+          form.submit();
+        });
+      });
+    })();
+    </script>
 
     <!-- Menus -->
     <div class="home-sidebar-menu">

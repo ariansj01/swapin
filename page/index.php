@@ -19,6 +19,24 @@ if (!$page) {
     exit;
 }
 
+$indexStatus = (string)($page['index_status'] ?? 'index');
+
+// 410 Gone — صفحه‌های تستی/حذف‌شده؛ خروج سریع از ایندکس گوگل
+if ($indexStatus === 'gone') {
+    http_response_code(410);
+    header('X-Robots-Tag: noindex, nofollow');
+    exit;
+}
+
+// 301 Redirect — صفحه‌های تکراری به نسخهٔ اصلی (مقدار canonical_url) هدایت می‌شوند
+if ($indexStatus === 'redirect') {
+    $redirectTarget = seo_resolve_canonical($page['canonical_url'] ?? '', '');
+    if ($redirectTarget !== '') {
+        header('Location: ' . $redirectTarget, true, 301);
+        exit;
+    }
+}
+
 render_head(
     $page['meta_title'] ?: $page['title'],
     $page['meta_description'] ?? '',
@@ -27,7 +45,7 @@ render_head(
             $page['canonical_url'] ?? '',
             APP_URL . '/page/' . $page['slug']
         ),
-        'robots' => ($page['index_status'] ?? 'index') === 'noindex'
+        'robots' => in_array($indexStatus, ['noindex', 'redirect'], true)
             ? 'noindex,nofollow'
             : 'index,follow'
     ]

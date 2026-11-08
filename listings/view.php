@@ -53,53 +53,55 @@ $reviewStatus = $listing['review_status'] ?? 'approved';
 
 $listingPath = '/listings/view?id=' . $id;
 
-if ($listing['status'] !== 'active' && !$isOwner && !$isAdmin) {
+if (!$isOwner && !$isAdmin) {
 
-
-    $similar = DB::fetch(
-        'SELECT id
-         FROM listings
-         WHERE category_id = ?
-         AND status = "active"
-         AND review_status = "approved"
-         AND id != ?
-         ORDER BY updated_at DESC
-         LIMIT 1',
-        [
-            $listing['category_id'],
-            $listing['id']
-        ]
-    );
-
-
-    if ($similar) {
-
-        header(
-            'Location: ' . listing_url($similar),
-            true,
-            301
-        );
-
-    } else {
-
-        header(
-            'Location: ' . APP_URL . '/listings',
-            true,
-            301
-        );
-
+    // آگهی رد‌شده یا حذف‌شده → 410 Gone (حذف سریع از ایندکس گوگل؛ هم‌راستا با Q17).
+    if ($reviewStatus === 'rejected' || $listing['status'] === 'deleted') {
+        http_response_code(410);
+        header('X-Robots-Tag: noindex, nofollow');
+        render_head('آگهی حذف شده', '', ['robots' => 'noindex, nofollow']);
+        render_navbar($user);
+        echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-slash-circle"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی رد یا حذف شده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
+        render_footer();
+        exit;
     }
 
-    exit;
-}
+    // آگهی در انتظار تأیید → 404 (هنوز منتشر نشده است).
+    if ($reviewStatus !== 'approved') {
+        http_response_code(404);
+        render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
+        render_navbar($user);
+        echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-hourglass-split"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی هنوز تأیید نشده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
+        render_footer();
+        exit;
+    }
 
-if ($reviewStatus !== 'approved' && !$isOwner && !$isAdmin) {
-    http_response_code(404);
-    render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
-    render_navbar($user);
-    echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-hourglass-split"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی هنوز تأیید نشده یا رد شده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
-    render_footer();
-    exit;
+    // آگهی غیرفعال به دلایل دیگر (فروخته/معامله‌شده) → 301 به آگهی مشابه.
+    if ($listing['status'] !== 'active') {
+
+        $similar = DB::fetch(
+            'SELECT id
+             FROM listings
+             WHERE category_id = ?
+             AND status = "active"
+             AND review_status = "approved"
+             AND id != ?
+             ORDER BY updated_at DESC
+             LIMIT 1',
+            [
+                $listing['category_id'],
+                $listing['id']
+            ]
+        );
+
+        if ($similar) {
+            header('Location: ' . listing_url($similar), true, 301);
+        } else {
+            header('Location: ' . APP_URL . '/listings', true, 301);
+        }
+
+        exit;
+    }
 }
 
 // Increment views

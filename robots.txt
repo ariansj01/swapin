@@ -15,6 +15,9 @@ Disallow: /dashboard
 Disallow: /dashboard.php
 Disallow: /auth/
 Disallow: /api/
+# Public listing-hub data endpoints (required so JS-rendered "swap suggestions" and "nearby listings" load for crawlers)
+Allow: /api/listing_swap_suggestions.php
+Allow: /api/listing_nearby.php
 Disallow: /meta/base/
 Disallow: /storage/
 Disallow: /includes/
@@ -34,6 +37,18 @@ Disallow: /listings/my.php
 Disallow: /listings/offers.php
 Disallow: /listings/bump.php
 Disallow: /listings/promote.php
+
+# Block crawl-budget draining URLs: map + parameter combinations (search/want/city/sort/time/neighborhood)
+Disallow: /listings/map
+Disallow: /listings/map_view.php
+Disallow: /*?q=
+Disallow: /*&q=
+Disallow: /*want=
+Disallow: /*sort=
+Disallow: /*time_ago=
+Disallow: /*neighborhood=
+Disallow: /*?city=
+Disallow: /*&city=
 
 # WordPress admin only
 Disallow: /blog/wp-admin/

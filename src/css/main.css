@@ -8550,10 +8550,11 @@ aside.home-sidebar,
   font-weight: 700;
 }
 
-/* ── Sidebar Time Chip as <a> tag ────────────────────────────────────── */
-.home-sidebar-time__chips a.time-chip {
+/* ── Sidebar Time Chip (button) ──────────────────────────────────────── */
+.home-sidebar-time__chips .time-chip {
   text-decoration: none;
   cursor: pointer;
+  font-family: inherit;
 }
 
 /* ── Sidebar Price Apply Button ──────────────────────────────────────── */
