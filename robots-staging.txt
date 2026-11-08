@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /
+Allow: /page/test$
+Allow: /page/test-final$
+Allow: /page/seo-test-page$
+Allow: /page/about-gol$
+Allow: /sitemap.xml$
+Allow: /sitemap.php$
+Allow: /sitemap-pages.php$
+
+Sitemap: https://stage.swapin.ir/sitemap.xml

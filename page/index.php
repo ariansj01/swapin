@@ -9,6 +9,12 @@ if (!$slug) {
     exit;
 }
 
+if (in_array(strtolower($slug), RETIRED_TEST_PAGE_SLUGS, true)) {
+    http_response_code(410);
+    header('X-Robots-Tag: noindex, nofollow');
+    exit;
+}
+
 $page = DB::fetch(
     'SELECT * FROM content_pages WHERE slug = ? AND status = "published" LIMIT 1',
     [$slug]

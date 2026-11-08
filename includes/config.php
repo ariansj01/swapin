@@ -56,6 +56,19 @@ if ($_swapinAppUrl === false || $_swapinAppUrl === '') {
 define('APP_URL', rtrim((string)$_swapinAppUrl, '/'));
 unset($_swapinAppUrl);
 
+$_swapinAppHost = strtolower((string)parse_url(APP_URL, PHP_URL_HOST));
+define(
+    'APP_IS_STAGING',
+    APP_ENV === 'testing' || preg_match('/^(?:stage|staging)\./', $_swapinAppHost) === 1
+);
+unset($_swapinAppHost);
+
+define('RETIRED_TEST_PAGE_SLUGS', ['test', 'test-final', 'seo-test-page', 'about-gol']);
+
+if (APP_IS_STAGING && !headers_sent()) {
+    header('X-Robots-Tag: noindex, nofollow, noarchive');
+}
+
 define('LOGO_URL',          APP_URL . '/src/img/swapin-dark-png.png');
 define('UPLOAD_URL',        APP_URL . '/uploads/');
 define('UPLOAD_DIR',        __DIR__ . '/../uploads');

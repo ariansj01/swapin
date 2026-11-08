@@ -14,6 +14,12 @@ Options -MultiViews -Indexes
 # Block direct web access to sensitive directories
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # Keep staging out of search indexes and serve its own sitemap index.
+  RewriteCond %{HTTP_HOST} ^(?:stage|staging)\.swapin\.ir$ [NC]
+  RewriteRule ^robots\.txt$ robots-staging.txt [L]
+  RewriteCond %{HTTP_HOST} ^(?:stage|staging)\.swapin\.ir$ [NC]
+  RewriteRule ^sitemap\.xml$ sitemap-staging.php [L]
+
   # For production server (root domain) — adjust RewriteBase if deployed at domain root:
   # RewriteBase /
   # For local development (XAMPP in /swaapin subdir):

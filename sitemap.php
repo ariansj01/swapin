@@ -1,8 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-require_once __DIR__ . '/includes/i18n.php';
 
 header('Content-Type: application/xml; charset=utf-8');
+
+if (APP_IS_STAGING) {
+    echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>';
+    exit;
+}
+
+require_once __DIR__ . '/includes/i18n.php';
 
 $base = rtrim(APP_URL, '/');
 $now  = date('c');
