@@ -336,7 +336,7 @@ function render_navbar(?array $user = null): void {
         <form class="navbar-searchbar-form" action="{$url}/" method="get">
           <i class="bi bi-search navbar-searchbar-form__icon"></i>
           <input type="search" class="navbar-searchbar-form__input"
-                 name="q" placeholder="دنبال چه کالایی می‌گردیییی؟"
+                 name="q" placeholder="دنبال چه کالایی می‌گردییییی؟"
                  value="{$search}">
           {$cityHiddenInput}
         </form>
