@@ -41,7 +41,7 @@ function admin_discount_validate_fields(array $post): array {
     $usesRaw  = trim((string)($post['max_uses'] ?? ''));
     $startRaw = trim((string)($post['starts_at'] ?? ''));
     $expRaw   = trim((string)($post['expires_at'] ?? ''));
-    $isActive = isset($post['is_active']) ? 1 : 0;
+    $isActive = array_key_exists('is_active', $post) ? (int)(bool)$post['is_active'] : 0;
 
     if (!in_array($type, ['amount', 'percent'], true)) {
         $type = 'percent';
@@ -227,56 +227,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'bulk_save') {
-        [$fieldErrors, $fields] = admin_discount_validate_fields($_POST);
-        $errors = array_merge($errors, $fieldErrors);
+        $codesArr   = (array)($_POST['code'] ?? []);
+        $typesArr   = (array)($_POST['type'] ?? []);
+        $valuesArr  = (array)($_POST['value'] ?? []);
+        $capsArr    = (array)($_POST['max_discount'] ?? []);
+        $usesArr    = (array)($_POST['max_uses'] ?? []);
+        $startsArr  = (array)($_POST['starts_at'] ?? []);
+        $expiresArr = (array)($_POST['expires_at'] ?? []);
+        $activesArr = (array)($_POST['is_active'] ?? []);
 
-        // Accept codes separated by new lines, spaces, commas or semicolons.
-        $rawParts = preg_split('/[\s,;]+/u', trim((string)($_POST['codes'] ?? '')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-        $unique = [];
-        foreach ($rawParts as $part) {
-            $norm = discount_code_normalize($part);
-            if ($norm !== '') {
-                $unique[$norm] = true;
-            }
-        }
-        $unique = array_keys($unique);
-
-        if (!$unique) {
-            $errors[] = 'حداقل یک کد تخفیف وارد کنید.';
-        } elseif (count($unique) > 100) {
-            $errors[] = 'حداکثر ۱۰۰ کد در هر بار قابل افزودن است (' . fmt_num(count($unique)) . ' کد وارد شده).';
-        }
-
-        $valid = $invalid = [];
-        foreach ($unique as $norm) {
-            if (preg_match('/^[A-Z0-9_-]{3,64}$/', $norm)) {
-                $valid[] = $norm;
-            } else {
-                $invalid[] = $norm;
-            }
-        }
-
+        $prepared   = [];   // code => validated fields, ready to insert
+        $bulkRows   = [];   // rows kept for re-rendering after an error
+        $batchSeen  = [];
         $duplicates = [];
-        if ($valid) {
-            $ph = implode(', ', array_fill(0, count($valid), '?'));
-            $existing = array_column(DB::fetchAll("SELECT code FROM discount_codes WHERE code IN ($ph)", $valid), 'code');
-            if ($existing) {
-                $duplicates = $existing;
-                $valid = array_values(array_diff($valid, $existing));
+
+        for ($i = 0, $n = count($codesArr); $i < $n; $i++) {
+            $row = [
+                'code'         => (string)($codesArr[$i] ?? ''),
+                'type'         => (string)($typesArr[$i] ?? 'percent'),
+                'value'        => (string)($valuesArr[$i] ?? ''),
+                'max_discount' => (string)($capsArr[$i] ?? ''),
+                'max_uses'     => (string)($usesArr[$i] ?? ''),
+                'starts_at'    => (string)($startsArr[$i] ?? ''),
+                'expires_at'   => (string)($expiresArr[$i] ?? ''),
+                'is_active'    => (string)($activesArr[$i] ?? '1'),
+                'errors'       => [],
+            ];
+
+            // Skip rows the admin left completely empty.
+            if (trim($row['code']) === '' && trim($row['value']) === ''
+                && trim($row['max_discount']) === '' && trim($row['max_uses']) === ''
+                && trim($row['starts_at']) === '' && trim($row['expires_at']) === '') {
+                continue;
             }
+
+            $ri = count($bulkRows);
+            $bulkRows[] = $row;
+
+            $norm = discount_code_normalize($row['code']);
+            if (!preg_match('/^[A-Z0-9_-]{3,64}$/', $norm)) {
+                $bulkRows[$ri]['errors'][] = 'کد نامعتبر است (۳ تا ۶۴ کاراکتر: حروف انگلیسی، عدد، خط تیره یا آندرلاین).';
+            }
+
+            [$fieldErrors, $fields] = admin_discount_validate_fields($row);
+            if ($fieldErrors) {
+                $bulkRows[$ri]['errors'] = array_merge($bulkRows[$ri]['errors'], $fieldErrors);
+            }
+
+            if ($bulkRows[$ri]['errors']) {
+                continue;
+            }
+            if (isset($batchSeen[$norm])) {
+                $bulkRows[$ri]['errors'][] = 'این کد در همین لیست تکرار شده است.';
+                continue;
+            }
+            $batchSeen[$norm] = true;
+            $prepared[$norm] = $fields;
         }
 
-        if (!$errors) {
-            foreach ($valid as $norm) {
-                DB::insert('discount_codes', ['code' => $norm] + $fields);
+        if (!$bulkRows) {
+            $errors[] = 'حداقل یک کد تخفیف وارد کنید.';
+        } elseif (count($bulkRows) > 100) {
+            $errors[] = 'حداکثر ۱۰۰ کد در هر بار قابل افزودن است (' . fmt_num(count($bulkRows)) . ' کد وارد شده).';
+        }
+
+        $hasRowErrors = false;
+        foreach ($bulkRows as $r) {
+            if (!empty($r['errors'])) { $hasRowErrors = true; break; }
+        }
+
+        if (!$errors && !$hasRowErrors) {
+            if ($prepared) {
+                $ph = implode(', ', array_fill(0, count($prepared), '?'));
+                $existing = array_column(
+                    DB::fetchAll("SELECT code FROM discount_codes WHERE code IN ($ph)", array_keys($prepared)),
+                    'code'
+                );
+                foreach ($existing as $ex) {
+                    unset($prepared[$ex]);
+                    $duplicates[] = $ex;
+                }
             }
 
-            $msg = fmt_num(count($valid)) . ' کد تخفیف اضافه شد.';
+            foreach ($prepared as $code => $fields) {
+                DB::insert('discount_codes', ['code' => $code] + $fields);
+            }
+
+            $msg = fmt_num(count($prepared)) . ' کد تخفیف اضافه شد.';
             if ($duplicates) {
                 $msg .= ' ' . fmt_num(count($duplicates)) . ' کد تکراری نادیده گرفته شد.';
-            }
-            if ($invalid) {
-                $msg .= ' ' . fmt_num(count($invalid)) . ' کد نامعتبر نادیده گرفته شد.';
             }
             admin_set_flash($msg);
             header('Location: ' . APP_URL . '/admin/discounts.php');
@@ -319,18 +358,15 @@ $singleValues = [
     'used_count'   => $editing['used_count'] ?? null,
 ];
 
-// Values for the bulk form — keep the submitted codes/fields after an error.
-$bulkPost = ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_save');
-$bulkCodesValue = (string)($_POST['codes'] ?? '');
-$bulkValues = [
-    'type'         => (string)($_POST['type'] ?? 'percent'),
-    'value'        => (string)($_POST['value'] ?? ''),
-    'max_discount' => (string)($_POST['max_discount'] ?? ''),
-    'max_uses'     => (string)($_POST['max_uses'] ?? ''),
-    'starts_at'    => (string)($_POST['starts_at'] ?? ''),
-    'expires_at'   => (string)($_POST['expires_at'] ?? ''),
-    'is_active'    => $bulkPost ? (isset($_POST['is_active']) ? 1 : 0) : 1,
-];
+// Rows for the bulk form — keep the submitted rows after a validation error,
+// otherwise start with a single blank row.
+if (empty($bulkRows)) {
+    $bulkRows = [[
+        'code' => '', 'type' => 'percent', 'value' => '', 'max_discount' => '',
+        'max_uses' => '', 'starts_at' => '', 'expires_at' => '', 'is_active' => '1',
+        'errors' => [],
+    ]];
+}
 
 ob_start();
 ?>
@@ -354,31 +390,81 @@ ob_start();
 <?php endif; ?>
 
 <?php if ($tab === 'bulk' && !$editing): ?>
-<form method="POST" class="card" style="padding:var(--sp-6);display:grid;gap:var(--sp-5);margin-bottom:var(--sp-6)">
+<form method="POST" class="card" style="padding:var(--sp-6);display:grid;gap:var(--sp-5);margin-bottom:var(--sp-6)" id="bulkForm">
   <?= csrf_field() ?>
   <input type="hidden" name="action" value="bulk_save">
 
   <div>
     <h3 style="margin:0 0 6px">افزودن گروهی کد تخفیف</h3>
-    <p class="fs-xs" style="color:var(--text-muted);margin:0">هر کد را در یک خط جداگانه وارد کنید (یا با فاصله/کاما از هم جدا کنید). حداکثر ۱۰۰ کد در هر بار. تنظیمات زیر برای همه کدها اعمال می‌شود و کدهای تکراری به‌صورت خودکار نادیده گرفته می‌شوند.</p>
+    <p class="fs-xs" style="color:var(--text-muted);margin:0">هر کد یک ردیف با جزئیات مستقل خودش دارد (نوع، مقدار، سقف، تعداد استفاده، تاریخ‌ها و وضعیت). حداکثر ۱۰۰ کد در هر بار.</p>
   </div>
 
-  <div class="form-group">
-    <label class="form-label" for="codes">کدها <span style="color:var(--text-muted)">(هر خط یک کد)</span></label>
-    <textarea id="codes" name="codes" class="form-control" rows="8" dir="ltr" required
-              style="line-height:2;font-family:ui-monospace,SFMono-Regular,Menlo,monospace"
-              placeholder="SWAPIN10&#10;SWAPIN11&#10;SWAPIN12"><?= h($bulkCodesValue) ?></textarea>
-    <p class="fs-xs" style="color:var(--text-muted);margin:6px 0 0">هر کد ۳ تا ۶۴ کاراکتر شامل حروف انگلیسی، عدد، خط تیره یا آندرلاین — بدون فاصله.</p>
+  <div style="border:1px dashed var(--border);border-radius:12px;padding:var(--sp-4);background:var(--bg)">
+    <div class="fs-sm" style="font-weight:700;margin-bottom:var(--sp-3)"><i class="bi bi-lightning-charge"></i> افزودن سریع</div>
+    <textarea id="bulkQuickCodes" class="form-control" rows="2" dir="ltr"
+              placeholder="چند کد را با کاما یا خط جدید بچسبانید: SWAPIN10, SWAPIN11, SWAPIN12"></textarea>
+    <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-top:var(--sp-3)">
+      <select id="bulkQuickType" class="form-control" style="max-width:150px">
+        <option value="percent">درصدی</option>
+        <option value="amount">مبلغ ثابت</option>
+      </select>
+      <input type="number" id="bulkQuickValue" class="form-control" min="1" step="1"
+             placeholder="مقدار پیش‌فرض (اختیاری)" style="max-width:220px">
+      <button type="button" class="btn btn-outline" id="bulkQuickAdd"><i class="bi bi-plus-lg"></i> افزودن به جدول</button>
+    </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5)">
-    <?= admin_discount_fields_html($bulkValues) ?>
+  <div style="overflow-x:auto">
+    <table class="admin-table" id="bulkTable" style="min-width:960px">
+      <thead>
+        <tr>
+          <th>کد</th>
+          <th>نوع</th>
+          <th>مقدار</th>
+          <th>سقف تخفیف</th>
+          <th>تعداد استفاده</th>
+          <th>از تاریخ</th>
+          <th>تا تاریخ</th>
+          <th>وضعیت</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="bulkBody">
+        <?php foreach ($bulkRows as $row): ?>
+        <tr>
+          <td>
+            <input type="text" name="code[]" class="form-control" dir="ltr" value="<?= h($row['code']) ?>" placeholder="SWAPIN10">
+            <?php if (!empty($row['errors'])): ?>
+            <p class="fs-xs" style="color:var(--danger);margin:6px 0 0"><?= h(implode(' ', $row['errors'])) ?></p>
+            <?php endif; ?>
+          </td>
+          <td>
+            <select name="type[]" class="form-control">
+              <option value="percent" <?= $row['type'] === 'percent' ? 'selected' : '' ?>>درصدی</option>
+              <option value="amount" <?= $row['type'] === 'amount' ? 'selected' : '' ?>>مبلغ</option>
+            </select>
+          </td>
+          <td><input type="number" name="value[]" class="form-control" min="1" step="1" value="<?= h($row['value']) ?>" placeholder="۱۰"></td>
+          <td><input type="number" name="max_discount[]" class="form-control" min="1" step="1000" value="<?= h($row['max_discount']) ?>" placeholder="—"></td>
+          <td><input type="number" name="max_uses[]" class="form-control" min="1" step="1" value="<?= h($row['max_uses']) ?>" placeholder="∞"></td>
+          <td><input type="text" name="starts_at[]" class="form-control" dir="ltr" value="<?= h($row['starts_at']) ?>" placeholder="۱۴۰۴/۰۴/۲۳"></td>
+          <td><input type="text" name="expires_at[]" class="form-control" dir="ltr" value="<?= h($row['expires_at']) ?>" placeholder="۱۴۰۴/۰۵/۳۰"></td>
+          <td>
+            <select name="is_active[]" class="form-control">
+              <option value="1" <?= (string)$row['is_active'] === '1' ? 'selected' : '' ?>>فعال</option>
+              <option value="0" <?= (string)$row['is_active'] === '0' ? 'selected' : '' ?>>غیرفعال</option>
+            </select>
+          </td>
+          <td><button type="button" class="btn btn-sm btn-danger" data-row-remove aria-label="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
   </div>
 
-  <div style="display:flex;justify-content:flex-end;gap:var(--sp-3)">
-    <button type="submit" class="btn btn-primary">
-      <i class="bi bi-plus-square"></i> افزودن کدها
-    </button>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--sp-3);flex-wrap:wrap">
+    <button type="button" class="btn btn-outline btn-sm" id="bulkAddRow"><i class="bi bi-plus-lg"></i> افزودن ردیف</button>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-square"></i> افزودن کدها</button>
   </div>
 </form>
 <?php else: ?>
@@ -464,10 +550,75 @@ ob_start();
 
 <script>
 function discountToggleCap() {
-  var type = document.getElementById('type').value;
-  document.getElementById('cap-group').style.display = (type === 'percent') ? '' : 'none';
+  var typeEl = document.getElementById('type');
+  var capEl  = document.getElementById('cap-group');
+  if (!typeEl || !capEl) return;
+  capEl.style.display = (typeEl.value === 'percent') ? '' : 'none';
 }
 discountToggleCap();
+
+(function () {
+  var body  = document.getElementById('bulkBody');
+  if (!body) return;
+  var MAX = 100;
+
+  function rowCount() { return body.rows.length; }
+
+  function buildRow(code, type, value) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input type="text" name="code[]" class="form-control" dir="ltr" placeholder="SWAPIN10"></td>' +
+      '<td><select name="type[]" class="form-control">' +
+        '<option value="percent">درصدی</option><option value="amount">مبلغ</option>' +
+      '</select></td>' +
+      '<td><input type="number" name="value[]" class="form-control" min="1" step="1" placeholder="۱۰"></td>' +
+      '<td><input type="number" name="max_discount[]" class="form-control" min="1" step="1000" placeholder="—"></td>' +
+      '<td><input type="number" name="max_uses[]" class="form-control" min="1" step="1" placeholder="∞"></td>' +
+      '<td><input type="text" name="starts_at[]" class="form-control" dir="ltr" placeholder="۱۴۰۴/۰۴/۲۳"></td>' +
+      '<td><input type="text" name="expires_at[]" class="form-control" dir="ltr" placeholder="۱۴۰۴/۰۵/۳۰"></td>' +
+      '<td><select name="is_active[]" class="form-control">' +
+        '<option value="1" selected>فعال</option><option value="0">غیرفعال</option>' +
+      '</select></td>' +
+      '<td><button type="button" class="btn btn-sm btn-danger" data-row-remove aria-label="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>';
+    tr.querySelector('input[name="code[]"]').value = code || '';
+    tr.querySelector('select[name="type[]"]').value = type || 'percent';
+    if (value !== undefined && value !== null && value !== '') {
+      tr.querySelector('input[name="value[]"]').value = value;
+    }
+    return tr;
+  }
+
+  document.getElementById('bulkAddRow').addEventListener('click', function () {
+    if (rowCount() >= MAX) { alert('حداکثر ۱۰۰ کد در هر بار قابل افزودن است.'); return; }
+    var tr = buildRow('', 'percent', '');
+    body.appendChild(tr);
+    tr.querySelector('input[name="code[]"]').focus();
+  });
+
+  document.getElementById('bulkQuickAdd').addEventListener('click', function () {
+    var raw   = document.getElementById('bulkQuickCodes').value || '';
+    var defType = document.getElementById('bulkQuickType').value;
+    var defValue = document.getElementById('bulkQuickValue').value;
+    var codes = raw.split(/[\s,;]+/).map(function (c) { return c.trim(); }).filter(Boolean);
+    if (!codes.length) return;
+    var added = 0;
+    codes.forEach(function (code) {
+      if (rowCount() >= MAX) return;
+      body.appendChild(buildRow(code.toUpperCase(), defType, defValue));
+      added++;
+    });
+    document.getElementById('bulkQuickCodes').value = '';
+    if (added < codes.length) alert('حداکثر ۱۰۰ کد مجاز است؛ بقیه اضافه نشدند.');
+  });
+
+  body.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-row-remove]');
+    if (!btn) return;
+    var tr = btn.closest('tr');
+    if (tr) tr.remove();
+    if (!rowCount()) body.appendChild(buildRow('', 'percent', ''));
+  });
+})();
 </script>
 <?php
 $content = ob_get_clean();
