@@ -342,7 +342,7 @@ function render_navbar(?array $user = null): void {
         </form>
       </div>
 
-      <a href="{$url}/" class="navbar-brand">تس
+      <a href="{$url}/" class="navbar-brand">
         <img src="{$logoUrl}" alt="{$appName}" class="brand-logo">
       </a>
 
