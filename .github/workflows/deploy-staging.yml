@@ -59,11 +59,11 @@ jobs:
           cd "$APP_DIR"
 
           if [ -f composer.json ]; then
-            /usr/bin/composer install \
-              --no-dev \
-              --no-interaction \
-              --prefer-dist \
-              --optimize-autoloader
+            sudo -u deploy -H /usr/bin/composer install \
+            --no-dev \
+            --no-interaction \
+            --prefer-dist \
+            --optimize-autoloader
           fi
 
           echo "========================================"
