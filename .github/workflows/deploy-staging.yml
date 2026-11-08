@@ -1,3 +1,4 @@
+
 name: Deploy Staging to VPS
 
 on:
@@ -11,41 +12,64 @@ jobs:
 
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.PORT }}
-          script: |
-            set -Eeuo pipefail
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          PORT: ${{ secrets.PORT }}
 
-            APP_DIR="/var/www/swapin-staging"
+        run: |
+          set -Eeuo pipefail
 
-            echo "========================================"
-            echo "SWAAPIN STAGING DEPLOY"
-            echo "========================================"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
 
-            echo "[1/4] Fetching staging..."
-            sudo -n -H git -C "$APP_DIR" fetch origin staging
+          KEY_FILE="$HOME/.ssh/staging_key"
+          printf '%s\n' "$SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
 
-            echo "[2/4] Syncing staging..."
-            sudo -n -H git -C "$APP_DIR" reset --hard origin/staging
+          ssh-keyscan -T 10 -p "$PORT" -H "$HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-            echo "[3/4] Restoring ownership..."
-            sudo chown -R deploy:www-data "$APP_DIR"
+          ssh \
+            -i "$KEY_FILE" \
+            -p "$PORT" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "$USERNAME@$HOST" 'bash -se' <<'REMOTE'
 
-            echo "[4/4] Installing dependencies..."
-            cd "$APP_DIR"
+          set -Eeuo pipefail
 
-            if [ -f composer.json ]; then
-              /usr/bin/composer install \
-                --no-dev \
-                --no-interaction \
-                --prefer-dist \
-                --optimize-autoloader
-            fi
+          APP_DIR="/var/www/swapin-staging"
 
-            echo "========================================"
-            echo "STAGING DEPLOY SUCCESSFUL"
-            echo "========================================"
+          echo "========================================"
+          echo "SWAAPIN STAGING DEPLOY"
+          echo "========================================"
+
+          echo "[1/4] Fetching staging..."
+          sudo -n -H git -C "$APP_DIR" fetch origin staging
+
+          echo "[2/4] Syncing staging..."
+          sudo -n -H git -C "$APP_DIR" reset --hard origin/staging
+
+          echo "[3/4] Restoring ownership..."
+          sudo chown -R deploy:www-data "$APP_DIR"
+
+          echo "[4/4] Installing dependencies..."
+          cd "$APP_DIR"
+
+          if [ -f composer.json ]; then
+            /usr/bin/composer install \
+              --no-dev \
+              --no-interaction \
+              --prefer-dist \
+              --optimize-autoloader
+          fi
+
+          echo "========================================"
+          echo "STAGING DEPLOY SUCCESSFUL"
+          echo "========================================"
+
+          REMOTE
+
+          rm -f "$KEY_FILE"
