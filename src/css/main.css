@@ -8910,6 +8910,11 @@ aside.home-sidebar,
     .home-listings-section--yellow .listings-slider-arrow {
         display: none;
     }
+
+    /* اسلایدر جدیدترین آگهی‌ها هم مثل اسلایدر فروشگاه در موبایل بدون فلش */
+    .home-listings-section--newest .listings-slider-arrow {
+        display: none;
+    }
 }
 
 /* -- 26. Premium Featured Slider (Yellow BG + Peek Effect) ------------------ */
