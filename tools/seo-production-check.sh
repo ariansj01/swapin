@@ -214,8 +214,7 @@ check_legacy_redirect \
 
 for sitemap in \
     "$BASE/sitemap.xml" \
-    "$BASE/sitemap.php" \
-    "$BASE/sitemap-pages.php"
+    "$BASE/sitemap.php"
 do
     code=$(status_code "$sitemap")
 
@@ -225,6 +224,19 @@ do
         fail "$sitemap returned HTTP $code"
     fi
 done
+
+retired_sitemap_code=$(status_code "$BASE/sitemap-pages.php")
+if [ "$retired_sitemap_code" = "410" ]; then
+    pass "$BASE/sitemap-pages.php is retired (HTTP 410)"
+else
+    fail "$BASE/sitemap-pages.php returned HTTP $retired_sitemap_code instead of 410"
+fi
+
+if curl -fsS "$BASE/sitemap.xml" | grep -Fq "$BASE/sitemap-pages.php"; then
+    fail "Main sitemap index still references sitemap-pages.php"
+else
+    pass "Main sitemap index excludes sitemap-pages.php"
+fi
 
 # --------------------------------------------------
 # 7. Every URL emitted by Swaapin sitemaps
@@ -236,7 +248,6 @@ mapfile -t sitemap_urls < <(
     {
         curl -sS "$BASE/sitemap.php"
         curl -sS "$BASE/sitemap-main.xml"
-        curl -sS "$BASE/sitemap-pages.php"
     } |
     grep -oP '(?<=<loc>).*?(?=</loc>)' |
     sort -u

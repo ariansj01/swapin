@@ -1,40 +1,6 @@
 <?php
 
-require_once __DIR__.'/includes/config.php';
-
-header('Content-Type: application/xml; charset=utf-8');
-
-if (APP_IS_STAGING) {
-    echo '<?xml version="1.0" encoding="UTF-8"?>';
-    echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>';
-    exit;
-}
-
-$retiredSlugs = RETIRED_TEST_PAGE_SLUGS;
-$slugPlaceholders = implode(',', array_fill(0, count($retiredSlugs), '?'));
-
-$pages = DB::fetchAll(
-    'SELECT slug, updated_at 
-     FROM content_pages
-     WHERE status="published"
-     AND index_status="index"
-     AND slug NOT IN (' . $slugPlaceholders . ')',
-    $retiredSlugs
-);
-
-echo '<?xml version="1.0" encoding="UTF-8"?>';
-
-?>
-
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-<?php foreach($pages as $p): ?>
-
-<url>
-<loc><?= APP_URL ?>/page/<?= htmlspecialchars($p['slug']) ?></loc>
-<lastmod><?= date('Y-m-d', strtotime($p['updated_at'])) ?></lastmod>
-</url>
-
-<?php endforeach; ?>
-
-</urlset>
+http_response_code(410);
+header('Content-Type: text/plain; charset=utf-8');
+header('X-Robots-Tag: noindex, nofollow');
+echo "This sitemap has been retired.\n";

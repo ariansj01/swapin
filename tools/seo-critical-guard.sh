@@ -133,7 +133,18 @@ else
 fi
 
 echo
-echo "[5] ALL SITEMAP URL HTTP STATUS"
+echo "[5] RETIRED PAGE SITEMAP"
+
+RETIRED_SITEMAP_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "$BASE/sitemap-pages.php" || true)"
+
+if [ "$RETIRED_SITEMAP_CODE" = "410" ]; then
+    pass "sitemap-pages.php returns HTTP 410"
+else
+    fail "sitemap-pages.php returned HTTP $RETIRED_SITEMAP_CODE instead of 410"
+fi
+
+echo
+echo "[6] ALL SITEMAP URL HTTP STATUS"
 
 while IFS= read -r url; do
     [ -z "$url" ] && continue
@@ -146,7 +157,6 @@ while IFS= read -r url; do
 done < <(
     {
         curl -fsSL "$BASE/sitemap.php" || true
-        curl -fsSL "$BASE/sitemap-pages.php" || true
     } \
       | sed -n 's:.*<loc>\(.*\)</loc>.*:\1:p' \
       | sed 's/&amp;/\&/g' \
@@ -154,7 +164,7 @@ done < <(
 )
 
 echo
-echo "[6] WORDPRESS PERMALINK"
+echo "[7] WORDPRESS PERMALINK"
 
 if command -v wp >/dev/null 2>&1 && [ -d "$BLOG" ]; then
     P="$(cd "$BLOG" && wp option get permalink_structure --allow-root 2>/dev/null || true)"

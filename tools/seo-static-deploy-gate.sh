@@ -7,6 +7,8 @@ cd "$APP"
 echo "===== SEO STATIC DEPLOY GATE ====="
 
 php -l sitemap.php >/dev/null
+php -l sitemap-pages.php >/dev/null
+php -l sitemap-staging.php >/dev/null
 php -l includes/seo.php >/dev/null
 php -l listings/all.php >/dev/null
 
@@ -19,6 +21,16 @@ grep -q 'Legacy WordPress dated URLs -> current postname URLs' \
 
 if grep -qE "\['loc'.*/trades" sitemap.php; then
     echo "[FAIL] /trades must not exist in public sitemap"
+    exit 1
+fi
+
+if grep -Fq 'sitemap-pages.php' sitemap.xml || grep -Fq 'sitemap-pages.php' sitemap-staging.php; then
+    echo "[FAIL] Retired page sitemap is still referenced by a sitemap index"
+    exit 1
+fi
+
+if ! grep -Fq 'http_response_code(410)' sitemap-pages.php; then
+    echo "[FAIL] Retired page sitemap must return HTTP 410"
     exit 1
 fi
 

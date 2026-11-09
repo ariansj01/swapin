@@ -10,7 +10,4 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
   <sitemap>
     <loc><?= htmlspecialchars(APP_URL . '/sitemap.php', ENT_XML1) ?></loc>
   </sitemap>
-  <sitemap>
-    <loc><?= htmlspecialchars(APP_URL . '/sitemap-pages.php', ENT_XML1) ?></loc>
-  </sitemap>
 </sitemapindex>
