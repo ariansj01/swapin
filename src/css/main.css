@@ -9322,7 +9322,7 @@ aside.home-sidebar,
     /* کلاس newest-listing فقط در دسکتاپ */
     .newest-listing {
         margin-right: 0 !important;
-        max-width: 16% !important;
+        max-width: 17% !important;
     }
 
     /* دکمه‌های بخش AI: کوچک‌تر و همیشه کنار هم */
@@ -9490,7 +9490,7 @@ aside.home-sidebar,
 
     /* ارتفاع ۱۴۰٪ تصویر — فقط برای کارت‌های «جدیدترین آگهی‌ها» در صفحه اصلی */
     .newest-listings-container .listing-card--v2 .listing-card__media-img {
-        height: 140% !important;
+        height: 100% !important;
     }
 
     /* عنوان آگهی تا ۲ خط (به جای برش در یک خط) */
