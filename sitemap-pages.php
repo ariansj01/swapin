@@ -4,11 +4,16 @@ require_once __DIR__.'/includes/config.php';
 
 header('Content-Type: application/xml; charset=utf-8');
 
+$excludedSlugs = ['test-final', 'about-gol', 'seo-test-page', 'test', 'ai-assistant'];
+$slugPlaceholders = implode(',', array_fill(0, count($excludedSlugs), '?'));
+
 $pages = DB::fetchAll(
     'SELECT slug, updated_at 
      FROM content_pages
      WHERE status="published"
-     AND index_status="index"'
+     AND index_status="index"
+     AND slug NOT IN (' . $slugPlaceholders . ')',
+    $excludedSlugs
 );
 
 echo '<?xml version="1.0" encoding="UTF-8"?>';
