@@ -9366,9 +9366,9 @@ aside.home-sidebar,
     }
 
     .newest-listing-item {
-        flex: 0 0 300px !important;
-        width: 300px !important;
-        max-width: 300px !important;
+        flex: 0 0 clamp(240px, 24vw, 290px) !important;
+        width: clamp(240px, 24vw, 290px) !important;
+        max-width: clamp(240px, 24vw, 290px) !important;
         scroll-snap-align: start;
     }
     /* در دسکتاپ همه کارت‌ها داخل اسلایدر دیده شوند */
