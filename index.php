@@ -534,26 +534,29 @@ render_navbar($user);
         <?php endif; ?>
 
         <!-- New Listings Section -->
-        <section id="listings" class="home-listings-section" aria-label="فهرست آگهی‌ها">
-          <div class="container newest-listing">
-            <div class="home-section-heading newest-home-section-heading home-section-heading--large mb-5">
-              <h2>جدیدترین آگهی‌ها</h2>
-              <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
-                مشاهده همه
-              </a>
-            </div>
-            <?php if (empty($listings)): ?>
-            <div class="empty-state">
-              <i class="bi bi-search"></i>
-              <h3>آگهی‌ای یافت نشد</h3>
-              <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
-              <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
-            </div>
-            <?php else: ?>
-            <div class="newest-listings-container">
-              <div class="newest-listings-list" id="newest-listings-list">
-                <?php foreach (array_slice($listings, 0, 40) as $index => $l): ?>
-                <div class="newest-listing-item <?= $index >= 10 ? 'd-none' : '' ?>">
+        <section id="listings" class="home-listings-section home-listings-section--newest" aria-label="فهرست آگهی‌ها">
+          <div class="home-section-heading newest-home-section-heading home-section-heading--large mb-5">
+            <h2>جدیدترین آگهی‌ها</h2>
+            <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
+              مشاهده همه
+            </a>
+          </div>
+          <?php if (empty($listings)): ?>
+          <div class="empty-state">
+            <i class="bi bi-search"></i>
+            <h3>آگهی‌ای یافت نشد</h3>
+            <p>فیلترها را تغییر دهید یا اولین نفری باشید که در این دسته آگهی ثبت می‌کند!</p>
+            <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
+          </div>
+          <?php else: ?>
+          <div class="listings-rows-container">
+            <div class="listings-row-wrapper">
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="newest-listings-row" aria-label="آگهی بعدی">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              <div class="listings-scroll-row" id="newest-listings-row">
+                <?php foreach (array_slice($listings, 0, 40) as $l): ?>
+                <div class="listings-scroll-card">
                   <?php 
                     $cardLayout = 'premium-horizontal';
                     include __DIR__ . '/includes/listing_card.php'; 
@@ -562,39 +565,12 @@ render_navbar($user);
                 </div>
                 <?php endforeach; ?>
               </div>
-              
-              <?php if (count($listings) > 10): ?>
-              <div class="text-center mt-6">
-                <button type="button" class="btn load-more-btn" id="btn-load-more">
-                  <i class="bi bi-plus-circle"></i> نمایش بیشتر
-                </button>
-              </div>
-              <?php endif; ?>
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="newest-listings-row" aria-label="آگهی قبلی">
+                <i class="bi bi-chevron-left"></i>
+              </button>
             </div>
-
-            <script>
-            document.addEventListener('DOMContentLoaded', function() {
-              const btn = document.getElementById('btn-load-more');
-              const list = document.getElementById('newest-listings-list');
-              if (!btn || !list) return;
-
-              btn.addEventListener('click', function() {
-                const hiddenItems = list.querySelectorAll('.newest-listing-item.d-none');
-                const nextItems = Array.from(hiddenItems).slice(0, 10);
-                
-                nextItems.forEach(item => {
-                  item.classList.remove('d-none');
-                  item.classList.add('animate-fade-in');
-                });
-
-                if (list.querySelectorAll('.newest-listing-item.d-none').length === 0) {
-                  btn.parentElement.style.display = 'none';
-                }
-              });
-            });
-            </script>
-            <?php endif; ?>
           </div>
+          <?php endif; ?>
         </section>
 
         <!-- Stores Section -->
