@@ -76,7 +76,11 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     $canonical = h(seo_resolve_canonical($seo['canonical'] ?? null));
     $ogImage   = h($seo['og_image'] ?? LOGO_URL);
     $ogType    = h($seo['og_type'] ?? 'website');
-    $robots    = h($seo['robots'] ?? 'index, follow');
+    $requestHost = strtolower((string)preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    $robotsValue = $requestHost === 'staging.swaapin.ir'
+        ? 'noindex, nofollow, noarchive'
+        : ($seo['robots'] ?? 'index, follow');
+    $robots    = h($robotsValue);
     $ogTitle   = h($seo['og_title'] ?? ($title ?: APP_NAME . ' — بازار تعویض هوشمند'));
     $favicon   = $url . '/src/img/logo.png';
     $appName    = h(APP_NAME);
