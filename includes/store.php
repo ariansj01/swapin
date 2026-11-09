@@ -47,6 +47,37 @@ function render_store_type_select(string $name, string $selected): string {
     return $out;
 }
 
+/** نوع ساخت فروشگاه — کدنویسی اختصاصی یا وردپرسی */
+function store_build_type_labels(): array {
+    return [
+        'coded'     => 'کدنویسی',
+        'wordpress' => 'وردپرسی',
+    ];
+}
+
+function normalize_store_build_type(?string $type): string {
+    $labels = store_build_type_labels();
+    return isset($labels[$type ?? '']) ? (string)$type : 'coded';
+}
+
+function render_store_build_type_select(string $name, string $selected = 'coded', string $inputClass = 'form-control'): string {
+    $html = '<select name="' . h($name) . '" class="' . h($inputClass) . '" required>';
+    foreach (store_build_type_labels() as $value => $label) {
+        $html .= '<option value="' . h($value) . '"' . ($selected === $value ? ' selected' : '') . '>' . h($label) . '</option>';
+    }
+    $html .= '</select>';
+    return $html;
+}
+
+function store_request_docs_status_labels(): array {
+    return [
+        'pending'   => 'در انتظار تکمیل اطلاعات فروشنده',
+        'submitted' => 'در انتظار بررسی مدارک',
+        'verified'  => 'مدارک تأییدشده',
+        'rejected'  => 'مدارک ردشده',
+    ];
+}
+
 /** @return array<string, array{id:string,icon:string,label:string,show:bool,badge?:int}> */
 function store_panel_tabs(string $providerType, int $requestBadge = 0, int $orderBadge = 0): array {
     $tabs = [
@@ -270,6 +301,151 @@ function store_request_pending_count(): int {
     }
 }
 
+/** آخرین درخواست فروشگاه کاربر */
+function store_latest_request(int $userId): ?array {
+    if ($userId <= 0 || !db_has_table('store_requests')) {
+        return null;
+    }
+    $row = DB::fetch(
+        'SELECT * FROM store_requests WHERE user_id = ? ORDER BY id DESC LIMIT 1',
+        [$userId]
+    );
+    return $row ?: null;
+}
+
+/** آیا کاربر باید مرحله دوم (اطلاعات فروشنده) را تکمیل/اصلاح کند؟ */
+function store_request_needs_documents(?array $request): bool {
+    if (!$request || ($request['status'] ?? '') !== 'approved') {
+        return false;
+    }
+    return in_array($request['docs_status'] ?? 'pending', ['pending', 'rejected'], true);
+}
+
+/** آیا مدارک فروشنده در انتظار بررسی ادمین است؟ */
+function store_request_docs_awaiting_review(?array $request): bool {
+    return (bool)$request && ($request['docs_status'] ?? '') === 'submitted';
+}
+
+function store_request_doc_url(int $requestId, string $field): string {
+    return APP_URL . '/media/private?req=' . $requestId . '&f=' . rawurlencode($field);
+}
+
+/**
+ * مرحله دوم درخواست فروشگاه — ثبت اطلاعات و مدارک فروشنده.
+ * @return array{ok:bool,error?:string}
+ */
+function save_store_request_documents(int $userId, array $input, array $files = []): array {
+    if (!db_has_table('store_requests')) {
+        return ['ok' => false, 'error' => 'سیستم درخواست فروشگاه هنوز آماده نیست.'];
+    }
+
+    $request = store_latest_request($userId);
+    if (!$request || ($request['status'] ?? '') !== 'approved') {
+        return ['ok' => false, 'error' => 'ابتدا باید درخواست فروشگاه شما تأیید شود.'];
+    }
+    if (($request['docs_status'] ?? 'pending') === 'verified') {
+        return ['ok' => false, 'error' => 'اطلاعات فروشندگی شما قبلاً تأیید شده است.'];
+    }
+
+    $nationalId  = normalize_digits(trim((string)($input['seller_national_id'] ?? '')));
+    $phone       = normalize_digits(trim((string)($input['seller_phone'] ?? '')));
+    $landline    = normalize_digits(trim((string)($input['seller_landline'] ?? '')));
+    $address     = trim((string)($input['seller_address'] ?? ''));
+    $postalCode  = normalize_digits(trim((string)($input['seller_postal_code'] ?? '')));
+    $bankAccount = normalize_digits(trim((string)($input['seller_bank_account'] ?? '')));
+
+    if (!validate_national_id($nationalId)) {
+        return ['ok' => false, 'error' => 'کد ملی معتبر ۱۰ رقمی وارد کنید.'];
+    }
+    if (!is_valid_phone($phone)) {
+        return ['ok' => false, 'error' => 'شماره تلفن همراه معتبر وارد کنید (مثال: ۰۹۱۲۳۴۵۶۷۸۹).'];
+    }
+    if ($landline !== '' && !preg_match('/^0\d{9,10}$/', $landline)) {
+        return ['ok' => false, 'error' => 'تلفن ثابت معتبر وارد کنید (مثال: ۰۲۱۱۲۳۴۵۶۷۸).'];
+    }
+    if ($address === '') {
+        return ['ok' => false, 'error' => 'آدرس فروشنده الزامی است.'];
+    }
+    if ($postalCode !== '' && !preg_match('/^\d{10}$/', $postalCode)) {
+        return ['ok' => false, 'error' => 'کد پستی باید ۱۰ رقم باشد.'];
+    }
+    if ($bankAccount !== '' && !preg_match('/^(IR\d{24}|\d{10,30})$/', str_replace([' ', '-'], '', $bankAccount))) {
+        return ['ok' => false, 'error' => 'شماره شبا یا حساب بانکی معتبر وارد کنید.'];
+    }
+
+    $data = [
+        'seller_national_id'  => clean($nationalId),
+        'seller_phone'        => clean($phone),
+        'seller_landline'     => $landline !== '' ? clean($landline) : null,
+        'seller_address'      => clean($address),
+        'seller_postal_code'  => $postalCode !== '' ? clean($postalCode) : null,
+        'seller_bank_account' => $bankAccount !== '' ? str_replace([' ', '-'], '', clean($bankAccount)) : null,
+    ];
+
+    $docFields = [
+        'national_card' => 'seller_national_card',
+        'birth_cert'    => 'seller_birth_cert',
+    ];
+    foreach ($docFields as $field => $column) {
+        $file     = $files[$field] ?? null;
+        $existing = (string)($request[$column] ?? '');
+        if (is_array($file) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            $uploaded = upload_private_image($file, 'store-doc');
+            if ($uploaded === null) {
+                return ['ok' => false, 'error' => 'آپلود تصویر ناموفق بود. فرمت (JPG/PNG/WebP) یا حجم فایل (حداکثر ۵ مگابایت) را بررسی کنید.'];
+            }
+            $data[$column] = $uploaded;
+        } elseif ($existing === '') {
+            return [
+                'ok'    => false,
+                'error' => $field === 'national_card' ? 'تصویر کارت ملی الزامی است.' : 'تصویر شناسنامه الزامی است.',
+            ];
+        }
+    }
+
+    $data['docs_status']       = 'submitted';
+    $data['docs_note']         = null;
+    $data['docs_submitted_at'] = date('Y-m-d H:i:s');
+
+    DB::update('store_requests', $data, 'id = ?', [(int)$request['id']]);
+
+    return ['ok' => true];
+}
+
+function admin_verify_store_documents(int $requestId, int $adminId, string $note = ''): bool {
+    if (!db_has_table('store_requests')) {
+        return false;
+    }
+    $req = DB::fetch('SELECT id, docs_status FROM store_requests WHERE id = ?', [$requestId]);
+    if (!$req || ($req['docs_status'] ?? '') !== 'submitted') {
+        return false;
+    }
+    DB::update('store_requests', [
+        'docs_status'      => 'verified',
+        'docs_note'        => clean($note) ?: null,
+        'docs_reviewed_by' => $adminId,
+        'docs_reviewed_at' => date('Y-m-d H:i:s'),
+    ], 'id = ?', [$requestId]);
+    return true;
+}
+
+function admin_reject_store_documents(int $requestId, int $adminId, string $note = ''): bool {
+    if (!db_has_table('store_requests')) {
+        return false;
+    }
+    $req = DB::fetch('SELECT id, docs_status FROM store_requests WHERE id = ?', [$requestId]);
+    if (!$req || ($req['docs_status'] ?? '') !== 'submitted') {
+        return false;
+    }
+    DB::update('store_requests', [
+        'docs_status'      => 'rejected',
+        'docs_note'        => clean($note) ?: null,
+        'docs_reviewed_by' => $adminId,
+        'docs_reviewed_at' => date('Y-m-d H:i:s'),
+    ], 'id = ?', [$requestId]);
+    return true;
+}
+
 function user_has_active_store(array $user): bool {
     if (is_store_seller($user)) {
         return true;
@@ -303,6 +479,7 @@ function store_fields_from_input(array $input): array {
         'store_name'          => trim((string)($input['store_name'] ?? '')),
         'provider_type'       => normalize_provider_type($input['provider_type'] ?? 'normal_store'),
         'store_type'          => normalize_store_type($input['store_type'] ?? 'both'),
+        'build_type'          => normalize_store_build_type($input['build_type'] ?? 'coded'),
         'store_description'   => trim((string)($input['store_description'] ?? '')),
         'store_address'       => trim((string)($input['store_address'] ?? '')),
         'store_phone'         => trim((string)($input['store_phone'] ?? '')),
@@ -526,6 +703,12 @@ function create_store_request(int $userId, array $input, ?array $bannerFile = nu
     }
     if (db_has_column('store_requests', 'store_type')) {
         $requestData['store_type'] = $fields['store_type'];
+    }
+    if (db_has_column('store_requests', 'build_type')) {
+        $requestData['build_type'] = $fields['build_type'];
+    }
+    if (db_has_column('store_requests', 'docs_status')) {
+        $requestData['docs_status'] = 'pending';
     }
 
     $requestId = DB::insert('store_requests', $requestData);

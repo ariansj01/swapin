@@ -1091,6 +1091,36 @@ if ($shouldMigrate) {
         }
     }
 
+    // فاز دوم درخواست فروشگاه: نوع ساخت + اطلاعات فروشنده (هویت)
+    if (db_has_table('store_requests')) {
+        $storeReqCols = db_table_columns('store_requests');
+        $storeReqAlters = [
+            'build_type'           => "ADD COLUMN `build_type` ENUM('coded','wordpress') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'coded' AFTER `provider_type`",
+            'docs_status'          => "ADD COLUMN `docs_status` ENUM('pending','submitted','verified','rejected') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending' AFTER `status`",
+            'seller_national_id'   => "ADD COLUMN `seller_national_id` VARCHAR(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_lng`",
+            'seller_national_card' => "ADD COLUMN `seller_national_card` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_national_id`",
+            'seller_birth_cert'    => "ADD COLUMN `seller_birth_cert` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_national_card`",
+            'seller_phone'         => "ADD COLUMN `seller_phone` VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_birth_cert`",
+            'seller_landline'      => "ADD COLUMN `seller_landline` VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_phone`",
+            'seller_address'       => "ADD COLUMN `seller_address` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_landline`",
+            'seller_postal_code'   => "ADD COLUMN `seller_postal_code` VARCHAR(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_address`",
+            'seller_bank_account'  => "ADD COLUMN `seller_bank_account` VARCHAR(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_postal_code`",
+            'docs_submitted_at'    => "ADD COLUMN `docs_submitted_at` DATETIME DEFAULT NULL AFTER `seller_bank_account`",
+            'docs_reviewed_at'     => "ADD COLUMN `docs_reviewed_at` DATETIME DEFAULT NULL AFTER `docs_submitted_at`",
+            'docs_reviewed_by'     => "ADD COLUMN `docs_reviewed_by` INT UNSIGNED DEFAULT NULL AFTER `docs_reviewed_at`",
+            'docs_note'            => "ADD COLUMN `docs_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `docs_reviewed_by`",
+        ];
+        foreach ($storeReqAlters as $col => $clause) {
+            if (!in_array($col, $storeReqCols, true)) {
+                try {
+                    DB::query("ALTER TABLE `store_requests` {$clause}");
+                } catch (Throwable $e) {
+                    swapin_debug_log('migration-error-store-req-' . $col, ['msg' => $e->getMessage()]);
+                }
+            }
+        }
+    }
+
     if (!db_has_table('store_orders')) {
         try {
             DB::query("
