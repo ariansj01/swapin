@@ -76,7 +76,11 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
     $canonical = h(seo_resolve_canonical($seo['canonical'] ?? null));
     $ogImage   = h($seo['og_image'] ?? LOGO_URL);
     $ogType    = h($seo['og_type'] ?? 'website');
-    $robots    = h($seo['robots'] ?? 'index, follow');
+    $requestHost = strtolower((string)preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    $robotsValue = $requestHost === 'staging.swaapin.ir'
+        ? 'noindex, nofollow, noarchive'
+        : ($seo['robots'] ?? 'index, follow');
+    $robots    = h($robotsValue);
     $ogTitle   = h($seo['og_title'] ?? ($title ?: APP_NAME . ' — بازار تعویض هوشمند'));
     $favicon   = $url . '/src/img/logo.png';
     $appName    = h(APP_NAME);
@@ -336,7 +340,7 @@ function render_navbar(?array $user = null): void {
         <form class="navbar-searchbar-form" action="{$url}/" method="get">
           <i class="bi bi-search navbar-searchbar-form__icon"></i>
           <input type="search" class="navbar-searchbar-form__input"
-                 name="q" placeholder="دنبال چه کالایی می‌گردی؟"
+                 name="q" placeholder="دنبال چه کالایی می‌گردییییی؟"
                  value="{$search}">
           {$cityHiddenInput}
         </form>
@@ -877,7 +881,7 @@ function render_support_widget(?array $user = null): void {
   <div class="support-chat" id="support-chat" hidden>
     <div class="support-chat__header">
       <div class="support-chat__title">
-        <i class="bi bi-headset"></i>
+        <i class="bi bi-robot"></i>
         <span>پشتیبانی آنلاین</span>
       </div>
       <button type="button" class="support-chat__close" id="support-chat-close" aria-label="بستن">
@@ -889,7 +893,7 @@ function render_support_widget(?array $user = null): void {
       <div class="support-chat__welcome" id="support-chat-welcome">
         <i class="bi bi-chat-dots-fill"></i>
         <p>به پشتیبانی سواَپین خوش آمدید</p>
-        <p class="fs-xs" style="opacity:.7">نام و شماره خود را وارد کنید تا شروع کنیم</p>
+        <p class="fs-xs" style="opacity:.7">نام خود را وارد کنید تا دستیار هوشمند پاسخ دهد</p>
       </div>
       <div class="support-chat__messages" id="support-chat-messages" hidden></div>
     </div>
@@ -898,9 +902,8 @@ function render_support_widget(?array $user = null): void {
       <div class="support-chat__register" id="support-chat-register">
         <input type="hidden" name="_csrf" value="{$csrf}">
         <input type="text" class="support-chat__input" id="support-chat-name" placeholder="نام شما" autocomplete="off">
-        <input type="tel" class="support-chat__input" id="support-chat-phone" placeholder="شماره موبایل" autocomplete="off" dir="ltr">
         <button type="button" class="support-chat__btn" id="support-chat-start">
-          <i class="bi bi-arrow-left"></i> شروع چت
+          <i class="bi bi-arrow-left"></i> شروع گفتگو
         </button>
       </div>
       <div class="support-chat__composer" id="support-chat-composer" hidden>
@@ -909,6 +912,9 @@ function render_support_widget(?array $user = null): void {
           <i class="bi bi-send-fill"></i>
         </button>
       </div>
+      <button type="button" class="support-chat__escalate" id="support-chat-escalate" hidden>
+        <i class="bi bi-headset"></i> پاسخم را نگرفتم؛ ارتباط با پشتیبان
+      </button>
     </div>
   </div>
 </div>

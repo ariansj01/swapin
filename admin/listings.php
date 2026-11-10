@@ -61,12 +61,23 @@ $where = match ($filter) {
     default    => 'l.review_status = "pending"',
 };
 
+$page    = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 50;
+
+$total = (int)(DB::fetch(
+    "SELECT COUNT(*) AS c FROM listings l WHERE {$where} AND l.status != 'deleted'"
+)['c'] ?? 0);
+
+$totalPages = max(1, (int)ceil($total / $perPage));
+$page       = min($page, $totalPages);
+$offset     = ($page - 1) * $perPage;
+
 $list = DB::fetchAll(
     "SELECT l.id, l.title, l.review_status, l.status, l.created_at, l.ai_suggestion, l.ai_confidence, l.ai_reviewed,
             u.name AS seller_name
      FROM listings l JOIN users u ON u.id = l.user_id
      WHERE {$where} AND l.status != 'deleted'
-     ORDER BY l.created_at DESC LIMIT 100"
+     ORDER BY l.created_at DESC LIMIT {$perPage} OFFSET {$offset}"
 );
 
 ob_start();
@@ -76,7 +87,7 @@ ob_start();
 <div class="admin-header">
   <div>
     <h1>مدیریت آگهی‌ها</h1>
-    <p class="fs-sm" style="color:var(--text-muted);margin:var(--sp-1) 0 0">تأیید یا رد آگهی‌های ثبت‌شده</p>
+    <p class="fs-sm" style="color:var(--text-muted);margin:var(--sp-1) 0 0">تأیید یا رد آگهی‌های ثبت‌شده — مجموع این فهرست: <?= number_format($total) ?></p>
   </div>
   <div class="admin-actions">
     <a href="?filter=pending" class="btn btn-sm <?= $filter === 'pending' ? 'btn-primary' : 'btn-outline' ?>">در انتظار</a>
@@ -361,6 +372,15 @@ document.addEventListener('DOMContentLoaded', function() {
     </tbody>
   </table>
 </div>
+
+<?php if ($totalPages > 1): ?>
+<nav class="admin-actions" style="justify-content:center;flex-wrap:wrap;gap:6px;margin-top:var(--sp-4)" aria-label="صفحه‌بندی">
+  <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+  <a href="?filter=<?= h($filter) ?>&page=<?= $p ?>" class="btn btn-sm <?= $p === $page ? 'btn-primary' : 'btn-outline' ?>"><?= $p ?></a>
+  <?php endfor; ?>
+</nav>
+<?php endif; ?>
+
 <?php
 $content = ob_get_clean();
 render_admin_head('آگهی‌ها');

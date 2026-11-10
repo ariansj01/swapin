@@ -43,11 +43,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ' . APP_URL . '/admin/store_requests.php?id=' . $requestId);
         exit;
     }
+
+    if ($action === 'verify_docs' && $requestId > 0) {
+        if (admin_verify_store_documents($requestId, (int)$admin['id'], trim((string)($_POST['docs_note'] ?? '')))) {
+            admin_set_flash('مدارک فروشنده تأیید شد.');
+        } else {
+            admin_set_flash('تأیید مدارک ناموفق بود.', 'error');
+        }
+        header('Location: ' . APP_URL . '/admin/store_requests.php?id=' . $requestId);
+        exit;
+    }
+
+    if ($action === 'reject_docs' && $requestId > 0) {
+        $note = trim((string)($_POST['docs_note'] ?? ''));
+        if (admin_reject_store_documents($requestId, (int)$admin['id'], $note)) {
+            admin_set_flash('مدارک فروشنده رد شد.');
+        } else {
+            admin_set_flash('رد مدارک ناموفق بود.', 'error');
+        }
+        header('Location: ' . APP_URL . '/admin/store_requests.php?id=' . $requestId);
+        exit;
+    }
 }
 
 [$flash, $flashType] = admin_flash();
 $storeCredsOnce = admin_take_store_credentials_once();
 $statusLabels = store_request_status_labels();
+$docsLabels   = store_request_docs_status_labels();
+$buildLabels  = store_build_type_labels();
 
 $detail = null;
 if ($id > 0) {
@@ -104,6 +127,8 @@ ob_start();
     <h2 style="margin:0 0 16px;font-size:1.1rem"><?= h($detail['store_name']) ?></h2>
     <div class="fs-sm" style="line-height:2;color:var(--text-muted)">
       <div><strong>نوع کسب‌وکار:</strong> <?= h(provider_type_labels()[normalize_provider_type($detail['provider_type'] ?? 'normal_store')] ?? '—') ?></div>
+      <div><strong>نوع فروشگاه:</strong> <?= h($buildLabels[normalize_store_build_type($detail['build_type'] ?? 'coded')] ?? '—') ?></div>
+      <div><strong>حالت فروشگاه:</strong> <?= h(store_type_labels()[normalize_store_type($detail['store_type'] ?? 'both')] ?? '—') ?></div>
       <div><strong>درخواست‌دهنده:</strong> <?= h($detail['user_name']) ?></div>
       <div><strong>ایمیل:</strong> <?= h($detail['user_email'] ?? '—') ?></div>
       <div><strong>تلفن کاربر:</strong> <?= h($detail['user_phone'] ?? '—') ?></div>
@@ -158,6 +183,75 @@ ob_start();
     <?php endif; ?>
   </div>
 
+  <div class="card" style="padding:24px">
+    <h2 style="margin:0 0 16px;font-size:1.1rem">اطلاعات فروشنده (مرحله ۲)</h2>
+    <?php if (($detail['docs_status'] ?? 'pending') === 'pending' && ($detail['status'] ?? '') !== 'approved'): ?>
+      <p class="fs-sm text-muted" style="margin:0">پس از تأیید مرحله اول، کاربر می‌تواند اطلاعات و مدارک فروشنده را ثبت کند.</p>
+    <?php else: ?>
+      <div class="fs-sm" style="line-height:2;color:var(--text-muted)">
+        <div><strong>وضعیت مدارک:</strong> <?= h($docsLabels[$detail['docs_status'] ?? 'pending'] ?? '—') ?></div>
+        <?php if (!empty($detail['docs_submitted_at'])): ?><div><strong>تاریخ ارسال:</strong> <?= h($detail['docs_submitted_at']) ?></div><?php endif; ?>
+        <?php if (!empty($detail['docs_reviewed_at'])): ?><div><strong>تاریخ بررسی:</strong> <?= h($detail['docs_reviewed_at']) ?></div><?php endif; ?>
+      </div>
+
+      <?php if (($detail['docs_status'] ?? '') !== 'pending'): ?>
+      <dl class="fs-sm" style="display:grid;grid-template-columns:120px 1fr;gap:8px;margin-top:16px">
+        <dt>کد ملی</dt><dd><?= h($detail['seller_national_id'] ?: '—') ?></dd>
+        <dt>تلفن همراه</dt><dd><?= h($detail['seller_phone'] ?: '—') ?></dd>
+        <dt>تلفن ثابت</dt><dd><?= h($detail['seller_landline'] ?: '—') ?></dd>
+        <dt>کد پستی</dt><dd><?= h($detail['seller_postal_code'] ?: '—') ?></dd>
+        <dt>آدرس</dt><dd><?= h($detail['seller_address'] ?: '—') ?></dd>
+        <dt>شبا/حساب</dt><dd><?= h($detail['seller_bank_account'] ?: '—') ?></dd>
+      </dl>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
+        <?php if (!empty($detail['seller_national_card'])): ?>
+        <div>
+          <div class="fs-xs text-muted" style="margin-bottom:4px">کارت ملی</div>
+          <a href="<?= h(store_request_doc_url((int)$detail['id'], 'national_card')) ?>" target="_blank">
+            <img src="<?= h(store_request_doc_url((int)$detail['id'], 'national_card')) ?>" alt="کارت ملی" style="max-height:160px;border-radius:8px;border:1px solid var(--border)">
+          </a>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($detail['seller_birth_cert'])): ?>
+        <div>
+          <div class="fs-xs text-muted" style="margin-bottom:4px">شناسنامه</div>
+          <a href="<?= h(store_request_doc_url((int)$detail['id'], 'birth_cert')) ?>" target="_blank">
+            <img src="<?= h(store_request_doc_url((int)$detail['id'], 'birth_cert')) ?>" alt="شناسنامه" style="max-height:160px;border-radius:8px;border:1px solid var(--border)">
+          </a>
+        </div>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
+
+      <?php if (!empty($detail['docs_note'])): ?>
+      <div class="alert alert-warning mt-4"><strong>یادداشت مدارک:</strong> <?= h($detail['docs_note']) ?></div>
+      <?php endif; ?>
+
+      <?php if (($detail['docs_status'] ?? '') === 'submitted'): ?>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">
+        <form method="POST" style="display:inline">
+          <?= csrf_field() ?>
+          <input type="hidden" name="request_id" value="<?= (int)$detail['id'] ?>">
+          <input type="hidden" name="action" value="verify_docs">
+          <button type="submit" class="btn btn-primary" onclick="return confirm('مدارک فروشنده تأیید شود؟')">
+            <i class="bi bi-check-lg"></i> تأیید مدارک
+          </button>
+        </form>
+        <form method="POST" style="flex:1;min-width:280px">
+          <?= csrf_field() ?>
+          <input type="hidden" name="request_id" value="<?= (int)$detail['id'] ?>">
+          <input type="hidden" name="action" value="reject_docs">
+          <div style="display:flex;gap:8px">
+            <input type="text" class="form-control" name="docs_note" placeholder="دلیل رد مدارک">
+            <button type="submit" class="btn btn-danger">رد مدارک</button>
+          </div>
+        </form>
+      </div>
+      <?php endif; ?>
+    <?php endif; ?>
+  </div>
+
   <div class="card" style="padding:20px">
     <h3 style="margin:0 0 12px;font-size:1rem">اقدامات</h3>
     <a href="<?= APP_URL ?>/admin/store_create_edit.php?id=<?= (int)$detail['user_id'] ?>" class="btn btn-outline w-100 mb-2">ویرایش کاربر / فروشگاه</a>
@@ -172,26 +266,30 @@ ob_start();
       <tr>
         <th>#</th>
         <th>نوع</th>
+        <th>نوع فروشگاه</th>
         <th>فروشگاه</th>
         <th>کاربر</th>
         <th>تلفن</th>
         <th>وضعیت</th>
+        <th>مدارک</th>
         <th>تاریخ</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($requests)): ?>
-      <tr><td colspan="8" class="text-muted">درخواستی یافت نشد.</td></tr>
+      <tr><td colspan="10" class="text-muted">درخواستی یافت نشد.</td></tr>
       <?php endif; ?>
       <?php foreach ($requests as $r): ?>
       <tr>
         <td><?= (int)$r['id'] ?></td>
         <td class="fs-xs"><?= h(provider_type_labels()[normalize_provider_type($r['provider_type'] ?? 'normal_store')] ?? '—') ?></td>
+        <td class="fs-xs"><?= h($buildLabels[normalize_store_build_type($r['build_type'] ?? 'coded')] ?? '—') ?></td>
         <td><strong><?= h($r['store_name']) ?></strong></td>
         <td><?= h($r['user_name']) ?></td>
         <td class="fs-xs"><?= h($r['store_phone'] ?: $r['user_phone']) ?></td>
         <td><?= h($statusLabels[$r['status']] ?? $r['status']) ?></td>
+        <td class="fs-xs"><?= h($docsLabels[$r['docs_status'] ?? 'pending'] ?? '—') ?></td>
         <td class="fs-xs text-muted"><?= h(timeago($r['created_at'])) ?></td>
         <td><a href="?id=<?= (int)$r['id'] ?>&status=<?= h($statusFilter) ?>" class="btn btn-sm btn-outline">مشاهده</a></td>
       </tr>

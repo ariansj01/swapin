@@ -269,6 +269,10 @@ function send_security_headers(): void {
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: geolocation=(self), microphone=(), camera=()');
+    $requestHost = strtolower((string)preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    if ($requestHost === 'staging.swaapin.ir') {
+        header('X-Robots-Tag: noindex, nofollow, noarchive', true);
+    }
     if (app_is_production()) {
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
     }

@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
 
     $status = in_array($_POST['status'] ?? 'draft', ['draft', 'published'], true) ? $_POST['status'] : 'draft';
-    $indexStatus = in_array($_POST['index_status'] ?? 'index', ['index', 'noindex'], true) ? $_POST['index_status'] : 'index';
+    $indexStatus = in_array($_POST['index_status'] ?? 'index', ['index', 'noindex', 'gone', 'redirect'], true) ? $_POST['index_status'] : 'index';
 
     $faqs = array_values(array_filter($_POST['faq'] ?? [], function ($faq) {
         return !empty(trim($faq['question'] ?? '')) && !empty(trim($faq['answer'] ?? ''));
@@ -75,8 +75,8 @@ ob_start();
 </div>
 
 <div class="form-group">
-<label>Canonical URL</label>
-<input class="form-control" name="canonical_url" placeholder="https://swaapin.ir/page/about-us — خالی = آدرس پیش‌فرض">
+<label>Canonical URL / مقصد ریدایرکت ۳۰۱</label>
+<input class="form-control" name="canonical_url" placeholder="https://swaapin.ir/page/about-us — خالی = آدرس پیش‌فرض؛ در حالت 301 مقصد انتقال">
 </div>
 
 <div class="form-group">
@@ -97,6 +97,8 @@ ob_start();
 <select name="index_status">
 <option value="index">Index</option>
 <option value="noindex">NoIndex</option>
+<option value="gone">410 Gone (حذف دائمی از ایندکس)</option>
+<option value="redirect">301 Redirect (به Canonical URL)</option>
 </select>
 </div>
 

@@ -302,11 +302,7 @@ render_navbar($user);
     );
     foreach ($allCats as $cat):
     ?>
-    <a href="<?= APP_URL . '/listings/map?' . http_build_query([
-        'cat'  => $cat['slug'],
-        'city' => $city,
-        'sort' => 'new',
-    ]) ?>" class="mobile-category-item">
+    <a href="<?= category_url($cat['slug']) ?>" class="mobile-category-item">
       <div class="mobile-category-circle">
         <i class="<?= h($cat['icon'] ?: 'bi bi-grid') ?>"></i>
       </div>

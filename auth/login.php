@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             DB::query('UPDATE otp_codes SET used = 1 WHERE id = ?', [$row['id']]);
             
-            $user = DB::fetch('SELECT id, name, phone_verified_at, is_active FROM users WHERE phone = ? LIMIT 1', [$phoneIntl]);
+            $user = DB::fetch('SELECT id, name, city, phone_verified_at, is_active FROM users WHERE phone = ? LIMIT 1', [$phoneIntl]);
             if ($user && (int)$user['is_active'] !== 1) {
                 swapin_debug_log('otp-login-inactive-account', [
                     'phone' => sms_mask_phone($phoneIntl),
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 login_user($user['id']);
                 unset($_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
                 $dest = $redir ? APP_URL . $redir : APP_URL . '/';
-                if (trim((string)($user['name'] ?? '')) === '') {
+                if (!user_profile_is_complete($user)) {
                     $dest = APP_URL . '/auth/complete-name' . ($redir ? '?redirect=' . urlencode($redir) : '');
                 }
                 header('Location: ' . $dest); exit;

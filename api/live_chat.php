@@ -30,13 +30,58 @@ if ($action === 'start') {
         exit;
     }
 
-    $result = live_chat_start($input['name'] ?? '', $input['phone'] ?? '');
+    $transcript = $input['transcript'] ?? [];
+    if (!is_array($transcript)) {
+        $transcript = [];
+    }
+
+    $result = live_chat_start($input['name'] ?? '', $transcript);
     if (isset($result['errors'])) {
         http_response_code(422);
         echo json_encode(['ok' => false, 'errors' => $result['errors']]);
         exit;
     }
-    echo json_encode(['ok' => true, 'token' => $result['token']]);
+    echo json_encode(['ok' => true, 'token' => $result['token'], 'last_id' => $result['last_id'] ?? 0]);
+    exit;
+}
+
+if ($action === 'ai_chat') {
+    rate_limit_ip_or_fail('live_chat_ai', 30, 300, true);
+
+    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($input['_csrf'] ?? '');
+    if ($csrf === '' || !hash_equals(csrf_token(), $csrf)) {
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'error' => 'csrf_invalid']);
+        exit;
+    }
+
+    $message = trim((string)($input['message'] ?? ''));
+    if ($message === '') {
+        http_response_code(422);
+        echo json_encode(['ok' => false, 'error' => 'empty_message']);
+        exit;
+    }
+
+    $history = [];
+    $rawHistory = $input['history'] ?? [];
+    if (is_array($rawHistory)) {
+        foreach (array_slice($rawHistory, -10) as $turn) {
+            if (!is_array($turn)) continue;
+            $content = trim((string)($turn['content'] ?? ''));
+            if ($content === '') continue;
+            $history[] = [
+                'role'    => ($turn['role'] ?? '') === 'assistant' ? 'assistant' : 'user',
+                'content' => mb_substr($content, 0, 2000),
+            ];
+        }
+    }
+
+    $result = ai_chat_respond(mb_substr($message, 0, 2000), $history, null);
+    echo json_encode([
+        'ok'       => true,
+        'reply'    => $result['message'],
+        'fallback' => !empty($result['fallback']),
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

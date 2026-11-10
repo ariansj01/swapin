@@ -194,6 +194,10 @@ function support_new_error_count(): int {
 /* ── Live Chat helpers ──────────────────────────────────────────────────── */
 
 function live_chat_ensure_tables(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+
     if (!db_has_table('live_chats')) {
         DB::query("CREATE TABLE IF NOT EXISTS `live_chats` (
           `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -212,7 +216,7 @@ function live_chat_ensure_tables(): void {
         DB::query("CREATE TABLE IF NOT EXISTS `live_chat_messages` (
           `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
           `chat_id` int UNSIGNED NOT NULL,
-          `sender_type` enum('guest','admin') COLLATE utf8mb4_unicode_ci NOT NULL,
+          `sender_type` enum('guest','admin','ai') COLLATE utf8mb4_unicode_ci NOT NULL,
           `body` text COLLATE utf8mb4_unicode_ci NOT NULL,
           `is_read` tinyint(1) NOT NULL DEFAULT 0,
           `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -220,14 +224,25 @@ function live_chat_ensure_tables(): void {
           KEY `idx_chat_id` (`chat_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
+
+    // Existing installs: widen sender_type so AI replies can be stored.
+    try {
+        $col = DB::fetch(
+            "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'live_chat_messages' AND COLUMN_NAME = 'sender_type'
+             LIMIT 1"
+        );
+        if ($col && strpos((string)($col['COLUMN_TYPE'] ?? ''), "'ai'") === false) {
+            DB::query("ALTER TABLE `live_chat_messages` MODIFY COLUMN `sender_type` ENUM('guest','admin','ai') COLLATE utf8mb4_unicode_ci NOT NULL");
+        }
+    } catch (Throwable) {
+    }
 }
 
-function live_chat_start(string $name, string $phone): array {
-    $name  = clean($name);
-    $phone = clean($phone);
+function live_chat_start(string $name, array $transcript = []): array {
+    $name   = clean($name);
     $errors = [];
     if (mb_strlen($name) < 2) $errors['name'] = 'نام را وارد کنید.';
-    if (!preg_match('/^09\d{9}$/', $phone)) $errors['phone'] = 'شماره موبایل معتبر وارد کنید.';
     if ($errors) return ['errors' => $errors];
 
     $token = bin2hex(random_bytes(16));
@@ -236,17 +251,32 @@ function live_chat_start(string $name, string $phone): array {
     $chatId = DB::insert('live_chats', [
         'session_token' => $token,
         'guest_name'    => $name,
-        'guest_phone'   => $phone,
+        'guest_phone'   => '',
         'status'        => 'open',
     ]);
 
+    // Transfer the prior AI conversation so the agent has full context.
+    $lastId = 0;
+    foreach (array_slice($transcript, -20) as $turn) {
+        if (!is_array($turn)) continue;
+        $body = clean((string)($turn['content'] ?? ''));
+        if ($body === '') continue;
+        $sender = ($turn['role'] ?? '') === 'user' ? 'guest' : 'ai';
+        $lastId = (int) DB::insert('live_chat_messages', [
+            'chat_id'     => $chatId,
+            'sender_type' => $sender,
+            'body'        => mb_substr($body, 0, 4000),
+            'is_read'     => $sender === 'guest' ? 0 : 1,
+        ]);
+    }
+
     notify_admins(
         'چت زنده جدید: ' . $name,
-        'کاربر ' . $name . ' (' . $phone . ') شروع به چت کرد.',
+        'کاربر ' . $name . ' درخواست ارتباط با پشتیبان انسانی کرد.',
         APP_URL . '/admin/live_chat?id=' . $chatId
     );
 
-    return ['chat_id' => $chatId, 'token' => $token];
+    return ['chat_id' => $chatId, 'token' => $token, 'last_id' => $lastId];
 }
 
 function live_chat_send_message(string $token, string $body): array {

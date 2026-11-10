@@ -46,8 +46,8 @@ try {
     $userId = (int) $result['user_id'];
     login_user($userId);
 
-    $currentUser = DB::fetch('SELECT name FROM users WHERE id = ? LIMIT 1', [$userId]);
-    $nameEmpty = $currentUser ? trim((string)($currentUser['name'] ?? '')) === '' : true;
+    $currentUser = DB::fetch('SELECT name, city FROM users WHERE id = ? LIMIT 1', [$userId]);
+    $profileIncomplete = $currentUser ? !user_profile_is_complete($currentUser) : true;
 
     unset($_SESSION['auth_error'], $_SESSION['otp_phone_raw'], $_SESSION['otp_phone_intl'], $_SESSION['last_otp_send']);
 
@@ -55,7 +55,7 @@ try {
         notify_profile_completion($userId);
     }
 
-    if ($nameEmpty) {
+    if ($profileIncomplete) {
         $dest = APP_URL . '/auth/complete-name' . ($redir ? '?redirect=' . urlencode($redir) : '');
     } else {
         $dest = APP_URL . '/';

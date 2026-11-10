@@ -151,6 +151,10 @@ Options -MultiViews -Indexes
   # Handle /sep/callback route for backward compatibility
   RewriteRule ^sep/callback/?$ payment_callback.php [L,NC,QSA]
 
+  # Legacy malformed /{APP_URL}/category/<slug> URLs (an old broken template rendered "{APP_URL}" literally).
+  # Route them to the canonical category resolver, which issues a 301 to the real category URL.
+  RewriteRule ^(?:\{APP_URL\}|%7BAPP_URL%7D)/category/(.+?)/?$ category/index.php?redirect_slugs=$1 [L,NC,QSA]
+
   # 301 Redirect old /category/* URLs to new hierarchical URLs (without /category prefix)
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f

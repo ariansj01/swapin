@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS content_pages (
 
     status ENUM('draft','published') DEFAULT 'draft',
 
-    index_status ENUM('index','noindex') DEFAULT 'index',
+    index_status ENUM('index','noindex','gone','redirect') DEFAULT 'index',
 
     created_by INT UNSIGNED DEFAULT NULL,
 

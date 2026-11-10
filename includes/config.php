@@ -53,6 +53,28 @@ if ($_swapinAppUrl === false || $_swapinAppUrl === '') {
     }
     $_swapinAppUrl = 'http://localhost/swaapin';
 }
+// محافظ چند‌دامنه‌ای (فقط محیط‌های غیر production):
+// اگر دامنه‌ی APP_URL با دامنه‌ی درخواست یکی نباشد (مثلاً .env پروداکشن روی
+// استیجینگ کپی شده باشد)، همه‌ی لینک‌ها و ریدایرکت‌ها کاربر را به دامنه‌ی
+// دیگری می‌فرستند و سشن از دست می‌رود. در این حالت دامنه/اسکیمای درخواست
+// جایگزین می‌شود و مسیر پایه‌ی تنظیم‌شده حفظ می‌گردد.
+if (APP_ENV !== 'production' && PHP_SAPI !== 'cli' && !empty($_SERVER['HTTP_HOST'])) {
+    $_swapinCfgHost = strtolower((string)parse_url((string)$_swapinAppUrl, PHP_URL_HOST));
+    $_swapinReqHost = strtolower((string)preg_replace('/:\d+$/', '', (string)$_SERVER['HTTP_HOST']));
+    if ($_swapinCfgHost !== '' && $_swapinReqHost !== '' && $_swapinCfgHost !== $_swapinReqHost) {
+        $_swapinHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443
+            || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+        $_swapinBasePath = rtrim((string)parse_url((string)$_swapinAppUrl, PHP_URL_PATH), '/');
+        error_log(sprintf(
+            '[config] APP_URL host mismatch (%s != %s); using request host instead.',
+            $_swapinCfgHost,
+            $_swapinReqHost
+        ));
+        $_swapinAppUrl = ($_swapinHttps ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $_swapinBasePath;
+    }
+    unset($_swapinCfgHost, $_swapinReqHost, $_swapinHttps, $_swapinBasePath);
+}
 define('APP_URL', rtrim((string)$_swapinAppUrl, '/'));
 unset($_swapinAppUrl);
 
@@ -252,6 +274,21 @@ if ($shouldMigrate) {
             ");
         } catch (Throwable $e) {
             swapin_debug_log('migration-error-store-offer-messages', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // Extend content_pages.index_status to support 410 Gone and 301 Redirect states
+    if (db_has_table('content_pages')) {
+        try {
+            $cpInfo = DB::fetch("SHOW CREATE TABLE `content_pages`");
+            if ($cpInfo && !empty($cpInfo['Create Table'])) {
+                $cpSql = $cpInfo['Create Table'];
+                if (strpos($cpSql, "'gone'") === false || strpos($cpSql, "'redirect'") === false) {
+                    DB::query("ALTER TABLE `content_pages` MODIFY COLUMN `index_status` ENUM('index','noindex','gone','redirect') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'index'");
+                }
+            }
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-content-pages-index-status', ['msg' => $e->getMessage()]);
         }
     }
 
@@ -1064,6 +1101,36 @@ if ($shouldMigrate) {
             DB::query("ALTER TABLE `store_requests` ADD COLUMN `provider_type` ENUM('normal_store','real_estate','car_dealer','corporate') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal_store' AFTER `store_name`");
         } catch (Throwable $e) {
             swapin_debug_log('migration-error-store-req-provider-type', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    // فاز دوم درخواست فروشگاه: نوع ساخت + اطلاعات فروشنده (هویت)
+    if (db_has_table('store_requests')) {
+        $storeReqCols = db_table_columns('store_requests');
+        $storeReqAlters = [
+            'build_type'           => "ADD COLUMN `build_type` ENUM('coded','wordpress') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'coded' AFTER `provider_type`",
+            'docs_status'          => "ADD COLUMN `docs_status` ENUM('pending','submitted','verified','rejected') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending' AFTER `status`",
+            'seller_national_id'   => "ADD COLUMN `seller_national_id` VARCHAR(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `store_lng`",
+            'seller_national_card' => "ADD COLUMN `seller_national_card` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_national_id`",
+            'seller_birth_cert'    => "ADD COLUMN `seller_birth_cert` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_national_card`",
+            'seller_phone'         => "ADD COLUMN `seller_phone` VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_birth_cert`",
+            'seller_landline'      => "ADD COLUMN `seller_landline` VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_phone`",
+            'seller_address'       => "ADD COLUMN `seller_address` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_landline`",
+            'seller_postal_code'   => "ADD COLUMN `seller_postal_code` VARCHAR(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_address`",
+            'seller_bank_account'  => "ADD COLUMN `seller_bank_account` VARCHAR(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `seller_postal_code`",
+            'docs_submitted_at'    => "ADD COLUMN `docs_submitted_at` DATETIME DEFAULT NULL AFTER `seller_bank_account`",
+            'docs_reviewed_at'     => "ADD COLUMN `docs_reviewed_at` DATETIME DEFAULT NULL AFTER `docs_submitted_at`",
+            'docs_reviewed_by'     => "ADD COLUMN `docs_reviewed_by` INT UNSIGNED DEFAULT NULL AFTER `docs_reviewed_at`",
+            'docs_note'            => "ADD COLUMN `docs_note` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `docs_reviewed_by`",
+        ];
+        foreach ($storeReqAlters as $col => $clause) {
+            if (!in_array($col, $storeReqCols, true)) {
+                try {
+                    DB::query("ALTER TABLE `store_requests` {$clause}");
+                } catch (Throwable $e) {
+                    swapin_debug_log('migration-error-store-req-' . $col, ['msg' => $e->getMessage()]);
+                }
+            }
         }
     }
 
@@ -1948,9 +2015,17 @@ function require_auth(): array {
         header('Location: ' . APP_URL . '/auth/login?redirect=' . $redirect);
         exit;
     }
+    // پس از ورود اولیه، تکمیل مشخصات (نام و شهر) اجباری است.
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-    $isCompleteNamePage = (strpos($requestUri, '/auth/complete-name') !== false);
-    if (!$isCompleteNamePage && trim((string)($user['name'] ?? '')) === '') {
+    $exemptPaths = ['/auth/complete-name', '/auth/logout', '/profile/edit'];
+    $isExempt = false;
+    foreach ($exemptPaths as $path) {
+        if (strpos($requestUri, $path) !== false) {
+            $isExempt = true;
+            break;
+        }
+    }
+    if (!$isExempt && !user_profile_is_complete($user)) {
         $redirect = urlencode($_SERVER['REQUEST_URI']);
         header('Location: ' . APP_URL . '/auth/complete-name?redirect=' . $redirect);
         exit;
@@ -2176,6 +2251,37 @@ function clean(mixed $val): string {
         return '';
     }
     return trim(htmlspecialchars_decode(strip_tags((string)$val)));
+}
+
+/**
+ * پاکسازی HTML محتوای صفحات CMS (خروجی CKEditor) با نگهداشتن تگهای مجاز.
+ * بلوکهای اجرایی، هندلرهای رویداد و پروتکلهای خطرناک حذف میشوند.
+ */
+function clean_page_html(mixed $html): string {
+    if (!is_string($html) || $html === '') {
+        return '';
+    }
+
+    // حذف کامل بلوکهای خطرناک همراه با محتوایشان
+    $html = preg_replace('#<(script|style|iframe|object|embed|form|noscript|svg|math)\b[^>]*>.*?</\1>#is', '', $html);
+    $html = preg_replace('#<(script|style|iframe|object|embed|form|noscript|svg|math)\b[^>]*/?>#is', '', $html);
+
+    // فقط تگهای مجاز باقی بمانند
+    $allowed = '<p><br><strong><b><em><i><u><s><del><ins><h1><h2><h3><h4><h5><h6>'
+        . '<ul><ol><li><a><table><thead><tbody><tfoot><tr><td><th><blockquote>'
+        . '<img><hr><span><div><figure><figcaption><sup><sub>';
+    $html = strip_tags((string)$html, $allowed);
+
+    // حذف هندلرهای رویداد (onclick، onerror، ...)
+    $html = preg_replace('#\son\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $html);
+
+    // خنثیسازی پروتکلهای خطرناک در href/src
+    $html = preg_replace('#(href|src|xlink:href|action|formaction)\s*=\s*(["\']?)\s*(?:javascript|vbscript|data)\s*:[^"\'>\s]*\2#i', '$1="#"', $html);
+
+    // حذف style برای جلوگیری از تزریق چیدمان
+    $html = preg_replace('#\sstyle\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $html);
+
+    return trim($html);
 }
 
 function is_valid_phone(string $phone): bool {
