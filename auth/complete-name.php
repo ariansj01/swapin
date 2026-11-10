@@ -5,9 +5,8 @@ require_once __DIR__ . '/../includes/layout.php';
 $user = require_auth();
 
 $redir = safe_redirect_path(clean($_GET['redirect'] ?? ''));
-$nameValue = trim((string)($user['name'] ?? ''));
 
-if ($nameValue !== '') {
+if (user_profile_is_complete($user)) {
     $dest = $redir ? APP_URL . $redir : APP_URL . '/?welcome=1';
     header('Location: ' . $dest);
     exit;
@@ -20,7 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     rate_limit_ip_or_fail('complete_name', 10, 3600);
 
     $fullName = trim(clean($_POST['full_name'] ?? ''));
-    $nameLen = mb_strlen($fullName);
+    $city     = clean($_POST['city'] ?? '');
+    $nameLen  = mb_strlen($fullName);
 
     if ($fullName === '') {
         $errors['full_name'] = 'لطفاً نام و نام خانوادگی خود را وارد کنید.';
@@ -30,10 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['full_name'] = 'نام و نام خانوادگی نباید بیش از ۱۰۰ کاراکتر باشد.';
     }
 
+    if ($city === '' || !in_array($city, iran_cities(), true)) {
+        $errors['city'] = 'لطفاً شهر خود را از فهرست انتخاب کنید.';
+    }
+
     if (empty($errors)) {
         DB::update('users', [
             'name' => $fullName,
+            'city' => $city,
         ], 'id = ?', [(int)$user['id']]);
+        dismiss_profile_completion_notifications((int)$user['id']);
 
         $dest = $redir ? APP_URL . $redir : APP_URL . '/?welcome=1';
         header('Location: ' . $dest);
@@ -56,7 +62,7 @@ render_navbar(null);
           <img src="<?= LOGO_URL ?>" alt="<?= APP_NAME ?>" class="brand-logo" style="height:56px;margin:0 auto var(--sp-4)">
           <h2>تکمیل اطلاعات</h2>
           <p style="color:var(--text-muted);margin-top:var(--sp-2)">
-            برای ادامه، نام و نام خانوادگی خود را وارد کنید
+            برای ادامه، نام و شهر خود را وارد کنید
           </p>
         </div>
 
@@ -86,11 +92,29 @@ render_navbar(null);
               required
               autofocus
               maxlength="100"
-              value="<?= isset($_POST['full_name']) ? h($_POST['full_name']) : '' ?>"
+              value="<?= h($_POST['full_name'] ?? ($user['name'] ?? '')) ?>"
               style="font-size: 1rem;"
             >
             <?php if (isset($errors['full_name'])): ?>
             <div class="invalid-feedback"><?= h($errors['full_name']) ?></div>
+            <?php endif; ?>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="city">
+              شهر <span class="required">*</span>
+            </label>
+            <select
+              class="form-control form-control-lg <?= isset($errors['city']) ? 'is-invalid' : '' ?>"
+              id="city"
+              name="city"
+              required
+              style="font-size: 1rem;"
+            >
+              <option value="">انتخاب شهر</option>
+              <?= render_city_options(h($_POST['city'] ?? $user['city'] ?? '')) ?>
+            </select>
+            <?php if (isset($errors['city'])): ?>
+            <div class="invalid-feedback"><?= h($errors['city']) ?></div>
             <?php endif; ?>
           </div>
           <button type="submit" class="btn btn-primary w-100 btn-lg" style="margin-top: var(--sp-4);">

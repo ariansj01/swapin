@@ -881,7 +881,7 @@ function render_support_widget(?array $user = null): void {
   <div class="support-chat" id="support-chat" hidden>
     <div class="support-chat__header">
       <div class="support-chat__title">
-        <i class="bi bi-headset"></i>
+        <i class="bi bi-robot"></i>
         <span>پشتیبانی آنلاین</span>
       </div>
       <button type="button" class="support-chat__close" id="support-chat-close" aria-label="بستن">
@@ -893,7 +893,7 @@ function render_support_widget(?array $user = null): void {
       <div class="support-chat__welcome" id="support-chat-welcome">
         <i class="bi bi-chat-dots-fill"></i>
         <p>به پشتیبانی سواَپین خوش آمدید</p>
-        <p class="fs-xs" style="opacity:.7">نام و شماره خود را وارد کنید تا شروع کنیم</p>
+        <p class="fs-xs" style="opacity:.7">نام خود را وارد کنید تا دستیار هوشمند پاسخ دهد</p>
       </div>
       <div class="support-chat__messages" id="support-chat-messages" hidden></div>
     </div>
@@ -902,9 +902,8 @@ function render_support_widget(?array $user = null): void {
       <div class="support-chat__register" id="support-chat-register">
         <input type="hidden" name="_csrf" value="{$csrf}">
         <input type="text" class="support-chat__input" id="support-chat-name" placeholder="نام شما" autocomplete="off">
-        <input type="tel" class="support-chat__input" id="support-chat-phone" placeholder="شماره موبایل" autocomplete="off" dir="ltr">
         <button type="button" class="support-chat__btn" id="support-chat-start">
-          <i class="bi bi-arrow-left"></i> شروع چت
+          <i class="bi bi-arrow-left"></i> شروع گفتگو
         </button>
       </div>
       <div class="support-chat__composer" id="support-chat-composer" hidden>
@@ -913,6 +912,9 @@ function render_support_widget(?array $user = null): void {
           <i class="bi bi-send-fill"></i>
         </button>
       </div>
+      <button type="button" class="support-chat__escalate" id="support-chat-escalate" hidden>
+        <i class="bi bi-headset"></i> پاسخم را نگرفتم؛ ارتباط با پشتیبان
+      </button>
     </div>
   </div>
 </div>

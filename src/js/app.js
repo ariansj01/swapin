@@ -548,33 +548,22 @@ function initNavbarHoverDropdowns() {
   };
   document.querySelectorAll('.navbar-nav .dropdown-menu').forEach(applySubmenuHover);
 
-  // Click on parent items (dropdown-item--parent): prevent link, toggle nested submenu
-  document.querySelectorAll('.navbar-nav .dropdown-item--parent').forEach(parent => {
-    parent.addEventListener('click', e => {
-      const sm = parent.closest('.dropdown-submenu');
-      const sub = sm ? sm.querySelector(':scope > .dropdown-menu--sub') : null;
-      if (!sub) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const willOpen = !sub.classList.contains('open');
-      // Close all sibling submenus at same level
-      if (sm && sm.parentNode) {
-        sm.parentNode.querySelectorAll(':scope > .dropdown-submenu > .dropdown-menu--sub.open').forEach(s => {
-          if (s !== sub) {
-            s.classList.remove('open');
-            forceSubmenuStyles(s, false);
-          }
+  // دستگاه‌های لمسی (بدون هاور): تپ اول زیرمنو را باز می‌کند، تپ دوم به لینک می‌رود.
+  if (window.matchMedia('(hover: none)').matches) {
+    document.querySelectorAll('.navbar-nav .dropdown-item--parent').forEach(parent => {
+      parent.addEventListener('click', e => {
+        const sm = parent.closest('.dropdown-submenu');
+        const sub = sm ? sm.querySelector(':scope > .dropdown-menu--sub') : null;
+        if (!sub || sub.classList.contains('open')) return; // تپ دوم → ناوبری
+        e.preventDefault();
+        e.stopPropagation();
+        sm.parentNode?.querySelectorAll(':scope > .dropdown-submenu > .dropdown-menu--sub.open').forEach(s => {
+          s.classList.remove('open');
         });
-      }
-      if (willOpen) {
         sub.classList.add('open');
-        forceSubmenuStyles(sub, true);
-      } else {
-        sub.classList.remove('open');
-        forceSubmenuStyles(sub, false);
-      }
+      });
     });
-  });
+  }
 }
 
 /* ── Category tree toggles in listings sidebar ─────────────────────────── */
@@ -1701,29 +1690,47 @@ function initSupportWidget() {
   const chatBox = document.getElementById('support-chat');
   if (!toggle || !chatBox) return;
 
-  const closeBtn  = document.getElementById('support-chat-close');
-  const nameInp   = document.getElementById('support-chat-name');
-  const phoneInp  = document.getElementById('support-chat-phone');
-  const startBtn  = document.getElementById('support-chat-start');
-  const register  = document.getElementById('support-chat-register');
-  const composer  = document.getElementById('support-chat-composer');
-  const msgInp    = document.getElementById('support-chat-msg');
-  const sendBtn   = document.getElementById('support-chat-send');
-  const messages  = document.getElementById('support-chat-messages');
-  const welcome   = document.getElementById('support-chat-welcome');
-  const csrfInp   = chatBox.querySelector('input[name="_csrf"]');
+  const closeBtn    = document.getElementById('support-chat-close');
+  const nameInp     = document.getElementById('support-chat-name');
+  const startBtn    = document.getElementById('support-chat-start');
+  const register    = document.getElementById('support-chat-register');
+  const composer    = document.getElementById('support-chat-composer');
+  const escalateBtn = document.getElementById('support-chat-escalate');
+  const msgInp      = document.getElementById('support-chat-msg');
+  const sendBtn     = document.getElementById('support-chat-send');
+  const messages    = document.getElementById('support-chat-messages');
+  const welcome     = document.getElementById('support-chat-welcome');
+  const csrfInp     = chatBox.querySelector('input[name="_csrf"]');
 
-  const TOKEN_KEY = 'swaapin_live_chat_token';
+  const TOKEN_KEY   = 'swaapin_live_chat_token';
+  const NAME_KEY    = 'swaapin_live_chat_name';
+  const HISTORY_KEY = 'swaapin_live_chat_ai_history';
+
   let pollTimer = null;
   let lastMsgId = 0;
+  let aiHistory = [];
+  let busy = false;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    if (Array.isArray(saved)) aiHistory = saved;
+  } catch { aiHistory = []; }
+
+  function saveHistory() {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(aiHistory.slice(-20))); } catch {}
+  }
 
   function openChat() {
     chatBox.hidden = false;
     toggle.setAttribute('aria-expanded', 'true');
     toggle.classList.add('is-open');
     if (localStorage.getItem(TOKEN_KEY)) {
-      showComposer();
-      pollMessages();
+      beginHuman();
+    } else if (localStorage.getItem(NAME_KEY)) {
+      nameInp.value = localStorage.getItem(NAME_KEY);
+      beginAi();
+    } else {
+      showRegister();
     }
   }
 
@@ -1731,10 +1738,10 @@ function initSupportWidget() {
     chatBox.hidden = true;
     toggle.setAttribute('aria-expanded', 'false');
     toggle.classList.remove('is-open');
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    stopPolling();
   }
 
-  function showComposer() {
+  function showChat() {
     welcome.hidden = true;
     messages.hidden = false;
     register.hidden = true;
@@ -1747,10 +1754,11 @@ function initSupportWidget() {
     messages.hidden = true;
     register.hidden = false;
     composer.hidden = true;
+    if (escalateBtn) escalateBtn.hidden = true;
   }
 
   function appendMsg(text, sender, time) {
-    if (!messages) return;
+    if (!messages) return null;
     const div = document.createElement('div');
     div.className = 'support-chat__msg support-chat__msg--' + sender;
     div.innerHTML = (text || '').replace(/\n/g, '<br>');
@@ -1763,6 +1771,7 @@ function initSupportWidget() {
     messages.appendChild(div);
     const body = document.getElementById('support-chat-body');
     if (body) body.scrollTop = body.scrollHeight;
+    return div;
   }
 
   function showError(text) {
@@ -1783,6 +1792,46 @@ function initSupportWidget() {
     }).then(r => r.json());
   }
 
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  async function fetchNewMessages() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) { stopPolling(); return; }
+    try {
+      const res = await api('messages', { token, after_id: lastMsgId });
+      if (res && Array.isArray(res.messages)) {
+        for (const m of res.messages) {
+          appendMsg(m.body, m.sender_type);
+          lastMsgId = Math.max(lastMsgId, parseInt(m.id, 10) || 0);
+        }
+      }
+    } catch {}
+  }
+
+  function beginAi() {
+    showChat();
+    if (escalateBtn) escalateBtn.hidden = false;
+    messages.innerHTML = '';
+    lastMsgId = 0;
+    if (aiHistory.length === 0) {
+      appendMsg('سلام! من دستیار هوشمند سواَپین هستم. چطور می‌توانم کمکتان کنم؟', 'ai');
+    } else {
+      aiHistory.forEach(h => appendMsg(h.content, h.role === 'assistant' ? 'ai' : 'guest'));
+    }
+  }
+
+  function beginHuman() {
+    showChat();
+    if (escalateBtn) escalateBtn.hidden = true;
+    messages.innerHTML = '';
+    lastMsgId = 0;
+    stopPolling();
+    fetchNewMessages();
+    pollTimer = setInterval(fetchNewMessages, 5000);
+  }
+
   toggle.addEventListener('click', (e) => {
     e.stopPropagation();
     if (chatBox.hidden) openChat(); else closeChat();
@@ -1797,45 +1846,63 @@ function initSupportWidget() {
     if (!document.getElementById('support-widget')?.contains(e.target)) closeChat();
   });
 
-  startBtn?.addEventListener('click', async () => {
-    const name  = (nameInp?.value || '').trim();
-    const phone = (phoneInp?.value || '').trim();
-    if (!name) return showError('نام را وارد کنید.');
-    if (!/^09\d{9}$/.test(phone)) return showError('شماره موبایل معتبر وارد کنید.');
+  startBtn?.addEventListener('click', () => {
+    const name = (nameInp?.value || '').trim();
+    if (name.length < 2) return showError('نام را وارد کنید.');
+    try { localStorage.setItem(NAME_KEY, name); } catch {}
+    beginAi();
+  });
 
-    startBtn.disabled = true;
-    startBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
-    try {
-      const res = await api('start', { name, phone });
-      if (res.ok && res.token) {
-        localStorage.setItem(TOKEN_KEY, res.token);
-        showComposer();
-        appendMsg('سلام! به پشتیبانی سواَپین خوش آمدید. چطور می‌توانیم کمکتان کنیم؟', 'admin');
-        pollMessages();
-      } else {
-        const errs = res.errors || {};
-        showError(errs.name || errs.phone || 'خطا در شروع چت.');
-      }
-    } catch {
-      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
-    } finally {
-      startBtn.disabled = false;
-      startBtn.innerHTML = '<i class="bi bi-arrow-left"></i> شروع چت';
-    }
+  nameInp?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); startBtn?.click(); }
   });
 
   async function sendMessage() {
-    const token = localStorage.getItem(TOKEN_KEY);
-    const text  = (msgInp?.value || '').trim();
-    if (!token) { showRegister(); return; }
+    if (busy) return;
+    const text = (msgInp?.value || '').trim();
     if (!text) return;
 
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      busy = true;
+      if (sendBtn) sendBtn.disabled = true;
+      try {
+        await api('send', { token, body: text });
+        msgInp.value = '';
+        await fetchNewMessages();
+      } catch {
+        showError('ارسال پیام ناموفق بود.');
+      } finally {
+        busy = false;
+        if (sendBtn) sendBtn.disabled = false;
+        msgInp?.focus();
+      }
+      return;
+    }
+
+    // AI phase (stateless — conversation kept client-side)
     msgInp.value = '';
     appendMsg(text, 'guest');
+    const typing = appendMsg('…', 'ai');
+    busy = true;
+    if (sendBtn) sendBtn.disabled = true;
     try {
-      await api('send', { token, body: text });
+      const res = await api('ai_chat', { message: text, history: aiHistory });
+      typing?.remove();
+      const reply = (res && res.ok && res.reply)
+        ? res.reply
+        : 'متأسفم، اکنون نمی‌توانم پاسخ دهم. می‌توانید با پشتیبان انسانی در ارتباط باشید.';
+      appendMsg(reply, 'ai');
+      aiHistory.push({ role: 'user', content: text });
+      aiHistory.push({ role: 'assistant', content: reply });
+      saveHistory();
     } catch {
-      showError('ارسال پیام ناموفق بود.');
+      typing?.remove();
+      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
+    } finally {
+      busy = false;
+      if (sendBtn) sendBtn.disabled = false;
+      msgInp?.focus();
     }
   }
 
@@ -1844,24 +1911,31 @@ function initSupportWidget() {
     if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
   });
 
-  async function pollMessages() {
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(async () => {
-      const token = localStorage.getItem(TOKEN_KEY);
-      if (!token) { if (pollTimer) clearInterval(pollTimer); return; }
-      try {
-        const res = await api('messages', { token, after_id: lastMsgId });
-        if (res.messages) {
-          for (const m of res.messages) {
-            if (m.sender_type === 'admin') {
-              appendMsg(m.body, 'admin');
-            }
-            lastMsgId = Math.max(lastMsgId, m.id);
-          }
-        }
-      } catch {}
-    }, 5000);
-  }
+  escalateBtn?.addEventListener('click', async () => {
+    if (busy) return;
+    const name = (localStorage.getItem(NAME_KEY) || nameInp?.value || '').trim();
+    if (name.length < 2) { showRegister(); return; }
+
+    escalateBtn.disabled = true;
+    try {
+      const res = await api('start', { name, transcript: aiHistory });
+      if (res && res.ok && res.token) {
+        try { localStorage.setItem(TOKEN_KEY, res.token); } catch {}
+        escalateBtn.hidden = true;
+        appendMsg('شما به پشتیبان انسانی متصل شدید. لطفاً تا پاسخ ادمین شکیبا باشید.', 'admin');
+        lastMsgId = parseInt(res.last_id, 10) || 0;
+        stopPolling();
+        pollTimer = setInterval(fetchNewMessages, 5000);
+      } else {
+        const errs = (res && res.errors) || {};
+        showError(errs.name || 'اتصال به پشتیبان ناموفق بود.');
+        escalateBtn.disabled = false;
+      }
+    } catch {
+      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
+      escalateBtn.disabled = false;
+    }
+  });
 }
 
 /* ── Homepage steps reveal ─────────────────────────────────────────────── */

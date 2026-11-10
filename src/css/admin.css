@@ -344,6 +344,11 @@
   border: 1px solid var(--border);
 }
 
+.lc-msg--ai .lc-msg__bubble {
+  background: #eef4ff;
+  border: 1px solid #d6e4ff;
+}
+
 .lc-msg--admin .lc-msg__bubble {
   background: var(--primary);
   color: #fff;

@@ -69,7 +69,9 @@ $lastId   = $messages ? (int)end($messages)['id'] : 0;
           <?php endif; ?>
         </div>
         <div class="live-chat-list__meta">
-          <span dir="ltr"><?= h($c['guest_phone']) ?></span>
+          <?php if ($c['guest_phone'] !== ''): ?>
+            <span dir="ltr"><?= h($c['guest_phone']) ?></span>
+          <?php endif; ?>
           <span class="fs-xs"><?= timeago($c['last_message_at']) ?></span>
         </div>
         <div class="live-chat-list__status">
@@ -92,8 +94,10 @@ $lastId   = $messages ? (int)end($messages)['id'] : 0;
       <div>
         <h2 style="margin:0;font-size:1.1rem"><?= h($chat['guest_name']) ?></h2>
         <div class="fs-xs" style="color:var(--text-muted)">
-          <span dir="ltr"><?= h($chat['guest_phone']) ?></span>
-          ·
+          <?php if ($chat['guest_phone'] !== ''): ?>
+            <span dir="ltr"><?= h($chat['guest_phone']) ?></span>
+            ·
+          <?php endif; ?>
           <?= $chat['status'] === 'open' ? 'باز' : 'بسته شده' ?>
         </div>
       </div>
@@ -257,7 +261,7 @@ $lastId   = $messages ? (int)end($messages)['id'] : 0;
       <tr>
         <td><?= $c['id'] ?></td>
         <td><?= h($c['guest_name']) ?></td>
-        <td dir="ltr"><?= h($c['guest_phone']) ?></td>
+        <td dir="ltr"><?= $c['guest_phone'] !== '' ? h($c['guest_phone']) : '—' ?></td>
         <td>
           <?php if ($c['status'] === 'open'): ?>
             <span class="badge badge-success">باز</span>
@@ -312,7 +316,7 @@ $lastId   = $messages ? (int)end($messages)['id'] : 0;
         return '<tr>' +
           '<td>' + esc(c.id) + '</td>' +
           '<td>' + esc(c.guest_name) + '</td>' +
-          '<td dir="ltr">' + esc(c.guest_phone) + '</td>' +
+          '<td dir="ltr">' + (c.guest_phone ? esc(c.guest_phone) : '—') + '</td>' +
           '<td>' + statusBadge + unread + '</td>' +
           '<td class="fs-xs">' + esc(c.last_message_at) + '</td>' +
           '<td><a href="?id=' + esc(c.id) + '" class="btn btn-sm btn-outline">بررسی</a></td>' +

@@ -2002,9 +2002,17 @@ function require_auth(): array {
         header('Location: ' . APP_URL . '/auth/login?redirect=' . $redirect);
         exit;
     }
+    // پس از ورود اولیه، تکمیل مشخصات (نام و شهر) اجباری است.
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-    $isCompleteNamePage = (strpos($requestUri, '/auth/complete-name') !== false);
-    if (!$isCompleteNamePage && trim((string)($user['name'] ?? '')) === '') {
+    $exemptPaths = ['/auth/complete-name', '/auth/logout', '/profile/edit'];
+    $isExempt = false;
+    foreach ($exemptPaths as $path) {
+        if (strpos($requestUri, $path) !== false) {
+            $isExempt = true;
+            break;
+        }
+    }
+    if (!$isExempt && !user_profile_is_complete($user)) {
         $redirect = urlencode($_SERVER['REQUEST_URI']);
         header('Location: ' . APP_URL . '/auth/complete-name?redirect=' . $redirect);
         exit;
