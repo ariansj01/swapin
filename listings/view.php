@@ -366,20 +366,25 @@ $swapCanOffer = $isOwner && listing_swap_offer_listing_swappable($listing);
 $swapSourceTitle = (string) ($listing['title'] ?? '');
 $listingIsReserved = ($listing['status'] ?? '') === 'reserved';
 
+$listingMode = (string) ($listing['listing_mode'] ?? 'swap');
+$listingJsonLd = [];
+// آگهی معاوضه نباید هیچ اسکیمای Product تولید کند تا گوگل آن را Merchant listing در نظر نگیرد.
+if ($listingMode !== 'swap') {
+    $listingJsonLd[] = seo_json_ld_product($listing, $ogImage, $listingUrl);
+}
+$listingJsonLd[] = seo_json_ld_breadcrumbs(array_merge(
+    [['name' => 'خانه', 'url' => APP_URL . '/']],
+    array_map(function ($c) { return ['name' => $c['name'], 'url' => $c['url']]; }, $_catChain),
+    [['name' => $listing['title']]]
+));
+
 render_head($seoTitle, $metaDesc, [
     'canonical' => $listingUrl,
-    'og_type'   => 'product',
+    'og_type'   => $listingMode !== 'swap' ? 'product' : 'website',
     'og_image'  => $ogImage,
     'og_title'  => $seoTitle,
     'keywords'  => implode(', ', array_filter([$listing['cat_name'], $listing['city'], 'معاوضه', 'مبادله کالا', APP_NAME])),
-    'json_ld'   => [
-        seo_json_ld_product($listing, $ogImage, $listingUrl),
-        seo_json_ld_breadcrumbs(array_merge(
-            [['name' => 'خانه', 'url' => APP_URL . '/']],
-            array_map(function ($c) { return ['name' => $c['name'], 'url' => $c['url']]; }, $_catChain),
-            [['name' => $listing['title']]]
-        )),
-    ],
+    'json_ld'   => $listingJsonLd,
 ]);
 render_navbar($user);
 ?>
