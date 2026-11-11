@@ -17,7 +17,7 @@ $listing = $listingId ? DB::fetch(
 ) : null;
 
 if (!$listing || !listing_can_cash_buy($listing, $user)) {
-    header('Location: ' . ($listing ? listing_url($listing) : APP_URL . '/listings'));
+    header('Location: ' . ($listing ? listing_url($listing) : APP_URL . '/iran'));
     exit;
 }
 

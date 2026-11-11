@@ -2,8 +2,7 @@ User-agent: *
 Allow: /
 
 # Public SEO pages - must be crawlable
-Allow: /listings
-Allow: /listings/
+Allow: /iran
 Allow: /listings/view
 Allow: /categories
 Allow: /category
@@ -38,9 +37,7 @@ Disallow: /listings/offers.php
 Disallow: /listings/bump.php
 Disallow: /listings/promote.php
 
-# Block crawl-budget draining URLs: map + parameter combinations (search/want/city/sort/time/neighborhood)
-Disallow: /listings/map
-Disallow: /listings/map_view.php
+# Block crawl-budget draining URLs: parameter combinations (search/want/city/sort/time/neighborhood)
 Disallow: /*?q=
 Disallow: /*&q=
 Disallow: /*want=

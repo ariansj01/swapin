@@ -9,6 +9,13 @@ if (!$slug) {
     exit;
 }
 
+// صفحات تستی طبق معماری سئو → 410 Gone
+if (in_array(strtolower($slug), ['test', 'test-final', 'about-gol', 'seo-test-page'], true)) {
+    http_response_code(410);
+    header('X-Robots-Tag: noindex, nofollow');
+    exit;
+}
+
 $page = DB::fetch(
     'SELECT * FROM content_pages WHERE slug = ? AND status = "published" LIMIT 1',
     [$slug]

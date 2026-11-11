@@ -1,8 +1,8 @@
 <?php
 // SWAPIN_DIRECT_ALL_PHP_301
-if (!defined('SKIP_301') && isset($_SERVER["REQUEST_URI"]) && preg_match("#^/listings/all\.php(?:\?|$)#", $_SERVER["REQUEST_URI"])) {
+if (!defined('SKIP_301') && isset($_SERVER["REQUEST_URI"]) && preg_match("#^/listings/(?:all|all\.php)(?:/|\?|$)#", $_SERVER["REQUEST_URI"])) {
     $query = $_SERVER["QUERY_STRING"] ?? "";
-    header("Location: /listings/" . ($query ? "?" . $query : ""), true, 301);
+    header("Location: /iran" . ($query ? "?" . $query : ""), true, 301);
     exit;
 }
 require_once __DIR__ . '/../includes/config.php';
@@ -22,7 +22,8 @@ try {
 // فیلترها
 $search    = clean($_GET['q']          ?? '');
 $catSlug   = clean($_GET['cat']        ?? '');
-$city      = clean($_GET['city']       ?? '') ?: 'تهران';
+$cityFilter = clean($_GET['city']       ?? '');
+$city      = $cityFilter ?: 'تهران';
 $locMode   = clean($_GET['loc']        ?? '');
 $nearbyCitiesRaw = clean($_GET['nearby_cities'] ?? '');
 $nearbyCitiesList = ($locMode === 'nearby') ? parse_nearby_cities_param($nearbyCitiesRaw) : [];
@@ -39,12 +40,79 @@ if ($locMode === 'nearby' && $nearbyCitiesList === []) {
     $nearbyCitiesRaw = '';
 }
 
+// فاز ۲: مکان ساختاریافته — /{location} و /{location}/{category} (بدون پیشوند /s/)
+$locSlug    = clean($_GET['loc_slug'] ?? '');
+$locRow     = $locSlug !== '' ? swaapin_location_by_slug($locSlug) : null;
+$locName    = $locRow ? (string) $locRow['name'] : '';
+$locCityNames    = [];
+$locNeighborhood = '';
+if ($locRow) {
+    $locFilter       = swaapin_location_filter($locRow);
+    $locCityNames    = $locFilter['cities'];
+    $locNeighborhood = $locFilter['neighborhood'];
+    if ($cityFilter === '') {
+        $city = $locName;
+    }
+}
+
+// لندینگ معاوضه (سند — بخش ۴): /list/swap، /list/swap-{cat}، /list/swap-{cat}-{model}، /list/swap-{X}-with-{Y}
+$swapToken = clean($_GET['swap'] ?? '');
+$swapInfo  = null;
+if ($swapToken !== '' && function_exists('swaapin_swap_landing_resolve')) {
+    $swapInfo = swaapin_swap_landing_resolve($swapToken);
+    if ($swapInfo && !empty($swapInfo['category']) && $catSlug === '') {
+        $catSlug = (string) $swapInfo['category']['slug'];
+    }
+}
+
 // دسته‌بندی
 $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [$catSlug]) : null;
 $catId    = $category ? (int)$category['id'] : null;
 $catScopeIds = [];
 if ($catId > 0) {
     $catScopeIds = swaapin_category_descendant_ids($catId);
+}
+
+// برند/مدل/تیپ (سند — بخش ۱ و ۲): /{location}/{category}/{brand}[/{model}[/{trim}]]
+$brandSlug    = clean($_GET['brand'] ?? '');
+$modelSlug    = clean($_GET['model'] ?? '');
+$trimSlug     = clean($_GET['trim']  ?? '');
+$catalogChain = [];
+if ($catId > 0 && $brandSlug !== '' && function_exists('swaapin_catalog_node')) {
+    $bNode = swaapin_catalog_node($catId, 0, $brandSlug);
+    if ($bNode) {
+        $catalogChain[] = $bNode;
+        if ($modelSlug !== '') {
+            $mNode = swaapin_catalog_node($catId, (int) $bNode['id'], $modelSlug);
+            if ($mNode) {
+                $catalogChain[] = $mNode;
+                if ($trimSlug !== '') {
+                    $tNode = swaapin_catalog_node($catId, (int) $mNode['id'], $trimSlug);
+                    if ($tNode) {
+                        $catalogChain[] = $tNode;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// فیلتر متنی مدل برای لندینگ «swap-{category}-{model}» و مقصد «with-{Y}»
+$swapModelName  = '';
+$swapTargetName = '';
+if ($swapInfo) {
+    if (!empty($swapInfo['model'])) {
+        $swapModelName = function_exists('swaapin_swap_model_name')
+            ? (swaapin_swap_model_name((string) $swapInfo['model'], (int) $catId) ?: (string) $swapInfo['model'])
+            : (string) $swapInfo['model'];
+    }
+    if (!empty($swapInfo['target_category'])) {
+        $tcat = DB::fetch('SELECT name FROM categories WHERE slug = ? LIMIT 1', [(string) $swapInfo['target_category']]);
+        $swapTargetName = $tcat ? (string) $tcat['name'] : '';
+    } elseif (!empty($swapInfo['target_location']) && function_exists('swaapin_location_by_slug')) {
+        $tloc = swaapin_location_by_slug((string) $swapInfo['target_location']);
+        $swapTargetName = $tloc ? (string) $tloc['name'] : '';
+    }
 }
 
 // ساخت شرط‌ها
@@ -57,12 +125,52 @@ if ($search) {
     $params[] = "%{$search}%";
     $params[] = "%{$search}%";
 }
+// فیلتر برند/مدل/تیپ (سند — بخش ۱ و ۲)
+foreach ($catalogChain as $node) {
+    $level = (string) ($node['level'] ?? '');
+    $col   = $level === 'brand' ? 'brand_id' : ($level === 'model' ? 'model_id' : 'trim_id');
+    $parts = [];
+    if (db_has_column('listings', $col)) {
+        $parts[] = "l.`{$col}` = ?";
+        $params[] = (int) $node['id'];
+    }
+    if (db_has_column('listings', 'listing_attrs')) {
+        $parts[] = 'l.listing_attrs LIKE ?';
+        $params[] = '%"' . $level . '":"' . (string) $node['name'] . '"%';
+    }
+    if ($parts) {
+        $whereClauses[] = '(' . implode(' OR ', $parts) . ')';
+    }
+}
+// لندینگ معاوضه — مدل خاص (سند — بخش ۴)
+if ($swapModelName !== '') {
+    $whereClauses[] = '(l.title LIKE ? OR l.listing_attrs LIKE ?)';
+    $params[] = "%{$swapModelName}%";
+    $params[] = "%{$swapModelName}%";
+}
+// لندینگ معاوضه — مقصد «with-{Y}» (سند — بخش ۴)
+if ($swapTargetName !== '') {
+    $whereClauses[] = 'l.want_in_return LIKE ?';
+    $params[] = "%{$swapTargetName}%";
+}
 if (!empty($catScopeIds)) {
     $placeholders = implode(',', array_fill(0, count($catScopeIds), '?'));
     $whereClauses[] = "(l.category_id IN ({$placeholders}))";
     foreach ($catScopeIds as $cid) { $params[] = (int)$cid; }
 }
-if ($locMode === 'nearby' && $nearbyCitiesList !== []) {
+if ($locRow) {
+    if (!empty($locCityNames)) {
+        $locPlaceholders = implode(',', array_fill(0, count($locCityNames), '?'));
+        $whereClauses[] = "l.city IN ({$locPlaceholders})";
+        foreach ($locCityNames as $locCity) {
+            $params[] = $locCity;
+        }
+    }
+    if ($locNeighborhood !== '') {
+        $whereClauses[] = 'l.neighborhood = ?';
+        $params[] = $locNeighborhood;
+    }
+} elseif ($locMode === 'nearby' && $nearbyCitiesList !== []) {
     $cityPlaceholders = implode(',', array_fill(0, count($nearbyCitiesList), '?'));
     $whereClauses[] = "l.city IN ({$cityPlaceholders})";
     foreach ($nearbyCitiesList as $nearbyCity) {
@@ -161,15 +269,27 @@ if ($category) {
     }
 }
 $catDisplayName = !empty($catChainNames) ? implode(' › ', $catChainNames) : '';
+// افزودن برند/مدل/تیپ به نام نمایشی و بردکرامب (سند — بخش ۱ و ۲)
+$catalogBaseUrl = $locRow ? rtrim(swaapin_location_url($locRow), '/') : APP_URL;
+foreach ($catalogChain as $node) {
+    $catDisplayName   = ($catDisplayName !== '' ? $catDisplayName . ' › ' : '') . (string) $node['name'];
+    $catalogBaseUrl  .= '/' . $node['slug'];
+    $catChainCrumbs[] = ['name' => (string) $node['name'], 'url' => $catalogBaseUrl];
+}
 
 $titleParts = [];
 $titleMode = 'معاوضه';
-if ($category) {
+if ($swapInfo) {
+    // لندینگ معاوضه — عنوان اختصاصی (سند — بخش ۴)
+    $titleParts[] = $catDisplayName !== '' ? ('معاوضه ' . $catDisplayName) : 'معاوضه';
+} elseif ($category) {
     $titleParts[] = $titleMode . ' ' . ($catDisplayName ?: category_label($category['slug'], $category['name']));
 } else {
     $titleParts[] = $titleMode . ' کالا';
 }
-if ($city) {
+if ($locName !== '') {
+    $titleParts[] = 'در ' . $locName;
+} elseif ($city) {
     $titleParts[] = 'در ' . $city;
 } elseif ($locMode === 'nearby' && !empty($nearbyCitiesList)) {
     $titleParts[] = 'در شهرهای نزدیک';
@@ -193,7 +313,9 @@ if (!empty($catDisplayName)) {
 } else {
     $descParts[] = 'بازار معاوضه کالا با کالا';
 }
-if ($city) {
+if ($locName !== '') {
+    $descParts[] = 'مکان: ' . $locName;
+} elseif ($city) {
     $descParts[] = 'شهر: ' . $city;
 } elseif ($locMode === 'nearby' && !empty($nearbyCitiesList)) {
     $descParts[] = 'شهرهای نزدیک: ' . implode('، ', array_slice($nearbyCitiesList, 0, 3));
@@ -201,24 +323,65 @@ if ($city) {
 if ($search) {
     $descParts[] = 'جستجو: ' . $search;
 }
+if ($swapTargetName !== '') {
+    $descParts[] = 'در ازای ' . $swapTargetName;
+}
 $descParts[] = 'در پلتفرم سواَپین ';
 $desc = implode(' - ', $descParts);
 if (mb_strlen($desc) > 160) {
     $desc = mb_strimwidth($desc, 0, 158, '…');
 }
 
-// Canonical: بدون فیلترهای اضافی و صفحه اول، به URL دسته‌بندی سلسله‌مراتبی اشاره می‌کند
+// Canonical: بدون پارامترها؛ صفحه‌بندی Self-canonical (طبق سند پارامترها و صفحه‌بندی)
 $categorySlugPath = trim((string)($_GET['slug_path'] ?? ''), '/');
 $requestCanonicalPath = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 
-if ($categorySlugPath !== '' && $requestCanonicalPath !== '') {
-    $canonical = APP_URL . rtrim($requestCanonicalPath, '/');
+if ($locRow) {
+    // صفحه مکان: کانونیکال به آدرس تمیز /{location}[/{category}[/{brand}[/{model}[/{trim}]]]]
+    $baseCanonical = swaapin_location_url($locRow);
+    if ($category) {
+        $baseCanonical .= '/' . $category['slug'];
+    }
+    foreach ($catalogChain as $node) {
+        $baseCanonical .= '/' . $node['slug'];
+    }
+} elseif ($categorySlugPath !== '' && $requestCanonicalPath !== '') {
+    $baseCanonical = APP_URL . rtrim($requestCanonicalPath, '/');
 } else {
-    $canonical = APP_URL . '/listings/';
+    $baseCanonical = APP_URL . '/iran';
 }
-$hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $page !== 1 || $timeAgo !== '';
-if ($category && !$hasOtherFilters) {
-    $canonical = category_url($category['slug']);
+// فیلترهای پارامتری (sort/q/min_price/city/...) → noindex,follow و کانونیکال به صفحه بدون پارامتر
+$hasOtherFilters = $search || $cityFilter !== '' || $locMode === 'nearby' || $wantType || $condition
+    || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $timeAgo !== '';
+if (!$locRow && $category && !$hasOtherFilters && empty($catalogChain)) {
+    $baseCanonical = category_url($category['slug']);
+}
+// لندینگ معاوضه — کانونیکال اختصاصی (سند — بخش ۴)
+if ($swapInfo) {
+    $swapBase = $locRow ? rtrim(swaapin_location_url($locRow), '/') : APP_URL;
+    $baseCanonical = $swapBase . '/list/' . $swapInfo['token'];
+}
+$canonical = $baseCanonical;
+if (!$hasOtherFilters && $page > 1) {
+    // صفحه‌بندی Self-canonical: هر صفحه به خودش اشاره می‌کند، نه به صفحه اول
+    $canonical = rtrim($baseCanonical, '/') . '?page=' . $page;
+}
+// قاعده حداقل ۶ آگهی فعال برای ایندکس صفحات مکان/دسته/برند/مدل/لندینگ معاوضه (سند — بخش ۷)
+$pageIndexable = null;
+if (!$hasOtherFilters && !$swapModelName && ($locRow || $category || $swapInfo) && function_exists('seo_list_page_indexable')) {
+    $pageIndexable = seo_list_page_indexable($baseCanonical, $total);
+}
+$robotsMeta = ($hasOtherFilters || $pageIndexable === false) ? 'noindex, follow' : null;
+
+// بخش ۱۰: آگهی‌های جایگزین در صفحات کم‌آگهی (رندر سمت سرور؛ بدون تغییر URL/Title/H1)
+$fallbackTitle    = '';
+$fallbackListings = [];
+if ($page === 1 && !$hasOtherFilters && $total < SWAAPIN_MIN_LISTINGS_FOR_INDEX
+    && function_exists('swaapin_fallback_listings')) {
+    $shownIds = array_map(static fn($l) => (int) $l['id'], $listings);
+    $fb = swaapin_fallback_listings($locRow, $category, $shownIds, 8);
+    $fallbackListings = $fb['rows'];
+    $fallbackTitle    = $fb['title'];
 }
 
 // BreadcrumbList — تقویت درک گوگل از ساختار دسته‌بندی (کمک به Sitelinks)
@@ -235,6 +398,7 @@ render_head($title, $desc, [
   'og_type'   => 'website',
   'og_image'  => APP_URL . '/src/img/heropng.png',
   'json_ld'   => $jsonLd,
+  'robots'    => $robotsMeta,
   'body_class' => 'page-listings',
 ]);
 render_navbar($user);
@@ -265,7 +429,7 @@ render_navbar($user);
         <!-- جستجو -->
         <div class="mb-5">
           <label class="fs-xs" for="q">جستجو در آگهی‌ها</label>
-          <form method="GET" action="<?= APP_URL ?>/listings/" class="d-flex gap-2 align-center">
+          <form method="GET" action="<?= APP_URL ?>/iran" class="d-flex gap-2 align-center">
             <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
             <input type="hidden" name="city" value="<?= h($city) ?>">
             <input type="hidden" name="loc" value="<?= h($locMode) ?>">
@@ -301,12 +465,12 @@ render_navbar($user);
                 'sort'           => $sort !== 'new' ? $sort : null,
                 'time_ago'       => $timeAgo !== '' ? $timeAgo : null,
             ]));
-            return APP_URL . '/listings/?' . $qs;
+            return APP_URL . '/iran?' . $qs;
         };
 
         if ($category):
             // جستجوی هوشمند: کلیدواژه‌های پیشنهادی هوش مصنوعی بر اساس آگهی‌های همین دسته
-            aick_render_sidebar($category, APP_URL . '/listings', [
+            aick_render_sidebar($category, APP_URL . '/iran', [
                 'city'          => $city,
                 'loc'           => $locMode === 'nearby' ? 'nearby' : null,
                 'nearby_cities' => $locMode === 'nearby' ? $nearbyCitiesRaw : null,
@@ -354,9 +518,9 @@ render_navbar($user);
                 $up = $pid;
             }
         }
-        $buildFilterLink = function (string $slug) use ($catSlug, $search, $city, $locMode, $nearbyCitiesRaw, $wantType, $condition, $pmin, $pmax, $sort, $timeAgo): string {
+        $buildFilterLink = function (string $slug) use ($catSlug, $search, $city, $cityFilter, $locMode, $nearbyCitiesRaw, $wantType, $condition, $pmin, $pmax, $sort, $timeAgo): string {
             $baseCatUrl = category_url($slug);
-            $hasOtherFilters = $search || $city || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $timeAgo !== '';
+            $hasOtherFilters = $search || $cityFilter !== '' || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $timeAgo !== '';
             if ($hasOtherFilters) {
                 $qs = http_build_query(array_filter([
                     'cat' => $slug,
@@ -371,14 +535,14 @@ render_navbar($user);
                     'sort' => $sort !== 'new' ? $sort : null,
                     'time_ago' => $timeAgo !== '' ? $timeAgo : null,
                 ]));
-                return APP_URL . '/listings/?' . $qs;
+                return APP_URL . '/iran?' . $qs;
             }
             return $baseCatUrl;
         };
         ?>
         <div class="all-listings-categories cat-tree">
           <div class="cat-tree__item cat-tree__item--root">
-            <a href="<?= APP_URL ?>/listings" class="cat-tree__link <?= $catSlug === '' ? 'is-active' : '' ?>"><i class="bi bi-grid"></i> همه دسته‌بندی‌ها</a>
+            <a href="<?= APP_URL ?>/iran" class="cat-tree__link <?= $catSlug === '' ? 'is-active' : '' ?>"><i class="bi bi-grid"></i> همه دسته‌بندی‌ها</a>
           </div>
           <?php foreach ($allTopCats as $tc):
               $tcId = (int)$tc['id'];
@@ -426,7 +590,7 @@ render_navbar($user);
         </div>
 
         <h3 class="all-listings-sidebar__subtitle">فیلترهای دیگر</h3>
-        <form method="GET" action="<?= APP_URL ?>/listings/" class="all-listings-filters" id="all-listings-filters">
+        <form method="GET" action="<?= APP_URL ?>/iran" class="all-listings-filters" id="all-listings-filters">
           <input type="hidden" name="cat" value="<?= h($catSlug) ?>">
           <?php if ($search): ?><input type="hidden" name="q" value="<?= h($search) ?>"><?php endif; ?>
           <input type="hidden" name="nearby_cities" id="nearby-cities" value="<?= h($nearbyCitiesRaw) ?>">
@@ -515,6 +679,26 @@ render_navbar($user);
         <span class="badge badge-primary"><?= fmt_num($total) ?> آگهی</span>
       </header>
 
+      <?php if ($swapInfo): ?>
+      <p class="all-listings-results__intro text-muted mb-5">
+        آگهی‌های معاوضه<?= $catDisplayName !== '' ? ' ' . h($catDisplayName) : '' ?><?= $locName !== '' ? ' در ' . h($locName) : '' ?><?= $swapTargetName !== '' ? ' در ازای ' . h($swapTargetName) : '' ?>.
+      </p>
+      <?php endif; ?>
+
+      <?php
+      // لینک متقابل صفحه دسته‌بندی و لندینگ معاوضه (سند — بخش ۴)
+      $crossLink = null;
+      $crossBase = $locRow ? rtrim(swaapin_location_url($locRow), '/') : APP_URL;
+      if ($swapInfo && $category && empty($catalogChain)) {
+          $crossLink = ['url' => $crossBase . '/' . $category['slug'], 'label' => 'مشاهده همه آگهی‌های ' . ($catDisplayName ?: $category['name'])];
+      } elseif (!$swapInfo && $category && !$hasOtherFilters) {
+          $crossLink = ['url' => $crossBase . '/list/swap-' . $category['slug'], 'label' => 'آگهی‌های معاوضه ' . ($catDisplayName ?: $category['name'])];
+      }
+      ?>
+      <?php if ($crossLink): ?>
+      <p class="mb-5"><a href="<?= h($crossLink['url']) ?>" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left-right"></i> <?= h($crossLink['label']) ?></a></p>
+      <?php endif; ?>
+
       <?php if (empty($listings)): ?>
       <div class="empty-state">
         <i class="bi bi-search"></i>
@@ -532,6 +716,21 @@ render_navbar($user);
       </div>
       <?php endif; ?>
 
+      <?php if (!empty($fallbackListings)): ?>
+      <!-- بخش ۱۰: آگهی‌های جایگزین (سایر مناطق/دسته‌های نزدیک) -->
+      <section class="fallback-listings mt-5" aria-label="آگهی‌های جایگزین">
+        <h2 class="all-listings-sidebar__title"><?= h($fallbackTitle !== '' ? $fallbackTitle : 'آگهی‌های مشابه') ?></h2>
+        <p class="fs-xs text-muted mb-4">این آگهی‌ها در منطقه یا دسته‌بندی نزدیک شما ثبت شده‌اند.</p>
+        <div class="all-listings-grid">
+          <?php foreach ($fallbackListings as $l): ?>
+          <div class="all-page-listing-card">
+            <?php include __DIR__ . '/../includes/listing_card.php'; ?>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </section>
+      <?php endif; ?>
+
       <?php if ($pag['pages'] > 1): ?>
       <nav class="pagination" aria-label="صفحه‌بندی">
         <?php
@@ -540,9 +739,27 @@ render_navbar($user);
 
         $qs = $_GET;
 
-        $buildUrl = function($p) use ($qs) {
+        $buildUrl = function($p) use ($qs, $categorySlugPath, $requestCanonicalPath, $hasOtherFilters, $locRow, $category, $catalogChain, $swapInfo) {
+            // لندینگ معاوضه: صفحه‌بندی روی /[location/]list/swap...
+            if ($swapInfo) {
+                $swapBase = $locRow ? rtrim(swaapin_location_url($locRow), '/') : APP_URL;
+                return $swapBase . '/list/' . $swapInfo['token'] . '?page=' . $p;
+            }
+            // صفحه مکان/دسته/برند/مدل: صفحه‌بندی روی آدرس تمیز
+            if ($locRow) {
+                $locBase = swaapin_location_url($locRow) . ($category ? '/' . $category['slug'] : '');
+                foreach ($catalogChain as $node) {
+                    $locBase .= '/' . $node['slug'];
+                }
+                return $locBase . '?page=' . $p;
+            }
+            // صفحه‌بندی روی مسیر تمیز دسته (Self-canonical) → بدون پارامترهای اضافی
+            if ($categorySlugPath !== '' && $requestCanonicalPath !== '' && !$hasOtherFilters) {
+                return APP_URL . rtrim($requestCanonicalPath, '/') . '?page=' . $p;
+            }
             $qs['page'] = $p;
-            return APP_URL . '/listings?' . http_build_query($qs);
+            unset($qs['slug_path']);
+            return APP_URL . '/iran?' . http_build_query($qs);
         };
 
         $isFirst = $currentPage === 1;

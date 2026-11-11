@@ -51,7 +51,9 @@ if (!$listing) {
 
 $reviewStatus = $listing['review_status'] ?? 'approved';
 
-$listingPath = '/listings/view?id=' . $id;
+// آدرس کانونیکال آگهی: /{fa-slug}/{id} (بدون پیشوند /v/ طبق معماری سئو)
+$_listingSlug = listing_slug((string) ($listing['title'] ?? ''));
+$listingPath  = $_listingSlug !== '' ? '/' . $_listingSlug . '/' . $id : '/' . $id;
 
 if (!$isOwner && !$isAdmin) {
 
@@ -97,7 +99,7 @@ if (!$isOwner && !$isAdmin) {
         if ($similar) {
             header('Location: ' . listing_url($similar), true, 301);
         } else {
-            header('Location: ' . APP_URL . '/listings', true, 301);
+            header('Location: ' . APP_URL . '/iran', true, 301);
         }
 
         exit;
@@ -365,6 +367,19 @@ $showSwapSuggestions = $showNearbySection;
 $swapCanOffer = $isOwner && listing_swap_offer_listing_swappable($listing);
 $swapSourceTitle = (string) ($listing['title'] ?? '');
 $listingIsReserved = ($listing['status'] ?? '') === 'reserved';
+
+// فاز ۱: هر آدرس غیرکانونیکال آگهی (مثل /listings/view?id= یا اسلاگ قدیمی) → 301 به /{fa-slug}/{id}
+$requestedPath = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
+$_appBasePath  = rtrim((string) parse_url(APP_URL, PHP_URL_PATH), '/');
+if ($_appBasePath !== '' && str_starts_with($requestedPath, $_appBasePath)) {
+    $requestedPath = substr($requestedPath, strlen($_appBasePath));
+}
+if ($requestedPath !== '' && $requestedPath !== $listingPath) {
+    parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $_qs);
+    unset($_qs['id']);
+    header('Location: ' . APP_URL . $listingPath . ($_qs ? '?' . http_build_query($_qs) : ''), true, 301);
+    exit;
+}
 
 render_head($seoTitle, $metaDesc, [
     'canonical' => $listingUrl,

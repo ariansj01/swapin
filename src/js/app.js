@@ -2058,7 +2058,7 @@ function initListingsLocationFilter() {
     });
 
     const qs = params.toString();
-    return `${appUrl}/listings/${qs ? `?${qs}` : ''}`;
+    return `${appUrl}/iran${qs ? `?${qs}` : ''}`;
   }
 
   locSelect.addEventListener('change', () => {

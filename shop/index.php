@@ -5,7 +5,6 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $user = auth_user();
 
-$type = normalize_store_type((string)($_GET['type'] ?? 'both'));
 $slug = normalize_shop_slug((string)($_GET['slug'] ?? ''));
 
 if ($slug === '') {
@@ -26,16 +25,6 @@ $storeUser = DB::fetch(
     [$slug]
 );
 
-if ($storeUser && $hasStoreTypeCol && $type !== 'both') {
-    $actualType = normalize_store_type($storeUser['store_type'] ?? 'both');
-    if ($actualType !== 'both' && $actualType !== $type) {
-        $newType = $actualType;
-        $redirectUrl = APP_URL . '/shop/' . $newType . '/' . rawurlencode($slug);
-        header('Location: ' . $redirectUrl, true, 302);
-        exit;
-    }
-}
-
 if (!$storeUser) {
     http_response_code(404);
     include __DIR__ . '/../404.php';
@@ -54,11 +43,9 @@ $listings = DB::fetchAll(
     [(int)$storeUser['id']]
 );
 
-$_shopType = $hasStoreTypeCol ? normalize_store_type($storeUser['store_type'] ?? 'both') : 'both';
-$_shopTypeSeg = $_shopType === 'both' ? 'both' : $_shopType;
 $title = h($storeUser['store_name'] ?? $storeUser['name']);
 $desc = trim($storeUser['store_description'] ?? '') ?: 'فروشگاه ' . $title . ' در سواَپین';
-$canonical = APP_URL . '/shop/' . $_shopTypeSeg . '/' . h($slug);
+$canonical = APP_URL . '/shop/' . h($slug);
 
 $ogImage = LOGO_URL;
 if (!empty($storeUser['store_banner'])) {

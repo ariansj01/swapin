@@ -509,7 +509,7 @@ render_navbar($user);
         <section class="home-listings-section home-listings-section--premium" aria-label="آگهی‌های ویژه">
           <div class="container">
             <div class="home-section-heading home-section-heading--premium mb-5" style="width: 120%;margin-right: -25px;">
-               <a href="<?= APP_URL ?>/listings/" class="home-section-heading__back">
+               <a href="<?= APP_URL ?>/iran" class="home-section-heading__back">
                  <i class="bi bi-chevron-left"></i>
                </a>
                <h2 style="margin: 0 !important;font-size: clamp(1.05rem, 1.8vw, 1.45rem) !important;font-weight: 800;letter-spacing: -0.02em;order: 1;">آگهی‌های ویژه</h2>
@@ -537,7 +537,7 @@ render_navbar($user);
         <section id="listings" class="home-listings-section home-listings-section--newest" aria-label="فهرست آگهی‌ها">
           <div class="home-section-heading newest-home-section-heading home-section-heading--large mb-5">
             <h2>جدیدترین آگهی‌ها</h2>
-            <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
+            <a href="<?= APP_URL ?>/iran" class="home-section-heading__link">
               مشاهده همه
             </a>
           </div>
@@ -608,7 +608,7 @@ render_navbar($user);
                   $storeCity = $hStoresCityCol ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
                   $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
                   $storeTypeValue = $hStoresTypeCol ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
-                  $shopUrl = APP_URL . '/shop/' . ($storeTypeValue === 'both' ? 'both' : $storeTypeValue) . '/' . h($slug);
+                  $shopUrl = APP_URL . '/shop/' . h($slug);
                   $storeTypeLabels = store_type_labels();
                   $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
                   $storeTypeBadgeClass = match($storeTypeValue) {

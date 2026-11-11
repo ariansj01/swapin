@@ -85,41 +85,30 @@ $categories = DB::fetchAll(
      WHERE c.is_active = 1 ORDER BY COALESCE(p.sort_order,c.sort_order), c.sort_order'
 );
 
-// Exchange categories for the new step 4 (expanded and refined)
-$exchangeCategories = [
-    ['name' => 'گوشی آیفون', 'icon' => 'bi-apple'],
-    ['name' => 'گوشی سامسونگ', 'icon' => 'bi-phone'],
-    ['name' => 'سایر گوشی‌ها', 'icon' => 'bi-phone-fill'],
-    ['name' => 'لپ‌تاپ گیمینگ', 'icon' => 'bi-gpu-card'],
-    ['name' => 'لپ‌تاپ اداری/مهندسی', 'icon' => 'bi-laptop'],
-    ['name' => 'مک‌بوک', 'icon' => 'bi-laptop-fill'],
-    ['name' => 'تبلت و آیپد', 'icon' => 'bi-tablet'],
-    ['name' => 'خودرو سواری', 'icon' => 'bi-car-front'],
-    ['name' => 'خودرو سنگین/باری', 'icon' => 'bi-truck'],
-    ['name' => 'موتورسیکلت', 'icon' => 'bi-bicycle'],
-    ['name' => 'خانه و آپارتمان', 'icon' => 'bi-house-fill'],
-    ['name' => 'ویلا و باغ', 'icon' => 'bi-tree'],
-    ['name' => 'زمین و کلنگی', 'icon' => 'bi-map'],
-    ['name' => 'دفتر کار و تجاری', 'icon' => 'bi-building'],
-    ['name' => 'کنسول پلی‌استیشن', 'icon' => 'bi-controller'],
-    ['name' => 'کنسول ایکس‌باکس', 'icon' => 'bi-controller'],
-    ['name' => 'کنسول نینتندو/پرتابل', 'icon' => 'bi-joystick'],
-    ['name' => 'دوربین عکاسی/فیلمبرداری', 'icon' => 'bi-camera'],
-    ['name' => 'لوازم جانبی دوربین', 'icon' => 'bi-camera-reels'],
-    ['name' => 'طلا و مسکوکات', 'icon' => 'bi-gem'],
-    ['name' => 'ساعت مچی هوشمند', 'icon' => 'bi-watch'],
-    ['name' => 'ساعت مچی کلاسیک', 'icon' => 'bi-clock'],
-    ['name' => 'کتاب و لوازم تحریر', 'icon' => 'bi-book'],
-    ['name' => 'یخچال و فریزر', 'icon' => 'bi-snow'],
-    ['name' => 'تلویزیون و صوتی', 'icon' => 'bi-tv'],
-    ['name' => 'ماشین لباسشویی/ظرفشویی', 'icon' => 'bi-water'],
-    ['name' => 'مبلمان و دکوراسیون', 'icon' => 'bi-chair'],
-    ['name' => 'پوشاک و اکسسوری', 'icon' => 'bi-bag'],
-    ['name' => 'لوازم ورزشی و بدنسازی', 'icon' => 'bi-activity'],
-    ['name' => 'ابزارآلات صنعتی/برقی', 'icon' => 'bi-tools'],
-    ['name' => 'خدمات آموزشی', 'icon' => 'bi-mortarboard'],
-    ['name' => 'خدمات فنی/تعمیراتی', 'icon' => 'bi-wrench'],
-];
+// Exchange categories for step 4 — از همان درخت واحد دسته‌بندی‌ها (سند — بخش ۱۳)
+$exchangeCategories = [];
+try {
+    swaapin_ensure_category_tree();
+} catch (Throwable $e) {
+    swapin_debug_log('create_exchange_tree_skip', ['msg' => $e->getMessage()]);
+}
+$catTreeRows  = DB::fetchAll('SELECT id, name, slug, parent_id, icon FROM categories WHERE is_active = 1 ORDER BY sort_order, id');
+$catTreeByPar = [];
+foreach ($catTreeRows as $r) {
+    $catTreeByPar[(int)($r['parent_id'] ?? 0)][] = $r;
+}
+foreach ($catTreeByPar[0] ?? [] as $topRow) {
+    foreach ($catTreeByPar[(int)$topRow['id']] ?? [] as $l2Row) {
+        $icon = trim((string)($l2Row['icon'] ?? ''));
+        if ($icon === '') {
+            $icon = trim((string)($topRow['icon'] ?? ''));
+        }
+        $exchangeCategories[] = [
+            'name' => category_label((string)$l2Row['slug'], (string)$l2Row['name']),
+            'icon' => 'bi ' . preg_replace('/^bi\s+/', '', $icon !== '' ? $icon : 'bi-collection'),
+        ];
+    }
+}
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

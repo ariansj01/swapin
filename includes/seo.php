@@ -70,7 +70,7 @@ function seo_json_ld_website(): array {
 function seo_json_ld_site_navigation(): array {
     $items = [
         ['خانه', APP_URL . '/'],
-        ['دسته‌بندی‌ها', APP_URL . '/listings/all'],
+        ['دسته‌بندی‌ها', APP_URL . '/iran'],
         ['فروشگاه‌ها', APP_URL . '/shops'],
         ['دستیار هوشمند', APP_URL . '/ai-assistant'],
         ['ثبت آگهی', APP_URL . '/listings/create'],
@@ -170,6 +170,165 @@ function seo_json_ld_breadcrumbs(array $items): array {
         '@type'           => 'BreadcrumbList',
         'itemListElement' => $list,
     ];
+}
+
+/**
+ * ── ایندکس‌پذیری صفحات لیستی (سند معماری سئو — بخش ۷) ──────────────────────
+ * قاعده: صفحات لیستی تنها با حداقل ۶ آگهی فعال ایندکس‌پذیر می‌شوند؛
+ * پس از اولین ایندکس، حتی با کاهش موجودی، ایندکس باقی می‌ماند.
+ */
+if (!defined('SWAAPIN_MIN_LISTINGS_FOR_INDEX')) {
+    define('SWAAPIN_MIN_LISTINGS_FOR_INDEX', 6);
+}
+
+function seo_index_status_table_exists(): bool {
+    return function_exists('db_has_table') && db_has_table('listing_index_status');
+}
+
+function seo_ensure_index_status_table(): void {
+    if (seo_index_status_table_exists()) {
+        return;
+    }
+    try {
+        DB::query(
+            "CREATE TABLE IF NOT EXISTS `listing_index_status` (
+                `path` VARCHAR(191) NOT NULL,
+                `is_indexed` TINYINT(1) NOT NULL DEFAULT 0,
+                `indexed_at` DATETIME NULL,
+                `last_count` INT NOT NULL DEFAULT 0,
+                `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`path`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+    } catch (Throwable $e) {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('index_status_create_fail', ['msg' => $e->getMessage()]);
+        }
+    }
+}
+
+/** نرمال‌سازی مسیر صفحات لیستی (حذف دامنه و پارامتر). */
+function seo_normalize_index_path(string $path): string {
+    $path = trim($path);
+    if ($path === '') {
+        return '';
+    }
+    $appPrefix = rtrim(APP_URL, '/');
+    if ($appPrefix !== '' && str_starts_with($path, $appPrefix)) {
+        $path = substr($path, strlen($appPrefix));
+    }
+    $parsed = parse_url($path, PHP_URL_PATH);
+    if (is_string($parsed) && $parsed !== '') {
+        $path = $parsed;
+    }
+    return '/' . trim($path, '/');
+}
+
+/** تاریخ اولین ایندکس یک مسیر؛ null اگر هنوز ایندکس نشده باشد. */
+function seo_page_indexed_at(string $path): ?string {
+    $path = seo_normalize_index_path($path);
+    if ($path === '' || !seo_index_status_table_exists()) {
+        return null;
+    }
+    try {
+        $row = DB::fetch('SELECT is_indexed, indexed_at FROM listing_index_status WHERE path = ? LIMIT 1', [$path]);
+    } catch (Throwable $e) {
+        return null;
+    }
+    if ($row && (int) $row['is_indexed'] === 1) {
+        return (string) ($row['indexed_at'] ?? '');
+    }
+    return null;
+}
+
+/** ثبت اولین ایندکس صفحه و تاریخ آن. */
+function seo_mark_page_indexed(string $path, int $count): void {
+    $path = seo_normalize_index_path($path);
+    if ($path === '') {
+        return;
+    }
+    seo_ensure_index_status_table();
+    if (!seo_index_status_table_exists()) {
+        return;
+    }
+    try {
+        DB::query(
+            'INSERT INTO listing_index_status (path, is_indexed, indexed_at, last_count) VALUES (?, 1, NOW(), ?)
+             ON DUPLICATE KEY UPDATE is_indexed = 1, indexed_at = COALESCE(indexed_at, NOW()), last_count = VALUES(last_count)',
+            [$path, $count]
+        );
+    } catch (Throwable $e) {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('index_status_mark_fail', ['path' => $path, 'msg' => $e->getMessage()]);
+        }
+    }
+}
+
+/**
+ * آیا صفحه لیستی با «count» آگهی مجاز به ایندکس است؟
+ * اگر قبلاً ایندکس شده باشد همیشه true؛ در غیر این صورت با رسیدن به حداقل تعداد، ایندکس ثبت می‌شود.
+ */
+function seo_list_page_indexable(string $path, int $count, int $min = SWAAPIN_MIN_LISTINGS_FOR_INDEX): bool {
+    $path = seo_normalize_index_path($path);
+    if ($path === '') {
+        return false;
+    }
+    if (seo_page_indexed_at($path) !== null) {
+        return true;
+    }
+    if ($count >= $min) {
+        seo_mark_page_indexed($path, $count);
+        return true;
+    }
+    return false;
+}
+
+/** مسیرهای ثبت‌شده به‌عنوان ایندکس‌شده: path => indexed_at */
+function seo_indexed_paths(): array {
+    if (!seo_index_status_table_exists()) {
+        return [];
+    }
+    try {
+        $rows = DB::fetchAll('SELECT path, indexed_at FROM listing_index_status WHERE is_indexed = 1');
+    } catch (Throwable $e) {
+        return [];
+    }
+    $out = [];
+    foreach ($rows as $r) {
+        $out[(string) $r['path']] = (string) ($r['indexed_at'] ?? '');
+    }
+    return $out;
+}
+
+/** ثبت گروهی اولین ایندکس صفحات. */
+function seo_mark_pages_indexed(array $paths): void {
+    $clean = [];
+    foreach ($paths as $p) {
+        $p = seo_normalize_index_path((string) $p);
+        if ($p !== '') {
+            $clean[$p] = true;
+        }
+    }
+    $paths = array_keys($clean);
+    if ($paths === []) {
+        return;
+    }
+    seo_ensure_index_status_table();
+    if (!seo_index_status_table_exists()) {
+        return;
+    }
+    try {
+        $values = implode(',', array_fill(0, count($paths), '(?, 1, NOW(), 0)'));
+        DB::query(
+            "INSERT INTO listing_index_status (path, is_indexed, indexed_at, last_count) VALUES {$values}
+             ON DUPLICATE KEY UPDATE is_indexed = 1, indexed_at = COALESCE(indexed_at, NOW())",
+            $paths
+        );
+    } catch (Throwable $e) {
+        if (function_exists('swapin_debug_log')) {
+            swapin_debug_log('index_status_bulk_fail', ['msg' => $e->getMessage()]);
+        }
+    }
 }
 
 function seo_clean_text(string $s, int $maxLen = 0): string {
@@ -278,4 +437,125 @@ function seo_listing_description(array $listing): string {
         $out = mb_strimwidth($out, 0, 158, '…');
     }
     return $out;
+}
+
+/**
+ * آگهی‌های جایگزین برای صفحات کم‌آگهی (سند — بخش ۱۰).
+ *
+ * ترتیب گسترش مکان: همان محله → سایر محله‌های شهر → استان → کشور
+ * و در صورت نیاز یک سطح بالاتر در دسته‌بندی.
+ * آگهی‌های جایگزین در محاسبه حداقل ۶ آگهی برای ایندکس شدن حساب نمی‌شوند.
+ *
+ * @param array|null $locationRow مکان فعلی صفحه
+ * @param array|null $categoryRow دسته فعلی صفحه
+ * @param int[]      $excludeIds  شناسه آگهی‌های اصلی (برای جلوگیری از تکرار)
+ * @param int        $need        حداکثر تعداد آگهی جایگزین
+ * @return array{rows: array, title: string}
+ */
+function swaapin_fallback_listings(?array $locationRow, ?array $categoryRow, array $excludeIds = [], int $need = 8): array {
+    $need    = max(1, min(24, $need));
+    $exclude = array_values(array_unique(array_map('intval', $excludeIds)));
+
+    // نردبان مکان از نزدیک به دور
+    $ladder = [];
+    $cur    = $locationRow;
+    $safety = 8;
+    while ($cur && $safety-- > 0) {
+        $ladder[] = [
+            'filter' => swaapin_location_filter($cur),
+            'name'   => (string) ($cur['name'] ?? ''),
+        ];
+        $pid = (int) ($cur['parent_id'] ?? 0);
+        $cur = $pid > 0 ? (DB::fetch('SELECT * FROM locations WHERE id = ? LIMIT 1', [$pid]) ?: null) : null;
+    }
+    if (empty($ladder)) {
+        $ladder[] = ['filter' => ['cities' => [], 'neighborhood' => ''], 'name' => ''];
+    }
+
+    // نردبان دسته: دسته فعلی، سپس یک سطح بالاتر
+    $catRounds = [];
+    if ($categoryRow) {
+        $catRounds[] = ['id' => (int) $categoryRow['id'], 'name' => (string) ($categoryRow['name'] ?? '')];
+        $parentId = (int) ($categoryRow['parent_id'] ?? 0);
+        if ($parentId > 0) {
+            $prow = DB::fetch('SELECT id, name FROM categories WHERE id = ? LIMIT 1', [$parentId]);
+            if ($prow) {
+                $catRounds[] = ['id' => (int) $prow['id'], 'name' => (string) $prow['name']];
+            }
+        }
+    } else {
+        $catRounds[] = ['id' => 0, 'name' => ''];
+    }
+
+    $rows  = [];
+    $seen  = $exclude ? array_fill_keys($exclude, true) : [];
+    $title = '';
+
+    foreach ($catRounds as $round) {
+        $scopeIds = $round['id'] > 0 ? swaapin_category_descendant_ids((int) $round['id']) : [];
+        foreach ($ladder as $step) {
+            if (count($rows) >= $need) {
+                break 2;
+            }
+            $where  = [listing_public_sql('l'), 'l.listing_mode != "sell"'];
+            $params = [];
+            if (!empty($scopeIds)) {
+                $where[] = 'l.category_id IN (' . implode(',', array_fill(0, count($scopeIds), '?')) . ')';
+                foreach ($scopeIds as $cid) {
+                    $params[] = (int) $cid;
+                }
+            }
+            if (!empty($step['filter']['cities'])) {
+                $where[] = 'l.city IN (' . implode(',', array_fill(0, count($step['filter']['cities']), '?')) . ')';
+                foreach ($step['filter']['cities'] as $cn) {
+                    $params[] = $cn;
+                }
+            }
+            if (($step['filter']['neighborhood'] ?? '') !== '') {
+                $where[]  = 'l.neighborhood = ?';
+                $params[] = $step['filter']['neighborhood'];
+            }
+            if ($seen) {
+                $where[] = 'l.id NOT IN (' . implode(',', array_fill(0, count($seen), '?')) . ')';
+                foreach (array_keys($seen) as $eid) {
+                    $params[] = (int) $eid;
+                }
+            }
+            $params[] = $need - count($rows);
+            try {
+                $got = DB::fetchAll(
+                    "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
+                            c.name AS cat_name, c.slug AS cat_slug,
+                            (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+                     FROM listings l
+                     JOIN users u ON u.id = l.user_id
+                     JOIN categories c ON c.id = l.category_id
+                     WHERE " . implode(' AND ', $where) . "
+                     ORDER BY l.created_at DESC, l.id DESC
+                     LIMIT ?",
+                    $params
+                );
+            } catch (Throwable $e) {
+                $got = [];
+            }
+            foreach ($got as $g) {
+                $gid = (int) $g['id'];
+                if (isset($seen[$gid])) {
+                    continue;
+                }
+                $seen[$gid] = true;
+                $rows[]     = $g;
+            }
+            if (!empty($got) && $title === '') {
+                $catPart = $round['name'] !== '' ? $round['name'] : 'آگهی‌ها';
+                $locPart = $step['name'] !== '' ? (' در ' . $step['name']) : '';
+                $title   = 'سایر ' . $catPart . $locPart;
+            }
+        }
+    }
+
+    if (!empty($rows)) {
+        listing_card_prefetch($rows);
+    }
+    return ['rows' => $rows, 'title' => $title];
 }

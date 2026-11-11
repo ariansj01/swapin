@@ -11,7 +11,7 @@ $pwaUrl       = APP_URL . '/pwa';
 render_head(
     'دانلود اپلیکیشن سواَپین | ' . APP_NAME,
     'دانلود اپلیکیشن اندروید سواَپین — دانلود مستقیم APK، دانلود از کافه‌بازار و نصب نسخه وب (PWA).',
-    ['canonical' => APP_URL . '/download']
+    ['canonical' => APP_URL . '/app']
 );
 render_navbar($user);
 ?>

@@ -650,6 +650,34 @@ if ($shouldMigrate) {
             swapin_debug_log('migration-error-listing-attrs', ['msg' => $e->getMessage()]);
         }
     }
+    if (!in_array('brand_id', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `brand_id` INT UNSIGNED DEFAULT NULL COMMENT 'catalog_nodes brand node' AFTER `listing_attrs`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-brand-id', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('model_id', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `model_id` INT UNSIGNED DEFAULT NULL COMMENT 'catalog_nodes model node' AFTER `brand_id`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-model-id', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!in_array('trim_id', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `trim_id` INT UNSIGNED DEFAULT NULL COMMENT 'catalog_nodes trim node' AFTER `model_id`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-trim-id', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (!db_has_index('listings', 'idx_listing_catalog') && db_has_column('listings', 'brand_id')) {
+        try {
+            DB::query('ALTER TABLE `listings` ADD KEY `idx_listing_catalog` (`brand_id`, `model_id`, `trim_id`)');
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-idx-listing-catalog', ['msg' => $e->getMessage()]);
+        }
+    }
     if (!db_has_index('listings', 'idx_listing_geo') && db_has_column('listings', 'latitude') && db_has_column('listings', 'longitude')) {
         try {
             DB::query('ALTER TABLE `listings` ADD KEY `idx_listing_geo` (`latitude`, `longitude`)');
@@ -2117,21 +2145,66 @@ function app_url(string $path = ''): string {
 }
 
 /**
- * آدرس آگهی: /listings/view?id={id}
- * آرایه‌ای از آگهی یا فقط شناسه عددی را می‌پذیرد.
+ * اسلاگ فارسی آگهی از روی عنوان (طبق سند معماری سئو: حروف فارسی، جداکننده «-»).
+ * اگر اسلاگ معتبر ساخته نشود (خالی / رزروشده / فقط رقم) رشته خالی برمی‌گردد.
+ */
+function listing_slug(string $title): string {
+    $title = trim(strip_tags($title));
+    if ($title === '') {
+        return '';
+    }
+
+    // یکسان‌سازی نیم‌فاصله و حروف عربی/فارسی پرکاربرد
+    $title = str_replace(
+        ["\xE2\x80\x8C", 'ي', 'ك', 'ة', 'ۀ', 'ؤ', 'إ', 'أ'],
+        ['-', 'ی', 'ک', 'ه', 'ه', 'و', 'ا', 'ا'],
+        $title
+    );
+
+    $title = preg_replace('/[^\p{L}\p{N}]+/u', '-', $title) ?? '';
+    $title = trim($title, '-');
+    $title = mb_strtolower($title, 'UTF-8');
+
+    if (mb_strlen($title, 'UTF-8') > 70) {
+        $title = rtrim(mb_substr($title, 0, 70, 'UTF-8'), '-');
+    }
+
+    // کلمات رزروشده/سیستمی نباید سگمنت اول URL شوند (تداخل با روت‌های موجود)
+    static $reserved = [
+        'api', 'admin', 'includes', 'seed', 'database', 'storage', 'tools', 'vendor', 'logs', 'backups', 'sql',
+        'store', 'orders', 'chat', 'store-offers', 'shops', 'search', 'shop', 'support', 'pwa', 'ai-lab', 'sep',
+        'iso', 'listing', 'listings', 'auth', 'page', 'src', 'css', 'js', 'assets', 'scripts', 'ops', 'blog',
+        'v', 's', 'list', 'iran', 'new', 'app', 'index', 'profile', 'dashboard', 'trades', 'wallet', 'sitemap',
+    ];
+
+    if ($title === '' || in_array($title, $reserved, true) || ctype_digit($title)) {
+        return '';
+    }
+
+    return $title;
+}
+
+/**
+ * آدرس کانونیکال آگهی: /{fa-slug}/{id}  (بدون پیشوند /v/ طبق تصمیم پروژه).
+ * اگر اسلاگ ساخته نشود: /{id}.  آرایه آگهی یا شناسه عددی را می‌پذیرد.
  */
 function listing_url($listing, ?string $title = null): string {
     if (is_array($listing)) {
         $id = (int) ($listing['id'] ?? 0);
+        if ($title === null) {
+            $title = (string) ($listing['title'] ?? '');
+        }
     } else {
         $id = (int) $listing;
     }
 
     if ($id <= 0) {
-        return APP_URL . '/listings';
+        return APP_URL . '/iran';
     }
 
-    return APP_URL . '/listings/view?id=' . $id;
+    $slug = listing_slug((string) $title);
+
+    return $slug === '' ? APP_URL . '/' . $id : APP_URL . '/' . $slug . '/' . $id;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2691,6 +2764,8 @@ if (!defined('LISTING_SWAP_OFFER_MESSAGE_MAX')) {
 require_once __DIR__ . '/ai.php';
 require_once __DIR__ . '/listing_freshness.php';
 require_once __DIR__ . '/listing_nearby.php';
+require_once __DIR__ . '/locations.php';
+require_once __DIR__ . '/catalog.php';
 require_once __DIR__ . '/listing_swap_suggestions.php';
 require_once __DIR__ . '/listing_swap_feedback.php';
 require_once __DIR__ . '/listing_swap_offers.php';

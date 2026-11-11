@@ -21,11 +21,7 @@ Options -MultiViews -Indexes
   # For production or root:
   # RewriteBase /
 
-  # آدرس تمیز نقشه آگهی‌ها (رفع آندرلاین در URL عمومی) - انتقال به بالا برای اولویت
-  RewriteRule ^listings/map/?$ listings/map_view.php [L,NC,QSA]
-
   # Landing pages
-  RewriteRule ^exchange/?$ exchange.php [L,NC,QSA]
   RewriteRule ^services/?$ services.php [L,NC,QSA]
 
   # Mobile Flutter API (do not affect PWA routes)
@@ -52,6 +48,33 @@ Options -MultiViews -Indexes
   RewriteCond %1 !^localhost(:[0-9]+)?$ [NC]
   RewriteCond %1 !^127\.0\.0\.1(:[0-9]+)?$
   RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+  # صفحه نقشه مستقل طبق معماری سئو حذف شد → 410 Gone
+  RewriteRule ^listings/map/?$ - [G,L]
+  RewriteRule ^listings/map_view\.php$ - [G,L]
+
+  # /exchange طبق سند به صفحه اصلی منتقل شده است
+  RewriteRule ^exchange/?$ / [R=301,L]
+  RewriteRule ^exchange\.php$ / [R=301,L]
+
+  # دانلود اپلیکیشن — آدرس کانونیکال /app (طبق معماری سئو)
+  RewriteRule ^app/?$ download.php [L,NC,QSA]
+  RewriteRule ^download/?$ /app [R=301,L,NC]
+
+  # ── نقشه ریدایرکت مهاجرت (سند معماری سئو — بخش ۱۱) ─────────────────────
+  # آدرس‌های قدیمی دسته‌ها → ساختار جدید کانونیکال /{location}/{category}
+  # (بدون پیشوند /s/ طبق تصمیم پروژه). پارامترهای بی‌ارزش حذف می‌شوند.
+  RewriteCond %{QUERY_STRING} (?:^|&)city=karaj(?:&|$) [NC]
+  RewriteRule ^real-estate/?$ /karaj/real-estate? [R=301,L,NC]
+  RewriteRule ^real-estate/?$ /iran/real-estate [R=301,L,NC,QSD]
+  RewriteRule ^vehicles/cars/passenger-cars/?$ /iran/passenger-cars [R=301,L,NC,QSD]
+  RewriteRule ^electronics/mobile-tablet/mobile-phones/?$ /iran/mobile-phones [R=301,L,NC,QSD]
+
+  # صفحه اصلی آگهی‌ها: /listings → صفحه کانونیکال کشور /iran
+  RewriteRule ^listings/?$ /iran [R=301,L,NC,QSD]
+  RewriteRule ^listings\.php$ /iran [R=301,L,NC,QSD]
+  RewriteRule ^listings/all/?$ /iran [R=301,L,NC,QSD]
+  RewriteRule ^listings/all\.php$ /iran [R=301,L,NC,QSD]
 
   # Explicitly handle /profile/ to avoid directory listing
   RewriteRule ^profile/?$ profile.php [L,NC,QSA]
@@ -102,17 +125,14 @@ Options -MultiViews -Indexes
   RewriteRule ^search/ai/?$ search/ai.php [L,NC,QSA]
   RewriteRule ^search/saved/?$ search/saved.php [L,NC,QSA]
 
-  # /shop/<type>/<slug>  →  shop/index.php?type=<type>&slug=<slug>  (pretty URLs)
+  # 301: آدرس‌های قدیمی /shop/<type>/<slug> → آدرس کانونیکال /shop/<slug>
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^shop/(online|physical|both)/(.+?)/?$ shop/index.php?type=$1&slug=$2 [L,NC,QSA,B]
-  # 301: old /shop/<slug> → redirect to /shop/both/<slug>
+  RewriteRule ^shop/(online|physical|both)/(.+?)/?$ /shop/$2 [R=301,L,NC]
+  # آدرس کانونیکال فروشگاه: /shop/<slug>  (طبق معماری سئو)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^shop/([^/]+)/?$ /shop/both/$1 [R=301,L,NC]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^shop/(.+?)/?$ shop/index.php?type=both&slug=$1 [L,NC,QSA,B]
+  RewriteRule ^shop/(.+?)/?$ shop/index.php?slug=$1 [L,NC,QSA,B]
 
   # /support OR /support/  →  support/index.php
   RewriteRule ^support/?$ support/index.php [L,NC,QSA]
@@ -130,13 +150,8 @@ Options -MultiViews -Indexes
   # PWA install landing page
   RewriteRule ^pwa/?$ pwa.php [L,NC,QSA]
 
-  # App download landing page
-  RewriteRule ^download/?$ download.php [L,NC,QSA]
-
-  # ── FIX: صفحه همه آگهی‌ها /listings (جلوگیری از تداخل با دایرکتوری listings/) ──
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^listings/?$ listings.php [L,NC,QSA]
-
+  # توجه: /listings و /listings/ طبق نقشه مهاجرت (بخش ۱۱) با ۳۰۱ به /iran منتقل می‌شوند
+  # و بالاتر در همین فایل مدیریت شده‌اند.
 
 
   # AI capabilities lab (interactive demos, no DB writes)
@@ -153,6 +168,10 @@ Options -MultiViews -Indexes
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^category/(.+)$ category/index.php?redirect_slugs=$1 [L,NC,QSA]
+
+  # فاز ۱: آدرس آگهی /{fa-slug}/{id} از طریق همین قوانین به روتر می‌رسد؛
+  # مسیر کوتاه /{id} (وقتی اسلاگ ساخته نشود) مستقیماً به صفحه آگهی می‌رود.
+  RewriteRule ^([0-9]+)/?$ listings/view.php?id=$1 [L,QSA]
 
   # New hierarchical category URLs (e.g., /electronics/phones → without /category prefix)
   # Must exclude real routes/files/dirs and known system prefixes
