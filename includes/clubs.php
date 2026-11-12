@@ -79,6 +79,29 @@ function clubs_ensure_tables(): void {
         }
     }
 
+    if (!db_has_table('club_banners')) {
+        try {
+            DB::query("
+                CREATE TABLE `club_banners` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `title` VARCHAR(150) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+                    `subtitle` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+                    `image` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+                    `link_url` VARCHAR(500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+                    `cta_label` VARCHAR(80) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `sort_order` INT NOT NULL DEFAULT 0,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_club_banners_active` (`is_active`, `sort_order`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-club-banners-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
     if (!db_has_table('club_messages')) {
         try {
             DB::query("
@@ -196,7 +219,7 @@ function clubs_image_empty(array $file): bool {
 
 /** @return array{filename:?string,error:?string} */
 function clubs_store_image(array $file, string $kind): array {
-    $label = $kind === 'avatar' ? 'پروفایل' : 'کاور';
+    $label = $kind === 'avatar' ? 'پروفایل' : ($kind === 'banner' ? 'بنر' : 'کاور');
     if (clubs_image_empty($file)) {
         return ['filename' => null, 'error' => null];
     }
@@ -239,7 +262,8 @@ function clubs_store_image(array $file, string $kind): array {
         return ['filename' => null, 'error' => "ذخیره تصویر {$label} ناموفق بود."];
     }
 
-    $filename = ($kind === 'avatar' ? 'club_avatar' : 'club_cover') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+    $prefix = $kind === 'avatar' ? 'club_avatar' : ($kind === 'banner' ? 'club_ad' : 'club_cover');
+    $filename = $prefix . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
     $dest = $dir . $filename;
     $moved = false;
     if (is_uploaded_file($tmp)) {
@@ -430,6 +454,14 @@ function clubs_approved_list(int $limit = 24): array {
     );
 }
 
+function clubs_hub_url(string $catSlug = ''): string {
+    $url = APP_URL . '/clubs';
+    if ($catSlug !== '') {
+        $url .= '?cat=' . rawurlencode($catSlug);
+    }
+    return $url;
+}
+
 function clubs_url(array $club, string $tab = '', string $q = ''): string {
     $url = APP_URL . '/clubs/' . rawurlencode((string)($club['slug'] ?? ''));
     $params = [];
@@ -483,6 +515,122 @@ function clubs_category_icon(?string $icon, string $name = ''): string {
     if (str_contains($name, 'کتاب')) return 'bi bi-book';
     if (str_contains($name, 'کودک') || str_contains($name, 'نوزاد')) return 'bi bi-emoji-smile';
     return 'bi bi-people';
+}
+
+function clubs_main_categories(): array {
+    try {
+        return DB::fetchAll(
+            'SELECT id, name, slug, icon FROM categories
+             WHERE is_active = 1 AND (parent_id IS NULL OR parent_id = 0)
+             ORDER BY sort_order, id'
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_root_category_id(int $categoryId): int {
+    $cur = $categoryId;
+    $safety = 20;
+    while ($cur > 0 && $safety-- > 0) {
+        $row = DB::fetch('SELECT id, parent_id FROM categories WHERE id = ?', [$cur]);
+        if (!$row) {
+            return $categoryId;
+        }
+        $pid = (int)($row['parent_id'] ?? 0);
+        if ($pid <= 0) {
+            return (int)$row['id'];
+        }
+        $cur = $pid;
+    }
+    return $categoryId;
+}
+
+function clubs_by_root_category(int $rootId): array {
+    clubs_ensure_tables();
+    $ids = function_exists('swaapin_category_descendant_ids')
+        ? swaapin_category_descendant_ids($rootId)
+        : [$rootId];
+    if (!$ids) {
+        return [];
+    }
+    $ph = implode(',', array_fill(0, count($ids), '?'));
+    try {
+        return DB::fetchAll(
+            "SELECT cl.*, c.name AS category_name, c.icon AS category_icon, c.slug AS category_slug
+             FROM clubs cl
+             LEFT JOIN categories c ON c.id = cl.category_id
+             WHERE cl.status = 'approved' AND cl.category_id IN ($ph)
+             ORDER BY cl.created_at DESC",
+            $ids
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_count_in_root(int $rootId): int {
+    return count(clubs_by_root_category($rootId));
+}
+
+function clubs_banner_active(): ?array {
+    clubs_ensure_tables();
+    if (!db_has_table('club_banners')) {
+        return null;
+    }
+    return DB::fetch('SELECT * FROM club_banners WHERE is_active = 1 ORDER BY sort_order ASC, id DESC LIMIT 1');
+}
+
+function clubs_banners_all(): array {
+    clubs_ensure_tables();
+    if (!db_has_table('club_banners')) {
+        return [];
+    }
+    return DB::fetchAll('SELECT * FROM club_banners ORDER BY sort_order ASC, id DESC');
+}
+
+function clubs_banner_get(int $id): ?array {
+    if ($id <= 0 || !db_has_table('club_banners')) {
+        return null;
+    }
+    return DB::fetch('SELECT * FROM club_banners WHERE id = ?', [$id]);
+}
+
+function clubs_safe_link(string $url): string {
+    $url = trim($url);
+    if ($url === '') {
+        return '';
+    }
+    return preg_match('#^(https?://|/)#i', $url) ? $url : '';
+}
+
+function clubs_banner_save(int $id, array $data): int {
+    clubs_ensure_tables();
+    if ($id > 0) {
+        DB::update('club_banners', $data, 'id = ?', [$id]);
+        $savedId = $id;
+    } else {
+        $savedId = DB::insert('club_banners', $data);
+    }
+    if ($savedId > 0 && !empty($data['is_active'])) {
+        DB::query('UPDATE club_banners SET is_active = 0 WHERE id <> ?', [$savedId]);
+    }
+    return $savedId;
+}
+
+function clubs_banner_delete(int $id): bool {
+    $row = clubs_banner_get($id);
+    if (!$row) {
+        return false;
+    }
+    DB::query('DELETE FROM club_banners WHERE id = ?', [$id]);
+    if (!empty($row['image'])) {
+        $file = UPLOAD_DIR . '/' . $row['image'];
+        if (is_file($file)) {
+            @unlink($file);
+        }
+    }
+    return true;
 }
 
 function clubs_get_by_slug(string $slug): ?array {

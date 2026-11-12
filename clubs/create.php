@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$categoryOptions = render_wizard_category_options([], (int)$vals['category_id'], true);
+$categoryOptions = render_wizard_category_options([], (int)$vals['category_id']);
 $formToken = h((string)$_SESSION['club_form_token']);
 $cssVer = @filemtime(__DIR__ . '/../src/css/clubs-create.css') ?: time();
 
