@@ -88,7 +88,8 @@ $isPremiumHorizontal = $cardLayout === 'premium-horizontal';
   <!-- ========== IMAGE SECTION (TOP) ========== -->
   <div class="lc-media-wrapper">
     <?php if (!empty($l['thumb'])): ?>
-    <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>" class="listing-card__media-img" width="360" height="230" loading="lazy" decoding="async">
+      <!-- listing-card__media-img -->
+    <img src="<?= UPLOAD_URL . h($l['thumb']) ?>" alt="<?= h($l['title']) ?>" class="" style="border-radius: 18px 0;" width="360" height="230" loading="lazy" decoding="async">
     <?php else: ?>
     <div class="listing-card__media-placeholder">
       <i class="bi bi-image"></i>

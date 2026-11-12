@@ -138,7 +138,7 @@ body.sw-story-open { overflow: hidden; }
         <span class="sw-story__ring">
           <img src="<?= UPLOAD_URL . h($s['image']) ?>" alt="<?= h($s['title'] !== '' ? $s['title'] : 'استوری') ?>" loading="lazy">
         </span>
-        <span class="sw-story__name"><?= h($s['title'] !== '' ? $s['title'] : 'استوری') ?></span>
+        <span class="sw-story__name"><?= h($s['title'] !== '' ? $s['title'] : '') ?></span>
       </button>
       <?php endforeach; ?>
     </div>
