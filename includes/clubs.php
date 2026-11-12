@@ -196,14 +196,13 @@ function clubs_store_image(array $file, string $kind): array {
         return ['filename' => null, 'error' => 'تصویر پروفایل باید حداقل ۲۰۰ × ۲۰۰ پیکسل باشد.'];
     }
 
-    $dir = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . 'clubs' . DIRECTORY_SEPARATOR;
-    if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir)) {
+    $dir = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR;
+    if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
         swapin_debug_log('club-upload-mkdir-failed', ['dir' => $dir, 'error' => error_get_last()]);
         return ['filename' => null, 'error' => "ذخیره تصویر {$label} ناموفق بود."];
     }
-    @chmod($dir, 0777);
 
-    $filename = ($kind === 'avatar' ? 'avatar' : 'cover') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+    $filename = ($kind === 'avatar' ? 'club_avatar' : 'club_cover') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
     $dest = $dir . $filename;
     $moved = false;
     if (is_uploaded_file($tmp)) {
@@ -227,7 +226,7 @@ function clubs_store_image(array $file, string $kind): array {
         return ['filename' => null, 'error' => "ذخیره تصویر {$label} ناموفق بود."];
     }
     @chmod($dest, 0644);
-    return ['filename' => 'clubs/' . $filename, 'error' => null];
+    return ['filename' => $filename, 'error' => null];
 }
 
 function clubs_create(int $ownerId, array $fields, array $files): array {

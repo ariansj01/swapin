@@ -175,7 +175,6 @@
 
 .club-avatar-row {
   display: flex;
-  flex-direction: row-reverse;
   align-items: center;
   justify-content: flex-start;
   gap: 14px;

@@ -257,7 +257,7 @@ render_navbar($user);
   </div>
 
   <p class="club-mnote"><i class="bi bi-info-circle"></i> بعداً می‌تونی اطلاعات و تنظیمات کلاب را ویرایش کنی.</p>
-  <p class="club-create__footline">سواپین؛ جایی برای معامله‌های بهتر، در کنار هم.</p>
+  <!-- <p class="club-create__footline">سواپین؛ جایی برای معامله‌های بهتر، در کنار هم.</p> -->
   <?php endif; ?>
 </main>
 
