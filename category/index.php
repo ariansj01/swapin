@@ -23,6 +23,7 @@ if ($_reqPath !== '') {
         'api', 'admin', 'includes', 'seed', 'database', 'storage', 'tools', 'vendor', 'logs', 'backups', 'sql',
         'store', 'orders', 'chat', 'store-offers', 'shops', 'search', 'shop', 'support', 'pwa', 'ai-lab', 'sep',
         'iso', 'listing', 'listings', 'auth', 'page', 'src', 'css', 'js', 'assets', 'scripts', 'ops', 'blog',
+        'clubs', 'club',
     ];
     if (ctype_digit((string) $_last)
         && (count($_segments) === 1 || (count($_segments) === 2 && !in_array(strtolower($_segments[0]), $_systemFirst, true)))) {

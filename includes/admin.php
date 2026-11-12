@@ -119,6 +119,13 @@ function admin_pending_counts(): array {
         $storeRequests = store_request_pending_count();
     } catch (Throwable) {}
 
+    $clubs = 0;
+    try {
+        if (function_exists('clubs_pending_count')) {
+            $clubs = clubs_pending_count();
+        }
+    } catch (Throwable) {}
+
     $liveChat = 0;
     try {
         if (db_has_table('live_chats')) {
@@ -134,6 +141,7 @@ function admin_pending_counts(): array {
         'tickets'        => $tickets + $errors,
         'live_chat'      => $liveChat,
         'store_requests' => $storeRequests,
+        'clubs'          => $clubs,
         'users'          => $users,
     ];
 }
