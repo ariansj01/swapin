@@ -2,11 +2,12 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../includes/clubs.php';
+require_once __DIR__ . '/../includes/banners.php';
 
 $user = auth_user();
 clubs_ensure_tables();
 
-$clubs = clubs_approved_list(40);
+$clubs = clubs_approved_list(100);
 $slug = clean($_GET['slug'] ?? '');
 if ($slug === '') {
     // /clubs/<slug> بدون پارامتر slug هم کار کند (وقتی وب‌سرور مسیر را پاس نمی‌دهد)
@@ -33,9 +34,6 @@ if ($slug !== '') {
     if ($club && ($club['status'] ?? '') !== 'approved' && !(function_exists('is_admin_user') && is_admin_user($user))) {
         $club = null;
     }
-}
-if (!$club && $clubs) {
-    $club = $clubs[0];
 }
 
 $flash = (string)($_SESSION['club_flash'] ?? '');
@@ -87,6 +85,56 @@ $listings = ($club && $canSeeListings && in_array($tab, ['listings', 'buy', 'swa
 $members = ($club && $tab === 'members') ? clubs_members_list((int)$club['id']) : [];
 $messages = ($club && $tab === 'chat') ? array_reverse(clubs_messages((int)$club['id'])) : [];
 
+// --- داده‌های صفحه فهرست کلاب‌ها (وقتی کلاب مشخصی انتخاب نشده) ---
+$adBanner = null;
+$adLink = '';
+$rootCategories = [];
+$catRoot = [];
+$catCounts = [];
+$memberCounts = [];
+if (!$club) {
+    $adList = banners_active();
+    $adBanner = $adList[0] ?? null;
+    if ($adBanner) {
+        $adLink = banners_safe_link((string)($adBanner['link_url'] ?? ''));
+    }
+
+    try {
+        $rootCategories = DB::fetchAll(
+            'SELECT id, name, slug, icon FROM categories
+             WHERE (parent_id IS NULL OR parent_id = 0) AND is_active = 1
+             ORDER BY sort_order ASC, id ASC'
+        ) ?: [];
+    } catch (Throwable $e) {
+        $rootCategories = [];
+    }
+
+    if (function_exists('swaapin_category_descendant_ids')) {
+        foreach ($rootCategories as $r) {
+            foreach (swaapin_category_descendant_ids((int)$r['id']) as $cid) {
+                $catRoot[(int)$cid] = (int)$r['id'];
+            }
+        }
+    }
+
+    foreach ($clubs as $c) {
+        $rid = $catRoot[(int)($c['category_id'] ?? 0)] ?? 0;
+        if ($rid > 0) {
+            $catCounts[$rid] = ($catCounts[$rid] ?? 0) + 1;
+        }
+    }
+
+    if ($clubs) {
+        try {
+            $rows = DB::fetchAll("SELECT club_id, COUNT(*) AS c FROM club_members WHERE status = 'active' GROUP BY club_id");
+            foreach ($rows as $r) {
+                $memberCounts[(int)$r['club_id']] = (int)$r['c'];
+            }
+        } catch (Throwable $e) {
+        }
+    }
+}
+
 $coverUrl = $club ? clubs_image_url($club['cover_image'] ?? '') : '';
 $avatarUrl = $club ? clubs_image_url($club['avatar_image'] ?? '') : '';
 $joinLabel = $state['member'] ? 'عضو کلاب هستید' : ($state['pending'] ? 'در انتظار تأیید' : 'عضویت در کلاب');
@@ -106,11 +154,109 @@ render_navbar($user);
 
 <main id="main-content" class="clubs-hub">
 <?php if (!$club): ?>
-  <div class="clubs-empty">
+
+  <?php if ($adBanner && !empty($adBanner['image'])): ?>
+    <?php if ($adLink !== ''): ?><a class="clubs-ad" href="<?= h($adLink) ?>" rel="noopener"><?php else: ?><div class="clubs-ad"><?php endif; ?>
+      <img src="<?= h(UPLOAD_URL . $adBanner['image']) ?>" alt="<?= h((string)($adBanner['title'] ?? 'بنر تبلیغاتی')) ?>">
+    <?php if ($adLink !== ''): ?></a><?php else: ?></div><?php endif; ?>
+  <?php endif; ?>
+
+  <div class="clubs-dir-head">
     <h1>کلاب‌های سواپین</h1>
-    <p>هنوز کلاب تأییدشده‌ای وجود ندارد.</p>
-    <a class="clubs-banner__cta" href="<?= APP_URL ?>/clubs/create">+ ساخت کلاب</a>
+    <p>در کلاب‌های تخصصی عضو شوید و با آدم‌های هم‌علاقه معامله کنید.</p>
   </div>
+
+  <?php if ($rootCategories): ?>
+  <div class="clubs-chips clubs-chips--cats">
+    <button type="button" class="is-on" data-cat-filter="0">همه</button>
+    <?php foreach ($rootCategories as $r): ?>
+    <button type="button" data-cat-filter="<?= (int)$r['id'] ?>"><?= h($r['name']) ?></button>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
+  <div class="clubs-hub__grid clubs-hub__grid--directory">
+    <section class="clubs-main">
+      <?php if (!$clubs): ?>
+        <div class="clubs-empty">هنوز کلاب تأییدشده‌ای وجود ندارد.</div>
+      <?php else: ?>
+        <div class="clubs-cards">
+          <?php foreach ($clubs as $c):
+            $cCover = clubs_image_url($c['cover_image'] ?? '');
+            $cRid = $catRoot[(int)($c['category_id'] ?? 0)] ?? 0;
+          ?>
+          <article class="club-item" data-cat="<?= (int)$cRid ?>">
+            <div class="club-item__media">
+              <?php if ($cCover): ?><img src="<?= h($cCover) ?>" alt="<?= h($c['name']) ?>" loading="lazy"><?php endif; ?>
+            </div>
+            <div class="club-item__body">
+              <h3 class="club-item__title"><?= h($c['name']) ?></h3>
+              <p class="club-item__sub"><?= h(mb_strimwidth((string)($c['description'] ?? ''), 0, 70, '…', 'UTF-8')) ?></p>
+              <div class="club-item__meta">
+                <span><i class="<?= h(clubs_category_icon($c['category_icon'] ?? '', (string)($c['category_name'] ?? ''))) ?>"></i> <?= h($c['category_name'] ?? 'دسته‌بندی نشده') ?></span>
+                <span><i class="bi bi-people"></i> <?= clubs_fmt_compact((int)($memberCounts[(int)$c['id']] ?? 0)) ?> عضو</span>
+              </div>
+              <a class="club-item__cta" href="<?= h(clubs_url($c)) ?>">مشاهده کلاب <i class="bi bi-arrow-left"></i></a>
+            </div>
+          </article>
+          <?php endforeach; ?>
+        </div>
+        <div class="clubs-empty" data-cat-empty hidden>کلابی در این دسته‌بندی نیست.</div>
+      <?php endif; ?>
+    </section>
+
+    <aside class="clubs-panel clubs-rail">
+      <div class="clubs-rail__head">
+        <h2>دسته‌بندی‌های کلاب</h2>
+        <a class="clubs-rail__add" href="<?= APP_URL ?>/clubs/create"><i class="bi bi-plus-lg"></i> ساخت کلاب</a>
+      </div>
+      <button type="button" class="clubs-rail__item is-on" data-cat-filter="0">
+        <span class="clubs-rail__icon"><i class="bi bi-grid"></i></span>
+        <span>
+          <span class="clubs-rail__name">همه کلاب‌ها</span>
+          <span class="clubs-rail__meta"><?= clubs_fmt_compact(count($clubs)) ?> کلاب</span>
+        </span>
+      </button>
+      <?php foreach ($rootCategories as $r): ?>
+      <button type="button" class="clubs-rail__item" data-cat-filter="<?= (int)$r['id'] ?>">
+        <span class="clubs-rail__icon"><i class="<?= h(clubs_category_icon($r['icon'] ?? '', (string)$r['name'])) ?>"></i></span>
+        <span>
+          <span class="clubs-rail__name"><?= h($r['name']) ?></span>
+          <span class="clubs-rail__meta"><?= clubs_fmt_compact((int)($catCounts[(int)$r['id']] ?? 0)) ?> کلاب</span>
+        </span>
+      </button>
+      <?php endforeach; ?>
+      <div class="clubs-rail__promo">
+        <p>کلاب خودت رو بساز! با چند کلیک، کلاب اختصاصی خودتو راه‌اندازی کن.</p>
+        <a href="<?= APP_URL ?>/clubs/create">ساخت کلاب</a>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+  (function () {
+    var filters = document.querySelectorAll('[data-cat-filter]');
+    var cards = document.querySelectorAll('.clubs-cards .club-item');
+    if (!filters.length || !cards.length) return;
+    var empty = document.querySelector('[data-cat-empty]');
+    function apply(cat) {
+      var shown = 0;
+      cards.forEach(function (card) {
+        var match = (cat === '0' || card.getAttribute('data-cat') === cat);
+        card.style.display = match ? '' : 'none';
+        if (match) shown++;
+      });
+      filters.forEach(function (f) {
+        f.classList.toggle('is-on', f.getAttribute('data-cat-filter') === cat);
+      });
+      if (empty) empty.hidden = shown > 0;
+    }
+    filters.forEach(function (f) {
+      f.addEventListener('click', function () { apply(f.getAttribute('data-cat-filter')); });
+    });
+  })();
+  </script>
+
 <?php else: ?>
 
   <?php if ($flash !== ''): ?>
