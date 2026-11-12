@@ -49,6 +49,7 @@ function panel_nav_items(array $user): array {
     $items = [
         'dashboard'    => [$url . '/dashboard',           'داشبورد',       'bi-speedometer2',    0],
         'my'           => [$url . '/listings/my',          'آگهی‌های من',   'bi-grid',            0],
+        'club_create'  => [$url . '/clubs/create',         'ساخت کلاب',     'bi-people',          0],
         'iso'          => [$url . '/iso',                  'نیازهای من برای معامله',       'bi-search-heart', $isoCount],
         'promote'      => [$promote,                       'ارتقای آگهی',   'bi-rocket-takeoff',  0],
         'saved'        => [$url . '/listings/saved',        'علاقه‌مندی‌ها', 'bi-heart',           0],

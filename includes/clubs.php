@@ -152,48 +152,82 @@ function clubs_fields_from_input(array $input): array {
     ];
 }
 
-function clubs_validate_image_file(array $file, string $kind): ?string {
-    $err = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
-    if ($err === UPLOAD_ERR_NO_FILE || ($file['name'] ?? '') === '') {
-        return null;
+function clubs_image_empty(array $file): bool {
+    return (int)($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE
+        || (string)($file['name'] ?? '') === '';
+}
+
+/** @return array{filename:?string,error:?string} */
+function clubs_store_image(array $file, string $kind): array {
+    $label = $kind === 'avatar' ? 'پروفایل' : 'کاور';
+    if (clubs_image_empty($file)) {
+        return ['filename' => null, 'error' => null];
     }
-    if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) {
-        return $kind === 'cover'
-            ? 'حجم تصویر کاور نباید بیشتر از ۵ مگابایت باشد.'
-            : 'حجم تصویر پروفایل نباید بیشتر از ۵ مگابایت باشد.';
+
+    $err = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+    if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE || (int)($file['size'] ?? 0) > 5 * 1024 * 1024) {
+        return ['filename' => null, 'error' => "حجم تصویر {$label} نباید بیشتر از ۵ مگابایت باشد."];
     }
     if ($err !== UPLOAD_ERR_OK) {
-        return $kind === 'cover' ? 'آپلود تصویر کاور ناموفق بود.' : 'آپلود تصویر پروفایل ناموفق بود.';
-    }
-    if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
-        return $kind === 'cover'
-            ? 'حجم تصویر کاور نباید بیشتر از ۵ مگابایت باشد.'
-            : 'حجم تصویر پروفایل نباید بیشتر از ۵ مگابایت باشد.';
+        return ['filename' => null, 'error' => "آپلود تصویر {$label} ناموفق بود."];
     }
 
-    $valid = validate_uploaded_image($file);
-    if (!$valid) {
-        return $kind === 'cover'
-            ? 'تصویر کاور باید JPG یا PNG باشد.'
-            : 'تصویر پروفایل باید JPG یا PNG باشد.';
-    }
-    $ext = strtolower((string)($valid['ext'] ?? ''));
-    if (!in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
-        return $kind === 'cover'
-            ? 'تصویر کاور فقط با فرمت JPG یا PNG پذیرفته می‌شود.'
-            : 'تصویر پروفایل فقط با فرمت JPG یا PNG پذیرفته می‌شود.';
+    $tmp = (string)($file['tmp_name'] ?? '');
+    if ($tmp === '' || !is_file($tmp)) {
+        return ['filename' => null, 'error' => "آپلود تصویر {$label} ناموفق بود."];
     }
 
-    if ($kind === 'avatar') {
-        $info = @getimagesize((string)$file['tmp_name']);
-        $w = is_array($info) ? (int)($info[0] ?? 0) : 0;
-        $h = is_array($info) ? (int)($info[1] ?? 0) : 0;
-        if ($w < 200 || $h < 200) {
-            return 'تصویر پروفایل باید حداقل ۲۰۰ × ۲۰۰ پیکسل باشد.';
+    $info = @getimagesize($tmp);
+    $w = is_array($info) ? (int)($info[0] ?? 0) : 0;
+    $h = is_array($info) ? (int)($info[1] ?? 0) : 0;
+    $mime = is_array($info) ? strtolower((string)($info['mime'] ?? '')) : '';
+    $extMap = ['image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/pjpeg' => 'jpg', 'image/png' => 'png', 'image/x-png' => 'png'];
+    $ext = $extMap[$mime] ?? null;
+    if ($ext === null) {
+        $origExt = strtolower((string)pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION));
+        if (in_array($origExt, ['jpg', 'jpeg', 'png'], true) && is_array($info)) {
+            $ext = $origExt === 'jpeg' ? 'jpg' : $origExt;
         }
     }
+    if ($ext === null || !in_array($ext, ['jpg', 'png'], true)) {
+        return ['filename' => null, 'error' => "تصویر {$label} فقط با فرمت JPG یا PNG پذیرفته می‌شود."];
+    }
+    if ($kind === 'avatar' && ($w < 200 || $h < 200)) {
+        return ['filename' => null, 'error' => 'تصویر پروفایل باید حداقل ۲۰۰ × ۲۰۰ پیکسل باشد.'];
+    }
 
-    return null;
+    $dir = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . 'clubs' . DIRECTORY_SEPARATOR;
+    if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir)) {
+        swapin_debug_log('club-upload-mkdir-failed', ['dir' => $dir, 'error' => error_get_last()]);
+        return ['filename' => null, 'error' => "ذخیره تصویر {$label} ناموفق بود."];
+    }
+    @chmod($dir, 0777);
+
+    $filename = ($kind === 'avatar' ? 'avatar' : 'cover') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+    $dest = $dir . $filename;
+    $moved = false;
+    if (is_uploaded_file($tmp)) {
+        $moved = @move_uploaded_file($tmp, $dest);
+    }
+    if (!$moved && is_readable($tmp)) {
+        $moved = @copy($tmp, $dest);
+        if ($moved) {
+            @unlink($tmp);
+        }
+    }
+    if (!$moved || !is_file($dest)) {
+        swapin_debug_log('club-upload-move-failed', [
+            'kind' => $kind,
+            'tmp' => $tmp,
+            'dest' => $dest,
+            'writable' => is_writable($dir),
+            'is_uploaded' => is_uploaded_file($tmp),
+            'php_error' => error_get_last(),
+        ]);
+        return ['filename' => null, 'error' => "ذخیره تصویر {$label} ناموفق بود."];
+    }
+    @chmod($dest, 0644);
+    return ['filename' => 'clubs/' . $filename, 'error' => null];
 }
 
 function clubs_create(int $ownerId, array $fields, array $files): array {
@@ -235,36 +269,21 @@ function clubs_create(int $ownerId, array $fields, array $files): array {
 
     $coverFile = $files['cover_image'] ?? [];
     $avatarFile = $files['avatar_image'] ?? [];
-    $coverErr = clubs_validate_image_file($coverFile, 'cover');
-    $avatarErr = clubs_validate_image_file($avatarFile, 'avatar');
-    if ($coverErr) {
-        $errors['cover_image'] = $coverErr;
-    }
-    if ($avatarErr) {
-        $errors['avatar_image'] = $avatarErr;
-    }
 
     if ($errors) {
         return ['ok' => false, 'errors' => $errors];
     }
 
-    $coverName = null;
-    $avatarName = null;
-    $hasCover = (($coverFile['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) && ($coverFile['name'] ?? '') !== '';
-    $hasAvatar = (($avatarFile['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) && ($avatarFile['name'] ?? '') !== '';
-
-    if ($hasCover) {
-        $coverName = upload_image($coverFile, 'club_cover');
-        if (!$coverName) {
-            return ['ok' => false, 'errors' => ['cover_image' => 'ذخیره تصویر کاور ناموفق بود.']];
-        }
+    $coverStore = clubs_store_image($coverFile, 'cover');
+    if (!empty($coverStore['error'])) {
+        return ['ok' => false, 'errors' => ['cover_image' => $coverStore['error']]];
     }
-    if ($hasAvatar) {
-        $avatarName = upload_image($avatarFile, 'club_avatar');
-        if (!$avatarName) {
-            return ['ok' => false, 'errors' => ['avatar_image' => 'ذخیره تصویر پروفایل ناموفق بود.']];
-        }
+    $avatarStore = clubs_store_image($avatarFile, 'avatar');
+    if (!empty($avatarStore['error'])) {
+        return ['ok' => false, 'errors' => ['avatar_image' => $avatarStore['error']]];
     }
+    $coverName = $coverStore['filename'];
+    $avatarName = $avatarStore['filename'];
 
     $slug = clubs_generate_slug($name);
 
