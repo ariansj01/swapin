@@ -37,6 +37,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ' . APP_URL . '/admin/clubs.php?id=' . $clubId);
         exit;
     }
+    if ($action === 'save_rules' && $clubId > 0) {
+        $rules = trim((string)($_POST['rules'] ?? ''));
+        $description = trim((string)($_POST['description'] ?? ''));
+        if (mb_strlen($rules) > 5000) {
+            admin_set_flash('متن قوانین خیلی بلند است.', 'error');
+        } else {
+            clubs_update_content($clubId, $rules, $description);
+            admin_set_flash('قوانین و توضیحات کلاب ذخیره شد.');
+        }
+        header('Location: ' . APP_URL . '/admin/clubs.php?id=' . $clubId . '&status=' . urlencode($statusFilter));
+        exit;
+    }
 }
 
 [$flash, $flashType] = admin_flash();
@@ -119,13 +131,23 @@ ob_start();
     <?php endif; ?>
   </div>
 
-  <p style="line-height:1.8"><?= nl2br(h($detail['description'])) ?></p>
-  <?php if (!empty($detail['rules'])): ?>
-  <div class="mt-4">
-    <strong>قوانین کلاب</strong>
-    <p style="line-height:1.8"><?= nl2br(h($detail['rules'])) ?></p>
-  </div>
-  <?php endif; ?>
+  <form method="POST" class="mt-4">
+    <?= csrf_field() ?>
+    <input type="hidden" name="club_id" value="<?= (int)$detail['id'] ?>">
+    <input type="hidden" name="action" value="save_rules">
+    <div class="form-group">
+      <label class="form-label">درباره کلاب</label>
+      <textarea class="form-control" name="description" rows="3" maxlength="500"><?= h((string)($detail['description'] ?? '')) ?></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">قوانین کلاب (تب قوانین در صفحه کلاب)</label>
+      <textarea class="form-control" name="rules" rows="8" maxlength="5000" placeholder="قوانین نمایش‌داده‌شده در تب قوانین را اینجا وارد کنید."><?= h((string)($detail['rules'] ?? '')) ?></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">ذخیره قوانین</button>
+    <?php if (!empty($detail['slug'])): ?>
+    <a class="btn btn-outline" href="<?= APP_URL ?>/clubs/<?= h($detail['slug']) ?>?tab=rules" target="_blank">مشاهده تب قوانین</a>
+    <?php endif; ?>
+  </form>
 
   <?php if (!empty($detail['admin_note'])): ?>
   <div class="alert alert-warning mt-4"><strong>یادداشت ادمین:</strong> <?= h($detail['admin_note']) ?></div>

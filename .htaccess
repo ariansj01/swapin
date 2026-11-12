@@ -94,6 +94,7 @@ Options -MultiViews -Indexes
 
   RewriteRule ^clubs/?$ clubs/index.php [L,NC,QSA]
   RewriteRule ^clubs/create/?$ clubs/create.php [L,NC,QSA]
+  RewriteRule ^clubs/([a-zA-Z0-9\-]+)/?$ clubs/index.php?slug=$1 [L,NC,QSA]
 
   RewriteRule ^orders/?$ orders/index.php [L,NC,QSA]
   RewriteRule ^orders/checkout/?$ orders/checkout.php [L,NC,QSA]

@@ -60,6 +60,42 @@ function clubs_ensure_tables(): void {
             swapin_debug_log('migration-error-club-members-create', ['msg' => $e->getMessage()]);
         }
     }
+
+    if (!db_has_table('club_follows')) {
+        try {
+            DB::query("
+                CREATE TABLE `club_follows` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `club_id` INT UNSIGNED NOT NULL,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_club_follow` (`club_id`, `user_id`),
+                    KEY `idx_club_follows_user` (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-club-follows-create', ['msg' => $e->getMessage()]);
+        }
+    }
+
+    if (!db_has_table('club_messages')) {
+        try {
+            DB::query("
+                CREATE TABLE `club_messages` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `club_id` INT UNSIGNED NOT NULL,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `body` VARCHAR(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_club_messages_club` (`club_id`, `id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-club-messages-create', ['msg' => $e->getMessage()]);
+        }
+    }
 }
 
 function clubs_status_labels(): array {
@@ -107,7 +143,8 @@ function clubs_generate_slug(string $name, int $excludeId = 0): string {
     $slug = preg_replace('/[^a-zA-Z0-9_\-]+/u', '-', $slug) ?? '';
     $slug = trim($slug, '-');
     $slug = mb_strtolower($slug, 'UTF-8');
-    if ($slug === '' || preg_match('/^[_\-]+$/', $slug)) {
+    $reserved = ['create', 'index', 'join', 'follow', 'chat'];
+    if ($slug === '' || preg_match('/^[_\-]+$/', $slug) || in_array($slug, $reserved, true)) {
         $slug = 'club-' . substr(bin2hex(random_bytes(4)), 0, 8);
     }
     $base = $slug;
@@ -358,7 +395,7 @@ function clubs_set_status(int $id, string $status, int $adminId, string $note = 
             'type'    => 'club',
             'title'   => 'کلاب شما تأیید شد',
             'body'    => 'کلاب «' . $club['name'] . '» تأیید شد و در سواپین فعال است.',
-            'link'    => APP_URL . '/clubs',
+            'link'    => APP_URL . '/clubs/' . rawurlencode((string)($club['slug'] ?? '')),
             'is_read' => 0,
         ]);
     } elseif ($status === 'rejected') {
@@ -384,11 +421,303 @@ function clubs_approved_list(int $limit = 24): array {
         return [];
     }
     return DB::fetchAll(
-        'SELECT cl.*, c.name AS category_name
+        'SELECT cl.*, c.name AS category_name, c.icon AS category_icon, c.slug AS category_slug
          FROM clubs cl
          LEFT JOIN categories c ON c.id = cl.category_id
          WHERE cl.status = "approved"
          ORDER BY cl.created_at DESC
          LIMIT ' . max(1, min(100, $limit))
     );
+}
+
+function clubs_url(array $club, string $tab = '', string $q = ''): string {
+    $url = APP_URL . '/clubs/' . rawurlencode((string)($club['slug'] ?? ''));
+    $params = [];
+    if ($tab !== '' && $tab !== 'listings') {
+        $params['tab'] = $tab;
+    }
+    if ($q !== '') {
+        $params['q'] = $q;
+    }
+    if ($params) {
+        $url .= '?' . http_build_query($params);
+    }
+    return $url;
+}
+
+function clubs_image_url(?string $path): string {
+    $path = trim((string)$path);
+    if ($path === '') {
+        return '';
+    }
+    if (preg_match('#^https?://#i', $path) || str_starts_with($path, '//')) {
+        return $path;
+    }
+    return UPLOAD_URL . ltrim($path, '/');
+}
+
+function clubs_fmt_compact(int $n): string {
+    if ($n >= 1000000) {
+        return persian_digits(rtrim(rtrim(number_format($n / 1000000, 1, '.', ''), '0'), '.')) . 'M';
+    }
+    if ($n >= 1000) {
+        return persian_digits(rtrim(rtrim(number_format($n / 1000, 1, '.', ''), '0'), '.')) . 'K';
+    }
+    return fmt_num($n);
+}
+
+function clubs_category_icon(?string $icon, string $name = ''): string {
+    $icon = trim((string)$icon);
+    if ($icon !== '') {
+        if (!str_starts_with($icon, 'bi')) {
+            $icon = 'bi ' . $icon;
+        }
+        return $icon;
+    }
+    $name = $name . '';
+    if (str_contains($name, 'موبایل') || str_contains($name, 'دیجیتال')) return 'bi bi-phone';
+    if (str_contains($name, 'خانه') || str_contains($name, 'آشپز')) return 'bi bi-house';
+    if (str_contains($name, 'پوشاک') || str_contains($name, 'مد')) return 'bi bi-handbag';
+    if (str_contains($name, 'خودرو') || str_contains($name, 'ماشین')) return 'bi bi-car-front';
+    if (str_contains($name, 'ورزش')) return 'bi bi-trophy';
+    if (str_contains($name, 'کتاب')) return 'bi bi-book';
+    if (str_contains($name, 'کودک') || str_contains($name, 'نوزاد')) return 'bi bi-emoji-smile';
+    return 'bi bi-people';
+}
+
+function clubs_get_by_slug(string $slug): ?array {
+    clubs_ensure_tables();
+    $slug = trim($slug);
+    if ($slug === '') {
+        return null;
+    }
+    return DB::fetch(
+        'SELECT cl.*, c.name AS category_name, c.icon AS category_icon, c.slug AS category_slug,
+                u.name AS owner_name, u.avatar AS owner_avatar
+         FROM clubs cl
+         LEFT JOIN categories c ON c.id = cl.category_id
+         LEFT JOIN users u ON u.id = cl.owner_id
+         WHERE cl.slug = ? LIMIT 1',
+        [$slug]
+    );
+}
+
+function clubs_category_ids(array $club): array {
+    $id = (int)($club['category_id'] ?? 0);
+    if ($id <= 0) {
+        return [];
+    }
+    if (function_exists('swaapin_category_descendant_ids')) {
+        return swaapin_category_descendant_ids($id);
+    }
+    return [$id];
+}
+
+function clubs_stats(array $club): array {
+    $clubId = (int)$club['id'];
+    $members = 0;
+    $posts = 0;
+    $trades = 0;
+    try {
+        $members = (int)(DB::fetch(
+            "SELECT COUNT(*) AS c FROM club_members WHERE club_id = ? AND status = 'active'",
+            [$clubId]
+        )['c'] ?? 0);
+    } catch (Throwable) {}
+
+    $catIds = clubs_category_ids($club);
+    if ($catIds) {
+        $ph = implode(',', array_fill(0, count($catIds), '?'));
+        try {
+            $posts = (int)(DB::fetch(
+                "SELECT COUNT(*) AS c FROM listings WHERE category_id IN ($ph) AND status = 'active' AND review_status = 'approved'",
+                $catIds
+            )['c'] ?? 0);
+        } catch (Throwable) {}
+        try {
+            if (db_has_table('trades')) {
+                $trades = (int)(DB::fetch(
+                    "SELECT COUNT(*) AS c FROM trades t
+                     JOIN listings l ON l.id = t.listing_id
+                     WHERE l.category_id IN ($ph) AND t.status = 'completed'",
+                    $catIds
+                )['c'] ?? 0);
+            }
+        } catch (Throwable) {}
+    }
+    return ['members' => $members, 'posts' => $posts, 'trades' => $trades];
+}
+
+function clubs_member_avatars(int $clubId, int $limit = 3): array {
+    try {
+        return DB::fetchAll(
+            "SELECT u.name, u.avatar FROM club_members m
+             JOIN users u ON u.id = m.user_id
+             WHERE m.club_id = ? AND m.status = 'active'
+             ORDER BY FIELD(m.role,'owner','moderator','member'), m.id
+             LIMIT " . max(1, min(8, $limit)),
+            [$clubId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_managers(int $clubId): array {
+    try {
+        return DB::fetchAll(
+            "SELECT u.id, u.name, u.avatar, m.role FROM club_members m
+             JOIN users u ON u.id = m.user_id
+             WHERE m.club_id = ? AND m.status = 'active' AND m.role IN ('owner','moderator')
+             ORDER BY FIELD(m.role,'owner','moderator'), m.id LIMIT 8",
+            [$clubId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_user_state(?array $user, int $clubId): array {
+    $uid = (int)($user['id'] ?? 0);
+    $state = ['member' => false, 'pending' => false, 'following' => false, 'role' => '', 'owner' => false];
+    if ($uid <= 0 || $clubId <= 0) {
+        return $state;
+    }
+    try {
+        $row = DB::fetch('SELECT role, status FROM club_members WHERE club_id = ? AND user_id = ?', [$clubId, $uid]);
+        if ($row) {
+            $state['role'] = (string)$row['role'];
+            $state['owner'] = $row['role'] === 'owner';
+            $state['member'] = $row['status'] === 'active';
+            $state['pending'] = $row['status'] === 'pending';
+        }
+    } catch (Throwable) {}
+    try {
+        $fol = DB::fetch('SELECT id FROM club_follows WHERE club_id = ? AND user_id = ?', [$clubId, $uid]);
+        $state['following'] = (bool)$fol;
+    } catch (Throwable) {}
+    return $state;
+}
+
+function clubs_join(int $clubId, int $userId, bool $requireApproval): array {
+    clubs_ensure_tables();
+    $existing = DB::fetch('SELECT id, status FROM club_members WHERE club_id = ? AND user_id = ?', [$clubId, $userId]);
+    if ($existing) {
+        if ($existing['status'] === 'banned') {
+            return ['ok' => false, 'error' => 'امکان عضویت در این کلاب وجود ندارد.'];
+        }
+        return ['ok' => true, 'status' => $existing['status']];
+    }
+    $status = $requireApproval ? 'pending' : 'active';
+    DB::insert('club_members', [
+        'club_id' => $clubId,
+        'user_id' => $userId,
+        'role'    => 'member',
+        'status'  => $status,
+    ]);
+    return ['ok' => true, 'status' => $status];
+}
+
+function clubs_follow_toggle(int $clubId, int $userId): bool {
+    clubs_ensure_tables();
+    $row = DB::fetch('SELECT id FROM club_follows WHERE club_id = ? AND user_id = ?', [$clubId, $userId]);
+    if ($row) {
+        DB::query('DELETE FROM club_follows WHERE id = ?', [(int)$row['id']]);
+        return false;
+    }
+    DB::insert('club_follows', ['club_id' => $clubId, 'user_id' => $userId]);
+    return true;
+}
+
+function clubs_listings(array $club, string $mode, string $q, int $limit = 12, int $offset = 0): array {
+    $catIds = clubs_category_ids($club);
+    if (!$catIds) {
+        return [];
+    }
+    $ph = implode(',', array_fill(0, count($catIds), '?'));
+    $sql = "SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar,
+                   c.name AS cat_name,
+                   (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+            FROM listings l
+            JOIN users u ON u.id = l.user_id
+            JOIN categories c ON c.id = l.category_id
+            WHERE l.category_id IN ($ph) AND l.status = 'active' AND l.review_status = 'approved'";
+    $params = $catIds;
+    if (db_has_column('listings', 'listing_mode')) {
+        if ($mode === 'buy') {
+            $sql .= " AND l.listing_mode IN ('sell','both')";
+        } elseif ($mode === 'swap') {
+            $sql .= " AND l.listing_mode IN ('swap','both')";
+        }
+    }
+    $q = trim($q);
+    if ($q !== '') {
+        $sql .= ' AND (l.title LIKE ? OR l.description LIKE ?)';
+        $like = '%' . $q . '%';
+        $params[] = $like;
+        $params[] = $like;
+    }
+    $sql .= ' ORDER BY l.created_at DESC, l.id DESC LIMIT ' . (int)$limit . ' OFFSET ' . (int)$offset;
+    try {
+        return DB::fetchAll($sql, $params);
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_members_list(int $clubId, int $limit = 24): array {
+    try {
+        return DB::fetchAll(
+            "SELECT u.id, u.name, u.avatar, u.city, m.role, m.created_at
+             FROM club_members m
+             JOIN users u ON u.id = m.user_id
+             WHERE m.club_id = ? AND m.status = 'active'
+             ORDER BY FIELD(m.role,'owner','moderator','member'), m.created_at
+             LIMIT " . max(1, min(60, $limit)),
+            [$clubId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_messages(int $clubId, int $limit = 20): array {
+    try {
+        return DB::fetchAll(
+            "SELECT msg.*, u.name AS user_name, u.avatar AS user_avatar
+             FROM club_messages msg
+             JOIN users u ON u.id = msg.user_id
+             WHERE msg.club_id = ?
+             ORDER BY msg.id DESC
+             LIMIT " . max(1, min(50, $limit)),
+            [$clubId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_post_message(int $clubId, int $userId, string $body): array {
+    $body = clean($body);
+    if (mb_strlen($body) < 2) {
+        return ['ok' => false, 'error' => 'متن پیام خیلی کوتاه است.'];
+    }
+    if (mb_strlen($body) > 500) {
+        return ['ok' => false, 'error' => 'متن پیام حداکثر ۵۰۰ کاراکتر است.'];
+    }
+    DB::insert('club_messages', [
+        'club_id' => $clubId,
+        'user_id' => $userId,
+        'body'    => $body,
+    ]);
+    return ['ok' => true];
+}
+
+function clubs_update_content(int $clubId, string $rules, string $description = ''): bool {
+    clubs_ensure_tables();
+    DB::update('clubs', [
+        'rules'       => $rules !== '' ? $rules : null,
+        'description' => mb_substr(trim($description), 0, 500),
+    ], 'id = ?', [$clubId]);
+    return true;
 }

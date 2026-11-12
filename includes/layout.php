@@ -439,6 +439,10 @@ HTML;
           </div>
         </div>
 
+        <a href="{$url}/clubs" class="navbar-nav__link">
+          <i class="bi bi-people"></i> کلاب‌ها
+        </a>
+
         <div class="dropdown">
           <button class="navbar-nav__link navbar-nav__link--ai" id="ai-dropdown-btn" style="border:none;background:none;cursor:pointer">
             <i class="bi bi-stars"></i> دستیار هوشمند
@@ -492,6 +496,7 @@ HTML;
     echo "<a href=\"{$url}/shops\" class=\"mobile-drawer__link\"><i class=\"bi bi-shop\"></i> فروشگاه‌ها</a>";
     echo "<a href=\"{$url}/shops/online\" class=\"mobile-drawer__link\"><i class=\"bi bi-globe2\"></i> فروشگاه‌های آنلاین</a>";
     echo "<a href=\"{$url}/shops/physical\" class=\"mobile-drawer__link\"><i class=\"bi bi-building-check\"></i> فروشگاه‌های حضوری</a>";
+    echo "<a href=\"{$url}/clubs\" class=\"mobile-drawer__link\"><i class=\"bi bi-people\"></i> کلاب‌ها</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     // echo "<a href=\"{$url}/#home-steps\" class=\"mobile-drawer__link\"><i class=\"bi bi-diagram-3\"></i> سواَپین چگونه کار می‌کند؟</a>";
     echo "<a href=\"{$url}/installment-swap\" class=\"mobile-drawer__link\"><i class=\"bi bi-calendar-check\"></i> مبادله قسطی</a>";
