@@ -680,7 +680,7 @@ function wizard_ensure_parents_exist(): array {
     return $parentIds;
 }
 
-function render_wizard_category_options(array $categoriesIgnored = [], int $selectedId = 0): string {
+function render_wizard_category_options(array $categoriesIgnored = [], int $selectedId = 0, bool $rootOnly = false): string {
     try {
         $idsBySlug = swaapin_ensure_category_tree();
     } catch (Throwable $e) {
@@ -717,6 +717,15 @@ function render_wizard_category_options(array $categoriesIgnored = [], int $sele
         $id = (int)$r['id'];
         if (empty($parentsOf[$id] ?? [])) {
             $leaves[$id] = $r;
+        }
+    }
+
+    if ($rootOnly) {
+        $leaves = [];
+        foreach ($rows as $r) {
+            if ((int)($r['parent_id'] ?? 0) === 0) {
+                $leaves[(int)$r['id']] = $r;
+            }
         }
     }
 

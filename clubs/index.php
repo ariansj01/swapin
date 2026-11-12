@@ -8,6 +8,16 @@ clubs_ensure_tables();
 
 $clubs = clubs_approved_list(40);
 $slug = clean($_GET['slug'] ?? '');
+if ($slug === '') {
+    // /clubs/<slug> بدون پارامتر slug هم کار کند (وقتی وب‌سرور مسیر را پاس نمی‌دهد)
+    $path = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '');
+    if (preg_match('~^/clubs/([A-Za-z0-9\-]+)/?$~', $path, $m)) {
+        $cand = clean($m[1]);
+        if (!in_array($cand, ['create', 'index', 'join', 'follow', 'chat'], true)) {
+            $slug = $cand;
+        }
+    }
+}
 $tab = clean($_GET['tab'] ?? 'listings');
 $q = clean($_GET['q'] ?? '');
 $page = max(1, (int)($_GET['page'] ?? 1));
@@ -26,17 +36,6 @@ if ($slug !== '') {
 }
 if (!$club && $clubs) {
     $club = $clubs[0];
-}
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $slug === '' && $club && !empty($club['slug'])) {
-    $qs = $_GET;
-    unset($qs['slug']);
-    $go = clubs_url($club, $tab, $q);
-    if ($page > 1) {
-        $go .= (str_contains($go, '?') ? '&' : '?') . 'page=' . $page;
-    }
-    header('Location: ' . $go, true, 302);
-    exit;
 }
 
 $flash = (string)($_SESSION['club_flash'] ?? '');
