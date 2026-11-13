@@ -16,6 +16,16 @@ $_appBase = trim((string) parse_url(APP_URL, PHP_URL_PATH), '/');
 if ($_appBase !== '' && str_starts_with($_reqPath, $_appBase)) {
     $_reqPath = trim(substr($_reqPath, strlen($_appBase)), '/');
 }
+// وقتی nginx با rewrite داخلی به این فایل می‌زند، REQUEST_URI ممکن است
+// /category/index.php باشد؛ مسیر واقعی در slug_path است (مثل iran).
+$_reqPathNorm = strtolower($_reqPath);
+if ($_reqPathNorm === 'category/index.php' || $_reqPathNorm === 'category/index' || $_reqPathNorm === 'category') {
+    $_fromQuery = trim((string)($_GET['slug_path'] ?? ''), '/');
+    if ($_fromQuery === '') {
+        $_fromQuery = trim((string)($_GET['redirect_slugs'] ?? ''), '/');
+    }
+    $_reqPath = $_fromQuery;
+}
 if ($_reqPath !== '') {
     $_segments = explode('/', $_reqPath);
     $_last     = end($_segments);
@@ -23,7 +33,7 @@ if ($_reqPath !== '') {
         'api', 'admin', 'includes', 'seed', 'database', 'storage', 'tools', 'vendor', 'logs', 'backups', 'sql',
         'store', 'orders', 'chat', 'store-offers', 'shops', 'search', 'shop', 'support', 'pwa', 'ai-lab', 'sep',
         'iso', 'listing', 'listings', 'auth', 'page', 'src', 'css', 'js', 'assets', 'scripts', 'ops', 'blog',
-        'clubs', 'club',
+        'clubs', 'club', 'category',
     ];
     if (ctype_digit((string) $_last)
         && (count($_segments) === 1 || (count($_segments) === 2 && !in_array(strtolower($_segments[0]), $_systemFirst, true)))) {
