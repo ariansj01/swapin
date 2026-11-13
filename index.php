@@ -504,31 +504,35 @@ render_navbar($user);
       <!-- ===== Main Content (Only Sliders: Listings + Stores) ===== -->
       <div class="home-main-content">
 
-        <!-- Premium Listings Section (Active promotion plans) -->
+        <!-- Featured Listings Section (Active promotion plans) -->
         <?php if (!empty($premiumListings)): ?>
-        <section class="home-listings-section home-listings-section--premium" aria-label="آگهی‌های ویژه">
-          <div class="container">
-            <div class="home-section-heading home-section-heading--premium mb-5" style="width: 120%;margin-right: -25px;">
-               <a href="<?= APP_URL ?>/iran" class="home-section-heading__back">
-                 <i class="bi bi-chevron-left"></i>
-               </a>
-               <h2 style="margin: 0 !important;font-size: clamp(1.05rem, 1.8vw, 1.45rem) !important;font-weight: 800;letter-spacing: -0.02em;order: 1;">آگهی‌های ویژه</h2>
-             </div>
-             <div class="listings-rows-container">
-               <div class="listings-row-wrapper" id="listings-row-premium-parent">
-                 <div class="listings-scroll-row" id="listings-row-premium">
-                   <?php foreach (array_slice($premiumListings, 0, 20) as $l): ?>
-                   <div class="listings-scroll-card listings-scroll-card--premium">
-                     <?php 
-                       $cardLayout = 'premium-horizontal';
-                       include __DIR__ . '/includes/listing_card.php'; 
-                       unset($cardLayout);
-                     ?>
-                   </div>
-                   <?php endforeach; ?>
-                 </div>
-               </div>
-             </div>
+        <section class="home-listings-section home-listings-section--newest" aria-label="آگهی‌های ویژه">
+          <div class="home-section-heading newest-home-section-heading home-section-heading--large mb-5">
+            <h2>آگهی‌های ویژه</h2>
+            <a href="<?= APP_URL ?>/iran" class="home-section-heading__link">
+              مشاهده همه
+            </a>
+          </div>
+          <div class="listings-rows-container">
+            <div class="listings-row-wrapper">
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--next" data-target="featured-listings-row" aria-label="آگهی بعدی">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              <div class="listings-scroll-row" id="featured-listings-row">
+                <?php foreach (array_slice($premiumListings, 0, 40) as $l): ?>
+                <div class="listings-scroll-card">
+                  <?php 
+                    $cardLayout = 'premium-horizontal';
+                    include __DIR__ . '/includes/listing_card.php'; 
+                    unset($cardLayout);
+                  ?>
+                </div>
+                <?php endforeach; ?>
+              </div>
+              <button type="button" class="listings-slider-arrow listings-slider-arrow--prev" data-target="featured-listings-row" aria-label="آگهی قبلی">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </div>
           </div>
         </section>
         <?php endif; ?>
