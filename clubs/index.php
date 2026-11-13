@@ -102,6 +102,7 @@ $listMode = in_array($tab, ['buy', 'swap'], true) ? $tab : 'listings';
 $listings = ($activeCat && in_array($tab, ['listings', 'buy', 'swap'], true))
     ? clubs_listings_in_root((int)$activeCat['id'], $listMode, $q, $perPage, $offset)
     : [];
+$listingImages = clubs_listing_images_map(array_map(static fn ($row) => (int)$row['id'], $listings));
 $members = ($club && $tab === 'members') ? clubs_members_list((int)$club['id']) : [];
 $messages = ($club && $tab === 'chat') ? array_reverse(clubs_messages((int)$club['id'])) : [];
 
@@ -345,6 +346,47 @@ render_navbar($user);
               }
               $cStats = $ownerId > 0 ? $clubStatsCache[$ownerId] : ['posts' => 0, 'trades' => 0];
               $clubLogo = $ownerClub ? (clubs_image_url($ownerClub['avatar_image'] ?? '') ?: clubs_image_url($ownerClub['cover_image'] ?? '')) : '';
+              $imgs = $listingImages[(int)$l['id']] ?? [];
+              if (!$imgs && !empty($l['thumb'])) {
+                  $imgs[] = UPLOAD_URL . ltrim((string)$l['thumb'], '/');
+              }
+              $sellerAvatar = trim((string)($l['seller_avatar'] ?? ''));
+              if ($sellerAvatar !== '' && !preg_match('#^https?://#i', $sellerAvatar) && !str_starts_with($sellerAvatar, '//')) {
+                  $sellerAvatar = UPLOAD_URL . ltrim($sellerAvatar, '/');
+              }
+              $mode = (string)($l['listing_mode'] ?? 'swap');
+              $modalPayload = [
+                  'id' => (int)$l['id'],
+                  'title' => (string)$l['title'],
+                  'url' => listing_url($l),
+                  'city' => (string)($l['city'] ?? ''),
+                  'condition' => condition_label((string)($l['condition'] ?? '')),
+                  'views' => clubs_fmt_compact((int)($l['views'] ?? 0)),
+                  'price' => clubs_listing_price_label($l),
+                  'mode' => clubs_deal_type_label($mode),
+                  'modeBadge' => $mode === 'sell' ? 'فروش' : 'معاوضه',
+                  'desc' => (string)($l['description'] ?? ''),
+                  'want' => (string)($l['want_in_return'] ?? ''),
+                  'images' => $imgs,
+                  'seller' => [
+                      'name' => (string)($l['seller_name'] ?? ''),
+                      'avatar' => $sellerAvatar,
+                      'since' => clubs_member_since_label($l['seller_since'] ?? null),
+                      'rating' => fmt_num((float)($l['seller_rating'] ?? 0), 1),
+                      'reviews' => fmt_num((int)($l['seller_rating_count'] ?? 0)),
+                      'chat' => $user
+                          ? (APP_URL . '/chat/view?listing_id=' . (int)$l['id'])
+                          : $loginUrl,
+                  ],
+                  'club' => [
+                      'id' => (int)($ownerClub['id'] ?? 0),
+                      'name' => (string)($ownerClub['name'] ?? ''),
+                      'logo' => $clubLogo,
+                      'members' => clubs_fmt_compact((int)($cStats['members'] ?? 0)),
+                      'posts' => clubs_fmt_compact((int)($cStats['posts'] ?? 0)),
+                      'url' => $ownerClub ? clubs_url($ownerClub) : '',
+                  ],
+              ];
             ?>
             <article class="club-item">
               <div class="club-item__media">
@@ -371,7 +413,7 @@ render_navbar($user);
                   <span><i class="bi bi-arrow-left-right"></i> <?= clubs_fmt_compact((int)($cStats['trades'] ?? 0)) ?> معامله</span>
                   <span><i class="bi bi-box-seam"></i> <?= clubs_fmt_compact((int)($cStats['posts'] ?? 0)) ?> آگهی</span>
                 </div>
-                <a class="club-item__cta" href="<?= h(listing_url($l)) ?>">مشاهده جزئیات <i class="bi bi-arrow-left"></i></a>
+                <button type="button" class="club-item__cta" data-club-listing="<?= h(json_encode($modalPayload, JSON_UNESCAPED_UNICODE)) ?>">مشاهده جزئیات <i class="bi bi-arrow-left"></i></button>
               </div>
             </article>
             <?php endforeach; ?>
@@ -439,5 +481,196 @@ render_navbar($user);
   <?php endif; ?>
 <?php endif; ?>
 </main>
+
+<div class="clm" id="club-listing-modal" hidden>
+  <div class="clm__backdrop" data-clm-close></div>
+  <div class="clm__dialog" role="dialog" aria-modal="true" aria-labelledby="clm-title">
+    <div class="clm__gallery">
+      <div class="clm__hero">
+        <img id="clm-hero" src="" alt="">
+        <span class="clm__count" id="clm-count"><i class="bi bi-camera"></i> <span>1 / 1</span></span>
+      </div>
+      <div class="clm__thumbs" id="clm-thumbs"></div>
+    </div>
+    <div class="clm__body">
+      <div class="clm__top">
+        <button type="button" class="clm__close" data-clm-close aria-label="بستن"><i class="bi bi-x-lg"></i></button>
+        <span class="clm__badge" id="clm-badge">معاوضه</span>
+      </div>
+      <h2 class="clm__title" id="clm-title"></h2>
+      <div class="clm__meta">
+        <span id="clm-city"><i class="bi bi-geo-alt"></i> <em></em></span>
+        <span id="clm-cond"><i class="bi bi-box-seam"></i> <em></em></span>
+        <span id="clm-views"><i class="bi bi-eye"></i> <em></em> بازدید</span>
+      </div>
+      <div class="clm__price"><i class="bi bi-gem"></i> <strong id="clm-price"></strong></div>
+
+      <div class="clm__seller">
+        <img class="clm__seller-av" id="clm-seller-av" src="" alt="">
+        <div class="clm__seller-copy">
+          <strong id="clm-seller-name"></strong>
+          <span id="clm-seller-since"></span>
+        </div>
+        <div class="clm__seller-side">
+          <div class="clm__rate"><i class="bi bi-star-fill"></i> <b id="clm-rate"></b> <small id="clm-reviews"></small></div>
+          <a class="clm__chat" id="clm-chat" href="#"><i class="bi bi-chat-dots"></i> چت با فروشنده</a>
+        </div>
+      </div>
+
+      <div class="clm__clubbox">
+        <h3><i class="bi bi-people"></i> این آگهی در کلاب‌های زیر قابل مشاهده است:</h3>
+        <div class="clm__clubrow">
+          <img id="clm-club-logo" src="" alt="">
+          <div>
+            <strong id="clm-club-name"></strong>
+            <div class="clm__clubstats">
+              <span><i class="bi bi-people"></i> <em id="clm-club-members"></em> عضو</span>
+              <span><i class="bi bi-megaphone"></i> <em id="clm-club-posts"></em> آگهی</span>
+            </div>
+          </div>
+          <a class="clm__club-go" id="clm-club-go" href="#"><i class="bi bi-chevron-left"></i> مشاهده کلاب</a>
+        </div>
+      </div>
+
+      <div class="clm__deal"><i class="bi bi-arrow-left-right"></i> نوع معامله: <b id="clm-mode"></b></div>
+      <form method="POST" id="clm-join-form">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="join">
+        <input type="hidden" name="club_id" id="clm-join-id" value="0">
+        <button class="clm__join" type="submit"><i class="bi bi-people"></i> پیوستن به کلاب</button>
+      </form>
+      <button type="button" class="clm__ghost" id="clm-save" data-listing-id="0"><i class="bi bi-bookmark"></i> ذخیره آگهی</button>
+      <button type="button" class="clm__ghost" id="clm-share"><i class="bi bi-share"></i> اشتراک‌گذاری</button>
+
+      <div class="clm__tabs">
+        <button type="button" class="is-on" data-clm-tab="desc">توضیحات</button>
+        <button type="button" data-clm-tab="want">مبادله با</button>
+        <button type="button" data-clm-tab="comments">نظرات کاربران</button>
+      </div>
+      <div class="clm__panel is-on" data-clm-panel="desc" id="clm-desc"></div>
+      <div class="clm__panel" data-clm-panel="want" id="clm-want"></div>
+      <div class="clm__panel" data-clm-panel="comments">هنوز نظری برای این آگهی ثبت نشده است.</div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const modal = document.getElementById('club-listing-modal');
+  if (!modal) return;
+  const hero = document.getElementById('clm-hero');
+  const thumbs = document.getElementById('clm-thumbs');
+  const countEl = document.getElementById('clm-count').querySelector('span');
+  let images = [];
+  let idx = 0;
+  let listingUrl = '';
+
+  function setImg(i) {
+    if (!images.length) return;
+    idx = (i + images.length) % images.length;
+    hero.src = images[idx];
+    countEl.textContent = (idx + 1) + ' / ' + images.length;
+    thumbs.querySelectorAll('button').forEach((b, n) => b.classList.toggle('is-on', n === idx));
+  }
+  function closeModal() {
+    modal.hidden = true;
+    document.body.classList.remove('clm-open');
+  }
+  function openModal(data) {
+    images = Array.isArray(data.images) && data.images.length ? data.images : [];
+    listingUrl = data.url || '';
+    document.getElementById('clm-title').textContent = data.title || '';
+    document.getElementById('clm-badge').textContent = data.modeBadge || 'معاوضه';
+    document.querySelector('#clm-city em').textContent = data.city || '—';
+    document.querySelector('#clm-cond em').textContent = data.condition || '—';
+    document.querySelector('#clm-views em').textContent = data.views || '۰';
+    document.getElementById('clm-price').textContent = data.price || '';
+    document.getElementById('clm-mode').textContent = data.mode || 'معاوضه';
+    document.getElementById('clm-desc').textContent = data.desc || 'توضیحی ثبت نشده است.';
+    document.getElementById('clm-want').textContent = data.want || 'موردی برای مبادله ثبت نشده است.';
+    const s = data.seller || {};
+    const av = document.getElementById('clm-seller-av');
+    if (s.avatar) { av.src = s.avatar; av.style.display = ''; }
+    else { av.removeAttribute('src'); av.style.display = 'none'; }
+    document.getElementById('clm-seller-name').textContent = s.name || '';
+    document.getElementById('clm-seller-since').textContent = s.since || '';
+    document.getElementById('clm-rate').textContent = s.rating || '۰';
+    document.getElementById('clm-reviews').textContent = '(' + (s.reviews || '۰') + ' نظر)';
+    document.getElementById('clm-chat').href = s.chat || '#';
+    const c = data.club || {};
+    const logo = document.getElementById('clm-club-logo');
+    if (c.logo) { logo.src = c.logo; logo.style.display = ''; }
+    else { logo.removeAttribute('src'); logo.style.display = 'none'; }
+    document.getElementById('clm-club-name').textContent = c.name || '';
+    document.getElementById('clm-club-members').textContent = c.members || '۰';
+    document.getElementById('clm-club-posts').textContent = c.posts || '۰';
+    document.getElementById('clm-club-go').href = c.url || '#';
+    document.getElementById('clm-join-id').value = c.id || 0;
+    const saveBtn = document.getElementById('clm-save');
+    saveBtn.dataset.listingId = data.id || 0;
+    saveBtn.dataset.saved = 'false';
+    saveBtn.innerHTML = '<i class="bi bi-bookmark"></i> ذخیره آگهی';
+    thumbs.innerHTML = '';
+    images.forEach((src, n) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = '<img alt="">';
+      b.firstChild.src = src;
+      b.addEventListener('click', () => setImg(n));
+      thumbs.appendChild(b);
+    });
+    setImg(0);
+    modal.querySelectorAll('[data-clm-tab]').forEach(t => t.classList.toggle('is-on', t.dataset.clmTab === 'desc'));
+    modal.querySelectorAll('[data-clm-panel]').forEach(p => p.classList.toggle('is-on', p.dataset.clmPanel === 'desc'));
+    modal.hidden = false;
+    document.body.classList.add('clm-open');
+  }
+  document.querySelectorAll('[data-club-listing]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      try { openModal(JSON.parse(btn.getAttribute('data-club-listing') || '{}')); } catch (e) {}
+    });
+  });
+  modal.querySelectorAll('[data-clm-close]').forEach(el => el.addEventListener('click', closeModal));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+  modal.querySelectorAll('[data-clm-tab]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const key = tab.dataset.clmTab;
+      modal.querySelectorAll('[data-clm-tab]').forEach(t => t.classList.toggle('is-on', t === tab));
+      modal.querySelectorAll('[data-clm-panel]').forEach(p => p.classList.toggle('is-on', p.dataset.clmPanel === key));
+    });
+  });
+  document.getElementById('clm-save').addEventListener('click', async () => {
+    const btn = document.getElementById('clm-save');
+    const id = btn.dataset.listingId;
+    if (!id) return;
+    const fd = new FormData();
+    fd.append('listing_id', id);
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (csrf) fd.append('_csrf', csrf);
+    try {
+      const res = await fetch(<?= json_encode(APP_URL . '/api/save_listing.php') ?>, {
+        method: 'POST', body: fd, credentials: 'same-origin',
+        headers: csrf ? { 'X-CSRF-Token': csrf } : {}
+      });
+      const data = await res.json();
+      if (!res.ok && data.error === 'login_required') {
+        window.location.href = <?= json_encode($loginUrl) ?>;
+        return;
+      }
+      const saved = !!data.saved;
+      btn.dataset.saved = saved ? 'true' : 'false';
+      btn.innerHTML = saved
+        ? '<i class="bi bi-bookmark-fill"></i> ذخیره شده'
+        : '<i class="bi bi-bookmark"></i> ذخیره آگهی';
+    } catch (e) {}
+  });
+  document.getElementById('clm-share').addEventListener('click', async () => {
+    if (!listingUrl) return;
+    try {
+      if (navigator.share) await navigator.share({ url: listingUrl, title: document.getElementById('clm-title').textContent });
+      else { await navigator.clipboard.writeText(listingUrl); }
+    } catch (e) {}
+  });
+})();
+</script>
 <?php
 render_footer();

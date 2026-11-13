@@ -616,6 +616,71 @@ function clubs_listings_in_root(int $rootId, string $mode, string $q, int $limit
     return clubs_listings(['category_id' => $rootId], $mode, $q, $limit, $offset);
 }
 
+function clubs_listing_images_map(array $listingIds): array {
+    $listingIds = array_values(array_filter(array_map('intval', $listingIds)));
+    if (!$listingIds) {
+        return [];
+    }
+    $ph = implode(',', array_fill(0, count($listingIds), '?'));
+    try {
+        $rows = DB::fetchAll(
+            "SELECT listing_id, filename FROM listing_images
+             WHERE listing_id IN ($ph)
+             ORDER BY is_primary DESC, sort_order ASC, id ASC",
+            $listingIds
+        );
+    } catch (Throwable) {
+        return [];
+    }
+    $map = [];
+    foreach ($rows as $row) {
+        $id = (int)$row['listing_id'];
+        $file = trim((string)($row['filename'] ?? ''));
+        if ($file === '') {
+            continue;
+        }
+        $map[$id][] = UPLOAD_URL . ltrim($file, '/');
+    }
+    return $map;
+}
+
+function clubs_member_since_label(?string $datetime): string {
+    if (!$datetime) {
+        return '';
+    }
+    $ts = strtotime($datetime);
+    if ($ts === false) {
+        return '';
+    }
+    $months = (int)floor(max(0, time() - $ts) / (30 * 86400));
+    if ($months < 1) {
+        return 'عضو جدید سواپین';
+    }
+    if ($months < 12) {
+        return 'عضو سواپین از ' . fmt_num($months) . ' ماه پیش';
+    }
+    return 'عضو سواپین از ' . fmt_num((int)floor($months / 12)) . ' سال پیش';
+}
+
+function clubs_deal_type_label(string $mode): string {
+    return match ($mode) {
+        'sell' => 'فروش',
+        'both' => 'فروش و معاوضه',
+        default => 'معاوضه',
+    };
+}
+
+function clubs_listing_price_label(array $listing): string {
+    $mode = (string)($listing['listing_mode'] ?? 'swap');
+    $sell = (float)($listing['sell_price'] ?? 0);
+    $est = (float)($listing['estimated_value'] ?? 0);
+    $val = ($mode !== 'swap' && $sell > 0) ? $sell : $est;
+    if ($val <= 0) {
+        return 'توافقی';
+    }
+    return fmt_credit($val);
+}
+
 function clubs_resolve_for_listing(array $listing, array $clubs): ?array {
     if (!$clubs) {
         return null;
@@ -853,7 +918,17 @@ function clubs_listings(array $club, string $mode, string $q, int $limit = 12, i
         return [];
     }
     $ph = implode(',', array_fill(0, count($catIds), '?'));
-    $sql = "SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar,
+    $extraUser = '';
+    if (db_has_column('users', 'rating')) {
+        $extraUser .= ', u.rating AS seller_rating';
+    }
+    if (db_has_column('users', 'rating_count')) {
+        $extraUser .= ', u.rating_count AS seller_rating_count';
+    }
+    if (db_has_column('users', 'created_at')) {
+        $extraUser .= ', u.created_at AS seller_since';
+    }
+    $sql = "SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar {$extraUser},
                    c.name AS cat_name,
                    (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
             FROM listings l
