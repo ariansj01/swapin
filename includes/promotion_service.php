@@ -99,6 +99,25 @@ function promotion_ui_plans(): array {
     return $plans;
 }
 
+function promotion_listing_columns(string $plan, string $endsAt): array {
+    return match ($plan) {
+        'boost'    => ['bump_until' => $endsAt],
+        'featured' => ['featured_until' => $endsAt, 'is_featured' => 1],
+        'vip'      => ['featured_until' => $endsAt, 'vip_until' => $endsAt, 'is_featured' => 1],
+        'targeted' => ['targeted_until' => $endsAt],
+        'ai'       => ['ai_promo_until' => $endsAt],
+        'gold'     => [
+            'bump_until'      => $endsAt,
+            'featured_until'  => $endsAt,
+            'vip_until'       => $endsAt,
+            'is_featured'     => 1,
+            'targeted_until'  => $endsAt,
+            'ai_promo_until'  => $endsAt,
+        ],
+        default    => [],
+    };
+}
+
 function normalize_promotion_duration(string $plan, int $selectedDuration): array {
     $plans = promotion_plans();
     if (!isset($plans[$plan])) {
@@ -160,28 +179,7 @@ function apply_listing_promotion(int $listingId, int $userId, string $plan, int 
         ]);
     }
 
-    $updateData = [];
-    if ($plan === 'boost') {
-        $updateData['bump_until'] = $endsAt;
-    } elseif ($plan === 'featured') {
-        $updateData['featured_until'] = $endsAt;
-        $updateData['is_featured'] = 1;
-    } elseif ($plan === 'vip') {
-        $updateData['featured_until'] = $endsAt;
-        $updateData['vip_until'] = $endsAt;
-        $updateData['is_featured'] = 1;
-    } elseif ($plan === 'targeted') {
-        $updateData['targeted_until'] = $endsAt;
-    } elseif ($plan === 'ai') {
-        $updateData['ai_promo_until'] = $endsAt;
-    } elseif ($plan === 'gold') {
-        $updateData['bump_until'] = $endsAt;
-        $updateData['featured_until'] = $endsAt;
-        $updateData['vip_until'] = $endsAt;
-        $updateData['is_featured'] = 1;
-        $updateData['targeted_until'] = $endsAt;
-        $updateData['ai_promo_until'] = $endsAt;
-    }
+    $updateData = promotion_listing_columns($plan, $endsAt);
 
     if ($updateData !== []) {
         DB::update('listings', $updateData, 'id = ?', [$listingId]);
@@ -192,5 +190,44 @@ function apply_listing_promotion(int $listingId, int $userId, string $plan, int 
         'promotion_id' => $promotionId,
         'ends_at' => $endsAt,
         'plan_name' => $normalized['plan']['name'] ?? $plan,
+    ];
+}
+
+function admin_apply_listing_promotion(int $listingId, string $plan, int $durationHours): array {
+    $plans = promotion_plans();
+    if (!isset($plans[$plan])) {
+        throw new RuntimeException('پلن ارتقا نامعتبر است');
+    }
+    if ($durationHours < 1) {
+        throw new RuntimeException('مدت زمان ارتقا نامعتبر است');
+    }
+
+    $listing = DB::fetch('SELECT id, user_id FROM listings WHERE id = ? LIMIT 1', [$listingId]);
+    if (!$listing) {
+        throw new RuntimeException('آگهی یافت نشد');
+    }
+
+    $now      = time();
+    $startsAt = date('Y-m-d H:i:s', $now);
+    $endsAt   = date('Y-m-d H:i:s', $now + ($durationHours * 3600));
+
+    DB::insert('listing_promotions', [
+        'listing_id'  => $listingId,
+        'user_id'     => (int)$listing['user_id'],
+        'plan'        => $plan,
+        'starts_at'   => $startsAt,
+        'ends_at'     => $endsAt,
+        'amount_paid' => 0,
+    ]);
+
+    $updateData = promotion_listing_columns($plan, $endsAt);
+    if ($updateData !== []) {
+        DB::update('listings', $updateData, 'id = ?', [$listingId]);
+    }
+
+    return [
+        'success'   => true,
+        'ends_at'   => $endsAt,
+        'plan_name' => $plans[$plan]['name'] ?? $plan,
     ];
 }
