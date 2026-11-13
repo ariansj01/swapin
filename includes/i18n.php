@@ -770,6 +770,19 @@ function wizard_validate_category_id(int $categoryId): bool {
     return ($row && (int)($row['is_active'] ?? 0) === 1);
 }
 
+function wizard_validate_root_category_id(int $categoryId): bool {
+    if ($categoryId <= 0) {
+        return false;
+    }
+    try {
+        swaapin_ensure_category_tree();
+    } catch (Throwable) {}
+    $row = DB::fetch('SELECT id, parent_id, is_active FROM categories WHERE id = ? LIMIT 1', [$categoryId]);
+    return $row
+        && (int)($row['is_active'] ?? 0) === 1
+        && (int)($row['parent_id'] ?? 0) <= 0;
+}
+
 function want_type_label(string $type): string {
     return match ($type) {
         'item'    => 'کالا',
@@ -963,7 +976,7 @@ function shipping_label(string $method): string {
   };
 }
 
-function render_wizard_category_picker(int $selectedId = 0): string {
+function render_wizard_category_picker(int $selectedId = 0, bool $rootsOnly = false): string {
     try {
         swaapin_ensure_category_tree();
     } catch (Throwable $e) {
@@ -1029,7 +1042,7 @@ function render_wizard_category_picker(int $selectedId = 0): string {
         $kids = $byParent[$cid] ?? [];
         $isSelected = $selectedId === $cid ? ' cat-pick-selected' : '';
 
-        if (empty($kids)) {
+        if ($rootsOnly || empty($kids)) {
             $topHtml .= '<a href="javascript:void(0)" class="dropdown-item cat-pick-leaf' . $isSelected . '" data-cat-id="' . $cid . '" data-cat-label="' . h($label) . '">'
                 . $iconHtml . h($label) . '</a>';
         } else {

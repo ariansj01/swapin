@@ -454,10 +454,23 @@ function clubs_approved_list(int $limit = 24): array {
     );
 }
 
-function clubs_hub_url(string $catSlug = ''): string {
+function clubs_hub_url(string $catSlug = '', string $tab = '', string $q = '', int $page = 1): string {
     $url = APP_URL . '/clubs';
+    $params = [];
     if ($catSlug !== '') {
-        $url .= '?cat=' . rawurlencode($catSlug);
+        $params['cat'] = $catSlug;
+    }
+    if ($tab !== '' && $tab !== 'listings') {
+        $params['tab'] = $tab;
+    }
+    if ($q !== '') {
+        $params['q'] = $q;
+    }
+    if ($page > 1) {
+        $params['page'] = $page;
+    }
+    if ($params) {
+        $url .= '?' . http_build_query($params);
     }
     return $url;
 }
@@ -571,6 +584,36 @@ function clubs_by_root_category(int $rootId): array {
 
 function clubs_count_in_root(int $rootId): int {
     return count(clubs_by_root_category($rootId));
+}
+
+function clubs_featured_in_root(int $rootId): ?array {
+    clubs_ensure_tables();
+    $ids = function_exists('swaapin_category_descendant_ids')
+        ? swaapin_category_descendant_ids($rootId)
+        : [$rootId];
+    if (!$ids) {
+        return null;
+    }
+    $ph = implode(',', array_fill(0, count($ids), '?'));
+    try {
+        return DB::fetch(
+            "SELECT cl.*, c.name AS category_name, c.icon AS category_icon, c.slug AS category_slug,
+                    (SELECT COUNT(*) FROM club_members m WHERE m.club_id = cl.id AND m.status = 'active') AS member_count
+             FROM clubs cl
+             LEFT JOIN categories c ON c.id = cl.category_id
+             WHERE cl.status = 'approved' AND cl.category_id IN ($ph)
+             ORDER BY member_count DESC, cl.created_at DESC
+             LIMIT 1",
+            $ids
+        );
+    } catch (Throwable) {
+        $list = clubs_by_root_category($rootId);
+        return $list[0] ?? null;
+    }
+}
+
+function clubs_listings_in_root(int $rootId, string $mode, string $q, int $limit = 12, int $offset = 0): array {
+    return clubs_listings(['category_id' => $rootId], $mode, $q, $limit, $offset);
 }
 
 function clubs_banner_active(): ?array {

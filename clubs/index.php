@@ -28,16 +28,16 @@ if ($catSlug !== '') {
     }
 }
 
-$club = null;
+$clubFromSlug = null;
 if ($slug !== '') {
-    $club = clubs_get_by_slug($slug);
-    if ($club && ($club['status'] ?? '') !== 'approved' && !(function_exists('is_admin_user') && is_admin_user($user))) {
-        $club = null;
+    $clubFromSlug = clubs_get_by_slug($slug);
+    if ($clubFromSlug && ($clubFromSlug['status'] ?? '') !== 'approved' && !(function_exists('is_admin_user') && is_admin_user($user))) {
+        $clubFromSlug = null;
     }
 }
 
-if ($club && !$activeCat) {
-    $rootId = clubs_root_category_id((int)($club['category_id'] ?? 0));
+if ($clubFromSlug && !$activeCat) {
+    $rootId = clubs_root_category_id((int)($clubFromSlug['category_id'] ?? 0));
     foreach ($mainCats as $mc) {
         if ((int)$mc['id'] === $rootId) {
             $activeCat = $mc;
@@ -49,55 +49,57 @@ if (!$activeCat && $mainCats) {
     $activeCat = $mainCats[0];
 }
 
-$categoryClubs = $activeCat ? clubs_by_root_category((int)$activeCat['id']) : [];
+$club = $clubFromSlug ?: ($activeCat ? clubs_featured_in_root((int)$activeCat['id']) : null);
 $adBanner = clubs_banner_active();
+$hubUrl = clubs_hub_url((string)($activeCat['slug'] ?? ''));
 
 $flash = (string)($_SESSION['club_flash'] ?? '');
 unset($_SESSION['club_flash']);
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $club) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
     if (!$user) {
         header('Location: ' . APP_URL . '/auth/login?redirect=' . urlencode($_SERVER['REQUEST_URI'] ?? '/clubs'));
         exit;
     }
+    $postedClub = clubs_get((int)($_POST['club_id'] ?? 0)) ?: $club;
     $action = clean($_POST['action'] ?? '');
-    $clubId = (int)$club['id'];
-    $uid = (int)$user['id'];
     $redirTab = $tab;
-    if ($action === 'join') {
-        rate_limit_ip_or_fail('club_join', 20, 3600);
-        $res = clubs_join($clubId, $uid, !empty($club['require_approval']));
-        $_SESSION['club_flash'] = (($res['status'] ?? '') === 'pending')
-            ? 'درخواست عضویت ارسال شد و پس از تأیید مدیر فعال می‌شود.'
-            : 'به کلاب پیوستید.';
-    } elseif ($action === 'follow') {
-        $on = clubs_follow_toggle($clubId, $uid);
-        $_SESSION['club_flash'] = $on ? 'کلاب را دنبال می‌کنید.' : 'دنبال کردن لغو شد.';
-    } elseif ($action === 'chat') {
-        $state = clubs_user_state($user, $clubId);
-        if (!$state['member']) {
-            $_SESSION['club_flash'] = 'برای ارسال پیام باید عضو کلاب باشید.';
-        } else {
-            rate_limit_ip_or_fail('club_chat', 30, 600);
-            $res = clubs_post_message($clubId, $uid, (string)($_POST['body'] ?? ''));
-            $_SESSION['club_flash'] = empty($res['ok']) ? ($res['error'] ?? 'ارسال ناموفق بود.') : '';
-            $redirTab = 'chat';
+    if ($postedClub && ($postedClub['status'] ?? '') === 'approved') {
+        $clubId = (int)$postedClub['id'];
+        $uid = (int)$user['id'];
+        if ($action === 'join') {
+            rate_limit_ip_or_fail('club_join', 20, 3600);
+            $res = clubs_join($clubId, $uid, !empty($postedClub['require_approval']));
+            $_SESSION['club_flash'] = (($res['status'] ?? '') === 'pending')
+                ? 'درخواست عضویت ارسال شد و پس از تأیید مدیر فعال می‌شود.'
+                : 'به کلاب پیوستید.';
+        } elseif ($action === 'follow') {
+            $on = clubs_follow_toggle($clubId, $uid);
+            $_SESSION['club_flash'] = $on ? 'کلاب را دنبال می‌کنید.' : 'دنبال کردن لغو شد.';
+        } elseif ($action === 'chat') {
+            $statePost = clubs_user_state($user, $clubId);
+            if (!$statePost['member']) {
+                $_SESSION['club_flash'] = 'برای ارسال پیام باید عضو کلاب باشید.';
+            } else {
+                rate_limit_ip_or_fail('club_chat', 30, 600);
+                $res = clubs_post_message($clubId, $uid, (string)($_POST['body'] ?? ''));
+                $_SESSION['club_flash'] = empty($res['ok']) ? ($res['error'] ?? 'ارسال ناموفق بود.') : '';
+                $redirTab = 'chat';
+            }
         }
     }
-    header('Location: ' . clubs_url($club, $redirTab, $q));
+    header('Location: ' . clubs_hub_url((string)($activeCat['slug'] ?? ''), $redirTab, $q));
     exit;
 }
 
 $stats = $club ? clubs_stats($club) : ['members' => 0, 'posts' => 0, 'trades' => 0];
 $state = $club ? clubs_user_state($user, (int)$club['id']) : ['member' => false, 'pending' => false, 'following' => false];
 $managers = $club ? clubs_managers((int)$club['id']) : [];
-$canSeeListings = $club && (($club['privacy'] ?? 'public') === 'public' || $state['member'] || (function_exists('is_admin_user') && is_admin_user($user)));
-$showClubDetail = (bool)$club;
 $perPage = 12;
 $offset = ($page - 1) * $perPage;
 $listMode = in_array($tab, ['buy', 'swap'], true) ? $tab : 'listings';
-$listings = ($club && $canSeeListings && in_array($tab, ['listings', 'buy', 'swap'], true))
-    ? clubs_listings($club, $listMode, $q, $perPage, $offset)
+$listings = ($activeCat && in_array($tab, ['listings', 'buy', 'swap'], true))
+    ? clubs_listings_in_root((int)$activeCat['id'], $listMode, $q, $perPage, $offset)
     : [];
 $members = ($club && $tab === 'members') ? clubs_members_list((int)$club['id']) : [];
 $messages = ($club && $tab === 'chat') ? array_reverse(clubs_messages((int)$club['id'])) : [];
@@ -107,9 +109,26 @@ $avatarUrl = $club ? clubs_image_url($club['avatar_image'] ?? '') : '';
 $bannerImg = $adBanner ? clubs_image_url((string)($adBanner['image'] ?? '')) : '';
 $joinLabel = $state['member'] ? 'عضو کلاب هستید' : ($state['pending'] ? 'در انتظار تأیید' : 'عضویت در کلاب');
 $title = $club ? ($club['name'] . ' | کلاب‌های سواپین') : (($activeCat['name'] ?? 'کلاب‌های سواپین') . ' | کلاب‌های سواپین');
-$canonical = $club ? clubs_url($club) : clubs_hub_url((string)($activeCat['slug'] ?? ''));
+$canonical = $hubUrl;
 $cssVer = @filemtime(__DIR__ . '/../src/css/clubs-page.css') ?: time();
 $loginUrl = APP_URL . '/auth/login?redirect=' . urlencode($_SERVER['REQUEST_URI'] ?? '/clubs');
+$bannerTitle = (string)($adBanner['title'] ?? '');
+$bannerSub = (string)($adBanner['subtitle'] ?? '');
+if ($bannerTitle === '') {
+    $bannerTitle = (string)($club['name'] ?? ($activeCat['name'] ?? 'کلاب‌های سواپین'));
+}
+if ($bannerSub === '') {
+    $bannerSub = (string)($club['description'] ?? 'آدم‌های هم‌علاقه را پیدا کن و معامله را شروع کن.');
+}
+$bannerCta = trim((string)($adBanner['cta_label'] ?? ''));
+$bannerHref = clubs_safe_link((string)($adBanner['link_url'] ?? ''));
+if ($adBanner && $bannerCta === '') {
+    $bannerCta = 'مشاهده';
+}
+if (!$adBanner && $club) {
+    $bannerCta = $joinLabel;
+    $bannerHref = $loginUrl;
+}
 
 render_head($title, $club['description'] ?? 'کلاب‌های سواپین؛ معامله در کنار آدم‌های هم‌علاقه.', [
     'canonical'  => $canonical,
@@ -141,7 +160,7 @@ render_navbar($user);
 
   <div class="clubs-hub__grid">
     <aside class="clubs-panel clubs-profile">
-      <?php if ($showClubDetail): ?>
+      <?php if ($club): ?>
       <div class="clubs-profile__avatar">
         <?php if ($avatarUrl): ?><img src="<?= h($avatarUrl) ?>" alt=""><?php else: ?><i class="bi bi-people"></i><?php endif; ?>
       </div>
@@ -155,11 +174,13 @@ render_navbar($user);
       <form method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="join">
+        <input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>">
         <button class="clubs-btn-navy" type="submit" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($joinLabel) ?></button>
       </form>
       <form method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="follow">
+        <input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>">
         <button class="clubs-btn-ghost<?= $state['following'] ? ' is-on' : '' ?>" type="submit">
           <i class="bi bi-plus-square"></i> <?= $state['following'] ? 'در حال دنبال کردن' : 'دنبال کردن' ?>
         </button>
@@ -168,17 +189,8 @@ render_navbar($user);
       <a class="clubs-btn-navy" href="<?= h($loginUrl) ?>">عضویت در کلاب</a>
       <a class="clubs-btn-ghost" href="<?= h($loginUrl) ?>"><i class="bi bi-plus-square"></i> دنبال کردن</a>
       <?php endif; ?>
-      <?php else: ?>
-      <div class="clubs-profile__avatar"><i class="<?= h(clubs_category_icon($activeCat['icon'] ?? '', (string)($activeCat['name'] ?? ''))) ?>"></i></div>
-      <h2 class="clubs-profile__name"><?= h($activeCat['name'] ?? 'کلاب‌های سواپین') ?></h2>
-      <div class="clubs-profile__stats">
-        <div class="clubs-profile__stat"><strong><?= clubs_fmt_compact(count($categoryClubs)) ?></strong><span>کلاب</span></div>
-      </div>
-      <p class="clubs-profile__about">کلاب‌های این دسته‌بندی را ببینید و عضو شوید.</p>
-      <a class="clubs-btn-navy" href="<?= APP_URL ?>/clubs/create">ساخت کلاب</a>
-      <?php endif; ?>
 
-      <?php if ($showClubDetail && $managers): ?>
+      <?php if ($managers): ?>
       <div class="clubs-profile__block">
         <h3>مدیران کلاب</h3>
         <div class="clubs-managers">
@@ -189,12 +201,16 @@ render_navbar($user);
       </div>
       <?php endif; ?>
 
-      <?php if ($showClubDetail): ?>
       <div class="clubs-profile__block">
         <h3>درباره این کلاب</h3>
         <p class="clubs-profile__about"><?= h($club['description'] ?? '') ?></p>
-        <a class="clubs-profile__rules" href="<?= h(clubs_url($club, 'rules')) ?>">مشاهده قوانین</a>
+        <a class="clubs-profile__rules" href="<?= h(clubs_hub_url((string)($activeCat['slug'] ?? ''), 'rules')) ?>">مشاهده قوانین</a>
       </div>
+      <?php else: ?>
+      <div class="clubs-profile__avatar"><i class="<?= h(clubs_category_icon($activeCat['icon'] ?? '', (string)($activeCat['name'] ?? ''))) ?>"></i></div>
+      <h2 class="clubs-profile__name"><?= h($activeCat['name'] ?? 'کلاب‌های سواپین') ?></h2>
+      <p class="clubs-profile__about">در این دسته‌بندی هنوز کلاب تأییدشده‌ای نیست.</p>
+      <a class="clubs-btn-navy" href="<?= APP_URL ?>/clubs/create">ساخت کلاب</a>
       <?php endif; ?>
     </aside>
 
@@ -203,19 +219,22 @@ render_navbar($user);
         <?php if ($bannerImg): ?><img src="<?= h($bannerImg) ?>" alt=""><?php endif; ?>
         <div class="clubs-banner__inner">
           <div class="clubs-banner__copy">
-            <h1><?= h($adBanner['title'] ?? ($club['name'] ?? ($activeCat['name'] ?? 'کلاب‌های سواپین'))) ?></h1>
-            <p><?= h($adBanner['subtitle'] ?? ($club['description'] ?? 'آدم‌های هم‌علاقه را پیدا کن و معامله را شروع کن.')) ?></p>
+            <h1><?= h($bannerTitle) ?></h1>
+            <p><?= h($bannerSub) ?></p>
           </div>
-          <?php
-            $bannerCta = trim((string)($adBanner['cta_label'] ?? ''));
-            $bannerHref = clubs_safe_link((string)($adBanner['link_url'] ?? ''));
-            if ($adBanner && ($bannerCta !== '' || $bannerHref !== '')):
-          ?>
-          <a class="clubs-banner__cta" href="<?= h($bannerHref !== '' ? $bannerHref : '#') ?>">
-            <?= h($bannerCta !== '' ? $bannerCta : 'مشاهده') ?>
-          </a>
+          <?php if ($bannerCta !== ''): ?>
+            <?php if ($adBanner || !$user): ?>
+            <a class="clubs-banner__cta" href="<?= h($bannerHref !== '' ? $bannerHref : '#') ?>"><?= h($bannerCta) ?></a>
+            <?php elseif ($club): ?>
+            <form method="POST">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="join">
+              <input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>">
+              <button class="clubs-banner__cta" type="submit" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($bannerCta) ?></button>
+            </form>
+            <?php endif; ?>
           <?php endif; ?>
-          <?php if ($showClubDetail): ?>
+          <?php if ($club): ?>
           <div class="clubs-mbar">
             <div><strong><?= clubs_fmt_compact((int)$stats['members']) ?></strong><span>عضو</span></div>
             <div><strong><?= clubs_fmt_compact((int)$stats['posts']) ?></strong><span>پست</span></div>
@@ -225,31 +244,35 @@ render_navbar($user);
         </div>
       </div>
 
-      <?php if ($showClubDetail): ?>
+      <?php if ($club): ?>
       <div class="clubs-mjoin">
         <?php if ($user): ?>
-        <form method="POST"><?= csrf_field() ?><input type="hidden" name="action" value="join"><button class="clubs-btn-navy" type="submit" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($joinLabel) ?></button></form>
-        <form method="POST"><?= csrf_field() ?><input type="hidden" name="action" value="follow"><button class="clubs-btn-ghost<?= $state['following'] ? ' is-on' : '' ?>" type="submit"><?= $state['following'] ? 'در حال دنبال کردن' : 'دنبال کردن' ?></button></form>
+        <form method="POST"><?= csrf_field() ?><input type="hidden" name="action" value="join"><input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>"><button class="clubs-btn-navy" type="submit" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($joinLabel) ?></button></form>
+        <form method="POST"><?= csrf_field() ?><input type="hidden" name="action" value="follow"><input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>"><button class="clubs-btn-ghost<?= $state['following'] ? ' is-on' : '' ?>" type="submit"><?= $state['following'] ? 'در حال دنبال کردن' : 'دنبال کردن' ?></button></form>
         <?php else: ?>
         <a class="clubs-btn-navy" href="<?= h($loginUrl) ?>">عضویت در کلاب</a>
         <a class="clubs-btn-ghost" href="<?= h($loginUrl) ?>">دنبال کردن</a>
         <?php endif; ?>
       </div>
+      <?php endif; ?>
 
       <nav class="clubs-mtabs">
         <?php foreach ($mobileTabs as $key => $label): ?>
-        <a class="<?= $tab === $key ? 'is-on' : '' ?>" href="<?= h(clubs_url($club, $key, $q)) ?>"><?= h($label) ?></a>
+        <a class="<?= $tab === $key ? 'is-on' : '' ?>" href="<?= h(clubs_hub_url((string)($activeCat['slug'] ?? ''), $key, $q)) ?>"><?= h($label) ?></a>
         <?php endforeach; ?>
       </nav>
 
       <div class="clubs-toolbar">
         <nav class="clubs-tabs">
           <?php foreach ($desktopTabs as $key => $label): ?>
-          <a class="<?= $tab === $key ? 'is-on' : '' ?>" href="<?= h(clubs_url($club, $key, $q)) ?>"><?= h($label) ?></a>
+          <a class="<?= $tab === $key ? 'is-on' : '' ?>" href="<?= h(clubs_hub_url((string)($activeCat['slug'] ?? ''), $key, $q)) ?>"><?= h($label) ?></a>
           <?php endforeach; ?>
         </nav>
-        <form class="clubs-search" method="get" action="<?= h(APP_URL . '/clubs/' . rawurlencode((string)$club['slug'])) ?>">
-          <?php if (in_array($tab, ['listings', 'buy', 'swap'], true) && $tab !== 'listings'): ?>
+        <form class="clubs-search" method="get" action="<?= APP_URL ?>/clubs">
+          <?php if ($activeCat): ?>
+          <input type="hidden" name="cat" value="<?= h((string)$activeCat['slug']) ?>">
+          <?php endif; ?>
+          <?php if (in_array($tab, ['buy', 'swap'], true)): ?>
           <input type="hidden" name="tab" value="<?= h($tab) ?>">
           <?php endif; ?>
           <input type="search" name="q" value="<?= h($q) ?>" placeholder="جستجو در این کلاب...">
@@ -260,7 +283,7 @@ render_navbar($user);
       <?php if ($tab === 'rules'): ?>
         <article class="clubs-rules">
           <h2>قوانین کلاب</h2>
-          <?php if (trim((string)($club['rules'] ?? '')) !== ''): ?>
+          <?php if ($club && trim((string)($club['rules'] ?? '')) !== ''): ?>
           <p><?= nl2br(h($club['rules'])) ?></p>
           <?php else: ?>
           <p>هنوز قانونی برای این کلاب ثبت نشده است.</p>
@@ -294,10 +317,11 @@ render_navbar($user);
             <?php endforeach; ?>
             <?php if (!$messages): ?><p class="text-muted">هنوز پیامی نیست.</p><?php endif; ?>
           </div>
-          <?php if ($state['member']): ?>
+          <?php if ($club && $state['member']): ?>
           <form class="clubs-chat-form" method="POST">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="chat">
+            <input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>">
             <input type="text" name="body" maxlength="500" placeholder="پیام خود را بنویسید..." required>
             <button type="submit" aria-label="ارسال"><i class="bi bi-send-fill"></i></button>
           </form>
@@ -306,10 +330,8 @@ render_navbar($user);
           <?php endif; ?>
         </div>
       <?php else: ?>
-        <?php if (!$canSeeListings): ?>
-          <div class="clubs-empty">این کلاب خصوصی است. پس از عضویت می‌توانید آگهی‌ها را ببینید.</div>
-        <?php elseif (!$listings): ?>
-          <div class="clubs-empty">آگهی‌ای در این کلاب پیدا نشد.</div>
+        <?php if (!$listings): ?>
+          <div class="clubs-empty">آگهی‌ای در این دسته‌بندی پیدا نشد.</div>
         <?php else: ?>
           <div class="clubs-cards">
             <?php foreach ($listings as $l): ?>
@@ -338,7 +360,7 @@ render_navbar($user);
             <?php endforeach; ?>
           </div>
           <?php if (count($listings) >= $perPage): ?>
-          <a class="clubs-more" href="<?= h(clubs_url($club, $tab, $q) . (str_contains(clubs_url($club, $tab, $q), '?') ? '&' : '?') . 'page=' . ($page + 1)) ?>">بارگذاری بیشتر...</a>
+          <a class="clubs-more" href="<?= h(clubs_hub_url((string)($activeCat['slug'] ?? ''), $tab, $q, $page + 1)) ?>">بارگذاری بیشتر...</a>
           <?php endif; ?>
         <?php endif; ?>
 
@@ -348,6 +370,7 @@ render_navbar($user);
           <p>قیمت بده، پیشنهاد بگیر و معامله‌ات را سریع‌تر جلو ببر.</p>
           <a class="clubs-banner__cta" href="<?= APP_URL ?>/ai/chat">شروع تضمین با دستیار هوشمند</a>
         </div>
+        <?php if ($club): ?>
         <div class="clubs-chat clubs-chat-preview" id="club-chat-mobile">
           <h3>گفت‌وگوی کلاب</h3>
           <?php $previewMsgs = $tab === 'chat' ? $messages : array_reverse(clubs_messages((int)$club['id'], 3)); ?>
@@ -362,40 +385,13 @@ render_navbar($user);
             </div>
             <?php endforeach; ?>
           </div>
-          <a class="clubs-more" href="<?= h(clubs_url($club, 'chat')) ?>">مشاهده گفتگو</a>
+          <a class="clubs-more" href="<?= h(clubs_hub_url((string)($activeCat['slug'] ?? ''), 'chat')) ?>">مشاهده گفتگو</a>
         </div>
+        <?php endif; ?>
         <div class="clubs-notice">
           <h3>اعلان کلاب</h3>
           <p>این آگهی ویژه هفته کلاب است. کالای پیشنهادی را با شرایط کلاب معامله کنید.</p>
         </div>
-      <?php endif; ?>
-      <?php else: ?>
-        <?php if (!$categoryClubs): ?>
-        <div class="clubs-empty">در این دسته‌بندی هنوز کلابی نیست. اولین کلاب را بسازید.</div>
-        <?php else: ?>
-        <div class="clubs-cards">
-          <?php foreach ($categoryClubs as $c):
-            $cCover = clubs_image_url($c['cover_image'] ?? '');
-            $cAvatar = clubs_image_url($c['avatar_image'] ?? '');
-            $cStats = clubs_stats($c);
-          ?>
-          <article class="club-item">
-            <div class="club-item__media">
-              <?php if ($cCover): ?><img src="<?= h($cCover) ?>" alt=""><?php endif; ?>
-            </div>
-            <div class="club-item__body">
-              <h3 class="club-item__title"><?= h($c['name']) ?></h3>
-              <p class="club-item__sub"><?= h($c['category_name'] ?? '') ?></p>
-              <div class="club-item__user">
-                <?php if ($cAvatar): ?><img src="<?= h($cAvatar) ?>" alt=""><?php endif; ?>
-                <span><?= clubs_fmt_compact((int)$cStats['members']) ?> عضو</span>
-              </div>
-              <a class="club-item__cta" href="<?= h(clubs_url($c)) ?>">ورود به کلاب <i class="bi bi-arrow-left"></i></a>
-            </div>
-          </article>
-          <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
       <?php endif; ?>
     </section>
 
@@ -421,8 +417,8 @@ render_navbar($user);
       </div>
     </aside>
   </div>
-  <?php if ($showClubDetail): ?>
-  <a class="clubs-fab" href="<?= h(clubs_url($club, 'chat')) ?>" aria-label="گفتگوی کلاب"><i class="bi bi-send-fill"></i></a>
+  <?php if ($club): ?>
+  <a class="clubs-fab" href="<?= h(clubs_hub_url((string)($activeCat['slug'] ?? ''), 'chat')) ?>" aria-label="گفتگوی کلاب"><i class="bi bi-send-fill"></i></a>
   <?php endif; ?>
 <?php endif; ?>
 </main>
