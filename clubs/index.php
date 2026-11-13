@@ -491,6 +491,17 @@ render_navbar($user);
         <span class="clm__count" id="clm-count"><i class="bi bi-camera"></i> <span>1 / 1</span></span>
       </div>
       <div class="clm__thumbs" id="clm-thumbs"></div>
+      <div class="clm__actions">
+        <div class="clm__deal"><i class="bi bi-arrow-left-right"></i> نوع معامله: <b id="clm-mode"></b></div>
+        <form method="POST" id="clm-join-form">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="join">
+          <input type="hidden" name="club_id" id="clm-join-id" value="0">
+          <button class="clm__join" type="submit"><i class="bi bi-people"></i> پیوستن به کلاب</button>
+        </form>
+        <button type="button" class="clm__ghost" id="clm-save" data-listing-id="0"><i class="bi bi-bookmark"></i> ذخیره آگهی</button>
+        <button type="button" class="clm__ghost" id="clm-share"><i class="bi bi-share"></i> اشتراک‌گذاری</button>
+      </div>
     </div>
     <div class="clm__body">
       <div class="clm__top">
@@ -531,16 +542,6 @@ render_navbar($user);
           <a class="clm__club-go" id="clm-club-go" href="#"><i class="bi bi-chevron-left"></i> مشاهده کلاب</a>
         </div>
       </div>
-
-      <div class="clm__deal"><i class="bi bi-arrow-left-right"></i> نوع معامله: <b id="clm-mode"></b></div>
-      <form method="POST" id="clm-join-form">
-        <?= csrf_field() ?>
-        <input type="hidden" name="action" value="join">
-        <input type="hidden" name="club_id" id="clm-join-id" value="0">
-        <button class="clm__join" type="submit"><i class="bi bi-people"></i> پیوستن به کلاب</button>
-      </form>
-      <button type="button" class="clm__ghost" id="clm-save" data-listing-id="0"><i class="bi bi-bookmark"></i> ذخیره آگهی</button>
-      <button type="button" class="clm__ghost" id="clm-share"><i class="bi bi-share"></i> اشتراک‌گذاری</button>
 
       <div class="clm__tabs">
         <button type="button" class="is-on" data-clm-tab="desc">توضیحات</button>

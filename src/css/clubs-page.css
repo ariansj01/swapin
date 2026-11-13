@@ -246,6 +246,7 @@
   height: 34px; padding: 0 12px; border: 1.5px solid #d1d5db; border-radius: 10px;
   color: #111827; text-decoration: none; font-size: 12.5px; font-weight: 800; background: #fff; white-space: nowrap;
 }
+.clm__actions { margin-top: 14px; }
 .clm__deal {
   display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #374151; margin: 0 0 10px;
 }
