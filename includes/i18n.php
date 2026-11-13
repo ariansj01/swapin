@@ -168,6 +168,7 @@ function swaapin_legacy_category_aliases(): array {
     return [
         'home-appliances' => 'home-kitchen',
         'home-garden'     => 'home-kitchen',
+        'car'             => 'cars',
     ];
 }
 

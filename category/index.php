@@ -124,6 +124,12 @@ if ($_reqPath !== '') {
 
             // مکان معتبر ولی دسته نامعتبر
             if ($_segCount === 2) {
+                // اسلاگ قدیمی دسته (مثل car → cars) → ریدایرکت 301 به مسیر کانونیکال
+                $alias = swaapin_resolve_legacy_category_slug($catSeg);
+                if ($alias !== null) {
+                    header('Location: ' . rtrim(APP_URL, '/') . '/' . $_firstSeg . '/' . $alias, true, 301);
+                    exit;
+                }
                 http_response_code(404);
                 exit;
             }
