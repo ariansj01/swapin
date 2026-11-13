@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/admin_layout.php';
 require_once __DIR__ . '/../includes/ai_moderation.php';
+require_once __DIR__ . '/../includes/promotion_service.php';
 
 $admin = require_admin();
 admin_require_permission('listings');
@@ -32,6 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'rerun_ai' && $listingId) {
         ai_mod_review_listing($listingId);
         admin_set_flash('بررسی هوش مصنوعی مجدداً انجام شد.');
+    } elseif ($action === 'promote' && $listingId) {
+        try {
+            $plan   = clean($_POST['plan'] ?? 'vip');
+            $months = max(1, (int)($_POST['months'] ?? 12));
+            $result = admin_apply_listing_promotion($listingId, $plan, $months * 30 * 24);
+            admin_set_flash('آگهی با پلن «' . $result['plan_name'] . '» تا ' . persian_date($result['ends_at']) . ' ویژه شد.');
+        } catch (Throwable $e) {
+            admin_set_flash($e->getMessage(), 'error');
+        }
     }
     header('Location: ' . APP_URL . '/admin/listings.php' . ($listingId && $action !== 'delete' ? "?id=$listingId" : ''));
     exit;
@@ -237,6 +247,50 @@ ob_start();
         </button>
       </form>
       <a href="<?= h(listing_url($listing)) ?>" class="btn btn-ghost w-100 mt-3" target="_blank">مشاهده در سایت</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3 style="margin:0;font-size:1rem"><i class="bi bi-award"></i> ویژه‌سازی آگهی</h3></div>
+    <div class="card-body">
+      <?php
+        $planLabels = ['boost' => 'بازدید بیشتر', 'featured' => 'داغ', 'vip' => 'ویژه', 'targeted' => 'هدفمند', 'ai' => 'هوشمند', 'gold' => 'طلایی'];
+        $nowTs = time();
+        $activePlans = [];
+        foreach ([['vip_until', 'ویژه'], ['featured_until', 'داغ'], ['bump_until', 'بازدید بیشتر'], ['targeted_until', 'هدفمند'], ['ai_promo_until', 'هوشمند']] as $p) {
+            if (!empty($listing[$p[0]]) && strtotime($listing[$p[0]]) > $nowTs) {
+                $activePlans[] = $p[1] . ' تا ' . persian_date($listing[$p[0]]);
+            }
+        }
+      ?>
+      <?php if ($activePlans): ?>
+        <p class="fs-sm" style="margin:0 0 var(--sp-3)">وضعیت فعلی: <strong><?= h(implode('، ', $activePlans)) ?></strong></p>
+      <?php else: ?>
+        <p class="fs-sm" style="color:var(--text-muted);margin:0 0 var(--sp-3)">این آگهی در حال حاضر ویژه نیست.</p>
+      <?php endif; ?>
+      <form method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="listing_id" value="<?= $id ?>">
+        <input type="hidden" name="action" value="promote">
+        <div class="form-group">
+          <label class="form-label">پلن</label>
+          <select class="form-control" name="plan">
+            <?php foreach ($planLabels as $slug => $label): ?>
+            <option value="<?= $slug ?>" <?= $slug === 'vip' ? 'selected' : '' ?>><?= h($label) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">مدت</label>
+          <select class="form-control" name="months">
+            <option value="1">۱ ماه</option>
+            <option value="3">۳ ماه</option>
+            <option value="6">۶ ماه</option>
+            <option value="12" selected>۱ سال</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-award"></i> ویژه کن</button>
+      </form>
     </div>
   </div>
 </div>
