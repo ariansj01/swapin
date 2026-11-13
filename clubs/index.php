@@ -92,14 +92,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$stats = $club ? clubs_stats($club) : ['members' => 0, 'posts' => 0, 'trades' => 0];
+$stats = $club ? clubs_stats($club) : ['members' => 0, 'posts' => 0, 'trades' => 0, 'views' => 0];
 $state = $club ? clubs_user_state($user, (int)$club['id']) : ['member' => false, 'pending' => false, 'following' => false];
 $managers = $club ? clubs_managers((int)$club['id']) : [];
-$perPage = 12;
+$perPage = 6;
 $offset = ($page - 1) * $perPage;
-$listMode = in_array($tab, ['buy', 'swap'], true) ? $tab : 'listings';
-$listings = ($activeCat && in_array($tab, ['listings', 'buy', 'swap'], true))
-    ? clubs_listings_in_root((int)$activeCat['id'], $listMode, $q, $perPage, $offset)
+$categoryClubs = $activeCat ? clubs_by_root_category((int)$activeCat['id']) : [];
+if ($q !== '') {
+    $categoryClubs = array_values(array_filter($categoryClubs, static function (array $c) use ($q): bool {
+        return mb_stripos((string)($c['name'] ?? ''), $q) !== false
+            || mb_stripos((string)($c['description'] ?? ''), $q) !== false;
+    }));
+}
+$clubCards = in_array($tab, ['listings', 'buy', 'swap'], true)
+    ? array_slice($categoryClubs, $offset, $perPage)
     : [];
 $members = ($club && $tab === 'members') ? clubs_members_list((int)$club['id']) : [];
 $messages = ($club && $tab === 'chat') ? array_reverse(clubs_messages((int)$club['id'])) : [];
@@ -330,36 +336,28 @@ render_navbar($user);
           <?php endif; ?>
         </div>
       <?php else: ?>
-        <?php if (!$listings): ?>
-          <div class="clubs-empty">آگهی‌ای در این دسته‌بندی پیدا نشد.</div>
+        <?php if (!$clubCards): ?>
+          <div class="clubs-empty">در این دسته‌بندی هنوز کلابی نیست.</div>
         <?php else: ?>
           <div class="clubs-cards">
-            <?php foreach ($listings as $l): ?>
+            <?php foreach ($clubCards as $c):
+              $cCover = clubs_image_url($c['cover_image'] ?? '') ?: clubs_image_url($c['avatar_image'] ?? '');
+              $cStats = clubs_stats($c);
+            ?>
             <article class="club-item">
               <div class="club-item__media">
-                <?php if (!empty($l['thumb'])): ?>
-                <img src="<?= h(UPLOAD_URL . $l['thumb']) ?>" alt="">
-                <?php endif; ?>
-                <?php if ($user): ?>
-                <button type="button" class="club-item__fav" data-save-toggle="<?= 'false' ?>" data-listing-id="<?= (int)$l['id'] ?>" aria-label="علاقه‌مندی"><i class="bi bi-heart"></i></button>
-                <?php endif; ?>
+                <?php if ($cCover): ?><img src="<?= h($cCover) ?>" alt=""><?php endif; ?>
+                <span class="club-item__views"><i class="bi bi-eye"></i> <?= clubs_fmt_compact((int)($cStats['views'] ?? 0)) ?></span>
               </div>
               <div class="club-item__body">
-                <h3 class="club-item__title"><?= h($l['title']) ?></h3>
-                <p class="club-item__sub"><?= h(mb_strimwidth((string)($l['description'] ?? ''), 0, 70, '…', 'UTF-8')) ?></p>
-                <div class="club-item__user">
-                  <?= avatar_html($l['seller_avatar'] ?? null, $l['seller_name'] ?? '', 'sm') ?>
-                  <span><?= h($l['seller_name'] ?? '') ?></span>
-                </div>
-                <div class="club-item__meta">
-                  <span><i class="bi bi-eye"></i> <?= clubs_fmt_compact((int)($l['views'] ?? 0)) ?></span>
-                </div>
-                <a class="club-item__cta" href="<?= h(listing_url($l)) ?>">مشاهده جزئیات <i class="bi bi-arrow-left"></i></a>
+                <h3 class="club-item__title"><?= h($c['name']) ?></h3>
+                <p class="club-item__sub"><?= h((string)($c['description'] ?? '')) ?></p>
+                <a class="club-item__cta" href="<?= h(clubs_url($c)) ?>">مشاهده جزئیات <i class="bi bi-arrow-left"></i></a>
               </div>
             </article>
             <?php endforeach; ?>
           </div>
-          <?php if (count($listings) >= $perPage): ?>
+          <?php if (($offset + count($clubCards)) < count($categoryClubs)): ?>
           <a class="clubs-more" href="<?= h(clubs_hub_url((string)($activeCat['slug'] ?? ''), $tab, $q, $page + 1)) ?>">بارگذاری بیشتر...</a>
           <?php endif; ?>
         <?php endif; ?>

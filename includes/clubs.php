@@ -709,6 +709,7 @@ function clubs_stats(array $club): array {
     $members = 0;
     $posts = 0;
     $trades = 0;
+    $views = 0;
     try {
         $members = (int)(DB::fetch(
             "SELECT COUNT(*) AS c FROM club_members WHERE club_id = ? AND status = 'active'",
@@ -726,6 +727,14 @@ function clubs_stats(array $club): array {
             )['c'] ?? 0);
         } catch (Throwable) {}
         try {
+            if (db_has_column('listings', 'views')) {
+                $views = (int)(DB::fetch(
+                    "SELECT COALESCE(SUM(views), 0) AS c FROM listings WHERE category_id IN ($ph) AND status = 'active' AND review_status = 'approved'",
+                    $catIds
+                )['c'] ?? 0);
+            }
+        } catch (Throwable) {}
+        try {
             if (db_has_table('trades')) {
                 $trades = (int)(DB::fetch(
                     "SELECT COUNT(*) AS c FROM trades t
@@ -736,7 +745,7 @@ function clubs_stats(array $club): array {
             }
         } catch (Throwable) {}
     }
-    return ['members' => $members, 'posts' => $posts, 'trades' => $trades];
+    return ['members' => $members, 'posts' => $posts, 'trades' => $trades, 'views' => $views];
 }
 
 function clubs_member_avatars(int $clubId, int $limit = 3): array {
