@@ -616,6 +616,24 @@ function clubs_listings_in_root(int $rootId, string $mode, string $q, int $limit
     return clubs_listings(['category_id' => $rootId], $mode, $q, $limit, $offset);
 }
 
+function clubs_resolve_for_listing(array $listing, array $clubs): ?array {
+    if (!$clubs) {
+        return null;
+    }
+    $listingCat = (int)($listing['category_id'] ?? 0);
+    $best = null;
+    foreach ($clubs as $c) {
+        $ids = clubs_category_ids($c);
+        if ($listingCat > 0 && in_array($listingCat, $ids, true)) {
+            if ((int)($c['category_id'] ?? 0) === $listingCat) {
+                return $c;
+            }
+            $best = $best ?? $c;
+        }
+    }
+    return $best ?: $clubs[0];
+}
+
 function clubs_banner_active(): ?array {
     clubs_ensure_tables();
     if (!db_has_table('club_banners')) {
