@@ -181,7 +181,7 @@ function clubs_generate_slug(string $name, int $excludeId = 0): string {
     $slug = preg_replace('/[^a-zA-Z0-9_\-]+/u', '-', $slug) ?? '';
     $slug = trim($slug, '-');
     $slug = mb_strtolower($slug, 'UTF-8');
-    $reserved = ['create', 'index', 'join', 'follow', 'chat'];
+    $reserved = ['create', 'index', 'join', 'follow', 'chat', 'mine', 'club'];
     if ($slug === '' || preg_match('/^[_\-]+$/', $slug) || in_array($slug, $reserved, true)) {
         $slug = 'club-' . substr(bin2hex(random_bytes(4)), 0, 8);
     }
@@ -978,6 +978,77 @@ function clubs_pending_joins(int $clubId): array {
     } catch (Throwable) {
         return [];
     }
+}
+
+function clubs_memberships_for_user(int $userId): array {
+    clubs_ensure_tables();
+    if ($userId <= 0) {
+        return [];
+    }
+    try {
+        return DB::fetchAll(
+            "SELECT cl.*, m.role, m.status AS member_status, m.listing_id
+             FROM club_members m
+             JOIN clubs cl ON cl.id = m.club_id
+             WHERE m.user_id = ? AND m.status = 'active' AND cl.status = 'approved'
+             ORDER BY FIELD(m.role,'owner','moderator','member'), cl.name",
+            [$userId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_managed_for_user(int $userId): array {
+    clubs_ensure_tables();
+    if ($userId <= 0) {
+        return [];
+    }
+    try {
+        return DB::fetchAll(
+            "SELECT cl.*, m.role,
+                    (SELECT COUNT(*) FROM club_members x WHERE x.club_id = cl.id AND x.status = 'pending') AS pending_count
+             FROM club_members m
+             JOIN clubs cl ON cl.id = m.club_id
+             WHERE m.user_id = ? AND m.status = 'active' AND m.role IN ('owner','moderator')
+             ORDER BY cl.created_at DESC",
+            [$userId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_pending_for_manager(int $userId): array {
+    clubs_ensure_tables();
+    $managed = clubs_managed_for_user($userId);
+    if (!$managed) {
+        return [];
+    }
+    $ids = array_map(static fn ($c) => (int)$c['id'], $managed);
+    $ph = implode(',', array_fill(0, count($ids), '?'));
+    try {
+        return DB::fetchAll(
+            "SELECT m.id, m.club_id, m.user_id, m.listing_id, m.created_at,
+                    u.name, u.avatar, u.phone,
+                    cl.name AS club_name, cl.slug AS club_slug,
+                    l.title AS listing_title, l.estimated_value,
+                    (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS listing_thumb
+             FROM club_members m
+             JOIN users u ON u.id = m.user_id
+             JOIN clubs cl ON cl.id = m.club_id
+             LEFT JOIN listings l ON l.id = m.listing_id
+             WHERE m.club_id IN ($ph) AND m.status = 'pending'
+             ORDER BY m.created_at ASC",
+            $ids
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_manager_pending_count(int $userId): int {
+    return count(clubs_pending_for_manager($userId));
 }
 
 function clubs_review_join(int $clubId, int $memberRowId, string $decision, int $actorId): array {

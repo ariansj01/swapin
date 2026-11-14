@@ -2,6 +2,7 @@
 /** Shared panel navigation — sidebar & header dropdown stay in sync. */
 
 require_once __DIR__ . '/user_chat.php';
+require_once __DIR__ . '/clubs.php';
 
 function panel_nav_promote_href(int $userId): string {
     $url = APP_URL;
@@ -25,6 +26,7 @@ function panel_nav_counts(int $userId): array {
             [$userId]
         )['c'] ?? 0),
         'chat' => function_exists('user_chat_unread_count') ? user_chat_unread_count($userId) : 0,
+        'club_requests' => function_exists('clubs_manager_pending_count') ? clubs_manager_pending_count($userId) : 0,
     ];
 }
 
@@ -49,7 +51,7 @@ function panel_nav_items(array $user): array {
     $items = [
         'dashboard'    => [$url . '/dashboard',           'داشبورد',       'bi-speedometer2',    0],
         'my'           => [$url . '/listings/my',          'آگهی‌های من',   'bi-grid',            0],
-        'clubs'        => [$url . '/clubs',                'کلاب‌ها',       'bi-people',          0],
+        'clubs'        => [$url . '/clubs/mine',           'کلاب‌های من',   'bi-people',          $counts['club_requests']],
         'club_create'  => [$url . '/clubs/create',         'ساخت کلاب',     'bi-plus-circle',     0],
         'iso'          => [$url . '/iso',                  'نیازهای من برای معامله',       'bi-search-heart', $isoCount],
         'promote'      => [$promote,                       'ارتقای آگهی',   'bi-rocket-takeoff',  0],

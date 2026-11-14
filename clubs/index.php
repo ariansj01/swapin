@@ -336,6 +336,7 @@ render_navbar($user);
           <div class="clubs-cards">
             <?php
             $clubStatsCache = [];
+            $memberCache = [];
             foreach ($listings as $l):
               $ownerClub = clubs_resolve_for_listing($l, $categoryClubs) ?: $club;
               $ownerId = (int)($ownerClub['id'] ?? 0);
@@ -383,6 +384,7 @@ render_navbar($user);
                       'members' => clubs_fmt_compact((int)($cStats['members'] ?? 0)),
                       'posts' => clubs_fmt_compact((int)($cStats['posts'] ?? 0)),
                       'url' => $ownerClub ? clubs_url($ownerClub) : '',
+                      'isMember' => $ownerId > 0 ? ($memberCache[$ownerId] ??= !empty(clubs_user_state($user, $ownerId)['member'])) : false,
                   ],
               ];
             ?>
@@ -491,6 +493,7 @@ render_navbar($user);
       <div class="clm__thumbs" id="clm-thumbs"></div>
       <div class="clm__actions">
         <div class="clm__deal"><i class="bi bi-arrow-left-right"></i> نوع معامله: <b id="clm-mode"></b></div>
+        <a class="clm__join" id="clm-enter" href="#" hidden>ورود به کلاب</a>
         <button type="button" class="clm__join" id="clm-join-btn" data-open-join="0"><i class="bi bi-people"></i> پیوستن به کلاب</button>
         <button type="button" class="clm__ghost" id="clm-save" data-listing-id="0"><i class="bi bi-bookmark"></i> ذخیره آگهی</button>
         <button type="button" class="clm__ghost" id="clm-share"><i class="bi bi-share"></i> اشتراک‌گذاری</button>
@@ -599,7 +602,15 @@ render_navbar($user);
     document.getElementById('clm-club-posts').textContent = c.posts || '۰';
     document.getElementById('clm-club-go').href = c.url || '#';
     const joinBtn = document.getElementById('clm-join-btn');
-    if (joinBtn) joinBtn.setAttribute('data-open-join', String(c.id || 0));
+    const enterBtn = document.getElementById('clm-enter');
+    if (joinBtn) {
+      joinBtn.setAttribute('data-open-join', String(c.id || 0));
+      joinBtn.hidden = !!c.isMember;
+    }
+    if (enterBtn) {
+      enterBtn.href = c.url || '#';
+      enterBtn.hidden = !(c.url);
+    }
     const saveBtn = document.getElementById('clm-save');
     saveBtn.dataset.listingId = data.id || 0;
     saveBtn.dataset.saved = 'false';

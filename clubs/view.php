@@ -99,6 +99,7 @@ $createUrl = APP_URL . '/listings/create' . (!empty($club['category_id']) ? ('?p
 $joinCreateUrl = $createUrl;
 $cssVer = @filemtime(__DIR__ . '/../src/css/clubs-club.css') ?: time();
 $mentionListings = array_slice($listings, 0, 20);
+$myClubs = $user ? clubs_memberships_for_user((int)$user['id']) : [];
 
 render_head($club['name'] . ' | کلاب‌های سواپین', $club['description'] ?? '', [
     'canonical'  => clubs_url($club),
@@ -139,6 +140,16 @@ render_navbar($user);
         <span class="clubp-banner__cta"><?= h($joinLabel) ?></span>
         <?php else: ?>
         <a class="clubp-banner__cta" href="<?= h($loginUrl) ?>">عضویت در کلاب</a>
+        <?php endif; ?>
+        <?php if (count($myClubs) > 0): ?>
+        <label class="clubp-switch">
+          <span>کلاب‌های من</span>
+          <select onchange="if(this.value) location.href=this.value">
+            <?php foreach ($myClubs as $mc): ?>
+            <option value="<?= h(clubs_url($mc)) ?>" <?= (int)$mc['id'] === $clubId ? 'selected' : '' ?>><?= h($mc['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
         <?php endif; ?>
       </div>
     </div>
