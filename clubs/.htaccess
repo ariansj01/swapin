@@ -1,2 +1,7 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^create/?$ create.php [L,NC,QSA]
+  RewriteRule ^mine/?$ mine.php [L,NC,QSA]
+  RewriteRule ^([a-zA-Z0-9\-]+)/?$ view.php?slug=$1 [L,NC,QSA]
+</IfModule>
 DirectoryIndex index.php
-Options -Indexes

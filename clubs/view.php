@@ -9,7 +9,15 @@ if ($user) {
     clubs_touch_presence((int)$user['id']);
 }
 
-$slug = clean($_GET['slug'] ?? '');
+$slug = clubs_request_segment();
+if ($slug === 'mine') {
+    require __DIR__ . '/mine.php';
+    exit;
+}
+if ($slug === '' || $slug === 'create' || $slug === 'index') {
+    header('Location: ' . APP_URL . '/clubs', true, 302);
+    exit;
+}
 $tab = clean($_GET['tab'] ?? 'listings');
 $q = clean($_GET['q'] ?? '');
 $sort = clean($_GET['sort'] ?? 'newest');

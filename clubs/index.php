@@ -5,10 +5,10 @@ require_once __DIR__ . '/../includes/clubs.php';
 
 $user = auth_user();
 clubs_ensure_tables();
+clubs_dispatch_from_hub();
 
 $mainCats = clubs_main_categories();
 $catSlug = clean($_GET['cat'] ?? '');
-$slug = clean($_GET['slug'] ?? '');
 $tab = clean($_GET['tab'] ?? 'listings');
 $q = clean($_GET['q'] ?? '');
 $page = max(1, (int)($_GET['page'] ?? 1));
@@ -27,29 +27,11 @@ if ($catSlug !== '') {
         }
     }
 }
-
-$clubFromSlug = null;
-if ($slug !== '') {
-    $clubFromSlug = clubs_get_by_slug($slug);
-    if ($clubFromSlug && ($clubFromSlug['status'] ?? '') !== 'approved' && !(function_exists('is_admin_user') && is_admin_user($user))) {
-        $clubFromSlug = null;
-    }
-}
-
-if ($clubFromSlug && !$activeCat) {
-    $rootId = clubs_root_category_id((int)($clubFromSlug['category_id'] ?? 0));
-    foreach ($mainCats as $mc) {
-        if ((int)$mc['id'] === $rootId) {
-            $activeCat = $mc;
-            break;
-        }
-    }
-}
 if (!$activeCat && $mainCats) {
     $activeCat = $mainCats[0];
 }
 
-$club = $clubFromSlug ?: ($activeCat ? clubs_featured_in_root((int)$activeCat['id']) : null);
+$club = $activeCat ? clubs_featured_in_root((int)$activeCat['id']) : null;
 $adBanner = clubs_banner_active();
 $hubUrl = clubs_hub_url((string)($activeCat['slug'] ?? ''));
 

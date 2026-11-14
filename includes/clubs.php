@@ -469,6 +469,40 @@ function clubs_approved_list(int $limit = 24): array {
     );
 }
 
+function clubs_request_segment(): string {
+    $slug = clean($_GET['slug'] ?? '');
+    if ($slug !== '') {
+        return $slug;
+    }
+    $uri = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '');
+    if (preg_match('#/clubs/([A-Za-z0-9\-]+)/?$#i', $uri, $m)) {
+        return $m[1];
+    }
+    $info = (string)($_SERVER['PATH_INFO'] ?? '');
+    if (preg_match('#^/([A-Za-z0-9\-]+)/?$#', $info, $m)) {
+        return $m[1];
+    }
+    return '';
+}
+
+function clubs_dispatch_from_hub(): void {
+    $seg = clubs_request_segment();
+    if ($seg === '' || $seg === 'index') {
+        return;
+    }
+    if ($seg === 'create') {
+        require __DIR__ . '/../clubs/create.php';
+        exit;
+    }
+    if ($seg === 'mine') {
+        require __DIR__ . '/../clubs/mine.php';
+        exit;
+    }
+    $_GET['slug'] = $seg;
+    require __DIR__ . '/../clubs/view.php';
+    exit;
+}
+
 function clubs_hub_url(string $catSlug = '', string $tab = '', string $q = '', int $page = 1): string {
     $url = APP_URL . '/clubs';
     $params = [];
