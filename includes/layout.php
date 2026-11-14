@@ -440,7 +440,7 @@ HTML;
         </div>
 
         <a href="{$url}/clubs" class="navbar-nav__link">
-          <i class="bi bi-people"></i> کلاب‌ها
+          <i class="bi bi-people"></i> کلاب‌
         </a>
 
         <div class="dropdown">

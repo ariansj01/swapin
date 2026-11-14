@@ -59,7 +59,7 @@
 .clubs-managers .avatar:first-child, .clubs-mini-av:first-child, .clubs-managers > :first-child { margin-left: 0; }
 .clubs-profile__about { font-size: 12.5px; color: #6b7280; line-height: 1.9; margin: 0; }
 .clubs-profile__rules {
-  display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 700; color: #071A33; text-decoration: none;
+  display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 700; color: #071A33; text-decoration: none; text-align: center; width: 100%;
 }
 
 .clubs-banner {
@@ -88,12 +88,12 @@
 
 .clubs-toolbar {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  background: #fff; border-radius: 16px; padding: 8px 10px 8px 12px;
+  border-radius: 16px; padding: 8px 10px 8px 12px;
   border: 1px solid #edf0f4; margin-bottom: 14px;
   flex-wrap: nowrap;
 }
 .clubs-tabs {
-  display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;
+  display: flex; gap: 0px; flex-wrap: nowrap; overflow-x: auto;
   min-width: 0; flex: 1; white-space: nowrap; scrollbar-width: none;
 }
 .clubs-tabs::-webkit-scrollbar { display: none; }
@@ -144,7 +144,7 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .club-item__stats {
-  display: flex; align-items: center; gap: 12px; font-size: 11.5px; font-weight: 700; color: #6b7280;
+  display: flex; justify-content: center ; align-items: center; gap: 12px; font-size: 11.5px; font-weight: 700; color: #6b7280;
 }
 .club-item__stats i {
   width: 18px; height: 18px; border-radius: 50%; background: #eef2f7; color: #4b5563;

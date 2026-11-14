@@ -126,7 +126,7 @@ render_navbar($user);
 
   <div class="clubp-banner">
     <?php if ($coverUrl): ?><img src="<?= h($coverUrl) ?>" alt=""><?php endif; ?>
-    <div class="clubp-banner__inner">
+    <!-- <div class="clubp-banner__inner">
       <div class="clubp-banner__copy">
         <h1><?= h($club['name']) ?></h1>
         <p><?= h($club['description'] ?? '') ?></p>
@@ -148,7 +148,7 @@ render_navbar($user);
         </label>
         <?php endif; ?>
       </div>
-    </div>
+    </div> -->
   </div>
 
   <nav class="clubp-mtabs">
