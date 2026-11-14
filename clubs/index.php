@@ -69,10 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $uid = (int)$user['id'];
         if ($action === 'join') {
             rate_limit_ip_or_fail('club_join', 20, 3600);
-            $res = clubs_join($clubId, $uid, !empty($postedClub['require_approval']));
-            $_SESSION['club_flash'] = (($res['status'] ?? '') === 'pending')
-                ? 'درخواست عضویت ارسال شد و پس از تأیید مدیر فعال می‌شود.'
-                : 'به کلاب پیوستید.';
+            $res = clubs_join($clubId, $uid, !empty($postedClub['require_approval']), (int)($_POST['listing_id'] ?? 0));
+            $_SESSION['club_flash'] = empty($res['ok'])
+                ? ($res['error'] ?? 'عضویت ناموفق بود.')
+                : ((($res['status'] ?? '') === 'pending')
+                    ? 'درخواست عضویت ارسال شد. مدیر کلاب آگهی و مشخصات شما را بررسی می‌کند.'
+                    : 'به کلاب پیوستید.');
         } elseif ($action === 'follow') {
             $on = clubs_follow_toggle($clubId, $uid);
             $_SESSION['club_flash'] = $on ? 'کلاب را دنبال می‌کنید.' : 'دنبال کردن لغو شد.';
@@ -114,6 +116,8 @@ $title = $club ? ($club['name'] . ' | کلاب‌های سواپین') : (($acti
 $canonical = $hubUrl;
 $cssVer = @filemtime(__DIR__ . '/../src/css/clubs-page.css') ?: time();
 $loginUrl = APP_URL . '/auth/login?redirect=' . urlencode($_SERVER['REQUEST_URI'] ?? '/clubs');
+$myListings = $user ? clubs_user_listings((int)$user['id']) : [];
+$joinCreateUrl = APP_URL . '/listings/create';
 $bannerTitle = (string)($adBanner['title'] ?? '');
 $bannerSub = (string)($adBanner['subtitle'] ?? '');
 if ($bannerTitle === '') {
@@ -166,19 +170,18 @@ render_navbar($user);
       <div class="clubs-profile__avatar">
         <?php if ($avatarUrl): ?><img src="<?= h($avatarUrl) ?>" alt=""><?php else: ?><i class="bi bi-people"></i><?php endif; ?>
       </div>
-      <h2 class="clubs-profile__name"><?= h($club['name']) ?></h2>
+      <h2 class="clubs-profile__name"><a href="<?= h(clubs_url($club)) ?>" style="color:inherit;text-decoration:none"><?= h($club['name']) ?></a></h2>
       <div class="clubs-profile__stats">
         <div class="clubs-profile__stat"><strong><?= clubs_fmt_compact((int)$stats['members']) ?></strong><span>عضو</span></div>
         <div class="clubs-profile__stat"><strong><?= clubs_fmt_compact((int)$stats['posts']) ?></strong><span>پست</span></div>
         <div class="clubs-profile__stat"><strong><?= clubs_fmt_compact((int)$stats['trades']) ?></strong><span>معامله موفق</span></div>
       </div>
       <?php if ($user): ?>
-      <form method="POST">
-        <?= csrf_field() ?>
-        <input type="hidden" name="action" value="join">
-        <input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>">
-        <button class="clubs-btn-navy" type="submit" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($joinLabel) ?></button>
-      </form>
+      <?php if ($state['member'] || $state['pending']): ?>
+      <button class="clubs-btn-navy" type="button" disabled><?= h($joinLabel) ?></button>
+      <?php else: ?>
+      <button type="button" class="clubs-btn-navy" data-open-join="<?= (int)$club['id'] ?>"><?= h($joinLabel) ?></button>
+      <?php endif; ?>
       <form method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="follow">
@@ -228,12 +231,7 @@ render_navbar($user);
             <?php if ($adBanner || !$user): ?>
             <a class="clubs-banner__cta" href="<?= h($bannerHref !== '' ? $bannerHref : '#') ?>"><?= h($bannerCta) ?></a>
             <?php elseif ($club): ?>
-            <form method="POST">
-              <?= csrf_field() ?>
-              <input type="hidden" name="action" value="join">
-              <input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>">
-              <button class="clubs-banner__cta" type="submit" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($bannerCta) ?></button>
-            </form>
+            <button type="button" class="clubs-banner__cta" data-open-join="<?= (int)$club['id'] ?>" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($bannerCta) ?></button>
             <?php endif; ?>
           <?php endif; ?>
           <?php if ($club): ?>
@@ -249,7 +247,7 @@ render_navbar($user);
       <?php if ($club): ?>
       <div class="clubs-mjoin">
         <?php if ($user): ?>
-        <form method="POST"><?= csrf_field() ?><input type="hidden" name="action" value="join"><input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>"><button class="clubs-btn-navy" type="submit" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($joinLabel) ?></button></form>
+        <button type="button" class="clubs-btn-navy" data-open-join="<?= (int)$club['id'] ?>" <?= ($state['member'] || $state['pending']) ? 'disabled' : '' ?>><?= h($joinLabel) ?></button>
         <form method="POST"><?= csrf_field() ?><input type="hidden" name="action" value="follow"><input type="hidden" name="club_id" value="<?= (int)$club['id'] ?>"><button class="clubs-btn-ghost<?= $state['following'] ? ' is-on' : '' ?>" type="submit"><?= $state['following'] ? 'در حال دنبال کردن' : 'دنبال کردن' ?></button></form>
         <?php else: ?>
         <a class="clubs-btn-navy" href="<?= h($loginUrl) ?>">عضویت در کلاب</a>
@@ -406,7 +404,7 @@ render_navbar($user);
                   </div>
                   <div class="club-item__copy">
                     <h3 class="club-item__title"><?= h($l['title']) ?></h3>
-                    <p class="club-item__sub"><?= h((string)($ownerClub['name'] ?? '')) ?></p>
+                    <p class="club-item__sub"><?php if ($ownerClub): ?><a href="<?= h(clubs_url($ownerClub)) ?>" style="color:inherit;text-decoration:none"><?= h($ownerClub['name']) ?></a><?php endif; ?></p>
                   </div>
                 </div>
                 <div class="club-item__stats">
@@ -493,12 +491,7 @@ render_navbar($user);
       <div class="clm__thumbs" id="clm-thumbs"></div>
       <div class="clm__actions">
         <div class="clm__deal"><i class="bi bi-arrow-left-right"></i> نوع معامله: <b id="clm-mode"></b></div>
-        <form method="POST" id="clm-join-form">
-          <?= csrf_field() ?>
-          <input type="hidden" name="action" value="join">
-          <input type="hidden" name="club_id" id="clm-join-id" value="0">
-          <button class="clm__join" type="submit"><i class="bi bi-people"></i> پیوستن به کلاب</button>
-        </form>
+        <button type="button" class="clm__join" id="clm-join-btn" data-open-join="0"><i class="bi bi-people"></i> پیوستن به کلاب</button>
         <button type="button" class="clm__ghost" id="clm-save" data-listing-id="0"><i class="bi bi-bookmark"></i> ذخیره آگهی</button>
         <button type="button" class="clm__ghost" id="clm-share"><i class="bi bi-share"></i> اشتراک‌گذاری</button>
       </div>
@@ -605,7 +598,8 @@ render_navbar($user);
     document.getElementById('clm-club-members').textContent = c.members || '۰';
     document.getElementById('clm-club-posts').textContent = c.posts || '۰';
     document.getElementById('clm-club-go').href = c.url || '#';
-    document.getElementById('clm-join-id').value = c.id || 0;
+    const joinBtn = document.getElementById('clm-join-btn');
+    if (joinBtn) joinBtn.setAttribute('data-open-join', String(c.id || 0));
     const saveBtn = document.getElementById('clm-save');
     saveBtn.dataset.listingId = data.id || 0;
     saveBtn.dataset.saved = 'false';
@@ -674,4 +668,5 @@ render_navbar($user);
 })();
 </script>
 <?php
+require __DIR__ . '/_join_modal.php';
 render_footer();

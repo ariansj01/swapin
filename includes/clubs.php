@@ -119,6 +119,21 @@ function clubs_ensure_tables(): void {
             swapin_debug_log('migration-error-club-messages-create', ['msg' => $e->getMessage()]);
         }
     }
+
+    if (db_has_table('club_members') && !db_has_column('club_members', 'listing_id')) {
+        try {
+            DB::query('ALTER TABLE `club_members` ADD COLUMN `listing_id` INT UNSIGNED DEFAULT NULL AFTER `user_id`');
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-club-members-listing', ['msg' => $e->getMessage()]);
+        }
+    }
+    if (db_has_table('club_messages') && !db_has_column('club_messages', 'listing_id')) {
+        try {
+            DB::query('ALTER TABLE `club_messages` ADD COLUMN `listing_id` INT UNSIGNED DEFAULT NULL AFTER `body`');
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-club-messages-listing', ['msg' => $e->getMessage()]);
+        }
+    }
 }
 
 function clubs_status_labels(): array {
@@ -862,17 +877,18 @@ function clubs_managers(int $clubId): array {
 
 function clubs_user_state(?array $user, int $clubId): array {
     $uid = (int)($user['id'] ?? 0);
-    $state = ['member' => false, 'pending' => false, 'following' => false, 'role' => '', 'owner' => false];
+    $state = ['member' => false, 'pending' => false, 'following' => false, 'role' => '', 'owner' => false, 'listing_id' => 0];
     if ($uid <= 0 || $clubId <= 0) {
         return $state;
     }
     try {
-        $row = DB::fetch('SELECT role, status FROM club_members WHERE club_id = ? AND user_id = ?', [$clubId, $uid]);
+        $row = DB::fetch('SELECT role, status, listing_id FROM club_members WHERE club_id = ? AND user_id = ?', [$clubId, $uid]);
         if ($row) {
             $state['role'] = (string)$row['role'];
             $state['owner'] = $row['role'] === 'owner';
             $state['member'] = $row['status'] === 'active';
             $state['pending'] = $row['status'] === 'pending';
+            $state['listing_id'] = (int)($row['listing_id'] ?? 0);
         }
     } catch (Throwable) {}
     try {
@@ -882,23 +898,177 @@ function clubs_user_state(?array $user, int $clubId): array {
     return $state;
 }
 
-function clubs_join(int $clubId, int $userId, bool $requireApproval): array {
+function clubs_user_listings(int $userId, int $limit = 40): array {
+    if ($userId <= 0) {
+        return [];
+    }
+    try {
+        return DB::fetchAll(
+            "SELECT l.id, l.title, l.estimated_value, l.sell_price, l.listing_mode, l.condition,
+                    (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+             FROM listings l
+             WHERE l.user_id = ? AND l.status = 'active' AND l.review_status = 'approved'
+             ORDER BY l.created_at DESC
+             LIMIT " . max(1, min(60, $limit)),
+            [$userId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_owned_listing(int $listingId, int $userId): ?array {
+    if ($listingId <= 0 || $userId <= 0) {
+        return null;
+    }
+    return DB::fetch(
+        "SELECT l.*, (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
+         FROM listings l
+         WHERE l.id = ? AND l.user_id = ? AND l.status = 'active' AND l.review_status = 'approved'",
+        [$listingId, $userId]
+    );
+}
+
+function clubs_join(int $clubId, int $userId, bool $requireApproval, int $listingId = 0): array {
     clubs_ensure_tables();
+    if ($listingId <= 0 || !clubs_owned_listing($listingId, $userId)) {
+        return ['ok' => false, 'error' => 'برای پیوستن باید یکی از آگهی‌های فعال خود را انتخاب کنید.'];
+    }
     $existing = DB::fetch('SELECT id, status FROM club_members WHERE club_id = ? AND user_id = ?', [$clubId, $userId]);
     if ($existing) {
         if ($existing['status'] === 'banned') {
             return ['ok' => false, 'error' => 'امکان عضویت در این کلاب وجود ندارد.'];
         }
+        if (db_has_column('club_members', 'listing_id')) {
+            DB::update('club_members', ['listing_id' => $listingId], 'id = ?', [(int)$existing['id']]);
+        }
         return ['ok' => true, 'status' => $existing['status']];
     }
     $status = $requireApproval ? 'pending' : 'active';
-    DB::insert('club_members', [
+    $row = [
         'club_id' => $clubId,
         'user_id' => $userId,
         'role'    => 'member',
         'status'  => $status,
-    ]);
+    ];
+    if (db_has_column('club_members', 'listing_id')) {
+        $row['listing_id'] = $listingId;
+    }
+    DB::insert('club_members', $row);
     return ['ok' => true, 'status' => $status];
+}
+
+function clubs_can_manage(array $state): bool {
+    return !empty($state['owner']) || (($state['role'] ?? '') === 'moderator');
+}
+
+function clubs_pending_joins(int $clubId): array {
+    try {
+        return DB::fetchAll(
+            "SELECT m.id, m.user_id, m.listing_id, m.created_at, u.name, u.avatar, u.phone,
+                    l.title AS listing_title, l.estimated_value,
+                    (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS listing_thumb
+             FROM club_members m
+             JOIN users u ON u.id = m.user_id
+             LEFT JOIN listings l ON l.id = m.listing_id
+             WHERE m.club_id = ? AND m.status = 'pending'
+             ORDER BY m.created_at ASC",
+            [$clubId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function clubs_review_join(int $clubId, int $memberRowId, string $decision, int $actorId): array {
+    $row = DB::fetch('SELECT * FROM club_members WHERE id = ? AND club_id = ?', [$memberRowId, $clubId]);
+    if (!$row || ($row['status'] ?? '') !== 'pending') {
+        return ['ok' => false, 'error' => 'درخواستی یافت نشد.'];
+    }
+    $actor = clubs_user_state(['id' => $actorId], $clubId);
+    if (!clubs_can_manage($actor)) {
+        return ['ok' => false, 'error' => 'اجازه بررسی این درخواست را ندارید.'];
+    }
+    if ($decision === 'approve') {
+        DB::update('club_members', ['status' => 'active'], 'id = ?', [$memberRowId]);
+        return ['ok' => true, 'status' => 'active'];
+    }
+    DB::query('DELETE FROM club_members WHERE id = ?', [$memberRowId]);
+    return ['ok' => true, 'status' => 'rejected'];
+}
+
+function clubs_send_swap_offer(int $targetListingId, int $fromUserId, int $offerListingId): array {
+    $target = DB::fetch(
+        "SELECT id, user_id, title, status, review_status FROM listings WHERE id = ?",
+        [$targetListingId]
+    );
+    if (!$target || ($target['status'] ?? '') !== 'active' || ($target['review_status'] ?? '') !== 'approved') {
+        return ['ok' => false, 'error' => 'آگهی در دسترس نیست.'];
+    }
+    if ((int)$target['user_id'] === $fromUserId) {
+        return ['ok' => false, 'error' => 'نمی‌توانید برای آگهی خودتان پیشنهاد بدهید.'];
+    }
+    if (!clubs_owned_listing($offerListingId, $fromUserId)) {
+        return ['ok' => false, 'error' => 'آگهی پیوستن شما معتبر نیست.'];
+    }
+    $existing = DB::fetch(
+        "SELECT id FROM trade_offers WHERE listing_id = ? AND from_user_id = ? AND status = 'pending' LIMIT 1",
+        [$targetListingId, $fromUserId]
+    );
+    if ($existing) {
+        return ['ok' => false, 'error' => 'شما از قبل یک پیشنهاد فعال برای این آگهی دارید.'];
+    }
+    $newOfferId = DB::insert('trade_offers', [
+        'listing_id'       => $targetListingId,
+        'from_user_id'     => $fromUserId,
+        'offer_listing_id' => $offerListingId,
+        'offer_type'       => 'swap',
+        'offer_credit'     => 0,
+        'message'          => 'پیشنهاد معاوضه از کلاب',
+        'status'           => 'pending',
+    ]);
+    DB::insert('messages', [
+        'thread_id'    => 'offer_' . uniqid(),
+        'from_user_id' => $fromUserId,
+        'to_user_id'   => (int)$target['user_id'],
+        'offer_id'     => $newOfferId,
+        'body'         => 'برای آگهی «' . $target['title'] . '» از کلاب پیشنهاد معاوضه دادم.',
+    ]);
+    return ['ok' => true, 'id' => $newOfferId];
+}
+
+function clubs_user_is_online(?string $lastSeen): bool {
+    if (!$lastSeen) {
+        return false;
+    }
+    $ts = strtotime($lastSeen);
+    return $ts !== false && $ts >= (time() - 300);
+}
+
+function clubs_online_count(int $clubId): int {
+    if (!db_has_column('users', 'last_seen')) {
+        return 0;
+    }
+    try {
+        return (int)(DB::fetch(
+            "SELECT COUNT(*) AS c FROM club_members m
+             JOIN users u ON u.id = m.user_id
+             WHERE m.club_id = ? AND m.status = 'active'
+               AND u.last_seen >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)",
+            [$clubId]
+        )['c'] ?? 0);
+    } catch (Throwable) {
+        return 0;
+    }
+}
+
+function clubs_touch_presence(int $userId): void {
+    if ($userId <= 0 || !db_has_column('users', 'last_seen')) {
+        return;
+    }
+    try {
+        DB::query('UPDATE users SET last_seen = NOW() WHERE id = ?', [$userId]);
+    } catch (Throwable) {}
 }
 
 function clubs_follow_toggle(int $clubId, int $userId): bool {
@@ -912,7 +1082,7 @@ function clubs_follow_toggle(int $clubId, int $userId): bool {
     return true;
 }
 
-function clubs_listings(array $club, string $mode, string $q, int $limit = 12, int $offset = 0): array {
+function clubs_listings(array $club, string $mode, string $q, int $limit = 12, int $offset = 0, string $sort = 'newest'): array {
     $catIds = clubs_category_ids($club);
     if (!$catIds) {
         return [];
@@ -950,7 +1120,10 @@ function clubs_listings(array $club, string $mode, string $q, int $limit = 12, i
         $params[] = $like;
         $params[] = $like;
     }
-    $sql .= ' ORDER BY l.created_at DESC, l.id DESC LIMIT ' . (int)$limit . ' OFFSET ' . (int)$offset;
+    $sql .= $sort === 'views'
+        ? ' ORDER BY l.views DESC, l.id DESC'
+        : ' ORDER BY l.created_at DESC, l.id DESC';
+    $sql .= ' LIMIT ' . (int)$limit . ' OFFSET ' . (int)$offset;
     try {
         return DB::fetchAll($sql, $params);
     } catch (Throwable) {
@@ -975,11 +1148,18 @@ function clubs_members_list(int $clubId, int $limit = 24): array {
 }
 
 function clubs_messages(int $clubId, int $limit = 20): array {
+    $seen = db_has_column('users', 'last_seen') ? ', u.last_seen AS user_last_seen' : '';
+    $mention = db_has_column('club_messages', 'listing_id')
+        ? ", l.title AS listing_title,
+           (SELECT filename FROM listing_images WHERE listing_id = msg.listing_id AND is_primary = 1 LIMIT 1) AS listing_thumb"
+        : '';
+    $joinL = db_has_column('club_messages', 'listing_id') ? 'LEFT JOIN listings l ON l.id = msg.listing_id' : '';
     try {
         return DB::fetchAll(
-            "SELECT msg.*, u.name AS user_name, u.avatar AS user_avatar
+            "SELECT msg.*, u.name AS user_name, u.avatar AS user_avatar {$seen} {$mention}
              FROM club_messages msg
              JOIN users u ON u.id = msg.user_id
+             {$joinL}
              WHERE msg.club_id = ?
              ORDER BY msg.id DESC
              LIMIT " . max(1, min(50, $limit)),
@@ -990,19 +1170,32 @@ function clubs_messages(int $clubId, int $limit = 20): array {
     }
 }
 
-function clubs_post_message(int $clubId, int $userId, string $body): array {
+function clubs_post_message(int $clubId, int $userId, string $body, int $listingId = 0): array {
     $body = clean($body);
-    if (mb_strlen($body) < 2) {
+    if ($listingId > 0) {
+        $listed = DB::fetch("SELECT id FROM listings WHERE id = ? AND status = 'active' AND review_status = 'approved'", [$listingId]);
+        if (!$listed) {
+            $listingId = 0;
+        }
+    }
+    if (mb_strlen($body) < 2 && $listingId <= 0) {
         return ['ok' => false, 'error' => 'متن پیام خیلی کوتاه است.'];
     }
     if (mb_strlen($body) > 500) {
         return ['ok' => false, 'error' => 'متن پیام حداکثر ۵۰۰ کاراکتر است.'];
     }
-    DB::insert('club_messages', [
+    if ($body === '') {
+        $body = 'آگهی را به اشتراک گذاشت.';
+    }
+    $row = [
         'club_id' => $clubId,
         'user_id' => $userId,
         'body'    => $body,
-    ]);
+    ];
+    if (db_has_column('club_messages', 'listing_id') && $listingId > 0) {
+        $row['listing_id'] = $listingId;
+    }
+    DB::insert('club_messages', $row);
     return ['ok' => true];
 }
 

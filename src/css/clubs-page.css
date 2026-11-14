@@ -271,6 +271,16 @@
 .clm__panel { display: none; font-size: 13.5px; line-height: 2; color: #4b5563; white-space: pre-wrap; }
 .clm__panel.is-on { display: block; }
 body.clm-open { overflow: hidden; }
+.club-join-pick__list { display: grid; gap: 8px; margin: 12px 0; max-height: 320px; overflow: auto; }
+.club-join-pick__item {
+  display: flex; align-items: center; gap: 10px; padding: 8px; border: 1.5px solid #edf0f4; border-radius: 12px; cursor: pointer;
+}
+.club-join-pick__item:has(input:checked) { border-color: #ffc928; background: #fff8e1; }
+.club-join-pick__item img, .club-join-pick__ph {
+  width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: #eef2f6;
+  display: flex; align-items: center; justify-content: center;
+}
+.clm__dialog--join { grid-template-columns: 1fr; max-width: 520px; }
 
 .clubs-rules { background: #fff; border-radius: 16px; padding: 20px 22px; line-height: 2; color: #374151; }
 .clubs-rules h2 { font-size: 1.05rem; margin: 0 0 12px; }
