@@ -137,18 +137,6 @@ render_navbar($user);
         </div>
       </div>
       <div class="clubp-banner__side">
-        <div class="clubp-banner__av">
-          <?php if ($avatarUrl): ?><img src="<?= h($avatarUrl) ?>" alt=""><?php else: ?><i class="bi bi-people"></i><?php endif; ?>
-        </div>
-        <?php if ($user && !($state['member'] || $state['pending'])): ?>
-        <button type="button" class="clubp-banner__cta" data-open-join="<?= $clubId ?>">عضویت در کلاب</button>
-        <?php elseif ($state['member']): ?>
-        <span class="clubp-banner__cta">عضو هستی</span>
-        <?php elseif ($state['pending']): ?>
-        <span class="clubp-banner__cta"><?= h($joinLabel) ?></span>
-        <?php else: ?>
-        <a class="clubp-banner__cta" href="<?= h($loginUrl) ?>">عضویت در کلاب</a>
-        <?php endif; ?>
         <?php if (count($myClubs) > 0): ?>
         <label class="clubp-switch">
           <span>کلاب‌های من</span>

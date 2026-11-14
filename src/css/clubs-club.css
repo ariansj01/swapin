@@ -10,17 +10,12 @@
   gap: 16px; padding: 28px 28px 22px; min-height: 210px;
 }
 .clubp-banner__copy { max-width: 520px; }
-.clubp-banner h1 { margin: 0 0 8px; font-size: 1.45rem; font-weight: 800; }
+.clubp-banner h1 { margin: 0 0 8px; font-size: 1.45rem; font-weight: 800; color: #fff; }
 .clubp-banner p { margin: 0 0 14px; font-size: 13px; line-height: 1.8; color: rgba(255,255,255,.88); }
 .clubp-banner__stats { display: flex; gap: 22px; }
 .clubp-banner__stats strong { display: block; font-size: 1.05rem; }
 .clubp-banner__stats span { font-size: 12px; opacity: .85; }
 .clubp-banner__side { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.clubp-banner__av {
-  width: 108px; height: 108px; border-radius: 50%; overflow: hidden; background: #123;
-  box-shadow: 0 0 0 4px rgba(255,255,255,.35); display: flex; align-items: center; justify-content: center;
-}
-.clubp-banner__av img { width: 100%; height: 100%; object-fit: cover; }
 .clubp-banner__cta {
   display: inline-flex; align-items: center; gap: 6px; background: #ffc928; color: #071A33;
   font-weight: 800; font-size: 13px; padding: 8px 14px; border-radius: 999px; border: 0; text-decoration: none;
@@ -169,4 +164,6 @@
 }
 @media (min-width: 992px) {
   .clubp-fab { display: none; }
+  .clubp-grid { grid-template-columns: 320px minmax(0,1fr); }
+  .clubp-grid > aside { order: -1; }
 }

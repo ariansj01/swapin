@@ -850,32 +850,50 @@ function clubs_stats(array $club): array {
     } catch (Throwable) {}
 
     $catIds = clubs_category_ids($club);
-    if ($catIds) {
-        $ph = implode(',', array_fill(0, count($catIds), '?'));
+    $memberListingIds = clubs_member_listing_ids((int)($club['id'] ?? 0));
+    if ($catIds || $memberListingIds) {
+        $where = [];
+        $params = [];
+        if ($catIds) {
+            $where[] = 'category_id IN (' . implode(',', array_fill(0, count($catIds), '?')) . ')';
+            foreach ($catIds as $cid) {
+                $params[] = $cid;
+            }
+        }
+        if ($memberListingIds) {
+            $where[] = 'id IN (' . implode(',', array_fill(0, count($memberListingIds), '?')) . ')';
+            foreach ($memberListingIds as $lid) {
+                $params[] = $lid;
+            }
+        }
+        $cond = '(' . implode(' OR ', $where) . ") AND status = 'active' AND review_status = 'approved'";
         try {
             $posts = (int)(DB::fetch(
-                "SELECT COUNT(*) AS c FROM listings WHERE category_id IN ($ph) AND status = 'active' AND review_status = 'approved'",
-                $catIds
+                "SELECT COUNT(*) AS c FROM listings WHERE $cond",
+                $params
             )['c'] ?? 0);
         } catch (Throwable) {}
         try {
             if (db_has_column('listings', 'views')) {
                 $views = (int)(DB::fetch(
-                    "SELECT COALESCE(SUM(views), 0) AS c FROM listings WHERE category_id IN ($ph) AND status = 'active' AND review_status = 'approved'",
-                    $catIds
+                    "SELECT COALESCE(SUM(views), 0) AS c FROM listings WHERE $cond",
+                    $params
                 )['c'] ?? 0);
             }
         } catch (Throwable) {}
-        try {
-            if (db_has_table('trades')) {
-                $trades = (int)(DB::fetch(
-                    "SELECT COUNT(*) AS c FROM trades t
-                     JOIN listings l ON l.id = t.listing_id
-                     WHERE l.category_id IN ($ph) AND t.status = 'completed'",
-                    $catIds
-                )['c'] ?? 0);
-            }
-        } catch (Throwable) {}
+        if ($catIds) {
+            $ph = implode(',', array_fill(0, count($catIds), '?'));
+            try {
+                if (db_has_table('trades')) {
+                    $trades = (int)(DB::fetch(
+                        "SELECT COUNT(*) AS c FROM trades t
+                         JOIN listings l ON l.id = t.listing_id
+                         WHERE l.category_id IN ($ph) AND t.status = 'completed'",
+                        $catIds
+                    )['c'] ?? 0);
+                }
+            } catch (Throwable) {}
+        }
     }
     return ['members' => $members, 'posts' => $posts, 'trades' => $trades, 'views' => $views];
 }
@@ -1187,12 +1205,46 @@ function clubs_follow_toggle(int $clubId, int $userId): bool {
     return true;
 }
 
-function clubs_listings(array $club, string $mode, string $q, int $limit = 12, int $offset = 0, string $sort = 'newest'): array {
-    $catIds = clubs_category_ids($club);
-    if (!$catIds) {
+function clubs_member_listing_ids(int $clubId): array {
+    if ($clubId <= 0 || !db_has_column('club_members', 'listing_id')) {
         return [];
     }
-    $ph = implode(',', array_fill(0, count($catIds), '?'));
+    try {
+        $rows = DB::fetchAll(
+            "SELECT DISTINCT listing_id FROM club_members
+             WHERE club_id = ? AND status = 'active' AND listing_id IS NOT NULL AND listing_id > 0",
+            [$clubId]
+        );
+    } catch (Throwable) {
+        return [];
+    }
+    $ids = [];
+    foreach ($rows as $r) {
+        $ids[] = (int)$r['listing_id'];
+    }
+    return $ids;
+}
+
+function clubs_listings(array $club, string $mode, string $q, int $limit = 12, int $offset = 0, string $sort = 'newest'): array {
+    $catIds = clubs_category_ids($club);
+    $memberListingIds = clubs_member_listing_ids((int)($club['id'] ?? 0));
+    if (!$catIds && !$memberListingIds) {
+        return [];
+    }
+    $where = [];
+    $params = [];
+    if ($catIds) {
+        $where[] = 'l.category_id IN (' . implode(',', array_fill(0, count($catIds), '?')) . ')';
+        foreach ($catIds as $cid) {
+            $params[] = $cid;
+        }
+    }
+    if ($memberListingIds) {
+        $where[] = 'l.id IN (' . implode(',', array_fill(0, count($memberListingIds), '?')) . ')';
+        foreach ($memberListingIds as $lid) {
+            $params[] = $lid;
+        }
+    }
     $extraUser = '';
     if (db_has_column('users', 'rating')) {
         $extraUser .= ', u.rating AS seller_rating';
@@ -1209,8 +1261,7 @@ function clubs_listings(array $club, string $mode, string $q, int $limit = 12, i
             FROM listings l
             JOIN users u ON u.id = l.user_id
             JOIN categories c ON c.id = l.category_id
-            WHERE l.category_id IN ($ph) AND l.status = 'active' AND l.review_status = 'approved'";
-    $params = $catIds;
+            WHERE (" . implode(' OR ', $where) . ") AND l.status = 'active' AND l.review_status = 'approved'";
     if (db_has_column('listings', 'listing_mode')) {
         if ($mode === 'buy') {
             $sql .= " AND l.listing_mode IN ('sell','both')";
