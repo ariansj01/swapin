@@ -304,8 +304,12 @@ echo "[۱] ستون‌های مقصد\n";
 echo "  listings.want_category_id : " . ($hasWantCat ? 'موجود' : 'موجود نیست') . "\n";
 echo "  listings.want_location_id : " . ($hasWantLoc ? 'موجود' : 'موجود نیست (نادیده گرفته می‌شود)') . "\n\n";
 if (!$hasWantCat) {
-    fwrite(STDERR, "ستون «want_category_id» در جدول listings وجود ندارد.\n"
-        . "یک بار سایت (یا includes/config.php) را اجرا کنید تا مایگریشن اسکیما اعمال شود و سپس دوباره تلاش کنید.\n");
+    fwrite(STDERR,
+        "ستون «want_category_id» در جدول listings وجود ندارد.\n"
+        . "مایگریشن‌ها فقط در CLI یا با «?migrate=1» اجرا می‌شوند؛ یکی از این دو را بزنید:\n"
+        . "  php -r \"require 'includes/config.php';\"\n"
+        . "  یا در مرورگر: https://<دامنه>/?migrate=1\n"
+        . "سپس همین ابزار را دوباره اجرا کنید.\n");
     exit(1);
 }
 
