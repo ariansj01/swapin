@@ -76,11 +76,36 @@ if ($action === 'ai_chat') {
         }
     }
 
+    // پرسش‌های آماده: اگر پیام با یکی از ۱۰ پرسش تکراری مطابقت داشت، پاسخ آماده برگردان.
+    $faqId = trim((string)($input['faq_id'] ?? ''));
+    $faq   = $faqId !== '' ? live_chat_faq_by_id($faqId) : null;
+    if (!$faq) {
+        $faq = live_chat_faq_match($message);
+    }
+    if ($faq) {
+        echo json_encode([
+            'ok'       => true,
+            'reply'    => $faq['a'],
+            'source'   => 'faq',
+            'faq_id'   => $faq['id'],
+            'fallback' => false,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     $result = ai_chat_respond(mb_substr($message, 0, 2000), $history, null);
     echo json_encode([
         'ok'       => true,
         'reply'    => $result['message'],
         'fallback' => !empty($result['fallback']),
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($action === 'faq') {
+    echo json_encode([
+        'ok'        => true,
+        'questions' => live_chat_faq_questions(),
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }

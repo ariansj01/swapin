@@ -899,6 +899,7 @@ function render_support_widget(?array $user = null): void {
     </div>
 
     <div class="support-chat__form" id="support-chat-form">
+      <div class="support-chat__suggestions" id="support-chat-suggestions" hidden></div>
       <div class="support-chat__register" id="support-chat-register">
         <input type="hidden" name="_csrf" value="{$csrf}">
         <input type="text" class="support-chat__input" id="support-chat-name" placeholder="نام شما" autocomplete="off">
