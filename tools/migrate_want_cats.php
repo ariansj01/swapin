@@ -304,7 +304,8 @@ echo "[۱] ستون‌های مقصد\n";
 echo "  listings.want_category_id : " . ($hasWantCat ? 'موجود' : 'موجود نیست') . "\n";
 echo "  listings.want_location_id : " . ($hasWantLoc ? 'موجود' : 'موجود نیست (نادیده گرفته می‌شود)') . "\n\n";
 if (!$hasWantCat) {
-    fwrite(STDERR, "ستون «want_category_id» در جدول listings وجود ندارد؛ ابتدا اسکیمای A05.1 را اعمال کنید.\n");
+    fwrite(STDERR, "ستون «want_category_id» در جدول listings وجود ندارد.\n"
+        . "یک بار سایت (یا includes/config.php) را اجرا کنید تا مایگریشن اسکیما اعمال شود و سپس دوباره تلاش کنید.\n");
     exit(1);
 }
 
