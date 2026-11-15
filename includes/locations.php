@@ -252,8 +252,26 @@ function swaapin_ensure_location_tree(): int {
         $countryId = $insert('country', 'ایران', null, 0, 'iran');
 
         $sort = 0;
+
+        // مناطق تجمیعی (region) پیش از استان‌ها ساخته می‌شوند تا والد استان‌های عضو باشند
+        // (طبق شیت «جدول مکان»: گیلان/مازندران/گلستان زیر «شمال»).
+        $regionIds = [];
+        $regionByProvince = [];
+        foreach (swaapin_location_regions() as $region) {
+            $regionIds[(string) $region['slug']] = $insert('region', (string) $region['name'], $countryId, ++$sort, (string) $region['slug']);
+            foreach ($region['provinces'] as $regionProvince) {
+                $regionByProvince[(string) $regionProvince] = (string) $region['slug'];
+            }
+        }
+
         foreach (iran_provinces() as $province) {
-            $pid = $insert('province', (string) $province, $countryId, ++$sort);
+            $provinceName = (string) $province;
+            $provinceParent = $countryId;
+            $regionSlug = $regionByProvince[$provinceName] ?? '';
+            if ($regionSlug !== '' && ($regionIds[$regionSlug] ?? 0) > 0) {
+                $provinceParent = (int) $regionIds[$regionSlug];
+            }
+            $pid = $insert('province', $provinceName, $provinceParent, ++$sort);
             if ($pid <= 0) {
                 continue;
             }
@@ -299,10 +317,6 @@ function swaapin_ensure_location_tree(): int {
             if (!$exists) {
                 $insert('city', $city, $countryId, ++$sort);
             }
-        }
-
-        foreach (swaapin_location_regions() as $region) {
-            $insert('region', (string) $region['name'], $countryId, ++$sort, (string) $region['slug']);
         }
 
         $cachedCount = (int) (DB::fetch('SELECT COUNT(*) AS c FROM locations')['c'] ?? 0);
