@@ -227,6 +227,119 @@ function swaapin_catalog_active_listing_count(array $chain, int $categoryId): in
     }
 }
 
+/** برندهای فعال یک دسته (سطح brand) برای فهرست انتخاب فرم ثبت آگهی. */
+function swaapin_catalog_brands(int $categoryId): array {
+    if ($categoryId <= 0) {
+        return [];
+    }
+    swaapin_ensure_catalog_table();
+    if (!swaapin_catalog_table_exists()) {
+        return [];
+    }
+    try {
+        return DB::fetchAll(
+            "SELECT id, name, slug FROM catalog_nodes
+             WHERE category_id = ? AND parent_id = 0 AND level = 'brand' AND is_active = 1
+             ORDER BY sort_order, name",
+            [$categoryId]
+        );
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+/** فرزندان فعال یک گره: مدل‌های یک برند یا تیپ‌های یک مدل. */
+function swaapin_catalog_children(int $parentId, string $level): array {
+    if ($parentId <= 0 || !in_array($level, ['model', 'trim'], true)) {
+        return [];
+    }
+    swaapin_ensure_catalog_table();
+    if (!swaapin_catalog_table_exists()) {
+        return [];
+    }
+    try {
+        return DB::fetchAll(
+            "SELECT id, name, slug FROM catalog_nodes
+             WHERE parent_id = ? AND level = ? AND is_active = 1
+             ORDER BY sort_order, name",
+            [$parentId, $level]
+        );
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+/** آیا این دسته فهرست برند دارد؟ (تعیین نمایش انتخابگر برند/مدل در فرم) */
+function swaapin_catalog_has_brands(int $categoryId): bool {
+    return swaapin_catalog_brands($categoryId) !== [];
+}
+
+/** گرهٔ فعال با شناسه و سطح مشخص، محدود به یک دسته (اعتبارسنجی انتخاب کاربر). */
+function swaapin_catalog_node_by_id(int $id, int $categoryId, string $level): ?array {
+    if ($id <= 0 || $categoryId <= 0 || !in_array($level, swaapin_catalog_levels(), true)) {
+        return null;
+    }
+    swaapin_ensure_catalog_table();
+    if (!swaapin_catalog_table_exists()) {
+        return null;
+    }
+    try {
+        $row = DB::fetch(
+            'SELECT * FROM catalog_nodes WHERE id = ? AND category_id = ? AND level = ? AND is_active = 1 LIMIT 1',
+            [$id, $categoryId, $level]
+        );
+        return $row ?: null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+/**
+ * تجزیه و اعتبارسنجی انتخاب برند/مدل/تیپ از ورودی فرم ثبت آگهی.
+ * فقط گره‌هایی پذیرفته می‌شوند که در همان دسته و با زنجیرهٔ والد درست باشند.
+ *
+ * @return array{brand_id:int,model_id:int,trim_id:int,attrs:array<string,string>}
+ */
+function swaapin_catalog_selection_from_input(int $categoryId, array $input): array {
+    $out = ['brand_id' => 0, 'model_id' => 0, 'trim_id' => 0, 'attrs' => []];
+    if ($categoryId <= 0) {
+        return $out;
+    }
+    $brand = swaapin_catalog_node_by_id((int) ($input['catalog_brand'] ?? 0), $categoryId, 'brand');
+    if (!$brand) {
+        return $out;
+    }
+    $out['brand_id']         = (int) $brand['id'];
+    $out['attrs']['brand']   = (string) $brand['name'];
+
+    $model = swaapin_catalog_node_by_id((int) ($input['catalog_model'] ?? 0), $categoryId, 'model');
+    if (!$model || (int) $model['parent_id'] !== $out['brand_id']) {
+        return $out;
+    }
+    $out['model_id']         = (int) $model['id'];
+    $out['attrs']['model']   = (string) $model['name'];
+
+    $trim = swaapin_catalog_node_by_id((int) ($input['catalog_trim'] ?? 0), $categoryId, 'trim');
+    if ($trim && (int) $trim['parent_id'] === $out['model_id']) {
+        $out['trim_id']        = (int) $trim['id'];
+        $out['attrs']['trim']  = (string) $trim['name'];
+    }
+    return $out;
+}
+
+/** ستون‌های brand_id/model_id/trim_id برای درج/به‌روزرسانی آگهی. */
+function swaapin_catalog_columns_payload(array $selection): array {
+    $payload = [];
+    foreach (['brand_id', 'model_id', 'trim_id'] as $col) {
+        if (!db_has_column('listings', $col)) {
+            continue;
+        }
+        $val = (int) ($selection[$col] ?? 0);
+        $payload[$col] = $val > 0 ? $val : null;
+    }
+    return $payload;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // لندینگ‌های معاوضه (بخش ۴ سند)
 // ─────────────────────────────────────────────────────────────────────────────

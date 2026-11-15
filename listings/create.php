@@ -188,6 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         // Insert listing
         $listingAttrs = listing_attrs_from_input($listingProviderType, $_POST);
+        // برند/مدل/تیپ انتخاب‌شده از فهرست (سند معماری سئو — بخش ۱ و ۲)
+        $catalogSel   = swaapin_catalog_selection_from_input((int) $vals['category_id'], $_POST);
+        $listingAttrs = array_merge($listingAttrs, $catalogSel['attrs']);
         $listingId = DB::insert('listings', array_merge([
             'user_id'          => $user['id'],
             'category_id'      => $vals['category_id'],
@@ -205,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'city'             => $vals['city'] ?: null,
             'status'           => 'active',
             'review_status'    => 'pending',
-        ], listing_location_db_payload($location), listing_attrs_db_payload($listingAttrs)));
+        ], listing_location_db_payload($location), listing_attrs_db_payload($listingAttrs), swaapin_catalog_columns_payload($catalogSel)));
 
         // Handle image uploads
         $uploadedImages = 0;
@@ -362,6 +365,24 @@ render_navbar($user);
             <?= render_wizard_category_picker((int)$vals['category_id'], true) ?>
           </div>
 
+          <!-- برند / مدل / تیپ از فهرست (سند معماری سئو — بخش ۱ و ۲) -->
+          <div class="wizard-form-group" id="catalog-picker" style="display:none">
+            <label class="wizard-form-label" for="catalog-brand">برند *</label>
+            <select name="catalog_brand" id="catalog-brand" class="wizard-form-select">
+              <option value="">انتخاب برند…</option>
+            </select>
+            <label class="wizard-form-label" for="catalog-model" style="margin-top:10px">مدل *</label>
+            <select name="catalog_model" id="catalog-model" class="wizard-form-select" disabled>
+              <option value="">انتخاب مدل…</option>
+            </select>
+            <div id="catalog-trim-wrap" style="display:none">
+              <label class="wizard-form-label" for="catalog-trim" style="margin-top:10px">تیپ</label>
+              <select name="catalog_trim" id="catalog-trim" class="wizard-form-select" disabled>
+                <option value="">انتخاب تیپ…</option>
+              </select>
+            </div>
+          </div>
+
           <div class="wizard-form-group">
             <label class="wizard-form-label">وضعیت کالا *</label>
             <select name="condition" id="step3-condition" class="wizard-form-select">
@@ -397,7 +418,7 @@ render_navbar($user);
           include __DIR__ . '/../includes/listing_location_picker.php';
           ?>
 
-          <?= render_listing_type_fields($listingProviderType, listing_attrs_from_input($listingProviderType, $_POST ?? []), 'wizard') ?>
+          <?= render_listing_type_fields($listingProviderType, listing_attrs_from_input($listingProviderType, $_POST ?? []), 'wizard', ['brand', 'model']) ?>
         </div>
 
         <!-- Step 4: What do you want in exchange? -->
@@ -720,6 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initStep1Counters();
   initStep2Upload();
   initStep3Fields();
+  initCatalogPicker();
   initWizardCategoryPicker('cat-pick');
   initWizardCategoryPicker('want-cat-pick');
   initStep6Price();
@@ -906,6 +928,133 @@ function initStep3Fields() {
   locationPicker?.addEventListener('listing-location-change', updateButtons);
 }
 
+// ── برند / مدل / تیپ از فهرست (سند معماری سئو — بخش ۱ و ۲) ─────────────────
+function initCatalogPicker() {
+  const catHidden = document.getElementById('step3-category-hidden');
+  const wrap = document.getElementById('catalog-picker');
+  const brandSel = document.getElementById('catalog-brand');
+  const modelSel = document.getElementById('catalog-model');
+  const trimWrap = document.getElementById('catalog-trim-wrap');
+  const trimSel = document.getElementById('catalog-trim');
+  if (!catHidden || !wrap || !brandSel || !modelSel) return;
+
+  const baseUrl = (document.querySelector('meta[name="app-url"]')?.content || '').replace(/\/$/, '') + '/api/catalog.php';
+
+  function fillSelect(sel, items, placeholder) {
+    sel.innerHTML = '';
+    const first = document.createElement('option');
+    first.value = '';
+    first.textContent = placeholder;
+    sel.appendChild(first);
+    items.forEach((it) => {
+      const opt = document.createElement('option');
+      opt.value = String(it.id);
+      opt.textContent = String(it.name);
+      sel.appendChild(opt);
+    });
+  }
+
+  function hideTrim() {
+    if (!trimSel || !trimWrap) return;
+    trimSel.value = '';
+    trimSel.disabled = true;
+    trimSel.innerHTML = '<option value="">انتخاب تیپ…</option>';
+    trimWrap.style.display = 'none';
+  }
+
+  function resetModels() {
+    modelSel.value = '';
+    modelSel.disabled = true;
+    modelSel.innerHTML = '<option value="">انتخاب مدل…</option>';
+    hideTrim();
+  }
+
+  async function fetchCatalog(query) {
+    const res = await fetch(baseUrl + query, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('catalog_request_failed');
+    return res.json();
+  }
+
+  async function loadBrands() {
+    const catId = parseInt(catHidden.value || '0', 10);
+    brandSel.value = '';
+    resetModels();
+    if (!catId) {
+      wrap.style.display = 'none';
+      updateButtons();
+      return;
+    }
+    try {
+      const data = await fetchCatalog('?cat=' + encodeURIComponent(catId));
+      const brands = data.brands || [];
+      if (!brands.length) {
+        wrap.style.display = 'none';
+        updateButtons();
+        return;
+      }
+      fillSelect(brandSel, brands, 'انتخاب برند…');
+      wrap.style.display = '';
+    } catch (e) {
+      wrap.style.display = 'none';
+    }
+    updateButtons();
+  }
+
+  async function loadModels() {
+    const catId = parseInt(catHidden.value || '0', 10);
+    const brandId = parseInt(brandSel.value || '0', 10);
+    resetModels();
+    if (!catId || !brandId) {
+      updateButtons();
+      return;
+    }
+    try {
+      const data = await fetchCatalog('?cat=' + encodeURIComponent(catId) + '&brand=' + encodeURIComponent(brandId));
+      const models = data.models || [];
+      fillSelect(modelSel, models, models.length ? 'انتخاب مدل…' : 'مدلی ثبت نشده');
+      modelSel.disabled = models.length === 0;
+    } catch (e) {
+    }
+    updateButtons();
+  }
+
+  async function loadTrims() {
+    const catId = parseInt(catHidden.value || '0', 10);
+    const brandId = parseInt(brandSel.value || '0', 10);
+    const modelId = parseInt(modelSel.value || '0', 10);
+    hideTrim();
+    if (!catId || !brandId || !modelId || !trimSel || !trimWrap) {
+      updateButtons();
+      return;
+    }
+    try {
+      const data = await fetchCatalog('?cat=' + encodeURIComponent(catId) + '&brand=' + encodeURIComponent(brandId) + '&model=' + encodeURIComponent(modelId));
+      const trims = data.trims || [];
+      if (trims.length) {
+        fillSelect(trimSel, trims, 'انتخاب تیپ…');
+        trimSel.disabled = false;
+        trimWrap.style.display = '';
+      }
+    } catch (e) {
+    }
+    updateButtons();
+  }
+
+  window.swaapinCatalogValid = () => {
+    if (wrap.style.display === 'none') return true;
+    return !!brandSel.value && !!modelSel.value;
+  };
+
+  catHidden.addEventListener('change', loadBrands);
+  brandSel.addEventListener('change', loadModels);
+  modelSel.addEventListener('change', loadTrims);
+
+  // فرم پس از خطا دوباره رندر شده و دسته از قبل انتخاب است
+  if (parseInt(catHidden.value || '0', 10) > 0) {
+    loadBrands();
+  }
+}
+
 function initStep1Counters() {
   const titleInput = document.getElementById('step1-title');
   const descInput = document.getElementById('step1-description');
@@ -1009,7 +1158,7 @@ function validateCurrentStepWithMessage() {
   const stepMessages = {
     1: 'عنوان و توضیحات باید حداقل ۵ و ۲۰ کاراکتر داشته باشند.',
     2: 'حداقل یک تصویر برای آگهی باید انتخاب شود.',
-    3: 'دسته‌بندی، شهر و موقعیت جغرافیایی را کامل کنید.',
+    3: 'دسته‌بندی، برند، مدل، شهر و موقعیت جغرافیایی را کامل کنید.',
     4: 'حداقل یکی از دسته‌بندی‌های مورد علاقه را انتخاب کنید.',
     5: 'توضیح دقیق‌تر را وارد کنید.',
     6: 'نوع معامله و اطلاعات قیمت را تکمیل کنید.',
@@ -1054,7 +1203,8 @@ function validateCurrentStep() {
       const neighborhood = document.getElementById('step3-neighborhood-hidden')?.value.trim()
         || document.getElementById('step3-neighborhood')?.value.trim()
         || document.getElementById('step3-neighborhood-text')?.value.trim();
-      return !!catId && !!city && !!lat && !!lng && !!neighborhood;
+      return !!catId && !!city && !!lat && !!lng && !!neighborhood
+        && (typeof window.swaapinCatalogValid !== 'function' || window.swaapinCatalogValid());
     }
 
     case 4:

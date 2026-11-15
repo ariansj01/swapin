@@ -235,8 +235,12 @@ function listing_attrs_db_payload(array $attrs): array {
     return ['listing_attrs' => empty($attrs) ? null : json_encode($attrs, JSON_UNESCAPED_UNICODE)];
 }
 
-function render_listing_type_fields(string $providerType, array $values = [], string $cssPrefix = 'store'): string {
+/** @param string[] $excludeKeys فیلدهایی که باید نادیده گرفته شوند (مثلاً برند/مدل انتخاب‌شده از فهرست) */
+function render_listing_type_fields(string $providerType, array $values = [], string $cssPrefix = 'store', array $excludeKeys = []): string {
     $defs = listing_type_field_defs($providerType);
+    foreach ($excludeKeys as $key) {
+        unset($defs[$key]);
+    }
     if (empty($defs)) {
         return '';
     }
