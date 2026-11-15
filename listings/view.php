@@ -21,10 +21,12 @@ $listing = DB::fetch(
     'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
             u.city AS seller_city, u.credit_balance AS seller_credits, u.verification_level,
             u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug,
+            wc.name AS want_cat_name,
             t.id AS trade_id, t.status AS trade_status, t.user_a_id, t.user_b_id' . $selectStoreCols . '
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
+     LEFT JOIN categories wc ON wc.id = l.want_category_id
      LEFT JOIN trades t ON (t.listing_a_id = l.id OR t.listing_b_id = l.id) AND t.status IN (\'in_progress\', \'user_a_confirmed\', \'user_b_confirmed\')
      WHERE l.id = ?',
     [$id]
@@ -588,17 +590,17 @@ render_navbar($user);
     </section>
 
     <!-- Wants -->
-    <?php if (!empty($listing['want_in_return'])): ?>
+    <?php 
+    $wantText = $listing['want_in_return'] ?? '';
+    if (!empty($listing['want_cat_name'])) {
+        $wantText = $listing['want_cat_name'] . (!empty($listing['want_in_return']) ? ' (' . $listing['want_in_return'] . ')' : '');
+    }
+    ?>
+    <?php if (!empty($wantText)): ?>
     <section class="lv-want-section">
       <h2 class="lv-section__title"><?= h($listing['seller_name']) ?> در ازای این کالا به دنبال چه چیزی هست؟</h2>
       <div class="lv-chips">
-        <?php if ($wantChips): ?>
-          <?php foreach ($wantChips as $chip): ?>
-          <span class="lv-chip lv-chip--gold"><?= h($chip) ?></span>
-          <?php endforeach; ?>
-        <?php else: ?>
-          <span class="lv-chip lv-chip--gold"><?= h($listing['want_in_return']) ?></span>
-        <?php endif; ?>
+          <span class="lv-chip lv-chip--gold"><?= h($wantText) ?></span>
       </div>
     </section>
     <?php endif; ?>
@@ -902,11 +904,17 @@ render_navbar($user);
           <h3 class="lv-section-title">توضیحات</h3>
           <div class="lv-description"><?= nl2br(h($listing['description'])) ?></div>
 
-          <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($listing['want_in_return'])): ?>
+          <?php 
+          $wantText = $listing['want_in_return'] ?? '';
+          if (!empty($listing['want_cat_name'])) {
+              $wantText = $listing['want_cat_name'] . (!empty($listing['want_in_return']) ? ' (' . $listing['want_in_return'] . ')' : '');
+          }
+          ?>
+          <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($wantText)): ?>
           <div class="lv-divider"></div>
           <div class="lv-wants">
             <div class="lv-wants-label"><i class="bi bi-stars"></i> <?= h($listing['seller_name']) ?> در ازای این کالا به دنبال چه چیزی است؟</div>
-            <p class="lv-wants-text"><?= h($listing['want_in_return']) ?></p>
+            <p class="lv-wants-text"><?= h($wantText) ?></p>
           </div>
           <?php endif; ?>
         </section>

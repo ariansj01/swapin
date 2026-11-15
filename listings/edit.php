@@ -41,6 +41,7 @@ $vals   = [
     'want_in_return'  => $listing['want_in_return'],
     'want_type'       => $listing['want_type'],
     'listing_mode'    => $listing['listing_mode'] ?? 'swap',
+    'deal_type'       => $listing['deal_type'] ?? ($listing['listing_mode'] ?? 'swap'),
     'sell_price'      => $listing['sell_price'] ?? 0,
     'city'            => $listing['city'] ?? '',
     'latitude'        => $listing['latitude'] ?? '',
@@ -53,13 +54,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
     $vals['title']           = clean($_POST['title']           ?? '');
     $vals['category_id']     = (int)($_POST['category_id']     ?? 0);
+    $vals['want_category_id'] = (int)($_POST['want_category_id'] ?? 0);
     $vals['description']     = clean($_POST['description']     ?? '');
     $vals['condition']       = clean($_POST['condition']       ?? 'good');
     $vals['estimated_value'] = (float)($_POST['estimated_value'] ?? 0);
     $vals['estimated_value'] = max(0, min($vals['estimated_value'], 999999999999.99));
     $vals['want_in_return']  = clean($_POST['want_in_return']  ?? '');
     $vals['want_type']       = clean($_POST['want_type']       ?? 'any');
-    $vals['listing_mode']    = 'both';
+    $vals['deal_type']       = clean($_POST['deal_type']       ?? ($_POST['listing_mode'] ?? 'swap'));
+    $vals['listing_mode']    = clean($_POST['listing_mode'] ?? $vals['deal_type']);
     $vals['sell_price']      = max(0, min((float)($_POST['sell_price']    ?? 0), 99999999999999.00));
     $vals['city']            = clean($_POST['city']            ?? '');
     $vals['latitude']        = clean($_POST['latitude']        ?? '');
@@ -75,6 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['category_id'] = 'لطفاً دسته‌بندی را انتخاب کنید.';
     if ($vals['category_id'] && !wizard_validate_category_id($vals['category_id']))
         $errors['category_id'] = 'دسته‌بندی انتخاب‌شده نامعتبر است.';
+    if (!$vals['want_category_id'] && in_array($vals['listing_mode'], ['swap', 'both'], true))
+        $errors['want_category_id'] = 'لطفاً دسته‌بندی درخواستی را انتخاب کنید.';
     if (mb_strlen($vals['description']) < 20)
         $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد.';
     if (!in_array($vals['condition'], ['new','like_new','good','fair','poor'], true))
@@ -109,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $listingAttrs = listing_attrs_from_input($listingProviderType, $_POST);
         DB::update('listings', array_merge([
             'category_id'     => $vals['category_id'],
+            'want_category_id' => $vals['want_category_id'] ?: null,
             'title'           => $vals['title'],
             'description'     => $vals['description'],
             'condition'       => $vals['condition'],
@@ -116,6 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'want_in_return'  => $vals['want_in_return'],
             'want_type'       => $vals['want_type'],
             'listing_mode'    => $vals['listing_mode'],
+            'deal_type'       => $vals['deal_type'],
             'sell_price'      => in_array($vals['listing_mode'], ['sell','both'], true) ? $vals['sell_price'] : 0,
             'city'            => $vals['city'] ?: null,
         ], listing_location_db_payload($location), listing_attrs_db_payload($listingAttrs), $reviewUpdate), 'id = ? AND user_id = ?', [$id, $uid]);
@@ -370,6 +377,31 @@ render_navbar($user);
         </div>
         <div class="card-body">
 
+          <div class="form-group">
+            <label class="form-label">نوع معامله <span class="required">*</span></label>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)">
+              <?php
+              $modes = [
+                  'swap' => ['bi-arrow-left-right', 'معاوضه'],
+                  'sell' => ['bi-cash-coin', 'فروش'],
+                  'both' => ['bi-arrow-repeat', 'معاوضه یا فروش']
+              ];
+              foreach ($modes as $m => [$icon, $label]):
+                $sel = $vals['deal_type'] === $m;
+              ?>
+              <label style="cursor:pointer">
+                <input type="radio" name="deal_type" value="<?= $m ?>" <?= $sel ? 'checked' : '' ?> style="display:none" onchange="document.getElementsByName('listing_mode')[0].value='<?= $m ?>'">
+                <div class="trade-type-btn <?= $sel ? 'selected' : '' ?>"
+                     style="text-align:center;padding:var(--sp-4);border:2px solid <?= $sel ? 'var(--primary)' : 'var(--border)' ?>;border-radius:var(--radius-md);background:<?= $sel ? 'rgba(26,107,74,.05)' : '' ?>;transition:all var(--duration)">
+                  <i class="bi <?= $icon ?>" style="font-size:1.5rem;color:<?= $sel ? 'var(--primary)' : 'var(--text-muted)' ?>;display:block;margin-bottom:var(--sp-2)"></i>
+                  <span style="font-size:.8125rem;font-weight:600;color:<?= $sel ? 'var(--primary)' : 'var(--text-secondary)' ?>"><?= $label ?></span>
+                </div>
+              </label>
+              <?php endforeach; ?>
+            </div>
+            <input type="hidden" name="listing_mode" value="<?= h($vals['listing_mode']) ?>">
+          </div>
+
           <div class="form-group" id="edit-sell-price">
             <label class="form-label" for="sell_price">قیمت فروش (تومان)</label>
             <input type="number" name="sell_price" id="sell_price" class="form-control"
@@ -383,7 +415,7 @@ render_navbar($user);
 
           <div class="form-group">
             <label class="form-label">به دنبال چه چیزی هستید؟ <span class="required">*</span></label>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3)">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3);margin-bottom:var(--sp-4)">
               <?php
               $types = ['any'=>['bi-stars','هر معامله‌ای'],'item'=>['bi-box','یک کالا'],'service'=>['bi-tools','یک خدمت'],'credit'=>['bi-wallet2','اعتبار ' . CREDIT_UNIT]];
               foreach ($types as $v => [$icon, $label]):
@@ -398,6 +430,19 @@ render_navbar($user);
                 </div>
               </label>
               <?php endforeach; ?>
+            </div>
+
+            <div id="want-category-select-wrapper" style="<?= in_array($vals['want_type'], ['item', 'any']) ? '' : 'display:none' ?>">
+                <label class="form-label" for="want_category_id">دسته‌بندی درخواستی <span class="required">*</span></label>
+                <select class="form-control <?= isset($errors['want_category_id']) ? 'is-invalid' : '' ?>"
+                        id="want_category_id" name="want_category_id">
+                    <option value="">انتخاب دسته‌بندی درخواستی…</option>
+                    <?= render_wizard_category_options([], (int)$vals['want_category_id']) ?>
+                </select>
+                <?php if (isset($errors['want_category_id'])): ?>
+                <div class="invalid-feedback"><?= h($errors['want_category_id']) ?></div>
+                <?php endif; ?>
+                <div class="form-hint">انتخاب دقیق دسته‌بندی به تطبیق هوشمند آگهی شما کمک می‌کند</div>
             </div>
           </div>
 
@@ -519,6 +564,12 @@ document.querySelectorAll('.want-radio').forEach(radio => {
     btn.style.background  = 'rgba(0,174,239,.05)';
     btn.querySelector('i').style.color = 'var(--primary-light)';
     btn.querySelector('span').style.color = 'var(--primary-light)';
+
+    // Show/hide category select based on want_type
+    const wrapper = document.getElementById('want-category-select-wrapper');
+    if (wrapper) {
+      wrapper.style.display = (radio.value === 'item' || radio.value === 'any') ? 'block' : 'none';
+    }
   });
 });
 

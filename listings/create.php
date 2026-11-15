@@ -50,7 +50,8 @@ $vals = [
     'custom_value'    => 0,
     'estimated_value' => 0,
     'sell_price'      => 0,
-    'listing_mode'    => 'swap',
+    'listing_mode'    => '',
+    'deal_type'       => 'swap',
 ];
 
 $suggestedValue = (int)($_POST['suggested_value'] ?? rand(10000000, 50000000));
@@ -123,12 +124,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'latitude'        => clean($_POST['latitude']        ?? ''),
         'longitude'       => clean($_POST['longitude']       ?? ''),
         'neighborhood'    => clean($_POST['neighborhood']    ?? ''),
-        'want_categories' => $_POST['want_categories']       ?? [],
+        'want_category_id' => (int)($_POST['want_category_id'] ?? 0),
         'want_description' => clean($_POST['want_description'] ?? ''),
         'custom_value'    => (int)($_POST['custom_value']    ?? 0),
         'estimated_value' => 0,
         'sell_price'      => max(0, min((float)($_POST['sell_price']    ?? 0), 99999999999999.00)),
-        'listing_mode'    => clean($_POST['listing_mode'] ?? 'swap'),
+        'listing_mode'    => clean($_POST['listing_mode'] ?? ''),
+        'deal_type'       => clean($_POST['deal_type'] ?? ($_POST['listing_mode'] ?? 'swap')),
     ];
     $suggestedValue = (int)($_POST['suggested_value'] ?? $suggestedValue);
     $vals['estimated_value'] = $vals['custom_value'] > 0 ? $vals['custom_value'] : $suggestedValue;
@@ -136,10 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($isStoreSeller) {
         $vals['listing_mode'] = 'both';
-    } elseif (!in_array($vals['listing_mode'], ['swap', 'sell'], true)) {
-        $vals['listing_mode'] = 'swap';
     }
-    if (!$isStoreSeller && $vals['listing_mode'] !== 'sell') {
+    if (!$isStoreSeller && !in_array($vals['listing_mode'], ['sell', 'both'], true)) {
         $vals['sell_price'] = 0;
     }
 
@@ -149,10 +149,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($vals['title']) > 200) $errors['title'] = 'عنوان باید کمتر از ۲۰۰ کاراکتر باشد';
     if (!$vals['category_id']) $errors['category_id'] = 'لطفا دسته‌بندی را انتخاب کنید';
     if ($vals['category_id'] && !wizard_validate_root_category_id($vals['category_id'])) $errors['category_id'] = 'دسته‌بندی انتخاب‌شده نامعتبر است';
+    if (!$vals['want_category_id'] && in_array($vals['listing_mode'], ['swap', 'both'], true)) {
+        $errors['want_category_id'] = 'لطفاً دسته‌بندی درخواستی را انتخاب کنید';
+    }
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
+    if (!$isStoreSeller && !in_array($vals['listing_mode'], ['swap', 'sell', 'both'], true)) {
+        $errors['listing_mode'] = 'نوع معامله را انتخاب کنید';
+    }
+    if (empty($vals['deal_type']) || !in_array($vals['deal_type'], ['swap', 'sell', 'both'], true)) {
+        $errors['deal_type'] = 'انتخاب نوع معامله (deal_type) الزامی است';
+    }
     if ($isStoreSeller && $vals['sell_price'] <= 0)
         $errors['sell_price'] = 'قیمت فروش برای فروشگاه‌ها الزامی است.';
-    if (!$isStoreSeller && $vals['listing_mode'] === 'sell' && $vals['sell_price'] <= 0)
+    if (!$isStoreSeller && in_array($vals['listing_mode'], ['sell', 'both'], true) && $vals['sell_price'] <= 0)
         $errors['sell_price'] = 'برای آگهی فروش، وارد کردن قیمت فروش الزامی است.';
 
     $location = listing_location_from_request($vals);
@@ -182,6 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $listingId = DB::insert('listings', array_merge([
             'user_id'          => $user['id'],
             'category_id'      => $vals['category_id'],
+            'want_category_id' => $vals['want_category_id'] ?: null,
             'title'            => $vals['title'],
             'description'      => $vals['description'],
             'condition'        => $vals['condition'],
@@ -189,6 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'want_in_return'   => $vals['want_description'] ?: '',
             'want_type'        => 'any',
             'listing_mode'     => $vals['listing_mode'],
+            'deal_type'        => $vals['deal_type'],
             'sell_price'       => $vals['sell_price'],
             'needs_inspection' => 0,
             'city'             => $vals['city'] ?: null,
@@ -392,18 +403,15 @@ render_navbar($user);
         <!-- Step 4: What do you want in exchange? -->
         <div class="wizard-step" data-step="4" id="step-4" style="display:none">
           <h2 class="wizard-step-title">به دنبال چه چیزی هستید؟</h2>
-          <p class="wizard-step-subtitle">دسته‌بندی‌های مورد علاقه خود را انتخاب کنید.</p>
+          <p class="wizard-step-subtitle">دسته کالایی که قصد معاوضه با آن را دارید انتخاب کنید.</p>
 
-          <div class="category-chips">
-            <?php foreach ($exchangeCategories as $cat): ?>
-              <div class="category-chip" data-category="<?= h($cat['name']) ?>" 
-                   onclick="toggleExchangeCategory(this, '<?= h($cat['name']) ?>')">
-                <span class="chip-icon"><i class="bi <?= $cat['icon'] ?>"></i></span>
-                <?= h($cat['name']) ?>
-              </div>
-            <?php endforeach; ?>
+          <div class="wizard-form-group">
+            <label class="wizard-form-label">دسته‌بندی درخواستی <span style="color:var(--danger)">*</span></label>
+            <?= render_wizard_category_picker((int)($vals['want_category_id'] ?? 0), false, 'want_category_id', 'want-cat-pick') ?>
+            <p class="form-hint" style="margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
+              انتخاب دقیق دسته‌بندی به ما کمک می‌کند آگهی شما را به افراد مناسب‌تری نشان دهیم.
+            </p>
           </div>
-          <input type="hidden" id="step4-want-cats" name="want_categories[]" multiple>
         </div>
 
         <!-- Step 5: Describe what you want -->
@@ -425,12 +433,12 @@ render_navbar($user);
           </p>
 
           <?php if (!$isStoreSeller): ?>
-          <!-- انتخاب نوع آگهی: معاوضه یا فروش -->
+          <!-- انتخاب نوع معامله: معاوضه / فروش / معاوضه یا فروش -->
           <div class="wizard-form-group">
-            <label class="wizard-form-label">نوع آگهی <span style="color:var(--danger)">*</span></label>
+            <label class="wizard-form-label">نوع معامله <span style="color:var(--danger)">*</span></label>
             <div class="listing-mode-switch">
               <label class="listing-mode-option">
-                <input type="radio" name="listing_mode" value="swap" <?= $vals['listing_mode'] !== 'sell' ? 'checked' : '' ?>>
+                <input type="radio" name="deal_type" value="swap" <?= $vals['deal_type'] === 'swap' ? 'checked' : '' ?> onchange="document.getElementsByName('listing_mode')[0].value='swap'">
                 <span class="listing-mode-option__inner">
                   <i class="bi bi-arrow-left-right"></i>
                   <strong>معاوضه</strong>
@@ -438,14 +446,26 @@ render_navbar($user);
                 </span>
               </label>
               <label class="listing-mode-option">
-                <input type="radio" name="listing_mode" value="sell" <?= $vals['listing_mode'] === 'sell' ? 'checked' : '' ?>>
+                <input type="radio" name="deal_type" value="sell" <?= $vals['deal_type'] === 'sell' ? 'checked' : '' ?> onchange="document.getElementsByName('listing_mode')[0].value='sell'">
                 <span class="listing-mode-option__inner">
                   <i class="bi bi-cash-coin"></i>
                   <strong>فروش</strong>
                   <small>کالا را با قیمت نقدی بفروشید</small>
                 </span>
               </label>
+              <label class="listing-mode-option">
+                <input type="radio" name="deal_type" value="both" <?= $vals['deal_type'] === 'both' ? 'checked' : '' ?> onchange="document.getElementsByName('listing_mode')[0].value='both'">
+                <span class="listing-mode-option__inner">
+                  <i class="bi bi-arrow-repeat"></i>
+                  <strong>معاوضه یا فروش</strong>
+                  <small>هم معاوضه می‌کنید و هم برای فروش نقدی می‌گذارید</small>
+                </span>
+              </label>
             </div>
+            <input type="hidden" name="listing_mode" value="<?= h($vals['listing_mode'] ?: 'swap') ?>">
+            <?php if (isset($errors['deal_type'])): ?>
+            <div class="invalid-feedback" style="display:block;margin-top:var(--wizard-gap)"><?= h($errors['deal_type']) ?></div>
+            <?php endif; ?>
           </div>
           <?php else: ?>
           <input type="hidden" name="listing_mode" value="both">
@@ -700,22 +720,23 @@ document.addEventListener('DOMContentLoaded', () => {
   initStep1Counters();
   initStep2Upload();
   initStep3Fields();
-  initWizardCategoryPicker();
+  initWizardCategoryPicker('cat-pick');
+  initWizardCategoryPicker('want-cat-pick');
   initStep6Price();
   initWizardSubmit();
 });
 
-function initWizardCategoryPicker() {
-  const trigger = document.getElementById('cat-pick-trigger');
-  const menu = document.getElementById('cat-pick-menu');
-  const labelEl = document.getElementById('cat-pick-label');
-  const hiddenEl = document.getElementById('step3-category-hidden');
+function initWizardCategoryPicker(prefix = 'cat-pick') {
+  const trigger = document.getElementById(prefix + '-trigger');
+  const menu = document.getElementById(prefix + '-menu');
+  const labelEl = document.getElementById(prefix + '-label');
+  const hiddenEl = document.getElementById(prefix + '-hidden');
   if (!trigger || !menu) return;
 
   function closeMenu() {
     menu.classList.remove('show');
     trigger.classList.remove('cat-pick-open');
-    document.querySelectorAll('.cat-pick-sub-open').forEach(el => el.classList.remove('cat-pick-sub-open'));
+    menu.querySelectorAll('.cat-pick-sub-open').forEach(el => el.classList.remove('cat-pick-sub-open'));
   }
   function openMenu() {
     menu.classList.add('show');
@@ -777,7 +798,11 @@ function initWizardCategoryPicker() {
       }
       if (parents.length) fullPath = parents.join(' › ') + ' › ' + catLabel;
 
-      if (hiddenEl) hiddenEl.value = catId;
+      if (hiddenEl) {
+        hiddenEl.value = catId;
+        // Trigger change event for validation
+        hiddenEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       if (labelEl) {
         labelEl.textContent = fullPath;
         trigger.setAttribute('data-empty', '0');
@@ -987,7 +1012,7 @@ function validateCurrentStepWithMessage() {
     3: 'دسته‌بندی، شهر و موقعیت جغرافیایی را کامل کنید.',
     4: 'حداقل یکی از دسته‌بندی‌های مورد علاقه را انتخاب کنید.',
     5: 'توضیح دقیق‌تر را وارد کنید.',
-    6: 'در این مرحله اطلاعات قیمت را تکمیل کنید.',
+    6: 'نوع معامله و اطلاعات قیمت را تکمیل کنید.',
     7: 'قبل از انتشار آگهی، اطلاعات را بررسی کنید.'
   };
 
@@ -1033,7 +1058,8 @@ function validateCurrentStep() {
     }
 
     case 4:
-      return exchangeCategories.size > 0;
+      const wantCatId = document.getElementById('want-cat-pick-hidden').value;
+      return !!wantCatId;
 
     case 5:
       return true;
@@ -1041,8 +1067,9 @@ function validateCurrentStep() {
     case 6: {
       const modeRadios = document.querySelectorAll('input[name="listing_mode"]');
       if (!modeRadios.length) return true; // فروشگاه: اعتبارسنجی سمت سرور
-      const mode = document.querySelector('input[name="listing_mode"]:checked')?.value || 'swap';
-      if (mode === 'sell') {
+      const mode = document.querySelector('input[name="listing_mode"]:checked')?.value || '';
+      if (!mode) return false; // نوع معامله اجباری است
+      if (mode === 'sell' || mode === 'both') {
         const sp = parseFloat(document.getElementById('step6-sell-price-input')?.value || '0');
         return sp > 0;
       }
@@ -1166,7 +1193,12 @@ function populateReview() {
     : 'موقعیت روی نقشه انتخاب نشده';
 
   // Step 4 & 5
-  document.getElementById('step7-want-cats').textContent = [...exchangeCategories].join('، ');
+  const wantCatLabel = document.getElementById('want-cat-pick-label');
+  const wantCatHidden = document.getElementById('want-cat-pick-hidden');
+  document.getElementById('step7-want-cats').textContent = 
+    (wantCatHidden?.value && wantCatLabel?.textContent && wantCatLabel.textContent !== 'انتخاب دسته‌بندی…')
+      ? wantCatLabel.textContent
+      : 'انتخاب نشده';
   document.getElementById('step7-want-desc').textContent = document.getElementById('step5-description').value || 'نوشته نشده';
 
   // Step 6
@@ -1175,7 +1207,7 @@ function populateReview() {
     ? (document.querySelector('input[name="listing_mode"]:checked')?.value || 'swap')
     : 'both';
   const priceLabel = document.getElementById('step7-price-label');
-  if (mode === 'sell') {
+  if (mode === 'sell' || mode === 'both') {
     const sellVal = document.getElementById('step6-sell-price-input')?.value || '0';
     if (priceLabel) priceLabel.textContent = 'قیمت فروش';
     document.getElementById('step7-price').textContent = new Intl.NumberFormat('fa-IR').format(parseInt(sellVal || '0', 10)) + ' تومان';
@@ -1218,15 +1250,15 @@ document.getElementById('wizard-next-btn').addEventListener('click', () => {
   }
 });
 
-// ── نوع آگهی: معاوضه / فروش ──────────────────────────────────────────────
+// ── نوع معامله: معاوضه / فروش / معاوضه یا فروش ─────────────────────────────
 function syncListingModeUi() {
   const radios = document.querySelectorAll('input[name="listing_mode"]');
   if (!radios.length) return; // فروشگاه: هر دو بخش نمایش داده می‌شوند
-  const mode = document.querySelector('input[name="listing_mode"]:checked')?.value || 'swap';
+  const mode = document.querySelector('input[name="listing_mode"]:checked')?.value || '';
   const swapBlock = document.getElementById('step6-swap-price-block');
   const sellBlock = document.getElementById('step6-sell-price-block');
   if (swapBlock) swapBlock.style.display = mode === 'sell' ? 'none' : '';
-  if (sellBlock) sellBlock.style.display = mode === 'sell' ? '' : 'none';
+  if (sellBlock) sellBlock.style.display = (mode === 'sell' || mode === 'both') ? '' : 'none';
   updateButtons();
 }
 document.querySelectorAll('input[name="listing_mode"]').forEach((el) => {

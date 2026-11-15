@@ -20,7 +20,9 @@ $user = auth_user();
 $search    = clean($_GET['q']         ?? '');
 $catSlug   = clean($_GET['cat']       ?? '');
 $city      = clean($_GET['city']      ?? '') ?: 'تهران';
-$wantType  = clean($_GET['want']      ?? '');
+$wantType = clean($_GET['want'] ?? '');
+$wantCatId = (int)($_GET['want_category_id'] ?? 0);
+$dealType = clean($_GET['deal_type'] ?? '');
 $sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
 $page      = max(1, (int)($_GET['page'] ?? 1));
 $timeAgo   = in_array($_GET['time_ago'] ?? '', ['3h','12h','1d','3d','1w']) ? $_GET['time_ago'] : '';
@@ -73,6 +75,14 @@ if ($wantType) {
     $whereClauses[] = 'l.want_type = ?';
     $params[] = $wantType;
 }
+if ($wantCatId > 0) {
+    $whereClauses[] = 'l.want_category_id = ?';
+    $params[] = $wantCatId;
+}
+if ($dealType) {
+    $whereClauses[] = 'l.deal_type = ?';
+    $params[] = $dealType;
+}
 if ($timeAgo) {
     $intervalMap = [
         '3h'  => '3 HOUR',
@@ -124,10 +134,12 @@ $pag   = paginate($total, $displayLimit, $page);
 $listings = DB::fetchAll(
     "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
             c.name AS cat_name, c.slug AS cat_slug,
+            wc.name AS want_cat_name,
             (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
+     LEFT JOIN categories wc ON wc.id = l.want_category_id
      {$where}
      ORDER BY {$orderBy}
      LIMIT ? OFFSET ?",
@@ -148,10 +160,12 @@ if (!$search && !$catSlug && $page === 1) {
     $premiumListings = DB::fetchAll(
         "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
                 c.name AS cat_name, c.slug AS cat_slug,
+                wc.name AS want_cat_name,
                 (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
          FROM listings l
          JOIN users u ON u.id = l.user_id
          JOIN categories c ON c.id = l.category_id
+         LEFT JOIN categories wc ON wc.id = l.want_category_id
          WHERE " . implode(' AND ', $premiumWhere) . "
          ORDER BY {$premiumOrderBy}
          LIMIT 20"

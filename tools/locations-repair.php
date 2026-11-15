@@ -128,6 +128,25 @@ function r_all(PDO $pdo, string $sql, array $params = []): array
     return $stmt->fetchAll();
 }
 
+/** نام محله‌های یک شهر از فهرست مرجع (data/iran_neighborhoods.json). */
+function r_neighborhood_names(string $city): array
+{
+    static $cache = null;
+    if ($cache === null) {
+        $path = __DIR__ . '/../data/iran_neighborhoods.json';
+        $decoded = is_readable($path) ? json_decode((string)file_get_contents($path), true) : [];
+        $cache = is_array($decoded) ? $decoded : [];
+    }
+    $rows = $cache[$city] ?? [];
+    $out = [];
+    foreach ((array)$rows as $row) {
+        if (is_array($row) && !empty($row['name'])) {
+            $out[] = (string)$row['name'];
+        }
+    }
+    return $out;
+}
+
 /** شمارش آگهی فعال به تفکیک شهر/محله (همان منطق swaapin_location_listing_counts). */
 function r_listing_counts(PDO $pdo): array
 {
@@ -210,6 +229,85 @@ function r_acceptance(PDO $pdo): void
             $n = (int)($counts['city'][(string)$c['name']] ?? 0);
             printf("     %-16s %d\n", (string)$c['name'], $n);
         }
+    }
+}
+
+/** تشخیص وضعیت سطح محله: وجود ردیف‌ها، تطابق با آگهی‌ها، شهرهای هم‌نام محله. */
+function r_neighborhood_diag(PDO $pdo): void
+{
+    echo "\n=== neighborhood diagnostics ===\n";
+
+    $nbRows   = (int)$pdo->query("SELECT COUNT(*) FROM locations WHERE level='neighborhood'")->fetchColumn();
+    $nbActive = (int)$pdo->query("SELECT COUNT(*) FROM locations WHERE level='neighborhood' AND is_active=1")->fetchColumn();
+    $nbOrphan = (int)$pdo->query(
+        "SELECT COUNT(*) FROM locations n
+         WHERE n.level='neighborhood'
+           AND NOT EXISTS (SELECT 1 FROM locations c WHERE c.id = n.parent_id AND c.level='city')"
+    )->fetchColumn();
+    printf("  neighborhood rows: %d (active %d) | without city parent: %d\n", $nbRows, $nbActive, $nbOrphan);
+
+    // آگهی‌هایی که (شهر, محله)شان در locations ردیف محله ندارد
+    $rows = r_all($pdo,
+        "SELECT l.city, l.neighborhood, COUNT(*) AS c
+         FROM listings l
+         WHERE l.status='active' AND l.review_status='approved' AND l.neighborhood <> ''
+           AND NOT EXISTS (
+               SELECT 1 FROM locations n
+               JOIN locations p ON p.id = n.parent_id AND p.level='city'
+               WHERE n.level='neighborhood' AND n.name = l.neighborhood AND p.name = l.city
+           )
+         GROUP BY l.city, l.neighborhood
+         ORDER BY c DESC LIMIT 25");
+    echo "  listings with (city,neighborhood) absent from locations: " . count($rows) . " pairs\n";
+    foreach ($rows as $r) {
+        printf("     %-12s / %-18s %d\n", (string)$r['city'], (string)$r['neighborhood'], (int)$r['c']);
+    }
+
+    // ردیف‌های سطح شهر که نامشان با یک محله در شهر دیگر یکسان است (احتمال رکورد اشتباه)
+    $nbByName = [];
+    foreach (r_all($pdo,
+        "SELECT n.name AS nb, p.name AS city FROM locations n
+         LEFT JOIN locations p ON p.id = n.parent_id
+         WHERE n.level='neighborhood'") as $r) {
+        $nbByName[(string)$r['nb']][] = (string)$r['city'];
+    }
+    $flags = [];
+    foreach (r_all($pdo, "SELECT id, name, parent_id, is_active FROM locations WHERE level='city'") as $c) {
+        $nm = (string)$c['name'];
+        if (!isset($nbByName[$nm])) {
+            continue;
+        }
+        $pn = (string)(DB::fetch('SELECT name FROM locations WHERE id = ?', [(int)$c['parent_id']])['name'] ?? '');
+        if ($pn === '' || !in_array($pn, $nbByName[$nm], true)) {
+            $cnt = (int)$pdo->query(
+                "SELECT COUNT(*) FROM listings WHERE status='active' AND review_status='approved'
+                   AND city = " . $pdo->quote($nm)
+            )->fetchColumn();
+            $flags[] = ['n' => $nm, 'i' => (int)$c['id'], 'p' => $pn, 'a' => (int)$c['is_active'], 'l' => $cnt];
+        }
+    }
+    echo "  city rows whose name is a neighborhood of another city: " . count($flags) . "\n";
+    foreach ($flags as $f) {
+        printf("     #%d %-14s parent=%-14s active=%d listings=%d\n", $f['i'], $f['n'], $f['p'] !== '' ? $f['p'] : '-', $f['a'], $f['l']);
+    }
+
+    // آگهی‌هایی که مقدار city آن‌ها در واقع نام یک محله است (نه شهر) — دلیل اصلی نبودن در /{city}/{cat}
+    $badCity = r_all($pdo,
+        "SELECT l.city, COUNT(*) AS c
+         FROM listings l
+         WHERE l.status='active' AND l.review_status='approved'
+           AND EXISTS (SELECT 1 FROM locations n JOIN locations p ON p.id = n.parent_id AND p.level='city'
+                       WHERE n.level='neighborhood' AND n.name = l.city)
+           AND NOT EXISTS (SELECT 1 FROM locations c WHERE c.level='city' AND c.name = l.city)
+         GROUP BY l.city
+         ORDER BY c DESC LIMIT 25");
+    $badCityTotal = 0;
+    foreach ($badCity as $r) {
+        $badCityTotal += (int)$r['c'];
+    }
+    echo "  listings whose city value is actually a neighborhood: {$badCityTotal}\n";
+    foreach ($badCity as $r) {
+        printf("     city=%-18s %d\n", (string)$r['city'], (int)$r['c']);
     }
 }
 
@@ -402,6 +500,9 @@ if ($orphanKeep) {
         printf("  %-16s %d\n", $o['name'], $o['n']);
     }
 }
+
+// ── تشخیص سطح محله (تسک P2: چرا آگهی‌های محله در /{city}/{category} دیده نمی‌شوند) ──
+r_neighborhood_diag($pdo);
 
 if (!$apply) {
     echo "\n[dry-run] هیچ تغییری اعمال نشد. برای اعمال: php tools/locations-repair.php --apply\n";

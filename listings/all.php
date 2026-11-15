@@ -27,7 +27,9 @@ $city      = $cityFilter ?: 'تهران';
 $locMode   = clean($_GET['loc']        ?? '');
 $nearbyCitiesRaw = clean($_GET['nearby_cities'] ?? '');
 $nearbyCitiesList = ($locMode === 'nearby') ? parse_nearby_cities_param($nearbyCitiesRaw) : [];
-$wantType  = clean($_GET['want']       ?? '');
+$wantType  = clean($_GET['want']  ?? '');
+$wantCatId = (int)($_GET['want_category_id'] ?? 0);
+$dealType  = clean($_GET['deal_type'] ?? '');
 $condition = clean($_GET['condition']  ?? '');
 $pmin      = (int)($_GET['price_min']  ?? 0);
 $pmax      = (int)($_GET['price_max']  ?? 0);
@@ -199,6 +201,14 @@ if ($wantType) {
     $whereClauses[] = 'l.want_type = ?';
     $params[] = $wantType;
 }
+if ($wantCatId > 0) {
+    $whereClauses[] = 'l.want_category_id = ?';
+    $params[] = $wantCatId;
+}
+if ($dealType) {
+    $whereClauses[] = 'l.deal_type = ?';
+    $params[] = $dealType;
+}
 if ($condition) {
     $whereClauses[] = 'l.condition = ?';
     $params[] = $condition;
@@ -242,10 +252,12 @@ $pag = paginate($total, $perPage, $page);
 $listings = DB::fetchAll(
     "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
             c.name AS cat_name, c.slug AS cat_slug,
+            wc.name AS want_cat_name,
             (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
+     LEFT JOIN categories wc ON wc.id = l.want_category_id
      {$where}
      ORDER BY {$orderBy}
      LIMIT ? OFFSET ?",

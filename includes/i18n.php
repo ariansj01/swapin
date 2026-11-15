@@ -916,7 +916,7 @@ function shipping_label(string $method): string {
   };
 }
 
-function render_wizard_category_picker(int $selectedId = 0, bool $rootsOnly = false): string {
+function render_wizard_category_picker(int $selectedId = 0, bool $rootsOnly = false, string $inputName = 'category_id', string $idPrefix = 'cat-pick'): string {
     try {
         swaapin_ensure_category_tree();
     } catch (Throwable $e) {
@@ -996,14 +996,14 @@ function render_wizard_category_picker(int $selectedId = 0, bool $rootsOnly = fa
         }
     }
 
-    $html = '<div class="wizard-category-picker" id="wizard-category-picker">';
-    $html .= '<div class="cat-pick-trigger" id="cat-pick-trigger" data-empty="' . ($selectedId === 0 ? '1' : '0') . '">';
+    $html = '<div class="wizard-category-picker" id="' . $idPrefix . '-picker">';
+    $html .= '<div class="cat-pick-trigger" id="' . $idPrefix . '-trigger" data-empty="' . ($selectedId === 0 ? '1' : '0') . '">';
     $html .= '<i class="bi bi-grid-3x3-gap-fill cat-pick-trigger-icon"></i>';
-    $html .= '<span class="cat-pick-trigger-label" id="cat-pick-label">' . h($selLabel) . '</span>';
+    $html .= '<span class="cat-pick-trigger-label" id="' . $idPrefix . '-label">' . h($selLabel) . '</span>';
     $html .= '<i class="bi bi-chevron-down cat-pick-trigger-caret"></i>';
     $html .= '</div>';
-    $html .= '<div class="dropdown-menu cat-pick-menu categories-dropdown" id="cat-pick-menu">' . $topHtml . '</div>';
-    $html .= '<input type="hidden" name="category_id" id="step3-category-hidden" value="' . $selectedId . '">';
+    $html .= '<div class="dropdown-menu cat-pick-menu categories-dropdown" id="' . $idPrefix . '-menu">' . $topHtml . '</div>';
+    $html .= '<input type="hidden" name="' . $inputName . '" id="' . $idPrefix . '-hidden" value="' . $selectedId . '">';
     $html .= '</div>';
     return $html;
 }
