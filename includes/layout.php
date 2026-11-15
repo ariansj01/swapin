@@ -931,16 +931,14 @@ function render_categories_strip(?int $active = null): void {
     echo '<div class="category-strip">';
     $cls  = $active === null ? ' active' : '';
     $categoryImages = [
-        'electronics' => APP_URL . '/src/img/category/electronic-devices.png',
-        'clothing' => APP_URL . '/src/img/category/personal.png',
-        'home-garden' => APP_URL . '/src/img/category/home-kitchen.png',
-        'books-media' => APP_URL . '/src/img/category/leisure-hobbies.png',
-        'sports' => APP_URL . '/src/img/category/leisure-hobbies.png',
-        'toys-games' => APP_URL . '/src/img/category/leisure-hobbies.png',
+        'real-estate' => APP_URL . '/src/img/category/real-estate.png',
         'vehicles' => APP_URL . '/src/img/category/vehicles.png',
-        'services' => APP_URL . '/src/img/category/services.png',
-        'food-drink' => APP_URL . '/src/img/category/home-kitchen.png',
-        'other' => APP_URL . '/src/img/category/community.png',
+        'electronics' => APP_URL . '/src/img/category/electronic-devices.png',
+        'home-kitchen' => APP_URL . '/src/img/category/home-kitchen.png',
+        'personal-items' => APP_URL . '/src/img/category/personal.png',
+        'leisure-hobbies' => APP_URL . '/src/img/category/leisure-hobbies.png',
+        'tools-equipment' => APP_URL . '/src/img/category/tools-materials-equipment.png',
+        'jobs-services' => APP_URL . '/src/img/category/jobs.png',
     ];
 
     echo "<a href='" . APP_URL . "/iran' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
@@ -955,5 +953,5 @@ function render_categories_strip(?int $active = null): void {
         }
         echo "<a href='{$catUrl}' class='cat-pill{$cls}'><div class='cat-pill__icon'>{$imageHtml}</div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
     }
-    }
     echo '</div>';
+}

@@ -136,18 +136,6 @@ render_navbar($user);
           <div><strong><?= clubs_fmt_compact((int)$stats['trades']) ?></strong><span>معامله موفق</span></div>
         </div>
       </div>
-      <div class="clubp-banner__side">
-        <?php if (count($myClubs) > 0): ?>
-        <label class="clubp-switch">
-          <span>کلاب‌های من</span>
-          <select onchange="if(this.value) location.href=this.value">
-            <?php foreach ($myClubs as $mc): ?>
-            <option value="<?= h(clubs_url($mc)) ?>" <?= (int)$mc['id'] === $clubId ? 'selected' : '' ?>><?= h($mc['name']) ?></option>
-            <?php endforeach; ?>
-          </select>
-        </label>
-        <?php endif; ?>
-      </div>
     </div> -->
   </div>
 
@@ -202,7 +190,19 @@ render_navbar($user);
         <option value="swap" <?= $mode === 'swap' ? 'selected' : '' ?>>معاوضه</option>
       </select>
     </form>
-    <a class="clubp-new" href="<?= h($createUrl) ?>"><i class="bi bi-plus-lg"></i> ثبت آگهی جدید</a>
+    <div class="clubp-toolbar__acts">
+      <?php if (count($myClubs) > 0): ?>
+      <label class="clubp-switch">
+        <span>کلاب‌های من</span>
+        <select onchange="if(this.value) location.href=this.value">
+          <?php foreach ($myClubs as $mc): ?>
+          <option value="<?= h(clubs_url($mc)) ?>" <?= (int)$mc['id'] === $clubId ? 'selected' : '' ?>><?= h($mc['name']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
+      <?php endif; ?>
+      <a class="clubp-new" href="<?= h($createUrl) ?>"><i class="bi bi-plus-lg"></i> ثبت آگهی جدید</a>
+    </div>
   </div>
 
   <div class="clubp-grid">

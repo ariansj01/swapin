@@ -11,11 +11,11 @@ const CATEGORY_COMMISSION_MAP = [
     'vehicles'           => 0.0125,
     'electronics'        => 0.035,
     'home-kitchen'       => 0.030,
-    'services'           => 0.050,
     'personal-items'     => 0.030,
     'leisure-hobbies'    => 0.030,
-    'community'          => 0.025,
     'tools-equipment'    => 0.0275,
+    'jobs-services'      => 0.025,
+    'services'           => 0.050,
     'jobs'               => 0.025,
 ];
 

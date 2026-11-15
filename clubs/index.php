@@ -27,9 +27,6 @@ if ($catSlug !== '') {
         }
     }
 }
-if (!$activeCat && $mainCats) {
-    $activeCat = $mainCats[0];
-}
 
 $club = $activeCat ? clubs_featured_in_root((int)$activeCat['id']) : null;
 $adBanner = clubs_banner_active();
@@ -128,7 +125,7 @@ render_navbar($user);
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/clubs-page.css?v=<?= $cssVer ?>">
 
 <main id="main-content" class="clubs-hub">
-<?php if (!$activeCat && !$club): ?>
+<?php if (!$mainCats): ?>
   <div class="clubs-empty">
     <h1>کلاب‌های سواپین</h1>
     <p>هنوز دسته‌بندی یا کلاب تأییدشده‌ای وجود ندارد.</p>
@@ -145,6 +142,13 @@ render_navbar($user);
     <a class="<?= $activeCat && (int)$mc['id'] === (int)$activeCat['id'] ? 'is-on' : '' ?>" href="<?= h(clubs_hub_url((string)$mc['slug'])) ?>"><?= h($mc['name']) ?></a>
     <?php endforeach; ?>
   </div>
+
+  <?php if (!$activeCat): ?>
+  <div class="clubs-empty">
+    <h1>کلاب‌های سواپین</h1>
+    <p>دسته‌بندی خودتو انتخاب کن</p>
+  </div>
+  <?php else: ?>
 
   <div class="clubs-hub__grid">
     <aside class="clubs-panel clubs-profile">
@@ -460,6 +464,7 @@ render_navbar($user);
   </div>
   <?php if ($club): ?>
   <a class="clubs-fab" href="<?= h(clubs_hub_url((string)($activeCat['slug'] ?? ''), 'chat')) ?>" aria-label="گفتگوی کلاب"><i class="bi bi-send-fill"></i></a>
+  <?php endif; ?>
   <?php endif; ?>
 <?php endif; ?>
 </main>

@@ -15,22 +15,23 @@
 .clubp-banner__stats { display: flex; gap: 22px; }
 .clubp-banner__stats strong { display: block; font-size: 1.05rem; }
 .clubp-banner__stats span { font-size: 12px; opacity: .85; }
-.clubp-banner__side { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .clubp-banner__cta {
   display: inline-flex; align-items: center; gap: 6px; background: #ffc928; color: #071A33;
   font-weight: 800; font-size: 13px; padding: 8px 14px; border-radius: 999px; border: 0; text-decoration: none;
   cursor: pointer; font-family: inherit;
 }
 .clubp-banner__cta:disabled { opacity: .85; cursor: default; }
-.clubp-switch { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-.clubp-switch span { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.8); text-align: center; }
+.clubp-switch { display: inline-flex; align-items: center; gap: 8px; }
+.clubp-switch span { font-size: 12.5px; font-weight: 700; color: #374151; white-space: nowrap; }
 .clubp-switch select {
-  height: 36px; border-radius: 10px; border: 0; padding: 0 10px; font-family: inherit; font-size: 12.5px; font-weight: 700;
+  height: 40px; border: 1.5px solid #e5e7eb; border-radius: 999px; padding: 0 14px;
+  background: #fff; font-family: inherit; font-size: 13px; font-weight: 700; color: #374151;
 }
 
 .clubp-toolbar {
   display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
 }
+.clubp-toolbar__acts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .clubp-filters { display: flex; gap: 8px; flex-wrap: wrap; }
 .clubp-filters select {
   height: 40px; border: 1.5px solid #e5e7eb; border-radius: 999px; padding: 0 14px;
