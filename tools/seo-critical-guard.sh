@@ -93,8 +93,8 @@ echo
 echo "[3] CATEGORY REDIRECT + CANONICAL"
 
 for pair in \
-    "$BASE/category/electronics|$BASE/electronics" \
-    "$BASE/category/home-kitchen|$BASE/home-kitchen"
+    "$BASE/category/electronics|$BASE/iran/electronics" \
+    "$BASE/category/home-kitchen|$BASE/iran/home-kitchen"
 do
     OLD_CAT="${pair%%|*}"
     NEW_CAT="${pair##*|}"

@@ -341,6 +341,33 @@ function swaapin_location_by_slug(string $slug): ?array {
     return $row ?: null;
 }
 
+/**
+ * یافتن مکان بر اساس نام (و در صورت تعیین، سطح مشخص).
+ * برای تبدیل نام شهر/استان که در پارامتر ?city= می‌آید به آدرس تمیز /{location}.
+ */
+function swaapin_location_by_name(string $name, ?string $level = null): ?array {
+    $name = trim($name);
+    if ($name === '' || !swaapin_locations_table_exists()) {
+        return null;
+    }
+    try {
+        if ($level !== null) {
+            $row = DB::fetch(
+                'SELECT * FROM locations WHERE name = ? AND level = ? AND is_active = 1 LIMIT 1',
+                [$name, $level]
+            );
+        } else {
+            $row = DB::fetch(
+                'SELECT * FROM locations WHERE name = ? AND is_active = 1 ORDER BY id LIMIT 1',
+                [$name]
+            );
+        }
+    } catch (Throwable $e) {
+        return null;
+    }
+    return $row ?: null;
+}
+
 function swaapin_location_child_city_names(int $locationId): array {
     if ($locationId <= 0) {
         return [];

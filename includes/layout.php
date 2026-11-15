@@ -311,7 +311,10 @@ function render_navbar(?array $user = null): void {
     foreach ($cities_list as $c) {
         $cname = h($c);
         $active = ($city === $c) ? 'active' : '';
-        $cityOptionsHtml .= "<a href=\"{$url}/?city=" . urlencode($c) . "\" class=\"dropdown-item navbar-city-select__item {$active}\" data-city=\"{$cname}\">{$cname}</a>";
+        // آدرس تمیز مکان (/{location}) به‌جای پارامتر ?city= تا صفحه‌ی استانی قابل ایندکس باشد
+        $provSlug = function_exists('swaapin_location_slug') ? swaapin_location_slug($c, 'province') : '';
+        $href = $provSlug !== '' ? "{$url}/" . rawurlencode($provSlug) : "{$url}/?city=" . urlencode($c);
+        $cityOptionsHtml .= "<a href=\"{$href}\" class=\"dropdown-item navbar-city-select__item {$active}\" data-city=\"{$cname}\">{$cname}</a>";
     }
 
     $contentPageNavLinks = content_page_nav_links_html();
@@ -332,7 +335,7 @@ function render_navbar(?array $user = null): void {
             <i class="bi bi-chevron-down navbar-city-select__chev"></i>
           </button>
           <div class="dropdown-menu navbar-city-select__menu" id="city-select-menu">
-            <a href="{$url}/" class="dropdown-item navbar-city-select__item" data-city="">همه شهرها</a>
+            <a href="{$url}/iran" class="dropdown-item navbar-city-select__item" data-city="">همه شهرها</a>
             {$cityOptionsHtml}
           </div>
         </div>

@@ -29,6 +29,47 @@ if ($_reqPathNorm === 'category/index.php' || $_reqPathNorm === 'category/index'
 if ($_reqPath !== '') {
     $_segments = explode('/', $_reqPath);
     $_last     = end($_segments);
+
+    // ── پارامتر ?city= → آدرس تمیز /{location}[/{category}] (سند — الگوی URL) ──
+    // صفحههای شهری قبلاً فقط با پارامتر ساخته میشدند و canonical آنها را حذف میکرد،
+    // بنابراین هرگز ایندکس نمیشدند. اینجا نام شهر/استان به اسلاگ مکان تبدیل و ۳۰۱ میشود.
+    if (!headers_sent() && !empty($_GET['city'])) {
+        $cityName  = trim((string) $_GET['city']);
+        $locByName = swaapin_location_by_name($cityName, 'city')
+            ?? swaapin_location_by_name($cityName, 'province');
+        if ($locByName) {
+            $locTarget = '';
+            if (swaapin_location_by_slug((string) ($_segments[0] ?? ''))) {
+                // مسیر از قبل پیشوند مکان دارد → فقط مکان را با مکان درست عوض کن
+                $_segments[0] = (string) $locByName['slug'];
+                $locTarget = rtrim(APP_URL, '/') . '/' . implode('/', array_map('rawurlencode', $_segments));
+            } else {
+                // مسیر دسته بدون پیشوند مکان → برگ دسته (یا معادل قدیمی) را به مکان بچسبان
+                $leafRow  = DB::fetch('SELECT slug FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [strtolower(rawurldecode((string) end($_segments)))]);
+                if (!$leafRow) {
+                    $leafAlias = swaapin_resolve_legacy_category_slug(strtolower(rawurldecode((string) end($_segments))));
+                    if ($leafAlias !== null) {
+                        $leafRow = DB::fetch('SELECT slug FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [$leafAlias]);
+                    }
+                }
+                if ($leafRow) {
+                    $locTarget = rtrim(swaapin_location_url($locByName), '/') . '/' . rawurlencode((string) $leafRow['slug']);
+                }
+            }
+            if ($locTarget !== '') {
+                $cityKeep = [];
+                foreach (['q', 'want', 'want_category_id', 'condition', 'price_min', 'price_max', 'sort', 'time_ago', 'page'] as $ckpk) {
+                    $ckpv = $_GET[$ckpk] ?? '';
+                    if ($ckpv !== '' && $ckpv !== null && $ckpv !== '0' && $ckpv !== 0) {
+                        $cityKeep[$ckpk] = $ckpv;
+                    }
+                }
+                header('Location: ' . $locTarget . ($cityKeep ? '?' . http_build_query($cityKeep) : ''), true, 301);
+                exit;
+            }
+        }
+    }
+
     $_systemFirst = [
         'api', 'admin', 'includes', 'seed', 'database', 'storage', 'tools', 'vendor', 'logs', 'backups', 'sql',
         'store', 'orders', 'chat', 'store-offers', 'shops', 'search', 'shop', 'support', 'pwa', 'ai-lab', 'sep',
@@ -169,6 +210,16 @@ if ($slugPath !== '') {
                 exit;
             }
         }
+        if ($category) {
+            // الگوی کانونیکال دسته: /iran/{leaf} — بدون تودرتویی والدها و با پیشوند مکان.
+            // مسیرهای قدیمی (بی‌ریشه یا تودرتو) → ۳۰۱ به فرم کانونیکال.
+            $canonicalPath = 'iran/' . strtolower((string) $category['slug']);
+            $currentPath   = strtolower(implode('/', $parts));
+            if ($currentPath !== $canonicalPath) {
+                header('Location: ' . category_url((string) $category['slug']), true, 301);
+                exit;
+            }
+        }
     }
 }
 
@@ -178,6 +229,11 @@ if (!$category && isset($_GET['slug'])) {
         'SELECT * FROM categories WHERE slug = ? AND is_active = 1',
         [$slug]
     );
+    if ($category) {
+        // دسترسی پارامتری (?slug=) → ۳۰۱ به آدرس کانونیکال /iran/{leaf}
+        header('Location: ' . category_url((string) $category['slug']), true, 301);
+        exit;
+    }
 }
 
 if (!$category) {

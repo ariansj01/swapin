@@ -62,12 +62,14 @@ Options -MultiViews -Indexes
   RewriteRule ^download/?$ /app [R=301,L,NC]
 
   # ── نقشه ریدایرکت مهاجرت (سند معماری سئو — بخش ۱۱) ─────────────────────
-  # آدرس‌های قدیمی دسته‌ها → ساختار جدید کانونیکال /{location}/{category}
-  # (بدون پیشوند /s/ طبق تصمیم پروژه). پارامترهای بی‌ارزش حذف می‌شوند.
-  RewriteCond %{QUERY_STRING} (?:^|&)city=karaj(?:&|$) [NC]
-  RewriteRule ^real-estate/?$ /karaj/real-estate? [R=301,L,NC]
+  # آدرس‌های قدیمی/تودرتوی دسته‌ها → کانونیکال /iran/{leaf}.
+  # وقتی پارامتر city هست، ریدایرکت به روتر (category/index.php) واگذار می‌شود
+  # تا مکان درست در مسیر ساخته شود (/{location}/{category}) و پارامتر از دست نرود.
+  RewriteCond %{QUERY_STRING} !(?:^|&)city= [NC]
   RewriteRule ^real-estate/?$ /iran/real-estate [R=301,L,NC,QSD]
-  RewriteRule ^vehicles/cars/passenger-cars/?$ /iran/passenger-cars [R=301,L,NC,QSD]
+  RewriteCond %{QUERY_STRING} !(?:^|&)city= [NC]
+  RewriteRule ^vehicles/cars/passenger-cars/?$ /iran/car [R=301,L,NC,QSD]
+  RewriteCond %{QUERY_STRING} !(?:^|&)city= [NC]
   RewriteRule ^electronics/mobile-tablet/mobile-phones/?$ /iran/mobile-phones [R=301,L,NC,QSD]
 
   # صفحه اصلی آگهی‌ها: /listings → صفحه کانونیکال کشور /iran

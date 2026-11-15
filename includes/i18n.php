@@ -154,10 +154,17 @@ function get_category_by_slug_path(array $slugParts): ?array {
     return $simple ?: null;
 }
 
+/**
+ * آدرس کانونیکال دسته (سند معماری سئو — الگوی /{location}/{category}).
+ * دسته‌ها تودرتو نیستند؛ فقط اسلاگ برگ و پیشوند مکان کشور (iran) استفاده می‌شود،
+ * مثلاً «mobile-phones» → /iran/mobile-phones  (نه /electronics/mobile-tablet/mobile-phones).
+ */
 function category_url(string $slug): string {
-    $chain = get_category_ancestors($slug);
-    $path = implode('/', array_map('rawurlencode', $chain));
-    return APP_URL . '/' . $path;
+    $slug = trim($slug, '/');
+    if ($slug === '') {
+        return APP_URL . '/iran';
+    }
+    return APP_URL . '/iran/' . rawurlencode($slug);
 }
 
 /**

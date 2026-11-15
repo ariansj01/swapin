@@ -21,6 +21,7 @@
  *   php tools/migrate_want_cats.php
  *   php tools/migrate_want_cats.php --map=/path/to/want-map.csv
  *   php tools/migrate_want_cats.php --apply
+ *   php tools/migrate_want_cats.php --redo --apply   # اصلاح تطبیق‌های غلط ردیف‌های قبلی
  *
  * عمداً «includes/config.php» لود نمی‌شود تا مایگریشن‌های خودکار CLI اجرا نشوند؛
  * فقط «.env» خوانده می‌شود و کلاس DB با PDO مستقیم شبیه‌سازی می‌شود.
@@ -40,6 +41,7 @@ $apply      = false;
 $mapPath    = null;
 $limit      = 0;
 $sampleSize = 20;
+$redo       = false; // بازبینی ردیف‌هایی که قبلاً دسته گرفته‌اند (اصلاح تطبیق‌های غلط)
 foreach (array_slice($argv, 1) as $arg) {
     if ($arg === '--apply') {
         $apply = true;
@@ -51,6 +53,8 @@ foreach (array_slice($argv, 1) as $arg) {
         $limit = max(0, (int)substr($arg, 8));
     } elseif (str_starts_with($arg, '--sample=')) {
         $sampleSize = max(0, (int)substr($arg, 9));
+    } elseif ($arg === '--redo') {
+        $redo = true;
     }
 }
 
@@ -438,10 +442,11 @@ foreach ($catRows as $r) {
 }
 
 // ── ۶) آگهی‌های هدف ─────────────────────────────────────────────────────────
-$sql = "SELECT id, want_in_return
+$selLoc = $hasWantLoc ? ', want_location_id AS cur_loc' : '';
+$sql = "SELECT id, want_in_return, want_category_id AS cur{$selLoc}
         FROM listings
         WHERE status = 'active' AND review_status = 'approved'
-          AND (want_category_id IS NULL OR want_category_id = 0)
+          " . ($redo ? '' : 'AND (want_category_id IS NULL OR want_category_id = 0)') . "
           AND want_in_return IS NOT NULL AND TRIM(want_in_return) <> ''
         ORDER BY id";
 if ($limit > 0) {
@@ -449,55 +454,74 @@ if ($limit > 0) {
 }
 $rows = w_all($pdo, $sql);
 
-$plan       = []; // id => ['cat'=>, 'loc'=>, 'src'=>, 'text'=>]
-$unmatched  = []; // id => text
-$cashOnly   = []; // id => text
+$plan        = []; // id => ['cat'=>, 'loc'=>, 'src'=>, 'text'=>, 'cur'=>]
+$unmatched   = []; // id => text
+$cashOnly    = []; // id => text
+$unchanged   = 0;
 $locDetected = 0;
-$cashWords  = w_cash_words();
+$cashWords   = w_cash_words();
 
 foreach ($rows as $r) {
     $id   = (int)$r['id'];
     $text = trim((string)$r['want_in_return']);
     $norm = w_norm($text);
+    $cur  = (int)($r['cur'] ?? 0);
+
+    $catId = 0;
+    $locId = 0;
+    $src   = '';
 
     if (isset($manual[$id])) {
-        $plan[$id] = ['cat' => $manual[$id], 'loc' => 0, 'src' => 'manual', 'text' => $text];
-        continue;
-    }
-
-    $hit = w_best($candidates, $norm);
-    if ($hit !== null) {
-        $locId = 0;
-        if ($hasWantLoc && $locCandidates !== []) {
-            $lhit  = w_best($locCandidates, $norm);
-            $locId = $lhit !== null ? (int)$lhit['id'] : 0;
-            if ($locId > 0) {
-                $locDetected++;
+        $catId = (int)$manual[$id];
+        $src   = 'manual';
+    } else {
+        $hit = w_best($candidates, $norm);
+        if ($hit !== null) {
+            $catId = (int)$hit['id'];
+            $src   = (string)$hit['src'];
+            if ($hasWantLoc && $locCandidates !== []) {
+                $lhit  = w_best($locCandidates, $norm);
+                $locId = $lhit !== null ? (int)$lhit['id'] : 0;
+                if ($locId > 0) {
+                    $locDetected++;
+                }
             }
         }
-        $plan[$id] = ['cat' => (int)$hit['id'], 'loc' => $locId, 'src' => (string)$hit['src'], 'text' => $text];
+    }
+
+    if ($catId <= 0) {
+        // بدون دسته — اگر فقط «نقد/پول» است جداگانه گزارش می‌شود
+        $hasCash = false;
+        foreach ($cashWords as $cw) {
+            if (w_find($norm, w_norm($cw))) {
+                $hasCash = true;
+                break;
+            }
+        }
+        if ($hasCash) {
+            $cashOnly[$id] = $text;
+        } else {
+            $unmatched[$id] = $text;
+        }
         continue;
     }
 
-    // بدون دسته — اگر فقط «نقد/پول» است جداگانه گزارش می‌شود
-    $hasCash = false;
-    foreach ($cashWords as $cw) {
-        if (w_find($norm, w_norm($cw))) {
-            $hasCash = true;
-            break;
-        }
+    $curLoc = $hasWantLoc ? (int)($r['cur_loc'] ?? 0) : 0;
+    if ($cur === $catId && (!$hasWantLoc || $locId === $curLoc)) {
+        $unchanged++;
+        continue;
     }
-    if ($hasCash) {
-        $cashOnly[$id] = $text;
-    } else {
-        $unmatched[$id] = $text;
-    }
+
+    $plan[$id] = ['cat' => $catId, 'loc' => $locId, 'src' => $src, 'text' => $text, 'cur' => $cur];
 }
 
 // ── ۷) گزارش ────────────────────────────────────────────────────────────────
-echo "[۵] نتیجه‌ی تحلیل\n";
-echo "  آگهی فعال با متن «در ازای» و بدون دسته : " . count($rows) . "\n";
-echo "  قابل تبدیل (خودکار + دستی)             : " . count($plan) . "\n";
+echo "[۵] نتیجه‌ی تحلیل" . ($redo ? ' (حالت --redo: بازبینی همه‌ی ردیف‌ها)' : '') . "\n";
+echo "  آگهی فعال با متن «در ازای» (بررسی‌شده) : " . count($rows) . "\n";
+echo "  " . ($redo ? 'نیازمند اصلاح' : 'قابل تبدیل (خودکار + دستی)') . "            : " . count($plan) . "\n";
+if ($redo) {
+    echo "  از قبل درست (بدون تغییر)               : {$unchanged}\n";
+}
 echo "  فقط نقد/پول (دسته‌ی کالایی ندارد)       : " . count($cashOnly) . "\n";
 echo "  نیازمند بررسی دستی                     : " . count($unmatched) . "\n";
 if ($hasWantLoc) {

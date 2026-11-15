@@ -161,8 +161,8 @@ check_self_canonical "$BASE/contact"
 check_self_canonical "$BASE/terms"
 check_self_canonical "$BASE/privacy"
 check_self_canonical "$BASE/listings/"
-check_self_canonical "$BASE/electronics"
-check_self_canonical "$BASE/home-kitchen"
+check_self_canonical "$BASE/iran/electronics"
+check_self_canonical "$BASE/iran/home-kitchen"
 
 # Also verify the legacy /category/* URLs 301-redirect to new canonical-style URLs
 # Redirect validation helper must be defined before first use
@@ -183,11 +183,11 @@ check_legacy_redirect() {
     fi
 }
 
-check_legacy_redirect "$BASE/category/electronics"      "$BASE/electronics"
-check_legacy_redirect "$BASE/category/home-kitchen"     "$BASE/home-kitchen"
+check_legacy_redirect "$BASE/category/electronics"      "$BASE/iran/electronics"
+check_legacy_redirect "$BASE/category/home-kitchen"     "$BASE/iran/home-kitchen"
 # Renamed legacy top-level slugs must 301 to the current canonical category
-check_legacy_redirect "$BASE/home-appliances"           "$BASE/home-kitchen"
-check_legacy_redirect "$BASE/category/home-appliances"  "$BASE/home-kitchen"
+check_legacy_redirect "$BASE/home-appliances"           "$BASE/iran/home-kitchen"
+check_legacy_redirect "$BASE/category/home-appliances"  "$BASE/iran/home-kitchen"
 
 # --------------------------------------------------
 # 5. Legacy .php duplicates
