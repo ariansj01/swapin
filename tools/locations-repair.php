@@ -179,13 +179,12 @@ function r_stats(PDO $pdo, string $label): void
     }
     $orphan = (int)$pdo->query(
         "SELECT COUNT(*) FROM locations c
-         WHERE c.level='city'
+         WHERE c.level='city' AND c.is_active = 1
            AND NOT EXISTS (SELECT 1 FROM locations p WHERE p.id = c.parent_id AND p.level='province')"
     )->fetchColumn();
-    $mismatch = 0;
-    $dups = r_all($pdo, "SELECT name, COUNT(*) AS c FROM locations WHERE level='city' GROUP BY name HAVING c > 1");
-    echo "  cities without province parent : {$orphan}\n";
-    echo "  duplicate city names           : " . count($dups) . "\n";
+    $dups = r_all($pdo, "SELECT name, COUNT(*) AS c FROM locations WHERE level='city' AND is_active = 1 GROUP BY name HAVING c > 1");
+    echo "  active cities without province parent : {$orphan}\n";
+    echo "  duplicate active city names           : " . count($dups) . "\n";
 }
 
 function r_acceptance(PDO $pdo): void
@@ -205,7 +204,7 @@ function r_acceptance(PDO $pdo): void
     // تفکیک شهرهای گیلان و تعداد آگهی هرکدام
     $gil = DB::fetch("SELECT id FROM locations WHERE slug='gilan-province' LIMIT 1");
     if ($gil) {
-        $cities = r_all($pdo, "SELECT name FROM locations WHERE parent_id = ? AND level='city' ORDER BY name", [(int)$gil['id']]);
+        $cities = r_all($pdo, "SELECT name FROM locations WHERE parent_id = ? AND level='city' AND is_active = 1 ORDER BY name", [(int)$gil['id']]);
         echo "  -- gilan cities --\n";
         foreach ($cities as $c) {
             $n = (int)($counts['city'][(string)$c['name']] ?? 0);
@@ -303,6 +302,66 @@ foreach (swaapin_location_regions() as $region) {
     }
 }
 
+// ── نام‌های غلط قدیمی (کپی اشتباه seed قدیمی) ────────────────────────────────
+// اگر ردیفِ نام‌درست موجود باشد ادغام می‌شود، وگرنه ردیف غلط تغییر نام می‌دهد.
+$legacyRenames = [
+    'چابکسار'   => 'چابکسر',
+    'مساله'     => 'ماسال',
+    'بندرانزلی' => 'بندر انزلی',
+];
+
+$mergeInto  = [];
+$renameRows = [];
+foreach ($legacyRenames as $badName => $goodName) {
+    if (!isset($byName[$badName])) {
+        continue;
+    }
+    $goodRow = $byName[$goodName][0] ?? null;
+    foreach ($byName[$badName] as $badRow) {
+        if ($goodRow !== null && (int)$goodRow['id'] !== (int)$badRow['id']) {
+            $mergeInto[] = [
+                'from'     => (int)$badRow['id'],
+                'fromName' => (string)$badName,
+                'to'       => (int)$goodRow['id'],
+                'toName'   => (string)$goodName,
+            ];
+            continue;
+        }
+        $renameRows[] = [
+            'id'       => (int)$badRow['id'],
+            'fromName' => (string)$badName,
+            'toName'   => (string)$goodName,
+            'slug'     => swaapin_location_slug((string)$goodName, 'city'),
+        ];
+    }
+}
+
+// ── شهرهای بی‌والد (والدشان استان نیست) ───────────────────────────────────────
+$moveIds = [];
+foreach ($moves as $m) {
+    $moveIds[$m['id']] = true;
+}
+$counts = r_listing_counts($pdo);
+
+$orphanDeact = [];
+$orphanKeep  = [];
+foreach ($cities as $c) {
+    $cid = (int)$c['id'];
+    if (isset($moveIds[$cid])) {
+        continue; // در برنامه انتقال به استان درست است
+    }
+    $parentLevel = (string)($locById[(int)$c['parent_id']]['level'] ?? '');
+    if ($parentLevel === 'province') {
+        continue;
+    }
+    $n = (int)($counts['city'][(string)$c['name']] ?? 0);
+    if ($n > 0) {
+        $orphanKeep[] = ['name' => (string)$c['name'], 'n' => $n];
+    } else {
+        $orphanDeact[] = ['id' => $cid, 'name' => (string)$c['name']];
+    }
+}
+
 // ── گزارش برنامه تغییرات ─────────────────────────────────────────────────────
 r_stats($pdo, 'BEFORE');
 
@@ -319,6 +378,29 @@ foreach ($dupes as $name => $ids) {
 echo "\n=== planned region re-parents (province -> shomal) : " . count($regionMoves) . " ===\n";
 foreach ($regionMoves as $m) {
     printf("  #%d %s -> region#%d\n", $m['id'], $m['name'], $m['to_id']);
+}
+
+echo "\n=== planned legacy renames / merges : " . (count($mergeInto) + count($renameRows)) . " ===\n";
+foreach ($mergeInto as $m) {
+    printf("  merge  #%d %-12s -> #%d %s\n", $m['from'], $m['fromName'], $m['to'], $m['toName']);
+}
+foreach ($renameRows as $m) {
+    printf("  rename #%d %-12s -> %s (slug: %s)\n", $m['id'], $m['fromName'], $m['toName'], $m['slug']);
+}
+
+echo "\n=== planned orphan city deactivations : " . count($orphanDeact) . " ===\n";
+foreach (array_slice($orphanDeact, 0, 25) as $o) {
+    printf("  #%d %s\n", $o['id'], $o['name']);
+}
+if (count($orphanDeact) > 25) {
+    printf("  ... و %d مورد دیگر\n", count($orphanDeact) - 25);
+}
+
+if ($orphanKeep) {
+    echo "\n=== orphans WITH listings (left active — need manual mapping) : " . count($orphanKeep) . " ===\n";
+    foreach ($orphanKeep as $o) {
+        printf("  %-16s %d\n", $o['name'], $o['n']);
+    }
 }
 
 if (!$apply) {
@@ -346,6 +428,34 @@ try {
     foreach ($regionMoves as $m) {
         $upParent->execute([$m['to_id'], $m['id']]);
     }
+
+    // نام‌های غلط: تغییر نام (با حفظ اسلاگ در صورت اشغال بودن مقصد)
+    $upName   = $pdo->prepare('UPDATE locations SET name = ?, slug = ? WHERE id = ?');
+    $upNameOnly = $pdo->prepare('UPDATE locations SET name = ? WHERE id = ?');
+    foreach ($renameRows as $m) {
+        $slug  = (string)$m['slug'];
+        $taken = $slug !== '' ? DB::fetch('SELECT id FROM locations WHERE slug = ? AND id <> ? LIMIT 1', [$slug, $m['id']]) : null;
+        if ($slug === '' || $taken) {
+            $upNameOnly->execute([$m['toName'], $m['id']]);
+        } else {
+            $upName->execute([$m['toName'], $slug, $m['id']]);
+        }
+    }
+
+    // ادغام کپی‌های اشتباه در ردیف نام‌درست
+    foreach ($mergeInto as $m) {
+        $upChild->execute([$m['to'], $m['from']]);
+        $delRow->execute([$m['from']]);
+    }
+
+    // غیرفعال‌سازی شهرهای بی‌والد (بدون آگهی) و محله‌هایشان
+    $upActive      = $pdo->prepare('UPDATE locations SET is_active = 0 WHERE id = ?');
+    $upChildActive = $pdo->prepare("UPDATE locations SET is_active = 0 WHERE parent_id = ? AND level = 'neighborhood'");
+    foreach ($orphanDeact as $o) {
+        $upChildActive->execute([$o['id']]);
+        $upActive->execute([$o['id']]);
+    }
+
     $pdo->commit();
     echo "\n[applied] تغییرات اعمال شد.\n";
 } catch (Throwable $e) {
