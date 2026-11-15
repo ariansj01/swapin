@@ -480,6 +480,32 @@ foreach ($dupSlug as $r) {
     echo "    - «{$r['slug']}» × {$r['c']}\n";
 }
 
+// نام تکراری میان دسته‌های «فعال» باید صفر شود. نام‌های تکراری میان دسته‌های
+// غیرفعال (باقی‌مانده‌های قدیمی که از درخت خارج شده‌اند) فقط اطلاعی‌اند و
+// شمارش نمی‌شوند، چون دیگر بخشی از درخت زنده نیستند.
+$dupNameActive = m_fetch_all(
+    $pdo,
+    'SELECT name, COUNT(*) AS c FROM categories WHERE is_active = 1 GROUP BY name HAVING c > 1 ORDER BY c DESC, name ASC'
+);
+echo "  نام تکراری (فعال): " . count($dupNameActive) . "\n";
+foreach ($dupNameActive as $r) {
+    $ids = m_fetch_all($pdo, 'SELECT id FROM categories WHERE name = ? AND is_active = 1', [$r['name']]);
+    $idList = implode(',', array_map(fn($x) => (int)$x['id'], $ids));
+    echo "    - «{$r['name']}» × {$r['c']}  (id: {$idList})\n";
+}
+$dupNameInactive = m_fetch_all(
+    $pdo,
+    'SELECT name, COUNT(*) AS c FROM categories WHERE is_active = 0 GROUP BY name HAVING c > 1 ORDER BY c DESC, name ASC'
+);
+if ($dupNameInactive !== []) {
+    echo "  نام تکراری (غیرفعال، فقط اطلاعی): " . count($dupNameInactive) . "\n";
+    foreach ($dupNameInactive as $r) {
+        $ids = m_fetch_all($pdo, 'SELECT id FROM categories WHERE name = ? AND is_active = 0', [$r['name']]);
+        $idList = implode(',', array_map(fn($x) => (int)$x['id'], $ids));
+        echo "    - «{$r['name']}» × {$r['c']}  (id: {$idList})\n";
+    }
+}
+
 $missing = [];
 foreach ($desired as $slug => $d) {
     if (!isset($after['bySlug'][$slug])) {
@@ -491,8 +517,8 @@ if ($missing !== []) {
     echo "    " . implode(', ', $missing) . "\n";
 }
 
-if ($outsideCount === 0 && $missing === [] && $dupSlug === []) {
-    echo "\n✓ معیار پذیرش برقرار است: هیچ آگهی فعالی خارج از برگ‌های درخت نیست.\n";
+if ($outsideCount === 0 && $missing === [] && $dupSlug === [] && $dupNameActive === []) {
+    echo "\n✓ معیار پذیرش برقرار است: هیچ آگهی فعالی خارج از برگ‌های درخت نیست و نام دسته‌های فعال یکتاست.\n";
 } else {
     echo "\n✗ هنوز موارد باقی‌مانده هست؛ بخش‌های بالا را بررسی کن.\n";
 }

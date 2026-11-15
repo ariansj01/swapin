@@ -400,15 +400,28 @@ foreach ($dupSlug as $r) {
     echo "    - «{$r['slug']}» × {$r['c']}  (id: {$idList})\n";
 }
 
-$dupName = a_fetch_all(
+$dupNameActive = a_fetch_all(
     $pdo,
-    'SELECT name, COUNT(*) AS c FROM categories GROUP BY name HAVING c > 1 ORDER BY c DESC, name ASC'
+    'SELECT name, COUNT(*) AS c FROM categories WHERE is_active = 1 GROUP BY name HAVING c > 1 ORDER BY c DESC, name ASC'
 );
-echo "  نام تکراری: " . count($dupName) . "\n";
-foreach ($dupName as $r) {
-    $ids = a_fetch_all($pdo, 'SELECT id FROM categories WHERE name = ?', [$r['name']]);
+echo "  نام تکراری (فعال): " . count($dupNameActive) . "\n";
+foreach ($dupNameActive as $r) {
+    $ids = a_fetch_all($pdo, 'SELECT id FROM categories WHERE name = ? AND is_active = 1', [$r['name']]);
     $idList = implode(',', array_map(fn($x) => (int)$x['id'], $ids));
     echo "    - «{$r['name']}» × {$r['c']}  (id: {$idList})\n";
+}
+
+$dupNameInactive = a_fetch_all(
+    $pdo,
+    'SELECT name, COUNT(*) AS c FROM categories WHERE is_active = 0 GROUP BY name HAVING c > 1 ORDER BY c DESC, name ASC'
+);
+if ($dupNameInactive !== []) {
+    echo "  نام تکراری (غیرفعال، فقط اطلاعی): " . count($dupNameInactive) . "\n";
+    foreach ($dupNameInactive as $r) {
+        $ids = a_fetch_all($pdo, 'SELECT id FROM categories WHERE name = ? AND is_active = 0', [$r['name']]);
+        $idList = implode(',', array_map(fn($x) => (int)$x['id'], $ids));
+        echo "    - «{$r['name']}» × {$r['c']}  (id: {$idList})\n";
+    }
 }
 
 $orphanParents = a_fetch_all(

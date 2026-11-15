@@ -286,6 +286,9 @@ function swaapin_legacy_category_aliases(): array {
         'gaming'                  => 'game-consoles',
         'audio'                   => 'audio-video',
         'kitchen'                 => 'kitchenware',
+        // ── دسته‌های سطح۱ قدیمی که در «درخت دسته» معادل مستقیم ندارند
+        'food-drink'              => 'kitchenware',
+        'other'                   => 'services',
     ];
 }
 
