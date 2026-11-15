@@ -1700,6 +1700,7 @@ function initSupportWidget() {
   const sendBtn     = document.getElementById('support-chat-send');
   const messages    = document.getElementById('support-chat-messages');
   const welcome     = document.getElementById('support-chat-welcome');
+  const suggestions = document.getElementById('support-chat-suggestions');
   const csrfInp     = chatBox.querySelector('input[name="_csrf"]');
 
   const TOKEN_KEY   = 'swaapin_live_chat_token';
@@ -1710,6 +1711,7 @@ function initSupportWidget() {
   let lastMsgId = 0;
   let aiHistory = [];
   let busy = false;
+  let faqItems = null;
 
   try {
     const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
@@ -1755,6 +1757,40 @@ function initSupportWidget() {
     register.hidden = false;
     composer.hidden = true;
     if (escalateBtn) escalateBtn.hidden = true;
+    if (suggestions) suggestions.hidden = true;
+  }
+
+  function renderSuggestions(items) {
+    if (!suggestions) return;
+    suggestions.innerHTML = '';
+    if (!items || !items.length) { suggestions.hidden = true; return; }
+    const label = document.createElement('div');
+    label.className = 'support-chat__suggestions-label';
+    label.textContent = 'پرسش‌های پرتکرار:';
+    suggestions.appendChild(label);
+    const row = document.createElement('div');
+    row.className = 'support-chat__chips';
+    items.forEach((it) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'support-chat__chip';
+      btn.textContent = it.q;
+      btn.addEventListener('click', () => sendMessage(it.q, it.id));
+      row.appendChild(btn);
+    });
+    suggestions.appendChild(row);
+    suggestions.hidden = false;
+  }
+
+  async function loadSuggestions() {
+    if (faqItems) { renderSuggestions(faqItems); return; }
+    try {
+      const res = await api('faq', {});
+      if (res && res.ok && Array.isArray(res.questions)) {
+        faqItems = res.questions;
+        renderSuggestions(faqItems);
+      }
+    } catch {}
   }
 
   function appendMsg(text, sender, time) {
@@ -1820,11 +1856,13 @@ function initSupportWidget() {
     } else {
       aiHistory.forEach(h => appendMsg(h.content, h.role === 'assistant' ? 'ai' : 'guest'));
     }
+    loadSuggestions();
   }
 
   function beginHuman() {
     showChat();
     if (escalateBtn) escalateBtn.hidden = true;
+    if (suggestions) suggestions.hidden = true;
     messages.innerHTML = '';
     lastMsgId = 0;
     stopPolling();
@@ -1857,13 +1895,13 @@ function initSupportWidget() {
     if (e.key === 'Enter') { e.preventDefault(); startBtn?.click(); }
   });
 
-  async function sendMessage() {
+  async function sendMessage(forcedText, faqId) {
     if (busy) return;
-    const text = (msgInp?.value || '').trim();
+    const text = (typeof forcedText === 'string' ? forcedText : (msgInp?.value || '')).trim();
     if (!text) return;
 
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
+    if (token && !faqId) {
       busy = true;
       if (sendBtn) sendBtn.disabled = true;
       try {
@@ -1887,7 +1925,7 @@ function initSupportWidget() {
     busy = true;
     if (sendBtn) sendBtn.disabled = true;
     try {
-      const res = await api('ai_chat', { message: text, history: aiHistory });
+      const res = await api('ai_chat', { message: text, history: aiHistory, faq_id: faqId || '' });
       typing?.remove();
       const reply = (res && res.ok && res.reply)
         ? res.reply
