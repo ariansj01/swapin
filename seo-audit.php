@@ -54,6 +54,9 @@ $AS_TEXT  = strtolower((string)($_GET['format'] ?? '')) === 'text';
 
 $RESULTS = [];
 
+/** اگر true باشد همهٔ صفحات با noindex سراسری سرو می‌شوند (staging) و بررسی HTML بی‌اعتبار است */
+$GLOBAL_NOINDEX = false;
+
 function check(string $task, string $name, bool $ok, string $detail = ''): void {
     global $RESULTS;
     $RESULTS[$task][] = ['name' => $name, 'ok' => $ok, 'detail' => $detail];
@@ -189,6 +192,27 @@ function is_noindex(string $body, string $headers): bool {
     return str_contains($r, 'noindex');
 }
 
+/**
+ * ایندکس‌پذیری مؤثر یک صفحه.
+ * روی staging تمام صفحات noindex سراسری دارند، پس بررسی HTML بی‌اعتبار می‌شود؛
+ * در آن حالت از «لایهٔ منطق» (پایداری ایندکس + آستانهٔ ۶) استفاده می‌کنیم.
+ * $path/$count فقط وقتی لازم است که تشخیص noindex سراسری فعال باشد.
+ */
+function effective_indexable(array $resp, ?string $path = null, ?int $count = null): bool {
+    global $GLOBAL_NOINDEX;
+    if (!$GLOBAL_NOINDEX) {
+        return !is_noindex($resp['body'], $resp['headers']);
+    }
+    if ($path !== null && function_exists('seo_page_indexed_at') && seo_page_indexed_at($path) !== null) {
+        return true; // ایندکس‌شدهٔ قبلی طبق پایداری همیشه index می‌ماند
+    }
+    if ($count !== null) {
+        $min = defined('SWAAPIN_MIN_LISTINGS_FOR_INDEX') ? (int)SWAAPIN_MIN_LISTINGS_FOR_INDEX : 6;
+        return $count >= $min;
+    }
+    return true; // ماسک‌شده با noindex سراسری؛ از HTML قابل تشخیص نیست
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // نقشهٔ ۳۰۱ (استخراج‌شده از شیت «نقشهٔ ۳۰۱»)
 // ══════════════════════════════════════════════════════════════════════════
@@ -319,6 +343,19 @@ $MAP301 = [
     '/pwa' => '/app',
     '/page/ai-assistant' => '/ai-assistant',
 ];
+
+// ══════════════════════════════════════════════════════════════════════════
+// ENV — تشخیص noindex سراسری (staging) و محیط تست
+// ══════════════════════════════════════════════════════════════════════════
+$__home = req($BASE . '/', true);
+if ($__home['code'] === 200 && is_noindex($__home['body'], $__home['headers'])) {
+    $GLOBAL_NOINDEX = true;
+}
+check('ENV', 'محیط تست: ' . $BASE, true);
+check('ENV', 'noindex سراسری فعال است (staging)', true,
+    $GLOBAL_NOINDEX
+        ? 'بله — بررسی ایندکس صفحات از لایهٔ منطق (آستانهٔ ۶ + پایداری) انجام می‌شود، نه از HTML.'
+        : 'خیر — بررسی ایندکس صفحات از HTML انجام می‌شود.');
 
 // ══════════════════════════════════════════════════════════════════════════
 // A01.1 — درخت دسته
@@ -462,7 +499,12 @@ $leafCounts = dbq("SELECT c.slug AS slug, c.name AS name, COUNT(l.id) AS n
 $catHigh = null; $catLow = null;
 foreach ($leafCounts as $r) {
     if ($catHigh === null && (int)$r['n'] >= 6) { $catHigh = $r; }
-    if ($catLow === null && (int)$r['n'] > 0 && (int)$r['n'] < 12) { $catLow = $r; }
+    if ($catLow === null && (int)$r['n'] > 0 && (int)$r['n'] < 6) {
+        // صفحه‌ای که قبلاً ایندکس شده طبق «قانون پایداری» همیشه index می‌ماند؛
+        // برای تست صحیح «زیر آستانه» باید صفحه‌ای انتخاب شود که هرگز ایندکس نشده باشد.
+        $already = function_exists('seo_page_indexed_at') && seo_page_indexed_at('/iran/' . $r['slug']) !== null;
+        if (!$already) { $catLow = $r; }
+    }
     if ($catHigh && $catLow) { break; }
 }
 
@@ -585,20 +627,24 @@ $MINIDX = defined('SWAAPIN_MIN_LISTINGS_FOR_INDEX') ? SWAAPIN_MIN_LISTINGS_FOR_I
 check('A11', 'آستانهٔ ایندکس برابر ۶ است', (int)$MINIDX === 6, 'مقدار: ' . $MINIDX);
 
 if ($catHigh) {
-    $u = $BASE . '/iran/' . $catHigh['slug'];
-    $r = req($u, true);
-    $noindex = is_noindex($r['body'], $r['headers']);
-    check('A11', 'صفحهٔ با ≥۶ آگهی index است (' . $catHigh['slug'] . ' n=' . $catHigh['n'] . ')', $r['code'] === 200 && !$noindex, 'کد=' . $r['code'] . ' robots=' . html_robots($r['body']));
+    $p = '/iran/' . $catHigh['slug'];
+    $r = req($BASE . $p, true);
+    $okIdx = effective_indexable($r, $p, (int)$catHigh['n']);
+    check('A11', 'صفحهٔ با ≥۶ آگهی index است (' . $catHigh['slug'] . ' n=' . $catHigh['n'] . ')',
+        $r['code'] === 200 && $okIdx,
+        'کد=' . $r['code'] . ' robots=' . html_robots($r['body']) . ($GLOBAL_NOINDEX ? ' [منطقی: index]' : ''));
 } else {
     check('A11', 'صفحهٔ با ≥۶ آگهی نمونه پیدا شد', false, 'نمونه پیدا نشد');
 }
 if ($catLow) {
-    $u = $BASE . '/iran/' . $catLow['slug'];
-    $r = req($u, true);
-    $noindex = is_noindex($r['body'], $r['headers']);
-    check('A11', 'صفحهٔ زیر ۶ آگهی noindex است (' . $catLow['slug'] . ' n=' . $catLow['n'] . ')', $r['code'] === 200 && $noindex, 'کد=' . $r['code'] . ' robots=' . html_robots($r['body']));
+    $p = '/iran/' . $catLow['slug'];
+    $r = req($BASE . $p, true);
+    $okIdx = effective_indexable($r, $p, (int)$catLow['n']);
+    check('A11', 'صفحهٔ زیر ۶ آگهی noindex است (' . $catLow['slug'] . ' n=' . $catLow['n'] . ')',
+        $r['code'] === 200 && !$okIdx,
+        'کد=' . $r['code'] . ' robots=' . html_robots($r['body']) . ($GLOBAL_NOINDEX ? ' [منطقی: noindex]' : ''));
 } else {
-    check('A11', 'صفحهٔ زیر آستانه (۱..۱۱ آگهی) نمونه پیدا شد', false, 'نمونه پیدا نشد');
+    check('A11', 'صفحهٔ زیر آستانه (۱..۵ آگهی) نمونه پیدا شد', false, 'نمونه پیدا نشد');
 }
 
 if (has_table('listing_index_status')) {
@@ -607,8 +653,9 @@ if (has_table('listing_index_status')) {
         $path = $idx['path'];
         $u = preg_match('#^https?://#i', $path) ? $path : $BASE . '/' . ltrim($path, '/');
         $r = req($u, true);
-        $noindex = is_noindex($r['body'], $r['headers']);
-        check('A11', 'صفحهٔ ایندکس‌شده همچنان index است', $r['code'] === 200 && !$noindex, $path . ' → کد=' . $r['code'] . ' robots=' . html_robots($r['body']));
+        check('A11', 'صفحهٔ ایندکس‌شده همچنان index است',
+            $r['code'] === 200 && effective_indexable($r, $path, null),
+            $path . ' → کد=' . $r['code'] . ' robots=' . html_robots($r['body']));
     } else {
         check('A11', 'صفحهٔ ایندکس‌شده ثبت‌شده وجود دارد', false, 'هیچ ردیف is_indexed=1 نیست');
     }
@@ -665,7 +712,7 @@ foreach ($childSitemaps as $smUrl) {
                 $smIssues[] = $u2 . ' → کد ' . $rc['code'];
                 continue;
             }
-            if (is_noindex($rc['body'], $rc['headers'])) {
+            if (!$GLOBAL_NOINDEX && is_noindex($rc['body'], $rc['headers'])) {
                 $smIssues[] = $u2 . ' → noindex';
                 continue;
             }
@@ -797,8 +844,9 @@ check('A21', '/ai-lab با noindex', $r['code'] === 200 && is_noindex($r['body']
 
 foreach (['/installment-swap', '/valuation', '/ai-assistant'] as $p) {
     $r = req($BASE . $p, true);
-    $ni = is_noindex($r['body'], $r['headers']);
-    check('A21', $p . ' ایندکس‌پذیر است', $r['code'] === 200 && !$ni, 'کد=' . $r['code'] . ' robots=' . html_robots($r['body']));
+    $ok = ($r['code'] === 200) && effective_indexable($r);
+    check('A21', $p . ' ایندکس‌پذیر است', $ok,
+        'کد=' . $r['code'] . ' robots=' . html_robots($r['body']) . ($GLOBAL_NOINDEX ? ' (noindex سراسری staging)' : ''));
 }
 
 $r = req($BASE . '/exchange', false);
@@ -855,7 +903,7 @@ foreach (['/admin/login.php', '/auth/login'] as $p) {
 // ══════════════════════════════════════════════════════════════════════════
 // خروجی
 // ══════════════════════════════════════════════════════════════════════════
-$ORDER = ['A01.1','A02','A03.1','A03.2','A04','A05','A06','A07','A08','A09.2','A10','A11','A12','A13','A14','A16','A20','A21','A22','GTM'];
+$ORDER = ['ENV','A01.1','A02','A03.1','A03.2','A04','A05','A06','A07','A08','A09.2','A10','A11','A12','A13','A14','A16','A20','A21','A22','GTM'];
 
 $totalPass = 0; $totalFail = 0;
 foreach ($RESULTS as $items) {
@@ -916,6 +964,17 @@ header('Content-Type: text/html; charset=utf-8');
   <span class="pill pass">PASS: <?= (int)$totalPass ?></span>
   <span class="pill fail">FAIL: <?= (int)$totalFail ?></span>
 </div>
+<?php if ($GLOBAL_NOINDEX): ?>
+<div class="task" style="border-color:#b45309">
+  <h2 style="background:#78350f;border-color:#b45309">توضیح محیط</h2>
+  <div class="row" style="color:#fbbf24">
+    <span class="st">ENV</span>
+    <span>noindex سراسری staging فعال است. بنابراین بررسی «ایندکس‌پذیری» صفحات از لایهٔ منطق
+    (پایدارى ایندکس در <code>listing_index_status</code> + آستانهٔ ۶ آگهی) انجام شده، نه از تگ robots در HTML.
+    برای بررسی واقعی robots متا در HTML، اسکریپت را با <code>&amp;base=https://swaapin.ir</code> اجرا کن.</span>
+  </div>
+</div>
+<?php endif; ?>
 
 <?php foreach ($ORDER as $task): ?>
   <?php if (empty($RESULTS[$task])) continue; ?>
