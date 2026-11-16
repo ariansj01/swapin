@@ -97,11 +97,12 @@ function req(string $url, bool $wantBody = false, int $timeout = 15): array {
     ]);
     $raw   = curl_exec($ch);
     $err   = curl_error($ch);
+    $errno = curl_errno($ch);
     $hsize = (int)curl_getinfo($ch, CURLINFO_HEADER_SIZE);
     $code  = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     if ($raw === false) {
-        return ['code' => 0, 'location' => '', 'body' => '', 'headers' => '', 'err' => $err];
+        return ['code' => 0, 'location' => '', 'body' => '', 'headers' => '', 'err' => $err, 'errno' => $errno];
     }
     $headers = substr($raw, 0, $hsize);
     $body    = substr($raw, $hsize);
@@ -109,7 +110,12 @@ function req(string $url, bool $wantBody = false, int $timeout = 15): array {
     if (preg_match('/^Location:\s*(.+)$/mi', $headers, $m)) {
         $loc = trim($m[1]);
     }
-    return ['code' => $code, 'location' => $loc, 'body' => $body, 'headers' => $headers, 'err' => ''];
+    return ['code' => $code, 'location' => $loc, 'body' => $body, 'headers' => $headers, 'err' => '', 'errno' => 0];
+}
+
+/** متن خطای curl برای نمایش در جزئیات تست */
+function req_err(array $r): string {
+    return ($r['code'] === 0 && ($r['err'] ?? '') !== '') ? ' [err ' . ($r['errno'] ?? 0) . ': ' . $r['err'] . ']' : '';
 }
 
 /** درخواست با دنبال‌کردن ریدایرکت و برگرداندن زنجیره */
@@ -542,10 +548,10 @@ function swap_url_of(string $base, array $row): string {
 // A08 — مسیریابی URLها
 // ══════════════════════════════════════════════════════════════════════════
 $r = req($BASE . '/abcxyz/test', true);
-check('A08', 'آدرس نامعتبر ۴۰۴ می‌دهد (/abcxyz/test)', $r['code'] === 404, 'کد: ' . $r['code']);
+check('A08', 'آدرس نامعتبر ۴۰۴ می‌دهد (/abcxyz/test)', $r['code'] === 404, 'کد: ' . $r['code'] . req_err($r));
 
 $r = req($BASE . '/community', true);
-check('A08', 'اسلاگ رزروشده /community ۴۰۴ می‌دهد', $r['code'] === 404, 'کد: ' . $r['code']);
+check('A08', 'اسلاگ رزروشده /community ۴۰۴ می‌دهد', $r['code'] === 404, 'کد: ' . $r['code'] . req_err($r));
 
 $r = req($BASE . '/iran/mobile-phones', true);
 check('A08', 'صفحهٔ /iran/mobile-phones با ۲۰۰ بارگذاری می‌شود', $r['code'] === 200, 'کد: ' . $r['code']);
@@ -878,7 +884,7 @@ $r = req($BASE . '/exchange', false);
 check('A21', '/exchange با ۳۰۱ به خانه می‌رود', $r['code'] === 301 && norm_path($r['location']) === '/', 'کد=' . $r['code'] . ' → ' . norm_path($r['location']));
 
 $r = req($BASE . '/community', true);
-check('A21', '/community طبق تصمیم ۴۰۴ می‌دهد', $r['code'] === 404, 'کد=' . $r['code']);
+check('A21', '/community طبق تصمیم ۴۰۴ می‌دهد', $r['code'] === 404, 'کد=' . $r['code'] . req_err($r));
 
 foreach (['/faq', '/fraud-prevention', '/about', '/contact'] as $p) {
     $r = req($BASE . $p, true);
