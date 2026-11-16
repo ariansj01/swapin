@@ -678,6 +678,13 @@ if ($shouldMigrate) {
             swapin_debug_log('migration-error-listing-want-category-id', ['msg' => $e->getMessage()]);
         }
     }
+    if (!in_array('want_location_id', $listingsColumns)) {
+        try {
+            DB::query("ALTER TABLE `listings` ADD COLUMN `want_location_id` INT UNSIGNED DEFAULT NULL COMMENT 'Structured desired location (architecture doc 8-4)' AFTER `want_category_id`");
+        } catch (Throwable $e) {
+            swapin_debug_log('migration-error-listing-want-location-id', ['msg' => $e->getMessage()]);
+        }
+    }
     if (!db_has_index('listings', 'idx_listing_catalog') && db_has_column('listings', 'brand_id')) {
         try {
             DB::query('ALTER TABLE `listings` ADD KEY `idx_listing_catalog` (`brand_id`, `model_id`, `trim_id`)');

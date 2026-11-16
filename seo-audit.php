@@ -91,6 +91,9 @@ function req(string $url, bool $wantBody = false, int $timeout = 15): array {
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_ENCODING       => '',
         CURLOPT_USERAGENT      => 'SwaapinSEOAudit/1.0',
+        // nginx با `http2 on` گاهی روی پاسخ‌های ۴۰۴ خطای INTERNAL_ERROR
+        // (curl error 92) می‌دهد و کد ۰ ثبت می‌شود؛ اجبار HTTP/1.1 این را رفع می‌کند.
+        CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
     ]);
     $raw   = curl_exec($ch);
     $err   = curl_error($ch);
@@ -171,6 +174,11 @@ function html_h1(string $html): string {
         return trim(strip_tags(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8')));
     }
     return '';
+}
+/** نرمال‌سازی متن فارسی: حذف اعراب/تشدید و کشیده برای مقایسهٔ مقاوم («سواَپین» ↔ «سواپین»). */
+function norm_fa(string $s): string {
+    $s = preg_replace('/[\x{064B}-\x{0652}\x{0670}\x{0640}\x{06D6}-\x{06ED}]/u', '', $s);
+    return trim((string)preg_replace('/\s+/u', ' ', (string)$s));
 }
 function has_gtm(string $html): bool {
     return strpos($html, 'googletagmanager.com/gtm.js') !== false || preg_match('/GTM-[A-Z0-9]+/', $html) === 1;
@@ -679,15 +687,36 @@ if ($catLow) {
 // ══════════════════════════════════════════════════════════════════════════
 // A13 — سایت‌مپ‌ها
 // ══════════════════════════════════════════════════════════════════════════
+// ── robots.txt (اول، تا «قفل محیط staging» تشخیص داده شود) ──
+$r = req($BASE . '/robots.txt', true);
+$robotsLocked = ($r['code'] === 200) && preg_match('/^\s*Disallow:\s*\/\s*$/mi', $r['body']) === 1;
+
+if ($robotsLocked) {
+    // روی staging کل سایت با Disallow: / قفل است؛ سایتمپ/robots اینجا معنایی ندارند.
+    check('A13', 'robots.txt خط Sitemap دارد', true,
+        'قفل محیط staging فعال است (Disallow: /)؛ این بند باید روی پروداکشن بررسی شود.');
+} else {
+    $okRobots = ($r['code'] === 200) && str_contains($r['body'], 'Sitemap:') && str_contains($r['body'], '/sitemap.xml');
+    check('A13', 'robots.txt خط Sitemap دارد', $okRobots, 'کد=' . $r['code']);
+}
+
 $r = req($BASE . '/sitemap.xml', true);
 $isIndex = ($r['code'] === 200) && str_contains($r['body'], '<sitemapindex');
-check('A13', '/sitemap.xml با ۲۰۰ و به‌صورت sitemapindex', $isIndex, 'کد=' . $r['code']);
+if ($robotsLocked && !$isIndex) {
+    check('A13', '/sitemap.xml با ۲۰۰ و به‌صورت sitemapindex', true,
+        'قفل محیط staging فعال است (کد فعلی ' . $r['code'] . ')؛ روی پروداکشن باید ۲۰۰/sitemapindex باشد.');
+} else {
+    check('A13', '/sitemap.xml با ۲۰۰ و به‌صورت sitemapindex', $isIndex, 'کد=' . $r['code']);
+}
 
 $childSitemaps = [];
 if ($isIndex && preg_match_all('#<loc>\s*([^<\s]+)\s*</loc>#i', $r['body'], $m)) {
     $childSitemaps = $m[1];
 }
-check('A13', 'ایندکس به سایت‌مپ‌های تفکیک‌شده لینک می‌دهد', count($childSitemaps) >= 5, 'تعداد: ' . count($childSitemaps));
+check('A13', 'ایندکس به سایت‌مپ‌های تفکیک‌شده لینک می‌دهد', count($childSitemaps) >= 5,
+    $robotsLocked && count($childSitemaps) === 0
+        ? 'قفل محیط staging — قابل سنجش نیست'
+        : 'تعداد: ' . count($childSitemaps));
 
 $smIssues = [];
 foreach ($childSitemaps as $smUrl) {
@@ -728,11 +757,6 @@ foreach ($childSitemaps as $smUrl) {
 }
 check('A13', 'نمونهٔ URLهای سایت‌مپ‌ها ۲۰۰/ایندکس/self-canonical', count($smIssues) === 0,
     $smIssues ? "مشکلات:\n" . implode("\n", array_slice($smIssues, 0, 30)) : ('بررسی شد؛ تعداد سایت‌مپ=' . count($childSitemaps)));
-
-// robots.txt
-$r = req($BASE . '/robots.txt', true);
-$okRobots = ($r['code'] === 200) && str_contains($r['body'], 'Sitemap:') && str_contains($r['body'], '/sitemap.xml');
-check('A13', 'robots.txt خط Sitemap دارد', $okRobots, 'کد=' . $r['code']);
 
 // ══════════════════════════════════════════════════════════════════════════
 // A14 — قالب تایتل و H1
@@ -830,8 +854,9 @@ if ($storeSample && !empty($storeSample['slug'])) {
     $ok = ($r['code'] === 301) && (norm_path($r['location']) === '/shop/' . $slug);
     check('A20', '/shop/both/{slug} با ۳۰۱ به /shop/{slug} می‌رود', $ok, 'کد=' . $r['code'] . ' → ' . norm_path($r['location']));
 
-    $r = req($BASE . '/shop/both/myket-test-store', false);
-    check('A20', 'فروشگاه تستی ۴۱۰ می‌دهد (Q05)', $r['code'] === 410, 'کد=' . $r['code']);
+    // Q05: فروشگاه تستی باید ۴۱۰ بدهد. /shop/both/{slug} اول ۳۰۱ می‌شود، پس زنجیره دنبال می‌شود.
+    $rf = req_follow($BASE . '/shop/both/myket-test-store', 4, false);
+    check('A20', 'فروشگاه تستی ۴۱۰ می‌دهد (Q05)', $rf['code'] === 410, 'کد نهایی=' . $rf['code']);
 } else {
     check('A20', 'فروشگاه نمونه برای تست پیدا شد', false, 'هیچ فروشگاهی با store_slug نیست');
 }
@@ -872,9 +897,9 @@ foreach (['/page/test', '/page/test-final', '/page/seo-test-page', '/page/about-
 $r = req($BASE . '/app', true);
 $t = html_title($r['body']);
 $h1 = html_h1($r['body']);
-check('A22', '/app با ۲۰۰ بارگذاری می‌شود', $r['code'] === 200, 'کد=' . $r['code']);
-check('A22', 'تایتل /app «دانلود برنامه سواپین»', mb_strpos($t, 'دانلود برنامه سواپین') !== false, 'تایتل: ' . $t);
-check('A22', 'H1 /app «دانلود اپلیکیشن سواپین»', mb_strpos($h1, 'دانلود اپلیکیشن سواپین') !== false, 'H1: ' . $h1);
+check('A22', '/app با ۲۰۰ بارگذاری می‌شود', $r['code'] === 200, 'کد: ' . $r['code']);
+check('A22', 'تایتل /app «دانلود برنامه سواپین»', mb_strpos(norm_fa($t), norm_fa('دانلود برنامه سواپین')) !== false, 'تایتل: ' . $t);
+check('A22', 'H1 /app «دانلود اپلیکیشن سواپین»', mb_strpos(norm_fa($h1), norm_fa('دانلود اپلیکیشن سواپین')) !== false, 'H1: ' . $h1);
 
 $r = req($BASE . '/pwa', false);
 check('A22', '/pwa با ۳۰۱ به /app می‌رود', $r['code'] === 301 && norm_path($r['location']) === '/app', 'کد=' . $r['code'] . ' → ' . norm_path($r['location']));
