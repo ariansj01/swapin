@@ -870,11 +870,12 @@ HTML;
 }
 
 function render_support_widget(?array $user = null): void {
-    $url = APP_URL;
-    $csrf = h(csrf_token());
+    $url    = APP_URL;
+    $csrf   = h(csrf_token());
+    $name   = $user ? h(trim((string)($user['name'] ?? ''))) : '';
 
     echo <<<HTML
-<div class="support-widget" id="support-widget">
+<div class="support-widget" id="support-widget" data-user-name="{$name}">
   <button type="button" class="support-widget__toggle" id="support-widget-toggle" aria-label="پشتیبانی" aria-expanded="false">
     <i class="bi bi-headset"></i>
   </button>
@@ -882,7 +883,7 @@ function render_support_widget(?array $user = null): void {
     <div class="support-chat__header">
       <div class="support-chat__title">
         <i class="bi bi-robot"></i>
-        <span>پشتیبانی آنلاین</span>
+        <span>پشتیبانی سواَپین</span>
       </div>
       <button type="button" class="support-chat__close" id="support-chat-close" aria-label="بستن">
         <i class="bi bi-x-lg"></i>
@@ -890,31 +891,35 @@ function render_support_widget(?array $user = null): void {
     </div>
 
     <div class="support-chat__body" id="support-chat-body">
-      <div class="support-chat__welcome" id="support-chat-welcome">
-        <i class="bi bi-chat-dots-fill"></i>
-        <p>به پشتیبانی سواَپین خوش آمدید</p>
-        <p class="fs-xs" style="opacity:.7">نام خود را وارد کنید تا دستیار هوشمند پاسخ دهد</p>
+      <input type="hidden" name="_csrf" value="{$csrf}">
+
+      <div class="support-chat__name" id="support-chat-name-step" hidden>
+        <p class="support-chat__lead">سلام! برای شروع، نام خود را وارد کنید</p>
+        <div class="support-chat__name-field">
+          <input type="text" class="support-chat__input" id="support-chat-name" placeholder="نام شما" autocomplete="off">
+          <button type="button" class="support-chat__name-go" id="support-chat-name-go" aria-label="ادامه">
+            <i class="bi bi-arrow-left"></i>
+          </button>
+        </div>
       </div>
+
+      <div class="support-chat__faq" id="support-chat-faq" hidden>
+        <p class="support-chat__lead">چطور می‌توانم کمکتان کنم؟</p>
+        <div class="support-chat__chips" id="support-chat-chips"></div>
+      </div>
+
       <div class="support-chat__messages" id="support-chat-messages" hidden></div>
     </div>
 
     <div class="support-chat__form" id="support-chat-form">
-      <div class="support-chat__suggestions" id="support-chat-suggestions" hidden></div>
-      <div class="support-chat__register" id="support-chat-register">
-        <input type="hidden" name="_csrf" value="{$csrf}">
-        <input type="text" class="support-chat__input" id="support-chat-name" placeholder="نام شما" autocomplete="off">
-        <button type="button" class="support-chat__btn" id="support-chat-start">
-          <i class="bi bi-arrow-left"></i> شروع گفتگو
-        </button>
-      </div>
       <div class="support-chat__composer" id="support-chat-composer" hidden>
-        <input type="text" class="support-chat__input" id="support-chat-msg" placeholder="پیام خود را بنویسید…" autocomplete="off">
-        <button type="button" class="support-chat__btn" id="support-chat-send">
+        <input type="text" class="support-chat__input" id="support-chat-msg" placeholder="یا پیام خود را بنویسید…" autocomplete="off">
+        <button type="button" class="support-chat__send" id="support-chat-send" aria-label="ارسال">
           <i class="bi bi-send-fill"></i>
         </button>
       </div>
       <button type="button" class="support-chat__escalate" id="support-chat-escalate" hidden>
-        <i class="bi bi-headset"></i> پاسخم را نگرفتم؛ ارتباط با پشتیبان
+        <i class="bi bi-headset"></i> گفتگو با پشتیبان انسانی
       </button>
     </div>
   </div>
