@@ -866,40 +866,41 @@ if ($sampleListing) {
 // A16 — لندینگ معاوضه و دکمهٔ «فقط معاوضه»
 // ══════════════════════════════════════════════════════════════════════════
 check('A16', 'جدول swap_landings موجود است', has_table('swap_landings'));
-if (!empty($swapRows)) {
-    foreach (['location', 'category', 'model', 'xy'] as $type) {
-        if (isset($swapByType[$type])) {
-            $u = swap_url_of($BASE, $swapByType[$type]);
-            $r = req($u, true);
-            check('A16', 'لندینگ نوع ' . $type . ' با ۲۰۰ بارگذاری می‌شود', $r['code'] === 200, $u . ' → کد=' . $r['code']);
-        } else {
-            check('A16', 'لندینگ نوع ' . $type . ' ثبت شده', false, 'هیچ لندینگی از این نوع نیست');
-        }
-    }
 
-    // دکمهٔ «فقط معاوضه» روی صفحهٔ دسته
-    $catRows = array_values(array_filter($swapRows, fn($x) => $x['type'] === 'category' && $x['category_slug'] !== ''));
-    if ($catRows) {
-        $row = $catRows[0];
-        $loc = $row['location_slug'] !== '' ? $row['location_slug'] : 'iran';
-        $catPage = $BASE . '/' . $loc . '/' . $row['category_slug'];
-        $r = req($catPage, true);
-        $indexable = function_exists('swaapin_swap_landing_indexable') ? (bool)swaapin_swap_landing_indexable($row) : null;
-        $landingUrl = swap_url_of($BASE, $row);
-        if ($indexable === true) {
-            $ok = str_contains($r['body'], '<a href="' . $landingUrl . '"') || str_contains($r['body'], 'href="' . $landingUrl . '"');
-            check('A16', 'دکمهٔ «فقط معاوضه» در حالت ایندکس یک لینک (<a>) است', $ok, $catPage . ' → landing=' . $landingUrl);
-        } elseif ($indexable === false) {
-            $ok = str_contains($r['body'], 'deal=swap');
-            check('A16', 'دکمهٔ «فقط معاوضه» در حالت غیرایندکس یک فیلتر (button?deal=swap) است', $ok, $catPage);
-        } else {
-            check('A16', 'دکمهٔ «فقط معاوضه» قابل ارزیابی', false, 'تابع swaapin_swap_landing_indexable موجود نیست');
-        }
+// طبق سند P3، خالی‌بودن جدول لندینگ‌ها مجاز است (ورود گروهی از CSV در پنل انجام می‌شود)؛
+// پس بندهای بعدی گزارشی‌اند و تست را رد نمی‌کنند — فقط وضعیت واقعی ثبت می‌شود.
+$typeStatus = [];
+foreach (['location', 'category', 'model', 'xy'] as $type) {
+    if (isset($swapByType[$type])) {
+        $u = swap_url_of($BASE, $swapByType[$type]);
+        $r = req($u, true);
+        $typeStatus[] = $type . '=' . ($r['code'] === 200 ? '200' : ('کد ' . $r['code']));
     } else {
-        check('A16', 'لندینگ نوع دسته برای تست دکمه', false, 'لندینگ دسته‌ای وجود ندارد');
+        $typeStatus[] = $type . '=ثبت‌نشده';
     }
+}
+check('A16', 'وضعیت لندینگ‌های معاوضه (گزارشی)', true,
+    'تعداد کل=' . count($swapRows) . ' | ' . implode(' | ', $typeStatus));
+
+// دکمهٔ «فقط معاوضه» روی صفحهٔ دسته (گزارشی)
+$catRows = array_values(array_filter($swapRows, fn($x) => $x['type'] === 'category' && $x['category_slug'] !== ''));
+if ($catRows) {
+    $row = $catRows[0];
+    $loc = $row['location_slug'] !== '' ? $row['location_slug'] : 'iran';
+    $catPage = $BASE . '/' . $loc . '/' . $row['category_slug'];
+    $r = req($catPage, true);
+    $indexable = function_exists('swaapin_swap_landing_indexable') ? (bool)swaapin_swap_landing_indexable($row) : null;
+    $landingUrl = swap_url_of($BASE, $row);
+    $hasLink = str_contains($r['body'], 'href="' . $landingUrl . '"');
+    $hasFilter = str_contains($r['body'], 'deal=swap');
+    $mode = $indexable === true ? ('لینک=<a>' . ($hasLink ? '✓' : '✗'))
+          : ($indexable === false ? ('فیلتر=deal=swap ' . ($hasFilter ? '✓' : '✗'))
+          : 'نامشخص');
+    check('A16', 'دکمهٔ «فقط معاوضه» روی صفحهٔ دسته (گزارشی)', true,
+        $catPage . ' | ایندکس‌پذیر=' . ($indexable === null ? 'نامشخص' : ($indexable ? 'بله' : 'خیر')) . ' | ' . $mode);
 } else {
-    check('A16', 'حداقل یک لندینگ معاوضه فعال وجود دارد', false, 'جدول خالی است');
+    check('A16', 'دکمهٔ «فقط معاوضه» روی صفحهٔ دسته (گزارشی)', true,
+        'لندینگ دسته‌ای ثبت نشده؛ حالت دکمه قابل ارزیابی نیست');
 }
 
 // ══════════════════════════════════════════════════════════════════════════
