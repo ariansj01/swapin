@@ -1686,26 +1686,30 @@ function initAiMatch() {
 
 /* ── Support floating widget (Live Chat) ────────────────────────────────── */
 function initSupportWidget() {
+  const widget  = document.getElementById('support-widget');
   const toggle  = document.getElementById('support-widget-toggle');
   const chatBox = document.getElementById('support-chat');
-  if (!toggle || !chatBox) return;
+  if (!widget || !toggle || !chatBox) return;
 
   const closeBtn    = document.getElementById('support-chat-close');
+  const form        = document.getElementById('support-chat-form');
+  const nameStep    = document.getElementById('support-chat-name-step');
   const nameInp     = document.getElementById('support-chat-name');
-  const startBtn    = document.getElementById('support-chat-start');
-  const register    = document.getElementById('support-chat-register');
+  const nameGoBtn   = document.getElementById('support-chat-name-go');
+  const faqBox      = document.getElementById('support-chat-faq');
+  const chips       = document.getElementById('support-chat-chips');
   const composer    = document.getElementById('support-chat-composer');
   const escalateBtn = document.getElementById('support-chat-escalate');
   const msgInp      = document.getElementById('support-chat-msg');
   const sendBtn     = document.getElementById('support-chat-send');
   const messages    = document.getElementById('support-chat-messages');
-  const welcome     = document.getElementById('support-chat-welcome');
-  const suggestions = document.getElementById('support-chat-suggestions');
   const csrfInp     = chatBox.querySelector('input[name="_csrf"]');
 
   const TOKEN_KEY   = 'swaapin_live_chat_token';
   const NAME_KEY    = 'swaapin_live_chat_name';
   const HISTORY_KEY = 'swaapin_live_chat_ai_history';
+
+  const accountName = (widget.getAttribute('data-user-name') || '').trim();
 
   let pollTimer = null;
   let lastMsgId = 0;
@@ -1722,17 +1726,21 @@ function initSupportWidget() {
     try { localStorage.setItem(HISTORY_KEY, JSON.stringify(aiHistory.slice(-20))); } catch {}
   }
 
+  function userName() {
+    if (accountName) return accountName;
+    try { return (localStorage.getItem(NAME_KEY) || '').trim(); } catch { return ''; }
+  }
+
   function openChat() {
     chatBox.hidden = false;
     toggle.setAttribute('aria-expanded', 'true');
     toggle.classList.add('is-open');
     if (localStorage.getItem(TOKEN_KEY)) {
       beginHuman();
-    } else if (localStorage.getItem(NAME_KEY)) {
-      nameInp.value = localStorage.getItem(NAME_KEY);
+    } else if (userName().length >= 2) {
       beginAi();
     } else {
-      showRegister();
+      showNameStep();
     }
   }
 
@@ -1743,52 +1751,43 @@ function initSupportWidget() {
     stopPolling();
   }
 
-  function showChat() {
-    welcome.hidden = true;
+  function showNameStep() {
+    nameStep.hidden = false;
+    faqBox.hidden = true;
+    messages.hidden = true;
+    form.hidden = true;
+    setTimeout(() => nameInp?.focus(), 100);
+  }
+
+  function showConversation() {
+    nameStep.hidden = true;
     messages.hidden = false;
-    register.hidden = true;
+    form.hidden = false;
     composer.hidden = false;
     setTimeout(() => msgInp?.focus(), 100);
   }
 
-  function showRegister() {
-    welcome.hidden = false;
-    messages.hidden = true;
-    register.hidden = false;
-    composer.hidden = true;
-    if (escalateBtn) escalateBtn.hidden = true;
-    if (suggestions) suggestions.hidden = true;
-  }
-
-  function renderSuggestions(items) {
-    if (!suggestions) return;
-    suggestions.innerHTML = '';
-    if (!items || !items.length) { suggestions.hidden = true; return; }
-    const label = document.createElement('div');
-    label.className = 'support-chat__suggestions-label';
-    label.textContent = 'پرسش‌های پرتکرار:';
-    suggestions.appendChild(label);
-    const row = document.createElement('div');
-    row.className = 'support-chat__chips';
+  function renderFaq(items) {
+    chips.innerHTML = '';
+    if (!items || !items.length) { faqBox.hidden = true; return; }
     items.forEach((it) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'support-chat__chip';
       btn.textContent = it.q;
       btn.addEventListener('click', () => sendMessage(it.q, it.id));
-      row.appendChild(btn);
+      chips.appendChild(btn);
     });
-    suggestions.appendChild(row);
-    suggestions.hidden = false;
+    faqBox.hidden = false;
   }
 
-  async function loadSuggestions() {
-    if (faqItems) { renderSuggestions(faqItems); return; }
+  async function loadFaq() {
+    if (faqItems) { renderFaq(faqItems); return; }
     try {
       const res = await api('faq', {});
       if (res && res.ok && Array.isArray(res.questions)) {
         faqItems = res.questions;
-        renderSuggestions(faqItems);
+        renderFaq(faqItems);
       }
     } catch {}
   }
@@ -1816,7 +1815,8 @@ function initSupportWidget() {
     const err = document.createElement('div');
     err.className = 'support-chat__error';
     err.textContent = text;
-    chatBox.querySelector('.support-chat__form').appendChild(err);
+    const body = document.getElementById('support-chat-body');
+    (body || chatBox).appendChild(err);
     setTimeout(() => err.remove(), 4000);
   }
 
@@ -1847,22 +1847,22 @@ function initSupportWidget() {
   }
 
   function beginAi() {
-    showChat();
-    if (escalateBtn) escalateBtn.hidden = false;
+    showConversation();
+    escalateBtn.hidden = false;
+    faqBox.hidden = true;
     messages.innerHTML = '';
     lastMsgId = 0;
-    if (aiHistory.length === 0) {
-      appendMsg('سلام! من دستیار هوشمند سواَپین هستم. چطور می‌توانم کمکتان کنم؟', 'ai');
-    } else {
+    if (aiHistory.length) {
       aiHistory.forEach(h => appendMsg(h.content, h.role === 'assistant' ? 'ai' : 'guest'));
+    } else {
+      loadFaq();
     }
-    loadSuggestions();
   }
 
   function beginHuman() {
-    showChat();
-    if (escalateBtn) escalateBtn.hidden = true;
-    if (suggestions) suggestions.hidden = true;
+    showConversation();
+    escalateBtn.hidden = true;
+    faqBox.hidden = true;
     messages.innerHTML = '';
     lastMsgId = 0;
     stopPolling();
@@ -1884,21 +1884,24 @@ function initSupportWidget() {
     if (!document.getElementById('support-widget')?.contains(e.target)) closeChat();
   });
 
-  startBtn?.addEventListener('click', () => {
+  function submitName() {
     const name = (nameInp?.value || '').trim();
     if (name.length < 2) return showError('نام را وارد کنید.');
     try { localStorage.setItem(NAME_KEY, name); } catch {}
     beginAi();
-  });
+  }
+
+  nameGoBtn?.addEventListener('click', submitName);
 
   nameInp?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); startBtn?.click(); }
+    if (e.key === 'Enter') { e.preventDefault(); submitName(); }
   });
 
   async function sendMessage(forcedText, faqId) {
     if (busy) return;
     const text = (typeof forcedText === 'string' ? forcedText : (msgInp?.value || '')).trim();
     if (!text) return;
+    faqBox.hidden = true;
 
     const token = localStorage.getItem(TOKEN_KEY);
     if (token && !faqId) {
@@ -1944,15 +1947,15 @@ function initSupportWidget() {
     }
   }
 
-  sendBtn?.addEventListener('click', sendMessage);
+  sendBtn?.addEventListener('click', () => sendMessage());
   msgInp?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
   });
 
   escalateBtn?.addEventListener('click', async () => {
     if (busy) return;
-    const name = (localStorage.getItem(NAME_KEY) || nameInp?.value || '').trim();
-    if (name.length < 2) { showRegister(); return; }
+    const name = userName();
+    if (name.length < 2) { showNameStep(); return; }
 
     escalateBtn.disabled = true;
     try {
