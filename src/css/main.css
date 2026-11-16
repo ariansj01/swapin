@@ -7015,6 +7015,13 @@ html body .categories-dropdown {
   font-size: .9rem;
 }
 .support-chat__title i { color: #FFC928; }
+.support-chat__subtitle {
+  display: block;
+  font-weight: 400;
+  font-size: .72rem;
+  opacity: .75;
+  margin-top: 2px;
+}
 .support-chat__close {
   background: none;
   border: none;
@@ -7031,7 +7038,7 @@ html body .categories-dropdown {
   flex-direction: column;
   gap: 10px;
   min-height: 120px;
-  max-height: 264px;
+  max-height: 320px;
   overflow-y: auto;
   padding: 14px;
   background: #f7f8fa;
@@ -7047,28 +7054,30 @@ html body .categories-dropdown {
 .support-chat__messages[hidden],
 .support-chat__form[hidden],
 .support-chat__composer[hidden] { display: none !important; }
-.support-chat__name-field {
+.support-chat__form-fields {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
 }
-.support-chat__name-go {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+.support-chat__field {
+  width: 100%;
+}
+.support-chat__start-btn {
+  width: 100%;
+  padding: 10px 16px;
   border: none;
   border-radius: 10px;
   background: var(--primary);
   color: #fff;
-  font-size: .95rem;
+  font-family: inherit;
+  font-size: .875rem;
+  font-weight: 600;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   transition: background .15s, transform .1s;
 }
-.support-chat__name-go:hover { background: var(--primary-dark); }
-.support-chat__name-go:active { transform: scale(.94); }
+.support-chat__start-btn:hover { background: var(--primary-dark); }
+.support-chat__start-btn:active { transform: scale(.98); }
+.support-chat__start-btn[disabled] { opacity: .6; cursor: default; }
 .support-chat__messages {
   display: flex;
   flex-direction: column;
@@ -7097,9 +7106,9 @@ html body .categories-dropdown {
 }
 .support-chat__msg--ai {
   align-self: flex-start;
-  background: #eef4ff;
+  background: #fff;
   color: var(--text);
-  border: 1px solid #d6e4ff;
+  border: 1px solid var(--border);
   border-bottom-left-radius: 4px;
 }
 .support-chat__msg-time {

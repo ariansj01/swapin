@@ -239,10 +239,14 @@ function live_chat_ensure_tables(): void {
     }
 }
 
-function live_chat_start(string $name, array $transcript = []): array {
+function live_chat_start(string $name, string $phone = '', array $transcript = []): array {
     $name   = clean($name);
+    $phone  = clean($phone);
     $errors = [];
     if (mb_strlen($name) < 2) $errors['name'] = 'نام را وارد کنید.';
+    if ($phone !== '' && !preg_match('/^09\d{9}$/', $phone)) {
+        $errors['phone'] = 'شماره موبایل معتبر نیست.';
+    }
     if ($errors) return ['errors' => $errors];
 
     $token = bin2hex(random_bytes(16));
@@ -251,7 +255,7 @@ function live_chat_start(string $name, array $transcript = []): array {
     $chatId = DB::insert('live_chats', [
         'session_token' => $token,
         'guest_name'    => $name,
-        'guest_phone'   => '',
+        'guest_phone'   => $phone,
         'status'        => 'open',
     ]);
 
@@ -300,6 +304,57 @@ function live_chat_send_message(string $token, string $body): array {
     ], 'id = ?', [(int)$chat['id']]);
 
     return ['ok' => true];
+}
+
+/**
+ * تولید پاسخ خودکار برای یک پیام کاربر و ذخیره آن در دیتابیس.
+ * ابتدا پرسش‌های آماده (FAQ) بررسی می‌شوند؛ در غیر این صورت از هوش مصنوعی استفاده می‌شود.
+ * پاسخ با sender_type='ai' ذخیره می‌شود اما در رابط کاربری مانند پیام پشتیبان نمایش داده می‌شود.
+ */
+function live_chat_auto_reply(int $chatId, string $userMessage): array {
+    $userMessage = trim($userMessage);
+    if ($userMessage === '') return ['reply' => ''];
+
+    live_chat_ensure_tables();
+
+    // تاریخچه گفتگو برای ارسال به هوش مصنوعی
+    $rows = DB::fetchAll(
+        'SELECT sender_type, body FROM live_chat_messages WHERE chat_id = ? ORDER BY id ASC LIMIT 30',
+        [$chatId]
+    );
+    $history = [];
+    foreach ($rows as $r) {
+        if ($r['sender_type'] === 'guest') {
+            $history[] = ['role' => 'user', 'content' => $r['body']];
+        } else {
+            $history[] = ['role' => 'assistant', 'content' => $r['body']];
+        }
+    }
+
+    // پرسش‌های آماده
+    $faq = live_chat_faq_match($userMessage);
+    if ($faq) {
+        $reply = $faq['a'];
+    } else {
+        $result = ai_chat_respond(mb_substr($userMessage, 0, 2000), $history, null);
+        $reply = (string)($result['message'] ?? '');
+        if ($reply === '') {
+            $reply = 'متوجه شدم. لطفاً کمی صبر کنید تا همکاران ما پاسخگوی شما باشند.';
+        }
+    }
+
+    $id = (int) DB::insert('live_chat_messages', [
+        'chat_id'     => $chatId,
+        'sender_type' => 'ai',
+        'body'        => mb_substr($reply, 0, 4000),
+        'is_read'     => 1,
+    ]);
+
+    DB::update('live_chats', [
+        'last_message_at' => date('Y-m-d H:i:s'),
+    ], 'id = ?', [$chatId]);
+
+    return ['reply' => $reply, 'id' => $id];
 }
 
 function live_chat_get_messages(string $token, int $afterId = 0): array {
@@ -463,7 +518,7 @@ function live_chat_faq_items(): array {
 /** فهرست پرسش‌ها برای نمایش به‌صورت پیشنهاد در ویجت چت. */
 function live_chat_faq_questions(): array {
     $out = [];
-    foreach (live_chat_faq_items() as $item) {
+    foreach (array_slice(live_chat_faq_items(), 0, 5) as $item) {
         $out[] = ['id' => $item['id'], 'q' => $item['q']];
     }
     return $out;

@@ -1695,52 +1695,47 @@ function initSupportWidget() {
   const form        = document.getElementById('support-chat-form');
   const nameStep    = document.getElementById('support-chat-name-step');
   const nameInp     = document.getElementById('support-chat-name');
+  const phoneInp    = document.getElementById('support-chat-phone');
   const nameGoBtn   = document.getElementById('support-chat-name-go');
   const faqBox      = document.getElementById('support-chat-faq');
   const chips       = document.getElementById('support-chat-chips');
   const composer    = document.getElementById('support-chat-composer');
-  const escalateBtn = document.getElementById('support-chat-escalate');
   const msgInp      = document.getElementById('support-chat-msg');
   const sendBtn     = document.getElementById('support-chat-send');
   const messages    = document.getElementById('support-chat-messages');
   const csrfInp     = chatBox.querySelector('input[name="_csrf"]');
 
-  const TOKEN_KEY   = 'swaapin_live_chat_token';
-  const NAME_KEY    = 'swaapin_live_chat_name';
-  const HISTORY_KEY = 'swaapin_live_chat_ai_history';
+  const TOKEN_KEY = 'swaapin_live_chat_token';
+  const NAME_KEY  = 'swaapin_live_chat_name';
+  const PHONE_KEY = 'swaapin_live_chat_phone';
 
   const accountName = (widget.getAttribute('data-user-name') || '').trim();
 
   let pollTimer = null;
   let lastMsgId = 0;
-  let aiHistory = [];
   let busy = false;
   let faqItems = null;
+  let sessionStarted = false;
 
-  try {
-    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    if (Array.isArray(saved)) aiHistory = saved;
-  } catch { aiHistory = []; }
-
-  function saveHistory() {
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(aiHistory.slice(-20))); } catch {}
-  }
-
-  function userName() {
+  function storedName() {
     if (accountName) return accountName;
     try { return (localStorage.getItem(NAME_KEY) || '').trim(); } catch { return ''; }
+  }
+
+  function storedPhone() {
+    try { return (localStorage.getItem(PHONE_KEY) || '').trim(); } catch { return ''; }
   }
 
   function openChat() {
     chatBox.hidden = false;
     toggle.setAttribute('aria-expanded', 'true');
     toggle.classList.add('is-open');
-    if (localStorage.getItem(TOKEN_KEY)) {
-      beginHuman();
-    } else if (userName().length >= 2) {
-      beginAi();
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      sessionStarted = true;
+      beginConversation();
     } else {
-      showNameStep();
+      showFormStep();
     }
   }
 
@@ -1751,12 +1746,16 @@ function initSupportWidget() {
     stopPolling();
   }
 
-  function showNameStep() {
+  function showFormStep() {
     nameStep.hidden = false;
     faqBox.hidden = true;
     messages.hidden = true;
     form.hidden = true;
-    setTimeout(() => nameInp?.focus(), 100);
+    if (nameInp) {
+      nameInp.value = storedName();
+      setTimeout(() => nameInp.focus(), 100);
+    }
+    if (phoneInp) phoneInp.value = storedPhone();
   }
 
   function showConversation() {
@@ -1768,6 +1767,7 @@ function initSupportWidget() {
   }
 
   function renderFaq(items) {
+    if (!chips) return;
     chips.innerHTML = '';
     if (!items || !items.length) { faqBox.hidden = true; return; }
     items.forEach((it) => {
@@ -1775,7 +1775,7 @@ function initSupportWidget() {
       btn.type = 'button';
       btn.className = 'support-chat__chip';
       btn.textContent = it.q;
-      btn.addEventListener('click', () => sendMessage(it.q, it.id));
+      btn.addEventListener('click', () => sendMessage(it.q));
       chips.appendChild(btn);
     });
     faqBox.hidden = false;
@@ -1792,17 +1792,13 @@ function initSupportWidget() {
     } catch {}
   }
 
-  function appendMsg(text, sender, time) {
+  function appendMsg(text, sender) {
     if (!messages) return null;
     const div = document.createElement('div');
-    div.className = 'support-chat__msg support-chat__msg--' + sender;
+    // پیام‌های ai و admin هر دو مانند پشتیبان نمایش داده می‌شوند تا مشخص نباشد هوش مصنوعی است.
+    const displaySender = (sender === 'ai') ? 'admin' : sender;
+    div.className = 'support-chat__msg support-chat__msg--' + displaySender;
     div.innerHTML = (text || '').replace(/\n/g, '<br>');
-    if (time) {
-      const t = document.createElement('span');
-      t.className = 'support-chat__msg-time';
-      t.textContent = time;
-      div.appendChild(t);
-    }
     messages.appendChild(div);
     const body = document.getElementById('support-chat-body');
     if (body) body.scrollTop = body.scrollHeight;
@@ -1846,28 +1842,15 @@ function initSupportWidget() {
     } catch {}
   }
 
-  function beginAi() {
+  function beginConversation() {
     showConversation();
-    escalateBtn.hidden = false;
-    faqBox.hidden = true;
-    messages.innerHTML = '';
-    lastMsgId = 0;
-    if (aiHistory.length) {
-      aiHistory.forEach(h => appendMsg(h.content, h.role === 'assistant' ? 'ai' : 'guest'));
-    } else {
-      loadFaq();
-    }
-  }
-
-  function beginHuman() {
-    showConversation();
-    escalateBtn.hidden = true;
     faqBox.hidden = true;
     messages.innerHTML = '';
     lastMsgId = 0;
     stopPolling();
     fetchNewMessages();
-    pollTimer = setInterval(fetchNewMessages, 5000);
+    pollTimer = setInterval(fetchNewMessages, 4000);
+    loadFaq();
   }
 
   toggle.addEventListener('click', (e) => {
@@ -1884,59 +1867,76 @@ function initSupportWidget() {
     if (!document.getElementById('support-widget')?.contains(e.target)) closeChat();
   });
 
-  function submitName() {
-    const name = (nameInp?.value || '').trim();
-    if (name.length < 2) return showError('نام را وارد کنید.');
-    try { localStorage.setItem(NAME_KEY, name); } catch {}
-    beginAi();
+  async function submitForm() {
+    if (busy) return;
+    const name  = (nameInp?.value  || '').trim();
+    const phone = (phoneInp?.value || '').trim();
+    if (name.length < 2) return showError('نام و نام خانوادگی را وارد کنید.');
+    if (phone && !/^09\d{9}$/.test(phone)) return showError('شماره موبایل معتبر نیست.');
+
+    busy = true;
+    if (nameGoBtn) nameGoBtn.disabled = true;
+    try {
+      const res = await api('start', { name, phone });
+      if (res && res.ok && res.token) {
+        try {
+          localStorage.setItem(TOKEN_KEY, res.token);
+          localStorage.setItem(NAME_KEY, name);
+          if (phone) localStorage.setItem(PHONE_KEY, phone);
+        } catch {}
+        sessionStarted = true;
+        lastMsgId = parseInt(res.last_id, 10) || 0;
+        appendMsg('سلام ' + name + '! خوش آمدید. چطور می‌توانم کمکتان کنم؟', 'admin');
+        beginConversation();
+      } else {
+        const errs = (res && res.errors) || {};
+        showError(errs.name || errs.phone || 'شروع گفتگو ناموفق بود.');
+      }
+    } catch {
+      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
+    } finally {
+      busy = false;
+      if (nameGoBtn) nameGoBtn.disabled = false;
+    }
   }
 
-  nameGoBtn?.addEventListener('click', submitName);
+  nameGoBtn?.addEventListener('click', submitForm);
 
   nameInp?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); submitName(); }
+    if (e.key === 'Enter') { e.preventDefault(); phoneInp?.focus(); }
   });
 
-  async function sendMessage(forcedText, faqId) {
+  phoneInp?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); submitForm(); }
+  });
+
+  async function sendMessage(forcedText) {
     if (busy) return;
     const text = (typeof forcedText === 'string' ? forcedText : (msgInp?.value || '')).trim();
     if (!text) return;
-    faqBox.hidden = true;
 
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token && !faqId) {
-      busy = true;
-      if (sendBtn) sendBtn.disabled = true;
-      try {
-        await api('send', { token, body: text });
-        msgInp.value = '';
-        await fetchNewMessages();
-      } catch {
-        showError('ارسال پیام ناموفق بود.');
-      } finally {
-        busy = false;
-        if (sendBtn) sendBtn.disabled = false;
-        msgInp?.focus();
-      }
-      return;
-    }
+    if (!token) { showFormStep(); return; }
 
-    // AI phase (stateless — conversation kept client-side)
-    msgInp.value = '';
-    appendMsg(text, 'guest');
-    const typing = appendMsg('…', 'ai');
+    faqBox.hidden = true;
     busy = true;
     if (sendBtn) sendBtn.disabled = true;
+    appendMsg(text, 'guest');
+    msgInp.value = '';
+    const typing = appendMsg('…', 'admin');
+
     try {
-      const res = await api('ai_chat', { message: text, history: aiHistory, faq_id: faqId || '' });
+      const res = await api('send', { token, body: text });
       typing?.remove();
-      const reply = (res && res.ok && res.reply)
-        ? res.reply
-        : 'متأسفم، اکنون نمی‌توانم پاسخ دهم. می‌توانید با پشتیبان انسانی در ارتباط باشید.';
-      appendMsg(reply, 'ai');
-      aiHistory.push({ role: 'user', content: text });
-      aiHistory.push({ role: 'assistant', content: reply });
-      saveHistory();
+      if (res && res.ok) {
+        if (res.reply) {
+          appendMsg(res.reply, 'ai');
+        }
+        lastMsgId = Math.max(lastMsgId, parseInt(res.id, 10) || 0);
+        await fetchNewMessages();
+      } else {
+        showError((res && res.error) || 'ارسال پیام ناموفق بود.');
+      }
     } catch {
       typing?.remove();
       showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
@@ -1950,32 +1950,6 @@ function initSupportWidget() {
   sendBtn?.addEventListener('click', () => sendMessage());
   msgInp?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
-  });
-
-  escalateBtn?.addEventListener('click', async () => {
-    if (busy) return;
-    const name = userName();
-    if (name.length < 2) { showNameStep(); return; }
-
-    escalateBtn.disabled = true;
-    try {
-      const res = await api('start', { name, transcript: aiHistory });
-      if (res && res.ok && res.token) {
-        try { localStorage.setItem(TOKEN_KEY, res.token); } catch {}
-        escalateBtn.hidden = true;
-        appendMsg('شما به پشتیبان انسانی متصل شدید. لطفاً تا پاسخ ادمین شکیبا باشید.', 'admin');
-        lastMsgId = parseInt(res.last_id, 10) || 0;
-        stopPolling();
-        pollTimer = setInterval(fetchNewMessages, 5000);
-      } else {
-        const errs = (res && res.errors) || {};
-        showError(errs.name || 'اتصال به پشتیبان ناموفق بود.');
-        escalateBtn.disabled = false;
-      }
-    } catch {
-      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
-      escalateBtn.disabled = false;
-    }
   });
 }
 
