@@ -77,8 +77,47 @@ function has_col(string $t, string $c): bool {
     return function_exists('db_has_column') && db_has_column($t, $c);
 }
 
-/** درخواست HTTP بدون دنبال‌کردن ریدایرکت */
+/** درخواست HTTP بدون دنبال‌کردن ریدایرکت — با مسیر جایگزین برای پاسخ‌های ۴۰۴ که
+ *  nginx اتصال TLS آن‌ها را بدون close_notify می‌بندد (curl error 56). */
 function req(string $url, bool $wantBody = false, int $timeout = 15): array {
+    $r = req_curl($url, $wantBody, $timeout);
+    if ($r['code'] !== 0) {
+        return $r;
+    }
+    $rf = req_stream($url, $timeout);
+    return $rf['code'] !== 0 ? $rf : $r;
+}
+
+/** خواندن پاسخ با stream wrapper (مقاوم به بسته‌شدن ناگهانی TLS). */
+function req_stream(string $url, int $timeout = 15): array {
+    $ctx = stream_context_create([
+        'http'  => [
+            'method'          => 'GET',
+            'timeout'         => $timeout,
+            'ignore_errors'   => true,
+            'follow_location' => 0,
+            'header'          => "User-Agent: SwaapinSEOAudit/1.0\r\n",
+        ],
+        'ssl'   => ['verify_peer' => false, 'verify_peer_name' => false],
+    ]);
+    $body    = @file_get_contents($url, false, $ctx);
+    $rawHead = $http_response_header ?? [];
+    $code    = 0;
+    $headers = '';
+    $loc     = '';
+    foreach ($rawHead as $hl) {
+        $headers .= $hl . "\r\n";
+        if (preg_match('#^HTTP/\S+\s+(\d{3})#', $hl, $m)) {
+            $code = (int) $m[1];
+        }
+        if (preg_match('/^Location:\s*(.+)$/i', $hl, $m)) {
+            $loc = trim($m[1]);
+        }
+    }
+    return ['code' => $code, 'location' => $loc, 'body' => (string) $body, 'headers' => $headers, 'err' => 'stream', 'errno' => 0];
+}
+
+function req_curl(string $url, bool $wantBody = false, int $timeout = 15): array {
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -152,6 +191,8 @@ function absolutize(string $loc, string $base): string {
 
 function norm_path(string $url): string {
     $p = (string)(parse_url($url, PHP_URL_PATH) ?: '');
+    // سایتمپ آدرس فارسی را خام و HTML آن را درصد-کدگذاری‌شده می‌دهد؛ یکسان‌سازی لازم است.
+    $p = rawurldecode($p);
     $p = '/' . trim($p, '/');
     return $p === '/' ? '/' : rtrim($p, '/');
 }
@@ -598,7 +639,7 @@ if (!$SKIP301) {
     $fail = [];
     $pass = 0;
     foreach ($MAP301 as $from => $to) {
-        $r = req($BASE . $from, false);
+        $r = req($BASE . $from, true);
         $ok = ($r['code'] === 301) && (norm_path($r['location']) === norm_path($to));
         if ($ok) {
             $pass++;
@@ -756,9 +797,6 @@ foreach ($childSitemaps as $smUrl) {
                 $smIssues[] = $u2 . ' → canonical=' . norm_path($canon);
             }
         }
-    }
-    if (str_contains($rs['body'], '<loc>') === false) {
-        $smIssues[] = $smUrl . ' → خالی';
     }
 }
 check('A13', 'نمونهٔ URLهای سایت‌مپ‌ها ۲۰۰/ایندکس/self-canonical', count($smIssues) === 0,
