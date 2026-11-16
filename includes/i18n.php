@@ -296,12 +296,55 @@ function swaapin_legacy_category_aliases(): array {
         // ── دسته‌های سطح۱ قدیمی که در «درخت دسته» معادل مستقیم ندارند
         'food-drink'              => 'kitchenware',
         'other'                   => 'services',
+        // ── تک‌سگمنت‌های قدیمی که فقط به‌صورت پارامتر cat دیده شده‌اند (نقشهٔ ۳۰۱ — ردیف‌های ۱۵۸-۱۷۰)
+        'residential'             => 'real-estate',
+        'tv'                      => 'audio-video',
+        'fridge'                  => 'home-appliances',
+        'bicycle'                 => 'bicycles',
+        'jewelry'                 => 'jewellery',
     ];
 }
 
 function swaapin_resolve_legacy_category_slug(string $slug): ?string {
     $aliases = swaapin_legacy_category_aliases();
     return $aliases[$slug] ?? null;
+}
+
+/**
+ * حل اسلاگ دستهٔ کانونیکال از یک مقدار خام (اسلاگ دقیق، مسیر تودرتوی قدیمی،
+ * یا مقدار قدیمی پارامتر cat مثل «electronics/phones»).
+ * اگر مقدار چند سگمنتی باشد، آخرین سگمنت بررسی می‌شود تا به برگ کانونیکال
+ * نگاشت شود (نقشهٔ ۳۰۱ — نگاشت پارامتر cat).
+ */
+function swaapin_resolve_category_slug(string $raw): ?string {
+    $raw = strtolower(rawurldecode(trim($raw)));
+    if ($raw === '') {
+        return null;
+    }
+
+    $candidates = [$raw];
+    if (str_contains($raw, '/')) {
+        $parts = array_values(array_filter(explode('/', $raw), 'strlen'));
+        if (!empty($parts)) {
+            $candidates[] = (string) end($parts);
+        }
+    }
+
+    foreach ($candidates as $cand) {
+        $row = DB::fetch('SELECT slug FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [$cand]);
+        if ($row) {
+            return (string) $row['slug'];
+        }
+        $alias = swaapin_resolve_legacy_category_slug($cand);
+        if ($alias !== null) {
+            $row = DB::fetch('SELECT slug FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [$alias]);
+            if ($row) {
+                return (string) $row['slug'];
+            }
+        }
+    }
+
+    return null;
 }
 
 function wizard_allowed_category_slugs(): array {

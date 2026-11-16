@@ -180,6 +180,11 @@ function seo_json_ld_breadcrumbs(array $items): array {
 if (!defined('SWAAPIN_MIN_LISTINGS_FOR_INDEX')) {
     define('SWAAPIN_MIN_LISTINGS_FOR_INDEX', 6);
 }
+// حداقل تعداد آگهی برای «نمایش» یک صفحه لیستی؛ زیر آن، آگهی‌های جایگزین از
+// سطوح بالاتر مکان/دسته پر می‌شوند (سند — بخش ۶-۵ و ۱۰).
+if (!defined('SWAAPIN_MIN_LISTINGS_DISPLAY')) {
+    define('SWAAPIN_MIN_LISTINGS_DISPLAY', 12);
+}
 
 function seo_index_status_table_exists(): bool {
     return function_exists('db_has_table') && db_has_table('listing_index_status');
@@ -335,44 +340,44 @@ function seo_clean_text(string $s, int $maxLen = 0): string {
     $s = preg_replace('/\s+/u', ' ', trim(strip_tags($s)));
     $s = preg_replace("/[«»\"'`]+/u", '', $s);
     if ($maxLen > 0 && mb_strlen($s) > $maxLen) {
-        $s = mb_strimwidth($s, 0, $maxLen, '…');
+        // بریدن وسط کلمه و «…» ممنوع — در نزدیک‌ترین مرز کلمه کوتاه می‌شود
+        $cut = mb_substr($s, 0, $maxLen);
+        $sp  = mb_strrpos($cut, ' ');
+        $s   = ($sp !== false && $sp > 0) ? rtrim(mb_substr($cut, 0, $sp)) : $cut;
     }
     return $s;
 }
 
+/**
+ * تایتل آگهی طبق شیت «قالب تایتل و H1»:
+ * معاوضه → «معاوضه {عنوان} در {شهر}» · فروش → «فروش {عنوان} در {شهر}»
+ * · هر دو → «فروش و معاوضه {عنوان} در {شهر}».
+ * نام برند در انتهای تایتل نمی‌آید و «…» استفاده نمی‌شود؛ اگر عنوان بلند شد
+ * ابتدا «در {شهر}» حذف می‌شود.
+ */
 function seo_listing_title(array $listing): string {
-    $title       = seo_clean_text((string)($listing['title'] ?? ''), 50);
-    $catName     = seo_clean_text((string)($listing['cat_name']  ?? ''));
-    $city        = seo_clean_text((string)($listing['city']      ?? ''));
-    $want        = seo_clean_text((string)($listing['want_in_return'] ?? ''), 35);
-    $mode        = (string)($listing['listing_mode'] ?? 'swap');
+    $title   = seo_clean_text((string)($listing['title'] ?? ''));
+    $catName = seo_clean_text((string)($listing['cat_name'] ?? ''));
+    $city    = seo_clean_text((string)($listing['city'] ?? ''));
+    $mode    = (string)($listing['listing_mode'] ?? 'swap');
 
-    $suffix = ' | ' . APP_NAME;
-    $prefix = ($mode === 'sell') ? 'فروش ' : 'معاوضه ';
-
-    $parts = [];
-
-    if ($title !== '' && $title !== '0') {
-        $parts[] = $prefix . $title;
+    if ($mode === 'sell') {
+        $prefix = 'فروش ';
+    } elseif ($mode === 'both') {
+        $prefix = 'فروش و معاوضه ';
     } else {
-        $parts[] = $prefix . trim($catName . ' مناسب');
+        $prefix = 'معاوضه ';
     }
 
-    if ($want !== '') {
-        $parts[] = 'با ' . $want;
+    $subject = ($title !== '' && $title !== '0') ? $title : trim($catName . ' مناسب');
+    $base    = $prefix . $subject;
+
+    if ($city === '') {
+        return $base;
     }
-
-    if ($city !== '') {
-        $parts[] = 'در ' . $city;
-    }
-
-    $combined = implode(' | ', $parts);
-
-    if (mb_strlen($combined . $suffix) > 65) {
-        $combined = mb_strimwidth($combined, 0, 63 - mb_strlen($suffix), '…');
-    }
-
-    return $combined . $suffix;
+    $withCity = $base . ' در ' . $city;
+    // اگر خیلی طولانی شد، اول «در {شهر}» حذف می‌شود (بدون بریدن با «…»)
+    return mb_strlen($withCity) > 65 ? $base : $withCity;
 }
 
 function seo_listing_description(array $listing): string {
@@ -426,7 +431,13 @@ function seo_listing_description(array $listing): string {
     }
 
     if ($description !== '' && count($sentences) < 4) {
-        $extra = mb_strimwidth($description, 0, 80, '…');
+        // بریدن با «…» ممنوع — در مرز کلمه کوتاه می‌شود
+        $extra = $description;
+        if (mb_strlen($extra) > 80) {
+            $cut = mb_substr($extra, 0, 80);
+            $sp  = mb_strrpos($cut, ' ');
+            $extra = ($sp !== false && $sp > 0) ? rtrim(mb_substr($cut, 0, $sp)) : $cut;
+        }
         if (mb_strlen($extra) > 20) {
             $sentences[] = $extra;
         }
@@ -434,7 +445,10 @@ function seo_listing_description(array $listing): string {
 
     $out = implode(' ', $sentences);
     if (mb_strlen($out) > 160) {
-        $out = mb_strimwidth($out, 0, 158, '…');
+        // بریدن با «…» ممنوع — در مرز کلمه کوتاه می‌شود
+        $cut = mb_substr($out, 0, 160);
+        $sp  = mb_strrpos($cut, ' ');
+        $out = ($sp !== false && $sp > 0) ? rtrim(mb_substr($cut, 0, $sp)) : $cut;
     }
     return $out;
 }

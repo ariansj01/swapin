@@ -29,6 +29,50 @@ $timeAgo   = in_array($_GET['time_ago'] ?? '', ['3h','12h','1d','3d','1w']) ? $_
 $pmin      = isset($_GET['price_min']) ? (float)$_GET['price_min'] : 0;
 $pmax      = isset($_GET['price_max']) ? (float)$_GET['price_max'] : 0;
 
+// ─── نقشهٔ ۳۰۱ (بخش ۱۱): پارامترهای ?city= و ?cat= → آدرس تمیز /{location}[/{category}] ───
+// آدرس‌های پارامتری «خالی» صفحهٔ اصلی (که canonical آن‌ها را حذف می‌کرد و هرگز ایندکس نمی‌شدند)
+// در یک مرحله به مسیر کانونیکال ۳۰۱ می‌شوند. sort و time_ago طبق نقشه به مقصد منتقل نمی‌شوند.
+// توجه: اگر یکی از پارامترهای واقعی فیلتر (مثل sort/want/price) حاضر باشد، صفحهٔ اصلی
+// همان فیلتر زندهٔ خودش است و ریدایرکت نمی‌شود تا فرم فیلتر هوم خراب نشود. (فرم همیشه sort دارد.)
+$homeFilterParams = ['want', 'want_category_id', 'condition', 'deal_type', 'price_min', 'price_max', 'sort', 'time_ago', 'page'];
+$homeHasFilter = false;
+foreach ($homeFilterParams as $hk) {
+    $hv = $_GET[$hk] ?? '';
+    if ($hv !== '' && $hv !== null && $hv !== '0' && $hv !== 0) {
+        $homeHasFilter = true;
+        break;
+    }
+}
+if (!headers_sent() && !$homeHasFilter
+    && ((string)($_GET['city'] ?? '') !== '' || (string)($_GET['cat'] ?? '') !== '')) {
+    $homeCityName = trim((string)($_GET['city'] ?? ''));
+    $homeLocRow   = null;
+    if ($homeCityName !== '' && function_exists('swaapin_location_by_name')) {
+        $homeLocRow = swaapin_location_by_name($homeCityName, 'city')
+            ?? swaapin_location_by_name($homeCityName, 'province');
+    }
+
+    // نگاشت پارامتر cat طبق نقشه: اسلاگ جاری، آخرین سگمنت مسیر، سپس alias قدیمی
+    $homeCatSlug = swaapin_resolve_category_slug((string)($_GET['cat'] ?? ''));
+
+    if ($homeLocRow || $homeCatSlug !== null) {
+        $homeBase = $homeLocRow
+            ? rtrim(swaapin_location_url($homeLocRow), '/')
+            : rtrim(APP_URL, '/') . '/iran';
+        $homeTarget = $homeBase . ($homeCatSlug !== null ? '/' . rawurlencode($homeCatSlug) : '');
+
+        $homeKeep = [];
+        foreach (['q', 'want', 'want_category_id', 'condition', 'price_min', 'price_max', 'page'] as $hk) {
+            $hv = $_GET[$hk] ?? '';
+            if ($hv !== '' && $hv !== null && $hv !== '0' && $hv !== 0) {
+                $homeKeep[$hk] = $hv;
+            }
+        }
+        header('Location: ' . $homeTarget . ($homeKeep ? '?' . http_build_query($homeKeep) : ''), true, 301);
+        exit;
+    }
+}
+
 // resolve category
 $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [$catSlug]) : null;
 $catId    = $category['id'] ?? null;

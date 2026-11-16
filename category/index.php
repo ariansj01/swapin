@@ -58,7 +58,8 @@ if ($_reqPath !== '') {
             }
             if ($locTarget !== '') {
                 $cityKeep = [];
-                foreach (['q', 'want', 'want_category_id', 'condition', 'price_min', 'price_max', 'sort', 'time_ago', 'page'] as $ckpk) {
+                // طبق نقشهٔ ۳۰۱، پارامترهای بی‌ارزش (sort، time_ago) به مقصد منتقل نمی‌شوند.
+                foreach (['q', 'want', 'want_category_id', 'condition', 'price_min', 'price_max', 'page'] as $ckpk) {
                     $ckpv = $_GET[$ckpk] ?? '';
                     if ($ckpv !== '' && $ckpv !== null && $ckpv !== '0' && $ckpv !== 0) {
                         $cityKeep[$ckpk] = $ckpv;
@@ -74,7 +75,7 @@ if ($_reqPath !== '') {
         'api', 'admin', 'includes', 'seed', 'database', 'storage', 'tools', 'vendor', 'logs', 'backups', 'sql',
         'store', 'orders', 'chat', 'store-offers', 'shops', 'search', 'shop', 'support', 'pwa', 'ai-lab', 'sep',
         'iso', 'listing', 'listings', 'auth', 'page', 'src', 'css', 'js', 'assets', 'scripts', 'ops', 'blog',
-        'clubs', 'club', 'category',
+        'clubs', 'club', 'category', 'community',
     ];
     if (ctype_digit((string) $_last)
         && (count($_segments) === 1 || (count($_segments) === 2 && !in_array(strtolower($_segments[0]), $_systemFirst, true)))) {
@@ -202,23 +203,43 @@ if ($slugPath !== '') {
     $parts = array_values(array_filter(explode('/', $slugPath), 'strlen'));
     if (!empty($parts)) {
         $parts = array_map('rawurldecode', $parts);
-        $category = get_category_by_slug_path($parts);
-        if (!$category && count($parts) === 1) {
-            $alias = swaapin_resolve_legacy_category_slug($parts[0]);
+        $currentPath = strtolower(implode('/', $parts));
+
+        // الگوی کانونیکال دسته: /iran/{leaf} — بدون تودرتویی والدها و با پیشوند مکان.
+        // برگ دسته از «آخرین سگمنت» مسیر حل می‌شود (اسلاگ جاری، سپس alias قدیمی)؛
+        // بنابراین هر مسیر قدیمی/تودرتو (مثل /electronics/mobile-tablet/mobile-phones)
+        // در یک مرحله به کانونیکال ۳۰۱ می‌شود، نه به والدِ اشتباه.
+        $lastSeg      = strtolower((string) end($parts));
+        $resolvedSlug = null;
+
+        $leafRow = DB::fetch(
+            'SELECT slug FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1',
+            [$lastSeg]
+        );
+        if ($leafRow) {
+            $resolvedSlug = (string) $leafRow['slug'];
+        } else {
+            $alias = swaapin_resolve_legacy_category_slug($lastSeg);
             if ($alias !== null) {
-                header('Location: ' . category_url($alias), true, 301);
-                exit;
+                $aliasRow = DB::fetch(
+                    'SELECT slug FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1',
+                    [$alias]
+                );
+                if ($aliasRow) {
+                    $resolvedSlug = (string) $aliasRow['slug'];
+                }
             }
         }
-        if ($category) {
-            // الگوی کانونیکال دسته: /iran/{leaf} — بدون تودرتویی والدها و با پیشوند مکان.
-            // مسیرهای قدیمی (بی‌ریشه یا تودرتو) → ۳۰۱ به فرم کانونیکال.
-            $canonicalPath = 'iran/' . strtolower((string) $category['slug']);
-            $currentPath   = strtolower(implode('/', $parts));
-            if ($currentPath !== $canonicalPath) {
-                header('Location: ' . category_url((string) $category['slug']), true, 301);
+
+        if ($resolvedSlug !== null) {
+            if ($currentPath !== 'iran/' . $resolvedSlug) {
+                header('Location: ' . category_url($resolvedSlug), true, 301);
                 exit;
             }
+            $category = DB::fetch(
+                'SELECT * FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1',
+                [$resolvedSlug]
+            );
         }
     }
 }

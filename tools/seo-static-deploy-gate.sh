@@ -6,7 +6,13 @@ cd "$APP"
 
 echo "===== SEO STATIC DEPLOY GATE ====="
 
-php -l sitemap.php >/dev/null
+php -l sitemap-index.php >/dev/null
+php -l sitemap-locations.php >/dev/null
+php -l sitemap-categories.php >/dev/null
+php -l sitemap-brands.php >/dev/null
+php -l sitemap-swap.php >/dev/null
+php -l sitemap-ads.php >/dev/null
+php -l sitemap-shops.php >/dev/null
 php -l sitemap-pages.php >/dev/null
 php -l includes/seo.php >/dev/null
 php -l listings/all.php >/dev/null
@@ -18,7 +24,7 @@ bash -n tools/seo-critical-guard.sh
 grep -q 'Legacy WordPress dated URLs -> current postname URLs' \
     ops/nginx/swaapin.ir.conf
 
-if grep -qE "\['loc'.*/trades" sitemap.php; then
+if grep -qE "\['loc'.*/trades" sitemap-*.php; then
     echo "[FAIL] /trades must not exist in public sitemap"
     exit 1
 fi

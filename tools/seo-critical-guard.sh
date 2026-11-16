@@ -124,7 +124,10 @@ echo "[4] PUBLIC SITEMAP"
 SITEMAP="$(mktemp)"
 trap 'rm -f "$SITEMAP"' EXIT
 
-curl -fsSL "$BASE/sitemap.php" > "$SITEMAP"
+for sm in sitemap-locations.xml sitemap-categories.xml sitemap-brands.xml \
+          sitemap-swap.xml sitemap-ads.xml sitemap-shops.xml sitemap-pages.xml; do
+    curl -fsSL "$BASE/$sm" >> "$SITEMAP" || true
+done
 
 if grep -qE '<loc>https://swaapin\.ir/trades/?</loc>' "$SITEMAP"; then
     fail "/trades is still present in public sitemap"
@@ -144,10 +147,10 @@ while IFS= read -r url; do
         fail "Sitemap URL not 200: $code $url"
     fi
 done < <(
-    {
-        curl -fsSL "$BASE/sitemap.php" || true
-        curl -fsSL "$BASE/sitemap-pages.php" || true
-    } \
+    for sm in sitemap-locations.xml sitemap-categories.xml sitemap-brands.xml \
+              sitemap-swap.xml sitemap-ads.xml sitemap-shops.xml sitemap-pages.xml; do
+        curl -fsSL "$BASE/$sm" || true
+    done \
       | sed -n 's:.*<loc>\(.*\)</loc>.*:\1:p' \
       | sed 's/&amp;/\&/g' \
       | sort -u

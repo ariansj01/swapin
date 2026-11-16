@@ -190,7 +190,7 @@
       <a href="<?= APP_URL ?>/faq">سوالات متداول</a>
     </div>
     <div class="home-sidebar-menu">
-      <a href="<?= APP_URL ?>/pwa">نصب اپلیکیشن</a>
+      <a href="<?= APP_URL ?>/app">نصب اپلیکیشن</a>
       <span class="home-sidebar-menu__dot"></span>
       <a href="<?= APP_URL ?>/blog">بلاگ</a>
       <span class="home-sidebar-menu__dot"></span>

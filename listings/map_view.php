@@ -7,6 +7,28 @@ require_once __DIR__ . '/../includes/ai_category_keywords.php';
 
 $user = auth_user();
 
+// نقشهٔ ۳۰۱ (سند — Q19): صفحهٔ نقشهٔ مستقل حذف شده است؛ آدرس آن در یک مرحله به
+// صفحهٔ دسته/مکان معادل ۳۰۱ می‌شود (به‌جای ۴۱۰ قبلی). q حفظ می‌شود.
+// نگاشت پارامتر cat: اسلاگ جاری، آخرین سگمنت مسیر، سپس alias قدیمی.
+$mvCatSlug = swaapin_resolve_category_slug((string)($_GET['cat'] ?? ''));
+
+$mvLocRow   = null;
+$mvCityName = trim((string)($_GET['city'] ?? ''));
+if ($mvCityName !== '' && function_exists('swaapin_location_by_name')) {
+    $mvLocRow = swaapin_location_by_name($mvCityName, 'city')
+        ?? swaapin_location_by_name($mvCityName, 'province');
+}
+
+$mvBase   = $mvLocRow ? rtrim(swaapin_location_url($mvLocRow), '/') : rtrim(APP_URL, '/') . '/iran';
+$mvTarget = $mvBase . ($mvCatSlug !== null ? '/' . rawurlencode($mvCatSlug) : '');
+$mvKeep   = [];
+$mvQ      = trim((string)($_GET['q'] ?? ''));
+if ($mvQ !== '') {
+    $mvKeep['q'] = $mvQ;
+}
+header('Location: ' . $mvTarget . ($mvKeep ? '?' . http_build_query($mvKeep) : ''), true, 301);
+exit;
+
 // فیلترها
 $search    = clean($_GET['q']          ?? '');
 $catSlug   = clean($_GET['cat']        ?? '');

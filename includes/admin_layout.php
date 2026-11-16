@@ -67,6 +67,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
         'pages'          => ['/pages.php', 'صفحات سایت', 'bi-file-earmark-text', 0],
         'content'        => ['/content.php', 'مدیریت محتوا', 'bi-pencil-square', 0],
         'banners'        => ['/banners.php', 'اسلایدر صفحه اصلی', 'bi-window-stack', 0],
+        'swap_landings'  => ['/swap_landings.php', 'لندینگ‌های معاوضه', 'bi-arrow-left-right', 0],
         'stories'        => ['/stories.php', 'استوری‌ها', 'bi-images', 0],
         'listings'       => ['/listings.php', 'آگهی‌ها', 'bi-grid', $counts['listings']],
         'ai_moderation'  => ['/ai_moderation.php', 'ربات نظارت AI', 'bi-robot', 0],

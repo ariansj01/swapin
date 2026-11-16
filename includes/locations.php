@@ -213,7 +213,7 @@ function swaapin_ensure_location_tree(): int {
     // اسلاگ‌های دسته‌بندی و کلمات رزروشده هم باید یکتا بمانند تا مسیر مکان با آن‌ها تداخل نکند.
     // نکته: «iran» کلمه رزروشده است اما اسلاگ رسمی سطح کشور است و مستثنی می‌شود.
     $used = [];
-    foreach (['list', 'v', 's', 'shop', 'blog', 'app', 'page', 'new', 'search'] as $reserved) {
+    foreach (['list', 'v', 's', 'shop', 'blog', 'app', 'page', 'new', 'search', 'community'] as $reserved) {
         $used[$reserved] = true;
     }
     try {

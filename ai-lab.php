@@ -23,6 +23,7 @@ $jsonLd = [
 
 render_head($metaTitle, $metaDesc, [
     'canonical' => $canonical,
+    'robots'    => 'noindex, follow',
     'og_type'   => 'website',
     'json_ld'   => $jsonLd,
 ]);

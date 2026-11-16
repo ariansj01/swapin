@@ -22,7 +22,12 @@ Options -MultiViews -Indexes
   # RewriteBase /
 
   # Landing pages
-  RewriteRule ^services/?$ services.php [L,NC,QSA]
+  # نقشهٔ ۳۰۱: صفحهٔ فرود «خدمات» به دستهٔ کانونیکال /iran/services منتقل شده است.
+  RewriteRule ^services/?$ /iran/services [R=301,L,NC,QSD]
+  RewriteRule ^services\.php$ /iran/services [R=301,L,NC,QSD]
+  # نقشهٔ ۳۰۱: صفحهٔ نصب اپ (/pwa) به آدرس دانلود /app منتقل شده است.
+  RewriteRule ^pwa/?$ /app [R=301,L,NC,QSD]
+  RewriteRule ^pwa\.php$ /app [R=301,L,NC,QSD]
 
   # Mobile Flutter API (do not affect PWA routes)
   RewriteRule ^api/v1/index\.php$ - [L]
@@ -32,26 +37,24 @@ Options -MultiViews -Indexes
   # User ↔ user chat API (AJAX)
   RewriteRule ^api/user_chat/?$ api/user_chat.php [L,NC,QSA]
 
-  # Force HTTPS (exclude localhost & 127.0.0.1 for local dev)
-  RewriteCond %{HTTPS} off
-  RewriteCond %{HTTP:X-Forwarded-Proto} !https
-  RewriteCond %{HTTP_HOST} !^localhost$ [NC]
-  RewriteCond %{HTTP_HOST} !^127\.0\.0\.1$
-  RewriteCond %{HTTP_HOST} !^localhost(:[0-9]+)?$ [NC]
-  RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:[0-9]+)?$
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-  # Remove www → non-www (skip localhost/IPs; keep HTTPS on redirect)
+  # canonical host + protocol در «یک مرحله» (نقشهٔ ۳۰۱ — ردیف ۱۴۱):
+  # www (با هر پروتکلی) مستقیماً به https بدون www می‌رود تا زنجیرهٔ
+  # http → www → non-www ساخته نشود.
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-  RewriteCond %1 !^localhost$ [NC]
-  RewriteCond %1 !^127\.0\.0\.1$
   RewriteCond %1 !^localhost(:[0-9]+)?$ [NC]
   RewriteCond %1 !^127\.0\.0\.1(:[0-9]+)?$
   RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
-  # صفحه نقشه مستقل طبق معماری سئو حذف شد → 410 Gone
-  RewriteRule ^listings/map/?$ - [G,L]
-  RewriteRule ^listings/map_view\.php$ - [G,L]
+  # Force HTTPS (exclude localhost & 127.0.0.1 for local dev)
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteCond %{HTTP_HOST} !^localhost(:[0-9]+)?$ [NC]
+  RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:[0-9]+)?$
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # نقشه مستقل حذف شد؛ آدرس آن در یک مرحله به صفحهٔ دسته/مکان معادل ۳۰۱ می‌شود (سند — Q19)
+  RewriteRule ^listings/map/?$ listings/map_view.php [L,NC,QSA]
+  RewriteRule ^listings/map_view\.php$ - [L,NC,QSA]
 
   # /exchange طبق سند به صفحه اصلی منتقل شده است
   RewriteRule ^exchange/?$ / [R=301,L]
@@ -60,6 +63,15 @@ Options -MultiViews -Indexes
   # دانلود اپلیکیشن — آدرس کانونیکال /app (طبق معماری سئو)
   RewriteRule ^app/?$ download.php [L,NC,QSA]
   RewriteRule ^download/?$ /app [R=301,L,NC]
+
+  # ── سایت‌مپ‌های تفکیک‌شده (سند معماری سئو — بخش ۷) ─────────────────────
+  # .xml → مولد PHP متناظر؛ sitemap.php و sitemap-main.xml قدیمی → 301 به ایندکس.
+  RewriteRule ^sitemap\.xml$ sitemap-index.php [L,NC]
+  RewriteRule ^sitemap\.php$ /sitemap.xml [R=301,L,NC]
+  RewriteRule ^sitemap-main\.xml$ /sitemap.xml [R=301,L,NC]
+  RewriteRule ^sitemap-(locations|categories|brands|swap|shops|pages)\.xml$ sitemap-$1.php [L,NC]
+  RewriteRule ^sitemap-ads-([0-9]+)\.xml$ sitemap-ads.php?chunk=$1 [L,NC,QSA]
+  RewriteRule ^sitemap-ads\.xml$ sitemap-ads.php [L,NC,QSA]
 
   # ── نقشه ریدایرکت مهاجرت (سند معماری سئو — بخش ۱۱) ─────────────────────
   # آدرس‌های قدیمی/تودرتوی دسته‌ها → کانونیکال /iran/{leaf}.
@@ -72,8 +84,12 @@ Options -MultiViews -Indexes
   RewriteCond %{QUERY_STRING} !(?:^|&)city= [NC]
   RewriteRule ^electronics/mobile-tablet/mobile-phones/?$ /iran/mobile-phones [R=301,L,NC,QSD]
 
-  # صفحه اصلی آگهی‌ها: /listings → صفحه کانونیکال کشور /iran
+  # صفحه اصلی آگهی‌ها: /listings (بدون پارامتر) → کانونیکال کشور /iran
+  # با پارامتر (city/cat/q) → روتر صفحهٔ اصلی، تا در یک مرحله به مسیر کانونیکال
+  # /{location}/{category} ۳۰۱ شود (نقشهٔ ۳۰۱ — ردیف‌های ۱۲۰-۱۲۲).
+  RewriteCond %{QUERY_STRING} ^$
   RewriteRule ^listings/?$ /iran [R=301,L,NC,QSD]
+  RewriteRule ^listings/?$ index.php [L,QSA]
   RewriteRule ^listings\.php$ /iran [R=301,L,NC,QSD]
   RewriteRule ^listings/all/?$ /iran [R=301,L,NC,QSD]
   RewriteRule ^listings/all\.php$ /iran [R=301,L,NC,QSD]
@@ -153,9 +169,8 @@ Options -MultiViews -Indexes
   # Remove .php extension (prioritize files over directories)
   RewriteCond %{REQUEST_FILENAME}.php -f
   RewriteRule ^([^/]+)/?$ $1.php [L,QSA]
-  
-  # PWA install landing page
-  RewriteRule ^pwa/?$ pwa.php [L,NC,QSA]
+
+  # توجه: /pwa طبق نقشه مهاجرت (بخش ۱۱) با ۳۰۱ به /app منتقل می‌شود و بالاتر در همین فایل مدیریت شده است.
 
   # توجه: /listings و /listings/ طبق نقشه مهاجرت (بخش ۱۱) با ۳۰۱ به /iran منتقل می‌شوند
   # و بالاتر در همین فایل مدیریت شده‌اند.

@@ -16,6 +16,12 @@ if (in_array(strtolower($slug), ['test', 'test-final', 'about-gol', 'seo-test-pa
     exit;
 }
 
+// نقشهٔ ۳۰۱: صفحهٔ CMS دستیار هوش مصنوعی به آدرس کانونیکال /ai-assistant منتقل شده است
+if (strtolower($slug) === 'ai-assistant') {
+    header('Location: ' . rtrim(APP_URL, '/') . '/ai-assistant', true, 301);
+    exit;
+}
+
 $page = DB::fetch(
     'SELECT * FROM content_pages WHERE slug = ? AND status = "published" LIMIT 1',
     [$slug]

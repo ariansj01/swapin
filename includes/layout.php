@@ -60,17 +60,9 @@ require_once __DIR__ . '/seo.php';
 require_once __DIR__ . '/dashboard_layout.php';
 
 function render_head(string $title = '', string $desc = '', array $seo = []): void {
-    if ($title) {
-        $safeTitle = h($title);
-
-        if (mb_strpos($title, APP_NAME) !== false) {
-            $t = $safeTitle;
-        } else {
-            $t = $safeTitle . ' — ' . APP_NAME;
-        }
-    } else {
-        $t = APP_NAME . ' — بازار تعویض هوشمند';
-    }
+    // سئو: تایتل طبق الگوی هر صفحه ساخته می‌شود و نام برند در انتهای آن نمی‌آید
+    // (شیت «قالب تایتل و H1»). بریدن خودکار تایتل با «…» هم انجام نمی‌شود.
+    $t         = $title !== '' ? h($title) : APP_NAME . ' — بازار تعویض هوشمند';
     $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواَپین مبادله کنید — بازار تعویض هوشمند.';
     $url       = APP_URL;
     $canonical = h(seo_resolve_canonical($seo['canonical'] ?? null));

@@ -167,6 +167,24 @@ $related = DB::fetchAll(
     [$listing['category_id'], $id]
 );
 
+// تکمیل «آگهی‌های مشابه» با همان منطق پر کردن صفحه‌های لیستی (سند — ۶-۵ و Q17):
+// اگر آگهی کافی در دسته‌ی دقیق نبود، از سطوح بالاتر مکان و سپس دسته پر می‌شود.
+if (count($related) < 4 && function_exists('swaapin_fallback_listings')) {
+    $relLocRow = null;
+    if (!empty($listing['city']) && function_exists('swaapin_location_by_name')) {
+        $relLocRow = swaapin_location_by_name((string) $listing['city'], 'city')
+            ?? swaapin_location_by_name((string) $listing['city'], 'province')
+            ?? swaapin_location_by_name((string) $listing['city'], 'region')
+            ?? swaapin_location_by_name((string) $listing['city'], 'neighborhood');
+    }
+    $relCatRow  = DB::fetch('SELECT id, name, parent_id FROM categories WHERE id = ? LIMIT 1', [(int) $listing['category_id']]);
+    $relExclude = array_merge([(int) $listing['id']], array_map(static fn($r) => (int) $r['id'], $related));
+    $relFill    = swaapin_fallback_listings($relLocRow, $relCatRow, $relExclude, 4 - count($related));
+    foreach ($relFill['rows'] as $r) {
+        $related[] = $r;
+    }
+}
+
 // Handle offer submission
 $offerError   = '';
 $offerSuccess = '';
@@ -378,7 +396,9 @@ if ($_appBasePath !== '' && str_starts_with($requestedPath, $_appBasePath)) {
 }
 if ($requestedPath !== '' && $requestedPath !== $listingPath) {
     parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $_qs);
-    unset($_qs['id']);
+    // پارامترهای داخلی مسیریابی نباید به آدرس مقصد منتقل شوند
+    unset($_qs['id'], $_qs['slug_path'], $_qs['redirect_slugs']);
+    // پارامترهای معنادار فیلتر (q, want, sort, page, ...) حفظ می‌شوند
     header('Location: ' . APP_URL . $listingPath . ($_qs ? '?' . http_build_query($_qs) : ''), true, 301);
     exit;
 }

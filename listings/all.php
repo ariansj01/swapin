@@ -36,6 +36,8 @@ $pmax      = (int)($_GET['price_max']  ?? 0);
 $sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
 $page      = max(1, (int)($_GET['page'] ?? 1));
 $timeAgo   = in_array($_GET['time_ago'] ?? '', ['3h','12h','1d','3d','1w']) ? $_GET['time_ago'] : '';
+// دکمهٔ «فقط معاوضه» (کارت A16.2 — بند ۴): فیلتر پارامتری ?deal=swap برای لندینگ ثبت‌نشده
+$dealSwap  = (clean($_GET['deal'] ?? '') === 'swap');
 
 if ($locMode === 'nearby' && $nearbyCitiesList === []) {
     $locMode = '';
@@ -73,6 +75,25 @@ $catId    = $category ? (int)$category['id'] : null;
 $catScopeIds = [];
 if ($catId > 0) {
     $catScopeIds = swaapin_category_descendant_ids($catId);
+}
+
+// لندینگ معاوضه — strict routing (کارت A16.2 — بند ۳): فقط توکن ثبت‌شده در جدول
+// `swap_landings` سرو می‌شود؛ لندینگ فقط از لیست کیورد تأییدشده ساخته می‌شود،
+// نه از ترکیب خودکار فیلترها. توکن ثبت‌نشده/نامعتبر → ۳۰۱ به صفحهٔ دسته/مکان.
+$swapLanding = null;
+if ($swapToken !== '') {
+    $swapRowLoc  = $locRow ? (string) $locRow['slug'] : 'iran';
+    $swapLanding = ($swapInfo && function_exists('swaapin_swap_landing_find'))
+        ? swaapin_swap_landing_find($swapRowLoc, $swapToken)
+        : null;
+    if ($swapLanding === null) {
+        $swapRedir = $locRow ? rtrim(swaapin_location_url($locRow), '/') : APP_URL;
+        if ($category) {
+            $swapRedir .= '/' . $category['slug'];
+        }
+        header('Location: ' . $swapRedir, true, 301);
+        exit;
+    }
 }
 
 // برند/مدل/تیپ (سند — بخش ۱ و ۲): /{location}/{category}/{brand}[/{model}[/{trim}]]
@@ -289,59 +310,106 @@ foreach ($catalogChain as $node) {
     $catChainCrumbs[] = ['name' => (string) $node['name'], 'url' => $catalogBaseUrl];
 }
 
-$titleParts = [];
-$titleMode = 'معاوضه';
+// ── سئو: تایتل/H1/متا طبق شیت «قالب تایتل و H1» (کارت A15) ──
+// قاعده‌ها: بدون «معاوضه» در صفحه‌های دسته؛ بدون زنجیره‌ی بردکرامب در تایتل؛
+// صفحه‌ی سراسری (iran) بدون «در {مکان}»؛ {مکان} نام فارسی؛ بدون نام برند در انتهای تایتل؛
+// هیچ تایتلی با «…» بریده نمی‌شود.
+$isGlobalLoc   = ($locRow && (string) ($locRow['level'] ?? '') === 'country');
+$locTitleName  = $locRow ? (string) $locRow['name'] : '';
+$cityTitleName = '';
+if ($city !== '') {
+    $cityLoc = swaapin_location_by_name($city, 'city')
+        ?? swaapin_location_by_name($city, 'province')
+        ?? swaapin_location_by_slug($city);
+    $cityTitleName = $cityLoc ? (string) $cityLoc['name'] : $city;
+}
+if ($isGlobalLoc) {
+    $locTitleName = '';
+} elseif ($locTitleName === '' && $cityFilter !== '') {
+    $locTitleName = $cityTitleName;
+}
+$locSuffix     = $locTitleName !== '' ? ' در ' . $locTitleName : '';
+$catTitleName  = $category ? category_label((string) $category['slug'], (string) $category['name']) : '';
+$brandNodeName = isset($catalogChain[0]) ? trim((string) $catalogChain[0]['name']) : '';
+$modelNodeName = isset($catalogChain[1]) ? trim((string) $catalogChain[1]['name']) : '';
+$trimNodeName  = isset($catalogChain[2]) ? trim((string) $catalogChain[2]['name']) : '';
+
+$title = '';
+$h1    = '';
 if ($swapInfo) {
-    // لندینگ معاوضه — عنوان اختصاصی (سند — بخش ۴)
-    $titleParts[] = $catDisplayName !== '' ? ('معاوضه ' . $catDisplayName) : 'معاوضه';
-} elseif ($category) {
-    $titleParts[] = $titleMode . ' ' . ($catDisplayName ?: category_label($category['slug'], $category['name']));
-} else {
-    $titleParts[] = $titleMode . ' کالا';
-}
-if ($locName !== '') {
-    $titleParts[] = 'در ' . $locName;
-} elseif ($city) {
-    $titleParts[] = 'در ' . $city;
-} elseif ($locMode === 'nearby' && !empty($nearbyCitiesList)) {
-    $titleParts[] = 'در شهرهای نزدیک';
-}
-$title = implode(' | ', $titleParts) . ' | ' . APP_NAME;
-if (mb_strlen($title) > 65) {
-    $first = array_shift($titleParts);
-    $title = $first . ' | ' . APP_NAME;
-    if (mb_strlen($title) > 65) {
-        $title = mb_strimwidth($title, 0, 63, '…') . ' | ' . APP_NAME;
+    // لندینگ معاوضه (کارت A16.2 — تایتل و H1 نهایی از پنل لندینگ‌ها قابل بازنویسی است)
+    if ($swapLanding) {
+        $title = swaapin_swap_landing_title($swapLanding);
+        $h1    = swaapin_swap_landing_h1($swapLanding);
+    } else {
+        $title = 'معاوضه و تهاتر کالا' . $locSuffix;
+        $h1    = $title;
     }
-}
-if ($search) {
-    $searchTitle = 'نتایج برای «' . $search . '» | ' . APP_NAME;
-    $title = mb_strlen($searchTitle) > 65 ? mb_strimwidth($searchTitle, 0, 63, '…') : $searchTitle;
+} elseif ($search) {
+    $title = 'جستجوی «' . $search . '»' . $locSuffix;
+    $h1    = $title;
+} elseif ($trimNodeName !== '') {
+    $modelFull = trim($brandNodeName . ' ' . $modelNodeName . ' ' . $trimNodeName);
+    $title = 'قیمت و خرید و فروش ' . $modelFull . $locSuffix;
+    $h1    = 'خرید و فروش ' . $modelFull;
+} elseif ($modelNodeName !== '') {
+    $modelFull = trim($brandNodeName . ' ' . $modelNodeName);
+    $title = 'قیمت و خرید و فروش ' . $modelFull . $locSuffix;
+    $h1    = 'خرید و فروش ' . $modelFull . $locSuffix;
+} elseif ($brandNodeName !== '') {
+    $title = 'خرید و فروش ' . trim($catTitleName . ' ' . $brandNodeName) . $locSuffix;
+    $h1    = $title;
+} elseif ($catTitleName !== '') {
+    // دسته — «معاوضه» در تایتل نمی‌آید؛ دسته‌های استثنا الگوی خاص دارند (سند ۶-۲)
+    $catSlugForTitle = (string) $category['slug'];
+    if ($catSlugForTitle === 'apartment-rent' || $catSlugForTitle === 'villa-rent') {
+        $title = $catTitleName . $locSuffix;
+    } elseif ($catSlugForTitle === 'jobs') {
+        $title = 'آگهی استخدام' . $locSuffix;
+    } elseif ($catSlugForTitle === 'services') {
+        $title = 'خدمات' . $locSuffix;
+    } else {
+        $title = 'خرید و فروش ' . $catTitleName . $locSuffix;
+    }
+    $h1 = $title;
+} elseif ($locMode === 'nearby' && !empty($nearbyCitiesList)) {
+    $title = 'آگهی‌های خرید، فروش و معاوضه در شهرهای نزدیک';
+    $h1    = 'آگهی‌های شهرهای نزدیک';
+} elseif ($isGlobalLoc) {
+    // صفحه‌ی سراسری (iran) — بدون «در {مکان}»
+    $title = 'همه‌ی آگهی‌های خرید، فروش و معاوضه';
+    $h1    = 'همه‌ی آگهی‌ها';
+} else {
+    // صفحه‌ی مکان
+    $title = 'آگهی‌های خرید، فروش و معاوضه' . $locSuffix;
+    $h1    = $locTitleName !== '' ? 'آگهی‌های ' . $locTitleName : 'آگهی‌ها';
 }
 
-$descParts = [];
-if (!empty($catDisplayName)) {
-    $descParts[] = 'دسته‌بندی: ' . $catDisplayName;
-} else {
-    $descParts[] = 'بازار معاوضه کالا با کالا';
+// صفحه‌بندی: «{تایتل صفحه‌ی اول} - صفحه‌ی {n}» (سند — صفحه‌بندی)
+if ($page > 1) {
+    $title .= ' - صفحه‌ی ' . fmt_num($page);
 }
-if ($locName !== '') {
-    $descParts[] = 'مکان: ' . $locName;
-} elseif ($city) {
-    $descParts[] = 'شهر: ' . $city;
-} elseif ($locMode === 'nearby' && !empty($nearbyCitiesList)) {
-    $descParts[] = 'شهرهای نزدیک: ' . implode('، ', array_slice($nearbyCitiesList, 0, 3));
-}
+
+// متا دیسکریپشن — طبق شیت (بدون بریدن با «…»)
+$numFa = fmt_num($total);
 if ($search) {
-    $descParts[] = 'جستجو: ' . $search;
-}
-if ($swapTargetName !== '') {
-    $descParts[] = 'در ازای ' . $swapTargetName;
-}
-$descParts[] = 'در پلتفرم سواَپین ';
-$desc = implode(' - ', $descParts);
-if (mb_strlen($desc) > 160) {
-    $desc = mb_strimwidth($desc, 0, 158, '…');
+    $desc = 'جستجوی «' . $search . '»' . $locSuffix . ': ' . $numFa . ' آگهی خرید، فروش و معاوضه با عکس و قیمت.';
+} elseif ($swapInfo) {
+    $desc = $numFa . ' آگهی معاوضه و تهاتر' . ($catTitleName !== '' ? ' ' . $catTitleName : '') . $locSuffix
+        . '؛ کالای خود را با کالای دلخواه معاوضه کنید.';
+} elseif ($modelNodeName !== '') {
+    $desc = 'بازه‌ی قیمت ' . trim($brandNodeName . ' ' . $modelNodeName) . ' در آگهی‌های ' . ($locTitleName ?: 'ایران')
+        . ': ' . $numFa . ' آگهی خرید، فروش و معاوضه با عکس و جزئیات.';
+} elseif ($brandNodeName !== '') {
+    $desc = $numFa . ' آگهی ' . trim($catTitleName . ' ' . $brandNodeName) . $locSuffix
+        . '؛ قیمت، خرید و فروش با عکس و جزئیات.';
+} elseif ($catTitleName !== '') {
+    $desc = $numFa . ' آگهی ' . $catTitleName . $locSuffix . '؛ خرید، فروش و معاوضه ' . $catTitleName
+        . ' با عکس و قیمت. آگهی رایگان ثبت کنید.';
+} elseif ($isGlobalLoc) {
+    $desc = 'همه‌ی آگهی‌های خرید، فروش و معاوضه در سواپین: ملک، خودرو، موبایل و هزاران کالا با عکس و جزئیات.';
+} else {
+    $desc = $numFa . ' آگهی خرید، فروش و معاوضه' . $locSuffix . ': ملک، خودرو، موبایل و موارد دیگر با عکس و قیمت.';
 }
 
 // Canonical: بدون پارامترها؛ صفحه‌بندی Self-canonical (طبق سند پارامترها و صفحه‌بندی)
@@ -364,7 +432,7 @@ if ($locRow) {
 }
 // فیلترهای پارامتری (sort/q/min_price/city/...) → noindex,follow و کانونیکال به صفحه بدون پارامتر
 $hasOtherFilters = $search || $cityFilter !== '' || $locMode === 'nearby' || $wantType || $condition
-    || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $timeAgo !== '';
+    || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $timeAgo !== '' || $dealSwap;
 if (!$locRow && $category && !$hasOtherFilters && empty($catalogChain)) {
     $baseCanonical = category_url($category['slug']);
 }
@@ -378,9 +446,15 @@ if (!$hasOtherFilters && $page > 1) {
     // صفحه‌بندی Self-canonical: هر صفحه به خودش اشاره می‌کند، نه به صفحه اول
     $canonical = rtrim($baseCanonical, '/') . '?page=' . $page;
 }
-// قاعده حداقل ۶ آگهی فعال برای ایندکس صفحات مکان/دسته/برند/مدل/لندینگ معاوضه (سند — بخش ۷)
+// قاعده حداقل ۶ آگهی فعال برای ایندکس صفحات مکان/دسته/برند/مدل (سند — بخش ۷)
+// لندینگ معاوضه: وضعیت ایندکس از ردیف پنل (index/noindex/auto) تعیین می‌شود.
 $pageIndexable = null;
-if (!$hasOtherFilters && !$swapModelName && ($locRow || $category || $swapInfo) && function_exists('seo_list_page_indexable')) {
+if ($swapLanding && function_exists('swaapin_swap_landing_indexable')) {
+    $pageIndexable = swaapin_swap_landing_indexable($swapLanding);
+    if ($pageIndexable && function_exists('swaapin_swap_landing_mark_indexed')) {
+        swaapin_swap_landing_mark_indexed($swapLanding, $total);
+    }
+} elseif (!$hasOtherFilters && !$swapModelName && ($locRow || $category) && function_exists('seo_list_page_indexable')) {
     $pageIndexable = seo_list_page_indexable($baseCanonical, $total);
 }
 $robotsMeta = ($hasOtherFilters || $pageIndexable === false) ? 'noindex, follow' : null;
@@ -388,10 +462,12 @@ $robotsMeta = ($hasOtherFilters || $pageIndexable === false) ? 'noindex, follow'
 // بخش ۱۰: آگهی‌های جایگزین در صفحات کم‌آگهی (رندر سمت سرور؛ بدون تغییر URL/Title/H1)
 $fallbackTitle    = '';
 $fallbackListings = [];
-if ($page === 1 && !$hasOtherFilters && $total < SWAAPIN_MIN_LISTINGS_FOR_INDEX
+if ($page === 1 && !$hasOtherFilters && $total < SWAAPIN_MIN_LISTINGS_DISPLAY
     && function_exists('swaapin_fallback_listings')) {
     $shownIds = array_map(static fn($l) => (int) $l['id'], $listings);
-    $fb = swaapin_fallback_listings($locRow, $category, $shownIds, 8);
+    // پر کردن بقیه صفحه: یک سطح مکان بالاتر، سپس یک سطح دسته بالاتر (بدون تکرار)
+    $need = max(1, $perPage - $total);
+    $fb = swaapin_fallback_listings($locRow, $category, $shownIds, $need);
     $fallbackListings = $fb['rows'];
     $fallbackTitle    = $fb['title'];
 }
@@ -686,35 +762,67 @@ render_navbar($user);
     <section aria-label="همه آگهی‌ها" class="all-listings-results">
       <header class="all-listings-results__header d-flex align-center mb-5">
         <h1 class="all-listings-results__title">
-          <?= h($title) ?>
+          <?= h($h1 !== '' ? $h1 : $title) ?>
         </h1>
         <span class="badge badge-primary"><?= fmt_num($total) ?> آگهی</span>
       </header>
 
       <?php if ($swapInfo): ?>
       <p class="all-listings-results__intro text-muted mb-5">
-        آگهی‌های معاوضه<?= $catDisplayName !== '' ? ' ' . h($catDisplayName) : '' ?><?= $locName !== '' ? ' در ' . h($locName) : '' ?><?= $swapTargetName !== '' ? ' در ازای ' . h($swapTargetName) : '' ?>.
+        <?= h($swapLanding && function_exists('swaapin_swap_landing_intro')
+            ? swaapin_swap_landing_intro($swapLanding)
+            : ('آگهی‌های معاوضه' . ($catDisplayName !== '' ? ' ' . $catDisplayName : '') . ($locName !== '' ? ' در ' . $locName : '') . '.')) ?>
       </p>
       <?php endif; ?>
 
       <?php
-      // لینک متقابل صفحه دسته‌بندی و لندینگ معاوضه (سند — بخش ۴)
-      $crossLink = null;
       $crossBase = $locRow ? rtrim(swaapin_location_url($locRow), '/') : APP_URL;
+      // لینک متقابل (کارت A16.2 — بند ۵): صفحهٔ لندینگ به صفحهٔ دستهٔ همان مکان لینک می‌دهد
+      $crossLink = null;
       if ($swapInfo && $category && empty($catalogChain)) {
           $crossLink = ['url' => $crossBase . '/' . $category['slug'], 'label' => 'مشاهده همه آگهی‌های ' . ($catDisplayName ?: $category['name'])];
-      } elseif (!$swapInfo && $category && !$hasOtherFilters) {
-          $crossLink = ['url' => $crossBase . '/list/swap-' . $category['slug'], 'label' => 'آگهی‌های معاوضه ' . ($catDisplayName ?: $category['name'])];
+      }
+      // دکمهٔ «فقط معاوضه» (کارت A16.2 — بند ۴)
+      $swapDeal = null;
+      if ($category && !$swapInfo && !$hasOtherFilters) {
+          $swapDealLoc = $locRow ? (string) $locRow['slug'] : 'iran';
+          $swapDealRow = function_exists('swaapin_swap_landing_for_category')
+              ? swaapin_swap_landing_for_category($swapDealLoc, (string) $category['slug'])
+              : null;
+          if ($swapDealRow && function_exists('swaapin_swap_landing_indexable') && swaapin_swap_landing_indexable($swapDealRow)) {
+              // لندینگ ایندکس‌پذیر است → لینک واقعی به لندینگ معاوضه
+              $swapDeal = ['href' => swaapin_swap_landing_url($swapDealRow), 'label' => 'فقط معاوضه'];
+          } else {
+              // لندینگ ثبت/ایندکس نشده → دکمهٔ فیلتر (noindex، canonical به صفحهٔ دسته)
+              $swapDealBase = $locRow ? ($crossBase . '/' . $category['slug']) : category_url((string) $category['slug']);
+              $swapDeal = ['href' => null, 'filter' => $swapDealBase . '?deal=swap', 'label' => 'فقط معاوضه'];
+          }
       }
       ?>
       <?php if ($crossLink): ?>
       <p class="mb-5"><a href="<?= h($crossLink['url']) ?>" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left-right"></i> <?= h($crossLink['label']) ?></a></p>
       <?php endif; ?>
+      <?php if ($swapDeal): ?>
+        <?php if (!empty($swapDeal['href'])): ?>
+        <p class="mb-5"><a href="<?= h($swapDeal['href']) ?>" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left-right"></i> <?= h($swapDeal['label']) ?></a></p>
+        <?php else: ?>
+        <p class="mb-5"><button type="button" class="btn btn-ghost btn-sm" onclick="location.href='<?= h($swapDeal['filter']) ?>'"><i class="bi bi-arrow-left-right"></i> <?= h($swapDeal['label']) ?></button></p>
+        <?php endif; ?>
+      <?php endif; ?>
 
       <?php if (empty($listings)): ?>
+      <?php
+      // پیام اختصاصی صفحه‌های بدون آگهی (سند — بخش ۶-۵)
+      $emptyScope = ($locName !== '' && ($locRow['level'] ?? '') !== 'country') ? ' در ' . $locName : '';
+      if ($swapTargetName !== '') {
+          $emptyScope = ' برای ' . $swapTargetName . $emptyScope;
+      } elseif ($catDisplayName !== '') {
+          $emptyScope = ' ' . $catDisplayName . $emptyScope;
+      }
+      ?>
       <div class="empty-state">
         <i class="bi bi-search"></i>
-        <h3>آگهی‌ای یافت نشد</h3>
+        <h3>فعلاً آگهی<?= h($emptyScope) ?> نداریم</h3>
         <p>فیلترها را تغییر دهید یا اولین نفری باشید که آگهی ثبت می‌کند!</p>
         <a href="<?= APP_URL ?>/listings/create" class="btn btn-primary">ثبت آگهی</a>
       </div>

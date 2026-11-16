@@ -2182,7 +2182,7 @@ function listing_slug(string $title): string {
         'store', 'orders', 'chat', 'store-offers', 'shops', 'search', 'shop', 'support', 'pwa', 'ai-lab', 'sep',
         'iso', 'listing', 'listings', 'auth', 'page', 'src', 'css', 'js', 'assets', 'scripts', 'ops', 'blog',
         'v', 's', 'list', 'iran', 'new', 'app', 'index', 'profile', 'dashboard', 'trades', 'wallet', 'sitemap',
-        'clubs', 'club',
+        'clubs', 'club', 'community',
     ];
 
     if ($title === '' || in_array($title, $reserved, true) || ctype_digit($title)) {
@@ -2781,3 +2781,4 @@ require_once __DIR__ . '/store_swap_offers.php';
 require_once __DIR__ . '/google_auth.php';
 require_once __DIR__ . '/sep_payment.php';
 require_once __DIR__ . '/clubs.php';
+require_once __DIR__ . '/swap_landings.php';
