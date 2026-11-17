@@ -312,7 +312,18 @@ function r_neighborhood_diag(PDO $pdo): void
 }
 
 // ── ساخت نقشه مطلوب (نام شهر → نام استان) ─────────────────────────────────────
+// علاوه بر تطبیق دقیق (name)، نگاشت «نرمال‌شده» هم ساخته می‌شود تا اختلاف
+// نیم‌فاصله (ZWNJ) بین نام دیتابیس و نگاشت (مثل «مسجدسلیمان»/«بندر‌امیر»/«سی‌سنگان»)
+// باعث جاافتادن شهر واقعی و غیرفعال‌شدن آن نشود.
+function r_norm_name(string $s): string {
+    $s = str_replace(["\xE2\x80\x8C", "\xE2\x80\x8B", "\xE2\x80\x8D", "\xEF\xBB\xBF"], '', $s);
+    $s = str_replace(['ي', 'ك', 'ة', 'ۀ', 'أ', 'إ', 'آ', 'ٱ'], ['ی', 'ک', 'ه', 'ه', 'ا', 'ا', 'ا', 'ا'], $s);
+    $s = preg_replace('/\s+/u', '', $s);
+    return trim((string)$s);
+}
+
 $desired = [];
+$desiredNorm = [];
 $ambiguous = [];
 foreach (iran_provinces() as $prov) {
     $prov = (string)$prov;
@@ -321,15 +332,27 @@ foreach (iran_provinces() as $prov) {
         if ($city === '') {
             continue;
         }
-        if (isset($desired[$city]) && $desired[$city] !== $prov) {
-            $ambiguous[$city] = true;
+        $key = r_norm_name($city);
+        if ($key === '') {
+            continue;
+        }
+        if (isset($desiredNorm[$key]) && $desiredNorm[$key] !== $prov) {
+            $ambiguous[$key] = true;
         } else {
+            $desiredNorm[$key] = $prov;
+        }
+        if (!isset($desired[$city])) {
             $desired[$city] = $prov;
         }
     }
 }
-foreach (array_keys($ambiguous) as $c) {
-    unset($desired[$c]);
+foreach (array_keys($ambiguous) as $k) {
+    unset($desiredNorm[$k]);
+    foreach (array_keys($desired) as $name) {
+        if (r_norm_name((string)$name) === $k) {
+            unset($desired[$name]);
+        }
+    }
 }
 
 // ── خواندن وضعیت فعلی ────────────────────────────────────────────────────────
@@ -351,7 +374,7 @@ foreach ($cities as $c) {
     $name = (string)$c['name'];
     $byName[$name][] = $c;
 
-    $exp = $desired[$name] ?? null;
+    $exp = $desired[$name] ?? $desiredNorm[r_norm_name($name)] ?? null;
     if ($exp === null) {
         continue;
     }
