@@ -97,6 +97,8 @@ foreach (['listing_attrs', 'brand_id', 'model_id'] as $need) {
     }
 }
 
+echo "\n=== ستون‌های جدول listings ===\n  " . implode(', ', $cols) . "\n\n";
+
 if (!$pdo->query('SHOW TABLES LIKE "catalog_nodes"')->fetchColumn()) {
     fwrite(STDERR, "جدول catalog_nodes وجود ندارد. اول «php tools/catalog-seed.php --apply» را اجرا کن.\n");
     exit(1);
@@ -180,6 +182,18 @@ foreach ($catIds as $catId) {
         $c = $cq->fetch() ?: ['t' => 0, 'a' => 0];
         $noDataCats[] = sprintf('%s (id=%d) زیردرخت=%d برگ درخت، کل آگهی=%d، دارای attrs=%d',
             $catName, $catId, count($scope), (int) $c['t'], (int) $c['a']);
+
+        // نمونهٔ آگهی‌ها برای تشخیص این‌که متن برند/مدل کجا ذخیره شده است.
+        $sq = $pdo->prepare(
+            "SELECT id, title, listing_attrs FROM listings WHERE category_id IN ({$ph}) ORDER BY id DESC LIMIT 5"
+        );
+        $sq->execute($scope);
+        foreach ($sq->fetchAll() as $s) {
+            printf("      نمونه id=%-7d title=%-50s attrs=%s\n",
+                (int) $s['id'],
+                mb_substr(trim((string) $s['title']), 0, 50),
+                $s['listing_attrs'] === null ? 'NULL' : mb_substr((string) $s['listing_attrs'], 0, 60));
+        }
         continue;
     }
 
