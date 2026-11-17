@@ -8,6 +8,9 @@
  * هر آگهی را به گرهٔ متناظر در catalog_nodes وصل می‌کند و ستون‌های
  * brand_id/model_id آگهی را پر می‌کند.
  *
+ * نکتهٔ مهم: گره‌های کاتالوگ روی دستهٔ والد ثبت می‌شوند، اما آگهی‌ها معمولاً روی
+ * برگ‌های زیرمجموعه می‌نشینند؛ بنابراین دامنهٔ آگهی‌ها کل زیردرخت هر دستهٔ کاتالوگ است.
+ *
  * پیش‌نیاز: اول «php tools/catalog-seed.php --apply» اجرا شود تا گره‌های پایه ساخته شوند.
  * این ابزار هیچ گرهٔ جدیدی نمی‌سازد (طبق تصمیم پروژه: فقط کیوردهای تأییدشده).
  *
@@ -67,6 +70,23 @@ function bf_norm(string $s): string {
     return trim(mb_strtolower((string) $s, 'UTF-8'));
 }
 
+/** همهٔ شناسه‌های زیردرخت یک دسته (شامل خودش). */
+function bf_subtree(int $root, array $childrenMap): array {
+    $ids   = [$root];
+    $queue = [$root];
+    $safety = 2000;
+    while ($queue && $safety-- > 0) {
+        $pid = (int) array_shift($queue);
+        foreach ($childrenMap[$pid] ?? [] as $cid) {
+            if (!in_array($cid, $ids, true)) {
+                $ids[] = $cid;
+                $queue[] = $cid;
+            }
+        }
+    }
+    return $ids;
+}
+
 // ── بررسی ستون‌های لازم ───────────────────────────────────────────────────────
 $colRows = $pdo->query('SHOW COLUMNS FROM `listings`')->fetchAll();
 $cols = array_map(static fn(array $r): string => (string) ($r['Field'] ?? ''), $colRows);
@@ -76,8 +96,6 @@ foreach (['listing_attrs', 'brand_id', 'model_id'] as $need) {
         exit(1);
     }
 }
-
-$hasTrim = in_array('trim_id', $cols, true);
 
 if (!$pdo->query('SHOW TABLES LIKE "catalog_nodes"')->fetchColumn()) {
     fwrite(STDERR, "جدول catalog_nodes وجود ندارد. اول «php tools/catalog-seed.php --apply» را اجرا کن.\n");
@@ -90,16 +108,32 @@ if (!$catIds) {
     exit(1);
 }
 
+// نقشهٔ درخت دسته‌ها برای محاسبهٔ زیردرخت
+$catInfo     = [];
+$childrenMap = [];
+foreach ($pdo->query('SELECT id, slug, name, parent_id FROM categories')->fetchAll() as $r) {
+    $id = (int) $r['id'];
+    $catInfo[$id] = [
+        'slug'      => (string) $r['slug'],
+        'name'      => (string) $r['name'],
+        'parent_id' => (int) $r['parent_id'],
+    ];
+    $childrenMap[(int) $r['parent_id']][] = $id;
+}
+
 echo $apply ? "حالت اعمال (--apply)\n" : "حالت آزمایشی (dry-run) — برای اعمال --apply بزنید\n";
 
 $grand = ['total' => 0, 'no_brand' => 0, 'brand_ok' => 0, 'model_ok' => 0];
 $unmatchedBrand = [];
 $unmatchedModel = [];
 $upd = $pdo->prepare('UPDATE listings SET brand_id = ?, model_id = ? WHERE id = ?');
+$noDataCats = [];
 
 foreach ($catIds as $catId) {
-    $catId = (int) $catId;
-    $catName = (string) ($pdo->query('SELECT name FROM categories WHERE id = ' . $catId)->fetchColumn() ?: $catId);
+    $catId   = (int) $catId;
+    $catName = $catInfo[$catId]['name'] ?? (string) $catId;
+    $scope   = bf_subtree($catId, $childrenMap);
+    $ph      = implode(',', array_fill(0, count($scope), '?'));
 
     // گره‌های برند/مدل این دسته
     $brandByKey  = [];   // norm(name) => id
@@ -134,10 +168,18 @@ foreach ($catIds as $catId) {
         continue;
     }
 
-    $lq = $pdo->prepare('SELECT id, listing_attrs FROM listings WHERE category_id = ? AND listing_attrs IS NOT NULL');
-    $lq->execute([$catId]);
+    $lq = $pdo->prepare(
+        "SELECT id, listing_attrs FROM listings WHERE category_id IN ({$ph}) AND listing_attrs IS NOT NULL"
+    );
+    $lq->execute($scope);
     $rows = $lq->fetchAll();
     if (!$rows) {
+        // چرا صفر؟ کل آگهی‌های زیردرخت و تعداد آگهی‌های دارای attrs را گزارش کن.
+        $cq = $pdo->prepare("SELECT COUNT(*) AS t, SUM(listing_attrs IS NOT NULL) AS a FROM listings WHERE category_id IN ({$ph})");
+        $cq->execute($scope);
+        $c = $cq->fetch() ?: ['t' => 0, 'a' => 0];
+        $noDataCats[] = sprintf('%s (id=%d) زیردرخت=%d برگ درخت، کل آگهی=%d، دارای attrs=%d',
+            $catName, $catId, count($scope), (int) $c['t'], (int) $c['a']);
         continue;
     }
 
@@ -190,8 +232,8 @@ foreach ($catIds as $catId) {
         }
     }
 
-    printf("دسته %-16s (id=%d): کل=%d  بدون‌برند=%d  برند‌متصل=%d  مدل‌متصل=%d\n",
-        $catName, $catId, $stat['total'], $stat['no_brand'], $stat['brand_ok'], $stat['model_ok']);
+    printf("دسته %-16s (id=%d) دامنه=%d: کل=%d  بدون‌برند=%d  برند‌متصل=%d  مدل‌متصل=%d\n",
+        $catName, $catId, count($scope), $stat['total'], $stat['no_brand'], $stat['brand_ok'], $stat['model_ok']);
 
     foreach ($stat as $k => $v) {
         $grand[$k] += $v;
@@ -203,6 +245,13 @@ printf("  کل آگهی‌های بررسی‌شده : %d\n", $grand['total']);
 printf("  بدون برند            : %d\n", $grand['no_brand']);
 printf("  برند متصل شد        : %d\n", $grand['brand_ok']);
 printf("  مدل متصل شد         : %d\n", $grand['model_ok']);
+
+if ($noDataCats) {
+    echo "\n=== دسته‌های کاتالوگ که آگهیِ دارای attrs نداشتند : " . count($noDataCats) . " ===\n";
+    foreach ($noDataCats as $line) {
+        echo '  - ' . $line . "\n";
+    }
+}
 
 if ($unmatchedBrand) {
     arsort($unmatchedBrand);
@@ -217,6 +266,25 @@ if ($unmatchedModel) {
     foreach (array_slice($unmatchedModel, 0, 30, true) as $name => $c) {
         printf("  %-28s %d\n", $name, $c);
     }
+}
+
+// ── گزارش تشخیصی: آگهی‌ها در کدام دسته‌ها هستند؟ ───────────────────────────────
+echo "\n=== تشخیص: توزیع آگهی در دسته‌ها (۱۵ مورد اول) ===\n";
+try {
+    $dist = $pdo->query(
+        "SELECT l.category_id, COUNT(*) AS c, SUM(l.listing_attrs IS NOT NULL) AS a
+         FROM listings l GROUP BY l.category_id ORDER BY c DESC LIMIT 15"
+    )->fetchAll();
+    foreach ($dist as $row) {
+        $cid = (int) $row['category_id'];
+        $slug = $catInfo[$cid]['slug'] ?? '?';
+        $name = $catInfo[$cid]['name'] ?? '?';
+        $pid  = $catInfo[$cid]['parent_id'] ?? -1;
+        printf("  id=%-8d parent=%-8d %-14s %-22s کل=%-5d attrs=%d\n",
+            $cid, $pid, $slug, $name, (int) $row['c'], (int) $row['a']);
+    }
+} catch (Throwable $e) {
+    echo '  (گزارش تشخیصی ناموفق: ' . $e->getMessage() . ")\n";
 }
 
 // ── گزارش تأیید (توزیع آگهی به تفکیک برند/مدل) ────────────────────────────────
