@@ -3,8 +3,8 @@
  * سواپین — ترمیم جدول مکان‌ها (locations)
  *
  * این ابزار ردیف‌های جدول «locations» را با منبع صحیح داده هم‌راستا می‌کند:
- *   ۱) شهرهایی که زیر استان اشتباه یا زیر «ایران» افتاده‌اند به استان درست منتقل می‌شوند
- *      (منبع درستی: iran_cities_by_province() در includes/store_orders.php).
+ *   ۱) شهرهایی که زیر استان اشتباه یا زیر «ایران» افتاده‌اند به استان درست منتقل و فعال می‌شوند
+ *      (منبع درستی: iran_cities_by_province() در includes/store_orders.php که کامل شده است).
  *   ۲) شهرهای تکراری (هم‌نام و در یک استان) در یک ردیف ادغام و محله‌هایشان منتقل می‌شوند.
  *   ۳) استان‌های عضو منطقه «شمال» (گیلان/مازندران/گلستان) زیر سرور «شمال» قرار می‌گیرند.
  *
@@ -342,9 +342,10 @@ foreach (r_all($pdo, "SELECT id, parent_id, level, name FROM locations") as $r) 
     }
 }
 
-$cities = r_all($pdo, "SELECT id, parent_id, name FROM locations WHERE level='city'");
+$cities = r_all($pdo, "SELECT id, parent_id, name, is_active FROM locations WHERE level='city'");
 
 $moves = [];
+$activate = [];
 $byName = [];
 foreach ($cities as $c) {
     $name = (string)$c['name'];
@@ -359,6 +360,10 @@ foreach ($cities as $c) {
         continue;
     }
     if ((int)$c['parent_id'] === $expId) {
+        // والد درست است؛ فقط اگر در اجرای قبلی غیرفعال شده دوباره فعال شود
+        if ((int)($c['is_active'] ?? 1) === 0) {
+            $activate[] = ['id' => (int)$c['id'], 'name' => $name, 'prov' => $exp];
+        }
         continue;
     }
     $parent = $locById[(int)$c['parent_id']] ?? null;
@@ -489,6 +494,14 @@ foreach ($moves as $m) {
     printf("  #%d %-16s %s  ->  %s\n", $m['id'], $m['name'], $m['from'], $m['to']);
 }
 
+echo "\n=== planned city activations (already under correct province) : " . count($activate) . " ===\n";
+foreach (array_slice($activate, 0, 25) as $a) {
+    printf("  #%d %-16s (%s)\n", $a['id'], $a['name'], $a['prov']);
+}
+if (count($activate) > 25) {
+    printf("  ... و %d مورد دیگر\n", count($activate) - 25);
+}
+
 echo "\n=== planned duplicate merges : " . count($dupes) . " ===\n";
 foreach ($dupes as $name => $ids) {
     printf("  %-16s keep #%d  remove %s\n", $name, $ids[0], implode(', ', array_map(static fn($i) => '#' . $i, array_slice($ids, 1))));
@@ -512,7 +525,7 @@ foreach ($renameRows as $m) {
     printf("  rename #%d %-12s -> %s (slug: %s)\n", $m['id'], $m['fromName'], $m['toName'], $m['slug']);
 }
 
-echo "\n=== planned orphan city deactivations : " . count($orphanDeact) . " ===\n";
+echo "\n=== planned orphan city deactivations (unmapped, no listings) : " . count($orphanDeact) . " ===\n";
 foreach (array_slice($orphanDeact, 0, 25) as $o) {
     printf("  #%d %s\n", $o['id'], $o['name']);
 }
@@ -539,11 +552,20 @@ if (!$apply) {
 $pdo->beginTransaction();
 try {
     $upParent = $pdo->prepare('UPDATE locations SET parent_id = ? WHERE id = ?');
+    $upParentActive = $pdo->prepare('UPDATE locations SET parent_id = ?, is_active = 1 WHERE id = ?');
+    $upEnable = $pdo->prepare('UPDATE locations SET is_active = 1 WHERE id = ?');
     $upChild  = $pdo->prepare("UPDATE locations SET parent_id = ? WHERE parent_id = ? AND level = 'neighborhood'");
+    $upChildEnable = $pdo->prepare("UPDATE locations SET is_active = 1 WHERE parent_id = ? AND level = 'neighborhood'");
     $delRow   = $pdo->prepare('DELETE FROM locations WHERE id = ?');
 
+    // انتقال شهرها به استان درست + فعال‌سازی مجدد شهر و محله‌هایش
     foreach ($moves as $m) {
-        $upParent->execute([$m['to_id'], $m['id']]);
+        $upParentActive->execute([$m['to_id'], $m['id']]);
+        $upChildEnable->execute([$m['id']]);
+    }
+    foreach ($activate as $a) {
+        $upEnable->execute([$a['id']]);
+        $upChildEnable->execute([$a['id']]);
     }
     foreach ($dupes as $ids) {
         $keep = array_shift($ids);

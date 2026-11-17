@@ -97,8 +97,10 @@ if ($catId) {
     $params[] = $catId;
 }
 if ($city) {
-    $provinces = iran_provinces();
-    if (in_array($city, $provinces, true)) {
+    $isProvince = in_array($city, iran_provinces(), true);
+    // اگر ورودی هم‌نام یک شهر باشد (مثل «تهران») اولویت به شهر داده می‌شود، نه کل استان
+    $isCityName = $isProvince ? (bool) swaapin_location_by_name($city, 'city') : false;
+    if ($isProvince && !$isCityName) {
         $provinceCities = iran_cities_by_province($city);
         if (!empty($provinceCities)) {
             $placeholders = implode(',', array_fill(0, count($provinceCities), '?'));
@@ -107,12 +109,12 @@ if ($city) {
                 $params[] = $pc;
             }
         } else {
-            $whereClauses[] = 'l.city LIKE ?';
-            $params[] = "%{$city}%";
+            $whereClauses[] = 'l.city = ?';
+            $params[] = $city;
         }
     } else {
-        $whereClauses[] = 'l.city LIKE ?';
-        $params[] = "%{$city}%";
+        $whereClauses[] = 'l.city = ?';
+        $params[] = $city;
     }
 }
 if ($wantType) {
