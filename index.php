@@ -1717,17 +1717,25 @@ $supQuestions = [
 .swp-modal__head-avatar:first-child { margin-left: 0; }
 .swp-modal__body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 
-/* نمای فرم */
-.swp-form-view { padding: 16px; }
+/* نمای فرم - استایل چت */
+.swp-form-view {
+  padding: 16px;
+  background: #f0f2f5;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(7,26,51,.03) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255,201,40,.04) 0, transparent 40%);
+  flex: 1;
+  overflow-y: auto;
+}
 .swp-msg {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 16px;
 }
 .swp-msg__avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--sw-sup-navy);
   color: #fff;
@@ -1735,85 +1743,70 @@ $supQuestions = [
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 .swp-msg__bubble {
-  background: #f4f6f9;
-  border-radius: 0 14px 14px 14px;
-  padding: 12px 14px;
-  max-width: 85%;
+  background: #fff;
+  border-radius: 14px 14px 14px 4px;
+  padding: 14px 16px;
+  max-width: 82%;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
 }
-.swp-msg__bubble p { margin: 0 0 10px; font-weight: 600; font-size: .95rem; color: var(--sw-sup-navy); }
+.swp-msg__bubble p { margin: 0 0 12px; font-weight: 600; font-size: .95rem; color: #334155; line-height: 1.6; }
+.swp-msg__time { font-size: .7rem; color: #94a3b8; margin-top: 8px; display: block; }
 .swp-qbuttons {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .swp-qbtn {
-  text-align: right;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: .85rem;
-  cursor: pointer;
-  transition: all .15s;
-  font-family: inherit;
-  color: var(--sw-sup-navy);
-}
-.swp-qbtn:hover { border-color: var(--sw-sup-yellow); background: var(--sw-sup-yellow-light); }
-.swp-qbtn.is-selected { border-color: var(--sw-sup-navy); background: var(--sw-sup-yellow-light); color: var(--sw-sup-navy-dark); font-weight: 600; }
-
-.swp-form-card {
-  background: #fafbfc;
-  border-radius: 14px;
-  padding: 16px;
-  border: 1px solid #eef0f3;
-}
-.swp-form-card__title { margin: 0 0 12px; font-size: .9rem; color: #475569; }
-.swp-field { position: relative; margin-bottom: 12px; }
-.swp-field__input {
-  width: 100%;
-  padding: 14px 12px 6px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: .95rem;
-  font-family: inherit;
-  background: #fff;
-  transition: border-color .15s;
-  box-sizing: border-box;
-}
-.swp-field__input:focus { outline: none; border-color: var(--sw-sup-navy); }
-.swp-field__input.is-invalid { border-color: #ef4444; }
-.swp-field__label {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94a3b8;
-  font-size: .9rem;
-  pointer-events: none;
-  transition: all .15s;
-  background: transparent;
-  padding: 0 4px;
-}
-.swp-field__input:focus + .swp-field__label,
-.swp-field__input:not(:placeholder-shown) + .swp-field__label {
-  top: 8px;
-  transform: none;
-  font-size: .72rem;
-  color: var(--sw-sup-navy);
-  font-weight: 600;
-}
-.swp-field__error { display: block; color: #ef4444; font-size: .75rem; margin-top: 4px; }
-.swp-submit {
-  width: 100%;
-  padding: 13px;
+  text-align: center;
   background: var(--sw-sup-navy);
   color: #fff;
   border: none;
   border-radius: 10px;
-  font-size: 1rem;
+  padding: 11px 16px;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  font-family: inherit;
+}
+.swp-qbtn:hover { background: var(--sw-sup-navy-dark); }
+.swp-qbtn:active { transform: scale(.97); }
+.swp-qbtn.is-selected {
+  background: var(--sw-sup-yellow);
+  color: var(--sw-sup-navy);
+}
+
+/* فرم داخل حباب */
+.swp-bubble-form p { margin: 0 0 16px; font-weight: 600; font-size: .95rem; color: #334155; }
+.swp-field { margin-bottom: 8px; }
+.swp-field__input {
+  width: 100%;
+  padding: 10px 0 8px;
+  border: none;
+  border-bottom: 1.5px solid #cbd5e1;
+  font-size: .95rem;
+  font-family: inherit;
+  background: transparent;
+  transition: border-color .15s;
+  box-sizing: border-box;
+  color: #1e293b;
+}
+.swp-field__input::placeholder { color: #94a3b8; }
+.swp-field__input:focus { outline: none; border-bottom-color: var(--sw-sup-navy); }
+.swp-field__input.is-invalid { border-bottom-color: #ef4444; }
+.swp-field__error { display: block; color: #ef4444; font-size: .72rem; margin-top: 4px; }
+.swp-submit {
+  display: block;
+  margin: 20px auto 4px;
+  padding: 11px 48px;
+  background: var(--sw-sup-navy);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: .98rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -1821,7 +1814,7 @@ $supQuestions = [
 }
 .swp-submit:hover { background: var(--sw-sup-navy-dark); }
 .swp-submit:disabled { opacity: .7; cursor: not-allowed; }
-.swp-note { text-align: center; font-size: .72rem; color: #94a3b8; margin: 10px 0 0; }
+.swp-note { text-align: center; font-size: .72rem; color: #94a3b8; margin: 12px 0 0; }
 
 /* نمای چت */
 .swp-chat-view {
@@ -1946,6 +1939,8 @@ $supQuestions = [
 
       <!-- نمای فرم -->
       <div class="swp-form-view" id="swp-form-view">
+
+        <!-- حباب ۱: سوال + دکمه‌های سریع -->
         <div class="swp-msg">
           <div class="swp-msg__avatar"><i class="bi bi-headset"></i></div>
           <div class="swp-msg__bubble">
@@ -1955,25 +1950,37 @@ $supQuestions = [
                 <button type="button" class="swp-qbtn" data-topic="<?= h($q) ?>"><?= h($q) ?></button>
               <?php endforeach; ?>
             </div>
+            <span class="swp-msg__time">لحظاتی پیش</span>
           </div>
         </div>
 
-        <div class="swp-form-card">
-          <h4 class="swp-form-card__title">برای شروع گفتگو فرم زیر را تکمیل کنید</h4>
-          <form id="swp-form" novalidate>
-            <input type="hidden" name="topic" id="swp-topic" value="">
-            <div class="swp-field">
-              <input type="text" id="swp-name" name="name" class="swp-field__input" placeholder=" " autocomplete="name" required>
-              <label class="swp-field__label" for="swp-name">نام و نام خانوادگی</label>
-            </div>
-            <div class="swp-field">
-              <input type="tel" id="swp-phone" name="phone" class="swp-field__input" placeholder=" " autocomplete="tel" maxlength="11" required>
-              <label class="swp-field__label" for="swp-phone">تلفن همراه</label>
-            </div>
-            <button type="submit" class="swp-submit" id="swp-submit">شروع گفتگو</button>
-          </form>
-          <p class="swp-note">با شروع گفتگو، شرایط پشتیبانی سواپین را می‌پذیرید.</p>
+        <!-- حباب ۲: ساعات کاری -->
+        <div class="swp-msg">
+          <div class="swp-msg__avatar"><i class="bi bi-clock"></i></div>
+          <div class="swp-msg__bubble">
+            <p>کاربر گرامی ؛ ساعت پاسخ دهی به سوالات و پیگیری مسائل شما در گفتگوی آنلاین از ساعت ۹ تا ۲۱ می‌باشد. در صورت نیاز به دریافت سریعتر پاسخ، می‌توانید با شماره ۰۲۱۸۴۵۷ تماس حاصل فرمایید.</p>
+            <span class="swp-msg__time">لحظاتی پیش</span>
+          </div>
         </div>
+
+        <!-- حباب ۳: فرم -->
+        <div class="swp-msg">
+          <div class="swp-msg__avatar"><i class="bi bi-pencil-square"></i></div>
+          <div class="swp-msg__bubble swp-bubble-form">
+            <p>برای شروع گفتگو لطفا فرم زیر را تکمیل کنید</p>
+            <form id="swp-form" novalidate>
+              <input type="hidden" name="topic" id="swp-topic" value="">
+              <div class="swp-field">
+                <input type="text" id="swp-name" name="name" class="swp-field__input" placeholder="نام و نام خانوادگی" autocomplete="name" required>
+              </div>
+              <div class="swp-field">
+                <input type="tel" id="swp-phone" name="phone" class="swp-field__input" placeholder="تلفن همراه" autocomplete="tel" maxlength="11" required>
+              </div>
+              <button type="submit" class="swp-submit" id="swp-submit">شروع</button>
+            </form>
+          </div>
+        </div>
+
       </div>
 
       <!-- نمای چت -->
@@ -2078,13 +2085,16 @@ $supQuestions = [
 
     const btn = document.getElementById('swp-submit');
     btn.disabled = true;
-    btn.textContent = 'در حال اتصال…';
+    btn.textContent = '…';
+
+    const transcript = [];
+    if (topic) transcript.push({ role: 'user', content: 'موضوع: ' + topic });
 
     try {
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrf() },
-        body: JSON.stringify({ action: 'start', name, phone, transcript: [] })
+        body: JSON.stringify({ action: 'start', name, phone, transcript })
       });
       const data = await res.json();
       if (!data.ok) {
@@ -2095,7 +2105,7 @@ $supQuestions = [
           alert(data.error || 'خطا در شروع گفتگو');
         }
         btn.disabled = false;
-        btn.textContent = 'شروع گفتگو';
+        btn.textContent = 'شروع';
         return;
       }
 
@@ -2115,7 +2125,7 @@ $supQuestions = [
     } catch {
       alert('خطا در برقراری ارتباط');
       btn.disabled = false;
-      btn.textContent = 'شروع گفتگو';
+      btn.textContent = 'شروع';
     }
   });
 
