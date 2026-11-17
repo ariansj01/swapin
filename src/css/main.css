@@ -2919,7 +2919,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   border-right: 3px solid transparent;
 }
  #city-select-menu .dropdown-item {
-  color: #fff !important;
+  /* color: #fff !important; */
 }
 .dropdown-item i {
   font-size: 1.05rem;

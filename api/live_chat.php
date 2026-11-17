@@ -35,7 +35,7 @@ if ($action === 'start') {
         $transcript = [];
     }
 
-    $result = live_chat_start($input['name'] ?? '', $transcript);
+    $result = live_chat_start($input['name'] ?? '', $input['phone'] ?? '', $transcript);
     if (isset($result['errors'])) {
         http_response_code(422);
         echo json_encode(['ok' => false, 'errors' => $result['errors']]);
