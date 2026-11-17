@@ -21,6 +21,13 @@ Options -MultiViews -Indexes
   # For production or root:
   # RewriteBase /
 
+  # ── حذف اسلش انتهایی (سئو — P2) ─────────────────────────────────────────
+  # هر آدرس با اسلش انتهایی با ۳۰۱ به نسخهٔ بدون اسلش می‌رود (پارامترها حفظ
+  # می‌شوند). استثناها: صفحهٔ خانه، /blog و مسیرهای قدیمی که خودشان در همان
+  # یک مرحله به مقصد کانونیکال ۳۰۱ می‌شوند (تا زنجیرهٔ ریدایرکت ساخته نشود).
+  RewriteCond %{REQUEST_URI} !^/(?:blog|meta|services|pwa|download|exchange|listings|shops|category|real-estate|vehicles|electronics|home-kitchen|personal-items|leisure-hobbies|tools-equipment|jobs|clothing)(?:/|$)
+  RewriteRule ^(.+?)/+$ /$1 [R=301,L,QSA]
+
   # Landing pages
   # نقشهٔ ۳۰۱: صفحهٔ فرود «خدمات» به دستهٔ کانونیکال /iran/services منتقل شده است.
   RewriteRule ^services/?$ /iran/services [R=301,L,NC,QSD]
