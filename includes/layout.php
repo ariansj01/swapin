@@ -874,6 +874,17 @@ function render_support_widget(?array $user = null): void {
     $csrf   = h(csrf_token());
     $name   = $user ? h(trim((string)($user['name'] ?? ''))) : '';
 
+    $supQuestions = [
+        'چطور در سواپین ثبت‌نام کنم؟',
+        'چطور کالایم را برای معاوضه ثبت کنم؟',
+        'معاوضه در سواپین چطور انجام می‌شود؟',
+    ];
+    $qHtml = '';
+    foreach ($supQuestions as $q) {
+        $qe = h($q);
+        $qHtml .= "<button type=\"button\" class=\"support-chat__qbtn\" data-topic=\"{$qe}\">{$qe}</button>";
+    }
+
     echo <<<HTML
 <div class="support-widget" id="support-widget" data-user-name="{$name}">
   <button type="button" class="support-widget__toggle" id="support-widget-toggle" aria-label="پشتیبانی" aria-expanded="false">
@@ -881,46 +892,65 @@ function render_support_widget(?array $user = null): void {
   </button>
   <div class="support-chat" id="support-chat" hidden>
     <div class="support-chat__header">
-      <div class="support-chat__title">
-        <i class="bi bi-robot"></i>
-        <span>پشتیبانی سواَپین</span>
-      </div>
       <button type="button" class="support-chat__close" id="support-chat-close" aria-label="بستن">
         <i class="bi bi-x-lg"></i>
       </button>
+      <div class="support-chat__head-info">
+        <span class="support-chat__title">پشتیبانی سواَپین</span>
+        <span class="support-chat__subtitle">سلام! برای شروع، نام خود را وارد کنید</span>
+      </div>
+      <div class="support-chat__head-avatars">
+        <div class="support-chat__head-avatar"><i class="bi bi-headset"></i></div>
+        <div class="support-chat__head-avatar"><i class="bi bi-person-badge"></i></div>
+      </div>
     </div>
 
     <div class="support-chat__body" id="support-chat-body">
       <input type="hidden" name="_csrf" value="{$csrf}">
 
-      <div class="support-chat__name" id="support-chat-name-step" hidden>
-        <p class="support-chat__lead">سلام! برای شروع، نام خود را وارد کنید</p>
-        <div class="support-chat__name-field">
-          <input type="text" class="support-chat__input" id="support-chat-name" placeholder="نام شما" autocomplete="off">
-          <button type="button" class="support-chat__name-go" id="support-chat-name-go" aria-label="ادامه">
-            <i class="bi bi-arrow-left"></i>
-          </button>
+      <!-- نمای فرم (مشابه عکس) -->
+      <div class="support-chat__form-view" id="support-chat-form-view">
+        <div class="support-chat__msg support-chat__msg--ai">
+          <div class="support-chat__bubble">
+            <p class="support-chat__lead">چگونه می‌توانیم کمکتان کنیم؟</p>
+            <div class="support-chat__qbuttons">{$qHtml}</div>
+          </div>
+        </div>
+
+        <div class="support-chat__msg support-chat__msg--ai">
+          <div class="support-chat__bubble">
+            <p>کاربر گرامی ؛ ساعت پاسخ دهی به سوالات و پیگیری مسائل شما در گفتگوی آنلاین از ساعت ۹ تا ۲۱ می‌باشد. در صورت نیاز به دریافت سریعتر پاسخ، می‌توانید با شماره ۰۲۱۸۴۵۷ تماس حاصل فرمایید.</p>
+          </div>
+        </div>
+
+        <div class="support-chat__msg support-chat__msg--ai">
+          <div class="support-chat__bubble support-chat__bubble--form">
+            <p class="support-chat__lead">برای شروع گفتگو لطفا فرم زیر را تکمیل کنید</p>
+            <form id="support-chat-start-form" novalidate>
+              <input type="hidden" name="topic" id="support-chat-topic" value="">
+              <div class="support-chat__field">
+                <input type="text" id="support-chat-name" name="name" class="support-chat__line-input" placeholder="نام و نام خانوادگی" autocomplete="name" required>
+              </div>
+              <div class="support-chat__field">
+                <input type="tel" id="support-chat-phone" name="phone" class="support-chat__line-input" placeholder="تلفن همراه" autocomplete="tel" maxlength="11" required>
+              </div>
+              <button type="submit" class="support-chat__start-btn" id="support-chat-start-btn">شروع</button>
+            </form>
+          </div>
         </div>
       </div>
 
-      <div class="support-chat__faq" id="support-chat-faq" hidden>
-        <p class="support-chat__lead">چطور می‌توانم کمکتان کنم؟</p>
-        <div class="support-chat__chips" id="support-chat-chips"></div>
-      </div>
-
+      <!-- نمای گفتگو -->
       <div class="support-chat__messages" id="support-chat-messages" hidden></div>
     </div>
 
-    <div class="support-chat__form" id="support-chat-form">
-      <div class="support-chat__composer" id="support-chat-composer" hidden>
+    <div class="support-chat__form" id="support-chat-form" hidden>
+      <div class="support-chat__composer" id="support-chat-composer">
         <input type="text" class="support-chat__input" id="support-chat-msg" placeholder="یا پیام خود را بنویسید…" autocomplete="off">
         <button type="button" class="support-chat__send" id="support-chat-send" aria-label="ارسال">
           <i class="bi bi-send-fill"></i>
         </button>
       </div>
-      <button type="button" class="support-chat__escalate" id="support-chat-escalate" hidden>
-        <i class="bi bi-headset"></i> گفتگو با پشتیبان انسانی
-      </button>
     </div>
   </div>
 </div>

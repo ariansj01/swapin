@@ -239,10 +239,12 @@ function live_chat_ensure_tables(): void {
     }
 }
 
-function live_chat_start(string $name, array $transcript = []): array {
+function live_chat_start(string $name, array $transcript = [], string $phone = ''): array {
     $name   = clean($name);
+    $phone  = clean($phone);
     $errors = [];
     if (mb_strlen($name) < 2) $errors['name'] = 'نام را وارد کنید.';
+    if (!preg_match('/^09\d{9}$/', $phone)) $errors['phone'] = 'شماره موبایل معتبر وارد کنید.';
     if ($errors) return ['errors' => $errors];
 
     $token = bin2hex(random_bytes(16));
@@ -251,7 +253,7 @@ function live_chat_start(string $name, array $transcript = []): array {
     $chatId = DB::insert('live_chats', [
         'session_token' => $token,
         'guest_name'    => $name,
-        'guest_phone'   => '',
+        'guest_phone'   => $phone,
         'status'        => 'open',
     ]);
 

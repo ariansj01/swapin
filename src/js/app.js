@@ -1691,57 +1691,50 @@ function initSupportWidget() {
   const chatBox = document.getElementById('support-chat');
   if (!widget || !toggle || !chatBox) return;
 
-  const closeBtn    = document.getElementById('support-chat-close');
-  const form        = document.getElementById('support-chat-form');
-  const nameStep    = document.getElementById('support-chat-name-step');
-  const nameInp     = document.getElementById('support-chat-name');
-  const nameGoBtn   = document.getElementById('support-chat-name-go');
-  const faqBox      = document.getElementById('support-chat-faq');
-  const chips       = document.getElementById('support-chat-chips');
-  const composer    = document.getElementById('support-chat-composer');
-  const escalateBtn = document.getElementById('support-chat-escalate');
-  const msgInp      = document.getElementById('support-chat-msg');
-  const sendBtn     = document.getElementById('support-chat-send');
-  const messages    = document.getElementById('support-chat-messages');
-  const csrfInp     = chatBox.querySelector('input[name="_csrf"]');
+  const closeBtn  = document.getElementById('support-chat-close');
+  const formView  = document.getElementById('support-chat-form-view');
+  const startForm = document.getElementById('support-chat-start-form');
+  const nameInp   = document.getElementById('support-chat-name');
+  const phoneInp  = document.getElementById('support-chat-phone');
+  const topicInp  = document.getElementById('support-chat-topic');
+  const startBtn  = document.getElementById('support-chat-start-btn');
+  const composer  = document.getElementById('support-chat-composer');
+  const msgInp    = document.getElementById('support-chat-msg');
+  const sendBtn   = document.getElementById('support-chat-send');
+  const messages  = document.getElementById('support-chat-messages');
+  const chatForm  = document.getElementById('support-chat-form');
+  const csrfInp   = chatBox.querySelector('input[name="_csrf"]');
+  const qBtns     = chatBox.querySelectorAll('.support-chat__qbtn');
 
-  const TOKEN_KEY   = 'swaapin_live_chat_token';
-  const NAME_KEY    = 'swaapin_live_chat_name';
-  const HISTORY_KEY = 'swaapin_live_chat_ai_history';
+  const TOKEN_KEY = 'swaapin_live_chat_token';
+  const NAME_KEY  = 'swaapin_live_chat_name';
+  const PHONE_KEY = 'swaapin_live_chat_phone';
 
   const accountName = (widget.getAttribute('data-user-name') || '').trim();
 
   let pollTimer = null;
   let lastMsgId = 0;
-  let aiHistory = [];
   let busy = false;
-  let faqItems = null;
 
   try {
-    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    if (Array.isArray(saved)) aiHistory = saved;
-  } catch { aiHistory = []; }
+    if (nameInp) nameInp.value = accountName || (localStorage.getItem(NAME_KEY) || '');
+    if (phoneInp) phoneInp.value = localStorage.getItem(PHONE_KEY) || '';
+  } catch {}
 
-  function saveHistory() {
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(aiHistory.slice(-20))); } catch {}
-  }
-
-  function userName() {
-    if (accountName) return accountName;
-    try { return (localStorage.getItem(NAME_KEY) || '').trim(); } catch { return ''; }
+  function api(action, data) {
+    return fetch(getAppUrl() + '/api/live_chat.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfInp?.value || '' },
+      body: JSON.stringify({ action, ...(data || {}) })
+    }).then(r => r.json());
   }
 
   function openChat() {
     chatBox.hidden = false;
     toggle.setAttribute('aria-expanded', 'true');
     toggle.classList.add('is-open');
-    if (localStorage.getItem(TOKEN_KEY)) {
-      beginHuman();
-    } else if (userName().length >= 2) {
-      beginAi();
-    } else {
-      showNameStep();
-    }
+    if (localStorage.getItem(TOKEN_KEY)) beginConversation();
+    else showFormView();
   }
 
   function closeChat() {
@@ -1751,58 +1744,24 @@ function initSupportWidget() {
     stopPolling();
   }
 
-  function showNameStep() {
-    nameStep.hidden = false;
-    faqBox.hidden = true;
+  function showFormView() {
+    formView.hidden = false;
     messages.hidden = true;
-    form.hidden = true;
-    setTimeout(() => nameInp?.focus(), 100);
+    chatForm.hidden = true;
   }
 
   function showConversation() {
-    nameStep.hidden = true;
+    formView.hidden = true;
     messages.hidden = false;
-    form.hidden = false;
+    chatForm.hidden = false;
     composer.hidden = false;
-    setTimeout(() => msgInp?.focus(), 100);
   }
 
-  function renderFaq(items) {
-    chips.innerHTML = '';
-    if (!items || !items.length) { faqBox.hidden = true; return; }
-    items.forEach((it) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'support-chat__chip';
-      btn.textContent = it.q;
-      btn.addEventListener('click', () => sendMessage(it.q, it.id));
-      chips.appendChild(btn);
-    });
-    faqBox.hidden = false;
-  }
-
-  async function loadFaq() {
-    if (faqItems) { renderFaq(faqItems); return; }
-    try {
-      const res = await api('faq', {});
-      if (res && res.ok && Array.isArray(res.questions)) {
-        faqItems = res.questions;
-        renderFaq(faqItems);
-      }
-    } catch {}
-  }
-
-  function appendMsg(text, sender, time) {
+  function appendMsg(text, sender) {
     if (!messages) return null;
     const div = document.createElement('div');
     div.className = 'support-chat__msg support-chat__msg--' + sender;
     div.innerHTML = (text || '').replace(/\n/g, '<br>');
-    if (time) {
-      const t = document.createElement('span');
-      t.className = 'support-chat__msg-time';
-      t.textContent = time;
-      div.appendChild(t);
-    }
     messages.appendChild(div);
     const body = document.getElementById('support-chat-body');
     if (body) body.scrollTop = body.scrollHeight;
@@ -1815,17 +1774,14 @@ function initSupportWidget() {
     const err = document.createElement('div');
     err.className = 'support-chat__error';
     err.textContent = text;
+    if (formView.hidden) {
+      messages.appendChild(err);
+    } else {
+      formView.appendChild(err);
+    }
     const body = document.getElementById('support-chat-body');
-    (body || chatBox).appendChild(err);
+    if (body) body.scrollTop = body.scrollHeight;
     setTimeout(() => err.remove(), 4000);
-  }
-
-  function api(action, data) {
-    return fetch(getAppUrl() + '/api/live_chat.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfInp?.value || '' },
-      body: JSON.stringify({ action, ...(data || {}) })
-    }).then(r => r.json());
   }
 
   function stopPolling() {
@@ -1846,23 +1802,8 @@ function initSupportWidget() {
     } catch {}
   }
 
-  function beginAi() {
+  function beginConversation() {
     showConversation();
-    escalateBtn.hidden = false;
-    faqBox.hidden = true;
-    messages.innerHTML = '';
-    lastMsgId = 0;
-    if (aiHistory.length) {
-      aiHistory.forEach(h => appendMsg(h.content, h.role === 'assistant' ? 'ai' : 'guest'));
-    } else {
-      loadFaq();
-    }
-  }
-
-  function beginHuman() {
-    showConversation();
-    escalateBtn.hidden = true;
-    faqBox.hidden = true;
     messages.innerHTML = '';
     lastMsgId = 0;
     stopPolling();
@@ -1884,62 +1825,88 @@ function initSupportWidget() {
     if (!document.getElementById('support-widget')?.contains(e.target)) closeChat();
   });
 
-  function submitName() {
-    const name = (nameInp?.value || '').trim();
-    if (name.length < 2) return showError('نام را وارد کنید.');
-    try { localStorage.setItem(NAME_KEY, name); } catch {}
-    beginAi();
-  }
-
-  nameGoBtn?.addEventListener('click', submitName);
-
-  nameInp?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); submitName(); }
+  qBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      qBtns.forEach(b => b.classList.remove('is-selected'));
+      btn.classList.add('is-selected');
+      if (topicInp) topicInp.value = btn.getAttribute('data-topic') || '';
+    });
   });
 
-  async function sendMessage(forcedText, faqId) {
-    if (busy) return;
-    const text = (typeof forcedText === 'string' ? forcedText : (msgInp?.value || '')).trim();
-    if (!text) return;
-    faqBox.hidden = true;
+  function clearErrors() {
+    chatBox.querySelectorAll('.support-chat__error').forEach(e => e.remove());
+    [nameInp, phoneInp].forEach((i) => {
+      i?.classList.remove('is-invalid');
+      i?.parentElement?.querySelector('.support-chat__field-error')?.remove();
+    });
+  }
 
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token && !faqId) {
-      busy = true;
-      if (sendBtn) sendBtn.disabled = true;
-      try {
-        await api('send', { token, body: text });
-        msgInp.value = '';
-        await fetchNewMessages();
-      } catch {
-        showError('ارسال پیام ناموفق بود.');
-      } finally {
-        busy = false;
-        if (sendBtn) sendBtn.disabled = false;
-        msgInp?.focus();
+  function addError(input, msg) {
+    if (!input) return;
+    input.classList.add('is-invalid');
+    const span = document.createElement('span');
+    span.className = 'support-chat__field-error';
+    span.textContent = msg;
+    input.parentElement?.appendChild(span);
+  }
+
+  startForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+    const name  = (nameInp?.value || '').trim();
+    const phone = (phoneInp?.value || '').trim();
+    const topic = (topicInp?.value || '').trim();
+    let bad = false;
+    if (name.length < 2) { addError(nameInp, 'نام را وارد کنید.'); bad = true; }
+    if (!/^09\d{9}$/.test(phone)) { addError(phoneInp, 'شماره موبایل معتبر وارد کنید.'); bad = true; }
+    if (bad) return;
+
+    startBtn.disabled = true;
+    const originalLabel = startBtn.textContent;
+    startBtn.textContent = '…';
+    try {
+      const transcript = topic ? [{ role: 'user', content: 'موضوع: ' + topic }] : [];
+      const res = await api('start', { name, phone, transcript });
+      if (!res || !res.ok) {
+        if (res && res.errors) {
+          if (res.errors.name) addError(nameInp, res.errors.name);
+          if (res.errors.phone) addError(phoneInp, res.errors.phone);
+        } else {
+          showError('خطا در شروع گفتگو');
+        }
+        startBtn.disabled = false;
+        startBtn.textContent = originalLabel;
+        return;
       }
-      return;
+      try {
+        localStorage.setItem(NAME_KEY, name);
+        localStorage.setItem(PHONE_KEY, phone);
+        localStorage.setItem(TOKEN_KEY, res.token);
+      } catch {}
+      if (topic) { try { await api('send', { token: res.token, body: topic }); } catch {} }
+      beginConversation();
+      appendMsg('سلام! 👋 پیام شما ثبت شد. یکی از همکاران ما به‌زودی پاسخگوی شما خواهد بود.', 'admin');
+    } catch {
+      showError('خطا در برقراری ارتباط');
+      startBtn.disabled = false;
+      startBtn.textContent = originalLabel;
     }
+  });
 
-    // AI phase (stateless — conversation kept client-side)
-    msgInp.value = '';
-    appendMsg(text, 'guest');
-    const typing = appendMsg('…', 'ai');
+  async function sendMessage() {
+    if (busy) return;
+    const text = (msgInp?.value || '').trim();
+    if (!text) return;
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) { showError('ابتدا فرم شروع گفتگو را تکمیل کنید.'); return; }
     busy = true;
     if (sendBtn) sendBtn.disabled = true;
+    msgInp.value = '';
     try {
-      const res = await api('ai_chat', { message: text, history: aiHistory, faq_id: faqId || '' });
-      typing?.remove();
-      const reply = (res && res.ok && res.reply)
-        ? res.reply
-        : 'متأسفم، اکنون نمی‌توانم پاسخ دهم. می‌توانید با پشتیبان انسانی در ارتباط باشید.';
-      appendMsg(reply, 'ai');
-      aiHistory.push({ role: 'user', content: text });
-      aiHistory.push({ role: 'assistant', content: reply });
-      saveHistory();
+      await api('send', { token, body: text });
+      await fetchNewMessages();
     } catch {
-      typing?.remove();
-      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
+      showError('ارسال پیام ناموفق بود.');
     } finally {
       busy = false;
       if (sendBtn) sendBtn.disabled = false;
@@ -1947,35 +1914,9 @@ function initSupportWidget() {
     }
   }
 
-  sendBtn?.addEventListener('click', () => sendMessage());
+  sendBtn?.addEventListener('click', sendMessage);
   msgInp?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
-  });
-
-  escalateBtn?.addEventListener('click', async () => {
-    if (busy) return;
-    const name = userName();
-    if (name.length < 2) { showNameStep(); return; }
-
-    escalateBtn.disabled = true;
-    try {
-      const res = await api('start', { name, transcript: aiHistory });
-      if (res && res.ok && res.token) {
-        try { localStorage.setItem(TOKEN_KEY, res.token); } catch {}
-        escalateBtn.hidden = true;
-        appendMsg('شما به پشتیبان انسانی متصل شدید. لطفاً تا پاسخ ادمین شکیبا باشید.', 'admin');
-        lastMsgId = parseInt(res.last_id, 10) || 0;
-        stopPolling();
-        pollTimer = setInterval(fetchNewMessages, 5000);
-      } else {
-        const errs = (res && res.errors) || {};
-        showError(errs.name || 'اتصال به پشتیبان ناموفق بود.');
-        escalateBtn.disabled = false;
-      }
-    } catch {
-      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
-      escalateBtn.disabled = false;
-    }
   });
 }
 
