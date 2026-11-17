@@ -2,11 +2,12 @@
 /**
  * سواپین — بازنویسی ساختاریافتهٔ برند/مدل آگهی‌ها روی کاتالوگ (catalog backfill)
  *
- * آگهی‌های قدیمی برند/مدل را به‌صورت «متن آزاد» در listing_attrs نگه داشته‌اند، پس
- * فیلتر ساختاریافتهٔ /{location}/{category}/{brand}/{model} آن‌ها را پیدا نمی‌کند.
- * این ابزار با تطبیق نرمال‌شده (ارقام فارسی/عربی، نیم‌فاصله، ی/ک عربی) برند و مدلِ
- * هر آگهی را به گرهٔ متناظر در catalog_nodes وصل می‌کند و ستون‌های
- * brand_id/model_id آگهی را پر می‌کند.
+ * آگهی‌های قدیمی برند/مدل را به‌صورت «متن آزاد» نگه داشته‌اند، پس فیلتر
+ * ساختاریافتهٔ /{location}/{category}/{brand}/{model} آن‌ها را پیدا نمی‌کند.
+ * این ابزار برند و مدلِ هر آگهی را به گرهٔ متناظر در catalog_nodes وصل می‌کند و
+ * ستون‌های brand_id/model_id آگهی را پر می‌کند. دو منبع به‌ترتیب اولویت:
+ *   ۱) فیلدهای برند/مدل در listing_attrs
+ *   ۲) استخراج از عنوان آگهی (برای داده‌های قدیمی که listing_attrs ندارند)
  *
  * نکتهٔ مهم: گره‌های کاتالوگ روی دستهٔ والد ثبت می‌شوند، اما آگهی‌ها معمولاً روی
  * برگ‌های زیرمجموعه می‌نشینند؛ بنابراین دامنهٔ آگهی‌ها کل زیردرخت هر دستهٔ کاتالوگ است.
@@ -87,6 +88,35 @@ function bf_subtree(int $root, array $childrenMap): array {
     return $ids;
 }
 
+/**
+ * یافتن یک نام در متن نرمال‌شده: زودترین جایگاه اولویت دارد، در تساوی طولانی‌ترین نام.
+ *
+ * @param array<int, array{0:string,1:mixed}> $candidates فهرست [نام نرمال‌شده, مقدار]
+ * @return array{0:mixed,1:?int} [مقدار برنده یا null, جایگاه]
+ */
+function bf_find_in_text(string $haystack, array $candidates): array {
+    $bestPos = null;
+    $bestVal = null;
+    $bestLen = 0;
+    foreach ($candidates as [$needle, $val]) {
+        $needle = (string) $needle;
+        if ($needle === '' || mb_strlen($needle) < 2) {
+            continue;
+        }
+        $pos = mb_strpos($haystack, $needle);
+        if ($pos === false) {
+            continue;
+        }
+        $len = mb_strlen($needle);
+        if ($bestPos === null || $pos < $bestPos || ($pos === $bestPos && $len > $bestLen)) {
+            $bestPos = $pos;
+            $bestVal = $val;
+            $bestLen = $len;
+        }
+    }
+    return [$bestVal, $bestPos];
+}
+
 // ── بررسی ستون‌های لازم ───────────────────────────────────────────────────────
 $colRows = $pdo->query('SHOW COLUMNS FROM `listings`')->fetchAll();
 $cols = array_map(static fn(array $r): string => (string) ($r['Field'] ?? ''), $colRows);
@@ -141,17 +171,21 @@ foreach ($catIds as $catId) {
     $brandByKey  = [];   // norm(name) => id
     $brandBySlug = [];   // slug(lower) => id
     $brandName   = [];   // id => name
+    $brandCand   = [];   // [ [norm(name), id] ] برای تطبیق عنوان
     $bq = $pdo->prepare("SELECT id, name, slug FROM catalog_nodes WHERE category_id = ? AND level = 'brand' AND parent_id = 0");
     $bq->execute([$catId]);
     foreach ($bq->fetchAll() as $r) {
         $brandByKey[bf_norm((string) $r['name'])] = (int) $r['id'];
         $brandBySlug[strtolower((string) $r['slug'])] = (int) $r['id'];
         $brandName[(int) $r['id']] = (string) $r['name'];
+        $brandCand[] = [bf_norm((string) $r['name']), (int) $r['id']];
     }
 
-    $modelByKey  = [];   // brandId => [norm(name) => id]
-    $modelBySlug = [];   // brandId => [slug(lower) => id]
-    $modelsOf    = [];   // brandId => [ [key, id], ... ] مرتب‌شده بر اساس بلندی کلید (برای تطبیق پیشوندی)
+    $modelByKey    = [];   // brandId => [norm(name) => id]
+    $modelBySlug   = [];   // brandId => [slug(lower) => id]
+    $modelsOf      = [];   // brandId => [ [key, id], ... ] مرتب‌شده بر اساس بلندی کلید (برای تطبیق پیشوندی)
+    $modelCand     = [];   // brandId => [ [norm(name), id] ] برای تطبیق عنوان
+    $allModelCand  = [];   // [ [norm(name), [modelId, brandId]] ] برای وقتی نام برند در عنوان نیست
     $mq = $pdo->prepare("SELECT id, parent_id, name, slug FROM catalog_nodes WHERE category_id = ? AND level = 'model'");
     $mq->execute([$catId]);
     foreach ($mq->fetchAll() as $r) {
@@ -159,7 +193,9 @@ foreach ($catIds as $catId) {
         $key = bf_norm((string) $r['name']);
         $modelByKey[$bid][$key] = (int) $r['id'];
         $modelBySlug[$bid][strtolower((string) $r['slug'])] = (int) $r['id'];
-        $modelsOf[$bid][] = [$key, (int) $r['id']];
+        $modelsOf[$bid][]  = [$key, (int) $r['id']];
+        $modelCand[$bid][] = [$key, (int) $r['id']];
+        $allModelCand[]    = [$key, [(int) $r['id'], $bid]];
     }
     foreach ($modelsOf as $bid => $list) {
         usort($list, static fn(array $a, array $b): int => strlen($b[0]) <=> strlen($a[0]));
@@ -171,7 +207,7 @@ foreach ($catIds as $catId) {
     }
 
     $lq = $pdo->prepare(
-        "SELECT id, listing_attrs FROM listings WHERE category_id IN ({$ph}) AND listing_attrs IS NOT NULL"
+        "SELECT id, title, listing_attrs FROM listings WHERE category_id IN ({$ph})"
     );
     $lq->execute($scope);
     $rows = $lq->fetchAll();
@@ -197,48 +233,77 @@ foreach ($catIds as $catId) {
         continue;
     }
 
-    $stat = ['total' => 0, 'no_brand' => 0, 'brand_ok' => 0, 'model_ok' => 0];
+    $stat = ['total' => 0, 'no_brand' => 0, 'brand_ok' => 0, 'model_ok' => 0, 'via_title' => 0];
 
     foreach ($rows as $r) {
         $stat['total']++;
-        $attrs = json_decode((string) $r['listing_attrs'], true);
-        if (!is_array($attrs)) {
-            $stat['no_brand']++;
-            continue;
-        }
-        $brandText = trim((string) ($attrs['brand'] ?? ''));
-        $modelText = trim((string) ($attrs['model'] ?? ''));
-        if ($brandText === '') {
-            $stat['no_brand']++;
-            continue;
+
+        $attrs     = json_decode((string) ($r['listing_attrs'] ?? ''), true);
+        $brandText = is_array($attrs) ? trim((string) ($attrs['brand'] ?? '')) : '';
+        $modelText = is_array($attrs) ? trim((string) ($attrs['model'] ?? '')) : '';
+
+        $brandId = 0;
+        $modelId = 0;
+
+        // ۱) منبع ساختاریافته: فیلدهای برند/مدل متن‌آزاد در listing_attrs
+        if ($brandText !== '') {
+            $brandId = $brandByKey[bf_norm($brandText)] ?? $brandBySlug[strtolower($brandText)] ?? 0;
+            if ($brandId > 0 && $modelText !== '') {
+                $mk = bf_norm($modelText);
+                $modelId = $modelByKey[$brandId][$mk] ?? $modelBySlug[$brandId][strtolower($modelText)] ?? 0;
+                if ($modelId <= 0) {
+                    // تطبیق پیشوندی: «206 تیپ 2» → مدل «206»
+                    foreach (($modelsOf[$brandId] ?? []) as [$key, $id]) {
+                        if ($key !== '' && mb_strlen($key) >= 2 && str_starts_with($mk, $key)) {
+                            $modelId = $id;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
-        $brandId = $brandByKey[bf_norm($brandText)] ?? $brandBySlug[strtolower($brandText)] ?? 0;
+        // ۲) fallback: استخراج برند/مدل از عنوان آگهی (داده‌های قدیمی که attrs ندارند)
         if ($brandId <= 0) {
-            $unmatchedBrand[$brandText] = ($unmatchedBrand[$brandText] ?? 0) + 1;
+            $nt = bf_norm((string) ($r['title'] ?? ''));
+            if ($nt !== '') {
+                [$tBrand, ] = bf_find_in_text($nt, $brandCand);
+                $tModel = 0;
+                $tBrand = (int) ($tBrand ?? 0);
+                if ($tBrand > 0) {
+                    [$tModel, ] = bf_find_in_text($nt, $modelCand[$tBrand] ?? []);
+                    $tModel = (int) ($tModel ?? 0);
+                } else {
+                    // نام برند در عنوان نیست (مثل «پراید 131») → از خود مدل، برند را استخراج کن
+                    [$hit, ] = bf_find_in_text($nt, $allModelCand);
+                    if (is_array($hit)) {
+                        $tModel = (int) $hit[0];
+                        $tBrand = (int) $hit[1];
+                    }
+                }
+                if ($tBrand > 0) {
+                    $brandId = $tBrand;
+                    $modelId = $tModel;
+                    $stat['via_title']++;
+                }
+            }
+        }
+
+        if ($brandId <= 0) {
+            $stat['no_brand']++;
+            $label = $brandText !== '' ? $brandText : mb_substr(trim((string) ($r['title'] ?? '')), 0, 40);
+            if ($label !== '') {
+                $unmatchedBrand[$label] = ($unmatchedBrand[$label] ?? 0) + 1;
+            }
             continue;
         }
         $stat['brand_ok']++;
 
-        $modelId = 0;
-        if ($modelText !== '') {
-            $mk = bf_norm($modelText);
-            $modelId = $modelByKey[$brandId][$mk] ?? $modelBySlug[$brandId][strtolower($modelText)] ?? 0;
-            if ($modelId <= 0) {
-                // تطبیق پیشوندی: «206 تیپ 2» → مدل «206»
-                foreach (($modelsOf[$brandId] ?? []) as [$key, $id]) {
-                    if ($key !== '' && strlen($key) >= 2 && str_starts_with($mk, $key)) {
-                        $modelId = $id;
-                        break;
-                    }
-                }
-            }
-            if ($modelId > 0) {
-                $stat['model_ok']++;
-            } else {
-                $label = $brandName[$brandId] . ' ' . $modelText;
-                $unmatchedModel[$label] = ($unmatchedModel[$label] ?? 0) + 1;
-            }
+        if ($modelId > 0) {
+            $stat['model_ok']++;
+        } elseif ($modelText !== '') {
+            $label = $brandName[$brandId] . ' ' . $modelText;
+            $unmatchedModel[$label] = ($unmatchedModel[$label] ?? 0) + 1;
         }
 
         if ($apply) {
@@ -246,22 +311,23 @@ foreach ($catIds as $catId) {
         }
     }
 
-    printf("دسته %-16s (id=%d) دامنه=%d: کل=%d  بدون‌برند=%d  برند‌متصل=%d  مدل‌متصل=%d\n",
-        $catName, $catId, count($scope), $stat['total'], $stat['no_brand'], $stat['brand_ok'], $stat['model_ok']);
+    printf("دسته %-16s (id=%d) دامنه=%d: کل=%d  ناموفق=%d  برندمتصل=%d (ازعنوان=%d)  مدلمتصل=%d\n",
+        $catName, $catId, count($scope), $stat['total'], $stat['no_brand'],
+        $stat['brand_ok'], $stat['via_title'], $stat['model_ok']);
 
     foreach ($stat as $k => $v) {
-        $grand[$k] += $v;
+        $grand[$k] = ($grand[$k] ?? 0) + $v;
     }
 }
 
 echo "\n=== جمع کل ===\n";
 printf("  کل آگهی‌های بررسی‌شده : %d\n", $grand['total']);
-printf("  بدون برند            : %d\n", $grand['no_brand']);
-printf("  برند متصل شد        : %d\n", $grand['brand_ok']);
-printf("  مدل متصل شد         : %d\n", $grand['model_ok']);
+printf("  ناموفق (بدون برند)   : %d\n", $grand['no_brand'] ?? 0);
+printf("  برند متصل شد        : %d (از این تعداد، %d از عنوان استخراج شد)\n", $grand['brand_ok'] ?? 0, $grand['via_title'] ?? 0);
+printf("  مدل متصل شد         : %d\n", $grand['model_ok'] ?? 0);
 
 if ($noDataCats) {
-    echo "\n=== دسته‌های کاتالوگ که آگهیِ دارای attrs نداشتند : " . count($noDataCats) . " ===\n";
+    echo "\n=== دسته‌های کاتالوگ بدون آگهی : " . count($noDataCats) . " ===\n";
     foreach ($noDataCats as $line) {
         echo '  - ' . $line . "\n";
     }
