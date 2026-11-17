@@ -239,12 +239,10 @@ function live_chat_ensure_tables(): void {
     }
 }
 
-function live_chat_start(string $name, string $phone = '', array $transcript = []): array {
+function live_chat_start(string $name, array $transcript = []): array {
     $name   = clean($name);
-    $phone  = clean($phone);
     $errors = [];
     if (mb_strlen($name) < 2) $errors['name'] = 'نام را وارد کنید.';
-    if ($phone !== '' && !preg_match('/^09\d{9}$/', $phone)) $errors['phone'] = 'شماره موبایل معتبر نیست.';
     if ($errors) return ['errors' => $errors];
 
     $token = bin2hex(random_bytes(16));
@@ -253,7 +251,7 @@ function live_chat_start(string $name, string $phone = '', array $transcript = [
     $chatId = DB::insert('live_chats', [
         'session_token' => $token,
         'guest_name'    => $name,
-        'guest_phone'   => $phone,
+        'guest_phone'   => '',
         'status'        => 'open',
     ]);
 
@@ -274,7 +272,7 @@ function live_chat_start(string $name, string $phone = '', array $transcript = [
 
     notify_admins(
         'چت زنده جدید: ' . $name,
-        'کاربر ' . $name . ($phone !== '' ? ' (' . $phone . ')' : '') . ' درخواست ارتباط با پشتیبان انسانی کرد.',
+        'کاربر ' . $name . ' درخواست ارتباط با پشتیبان انسانی کرد.',
         APP_URL . '/admin/live_chat?id=' . $chatId
     );
 

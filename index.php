@@ -1523,4 +1523,674 @@ render_navbar($user);
 </section>
 <?php endif; ?>
 
+<!-- ===== پشتیبانی سواپین: ویجت شناور + دکمه‌ها ===== -->
+<?php
+$supQuestions = [
+    'چطور در سواپین ثبت‌نام کنم؟',
+    'چطور کالایم را برای معاوضه ثبت کنم؟',
+    'معاوضه در سواپین چطور انجام می‌شود؟',
+    'ارزش کالایم را چطور تعیین کنم؟',
+    'چطور آگهی‌ام را ویژه کنم؟',
+];
+?>
+<style>
+:root {
+  --sw-sup-navy: #071A33;
+  --sw-sup-navy-dark: #030D1C;
+  --sw-sup-yellow: #FFC928;
+  --sw-sup-yellow-dark: #E6B000;
+  --sw-sup-yellow-light: #FFF8E1;
+}
+.swp-support-fab {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.swp-support-fab__btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sw-sup-navy) 0%, var(--sw-sup-navy-dark) 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(7,26,51,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  position: relative;
+  transition: transform .2s, box-shadow .2s;
+}
+.swp-support-fab__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(7,26,51,.5);
+}
+.swp-support-fab__btn::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--sw-sup-yellow);
+  opacity: .5;
+  animation: swp-pulse 2s infinite;
+}
+@keyframes swp-pulse {
+  0% { transform: scale(1); opacity: .5; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+.swp-support-fab__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--sw-sup-yellow);
+  color: var(--sw-sup-navy);
+  font-size: .7rem;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+
+/* دکمه‌های درون صفحه */
+.swp-support-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+.swp-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: .95rem;
+  border: none;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  font-family: inherit;
+}
+.swp-support-btn--primary {
+  background: var(--sw-sup-navy);
+  color: #fff;
+}
+.swp-support-btn--primary:hover {
+  background: var(--sw-sup-navy-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(7,26,51,.3);
+}
+.swp-support-btn--accent {
+  background: var(--sw-sup-yellow);
+  color: var(--sw-sup-navy);
+}
+.swp-support-btn--accent:hover {
+  background: var(--sw-sup-yellow-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,201,40,.3);
+}
+.swp-support-btn i { font-size: 1.15rem; }
+
+/* مودال */
+.swp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3,13,28,.65);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.swp-modal-overlay.is-open { display: flex; }
+.swp-modal {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,.4);
+  animation: swp-pop .25s ease;
+}
+@keyframes swp-pop {
+  from { transform: scale(.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.swp-modal__header {
+  background: linear-gradient(135deg, var(--sw-sup-navy) 0%, var(--sw-sup-navy-dark) 100%);
+  color: #fff;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+.swp-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s;
+}
+.swp-modal__close:hover { background: rgba(255,255,255,.25); }
+.swp-modal__head-info { flex: 1; }
+.swp-modal__head-info h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.swp-modal__head-info p { margin: 2px 0 0; font-size: .8rem; opacity: .8; }
+.swp-modal__head-avatars { display: flex; }
+.swp-modal__head-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--sw-sup-yellow);
+  color: var(--sw-sup-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  margin-left: -10px;
+  border: 2px solid var(--sw-sup-navy);
+}
+.swp-modal__head-avatar:first-child { margin-left: 0; }
+.swp-modal__body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* نمای فرم */
+.swp-form-view { padding: 16px; }
+.swp-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.swp-msg__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--sw-sup-navy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+.swp-msg__bubble {
+  background: #f4f6f9;
+  border-radius: 0 14px 14px 14px;
+  padding: 12px 14px;
+  max-width: 85%;
+}
+.swp-msg__bubble p { margin: 0 0 10px; font-weight: 600; font-size: .95rem; color: var(--sw-sup-navy); }
+.swp-qbuttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.swp-qbtn {
+  text-align: right;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: .85rem;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+  color: var(--sw-sup-navy);
+}
+.swp-qbtn:hover { border-color: var(--sw-sup-yellow); background: var(--sw-sup-yellow-light); }
+.swp-qbtn.is-selected { border-color: var(--sw-sup-navy); background: var(--sw-sup-yellow-light); color: var(--sw-sup-navy-dark); font-weight: 600; }
+
+.swp-form-card {
+  background: #fafbfc;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid #eef0f3;
+}
+.swp-form-card__title { margin: 0 0 12px; font-size: .9rem; color: #475569; }
+.swp-field { position: relative; margin-bottom: 12px; }
+.swp-field__input {
+  width: 100%;
+  padding: 14px 12px 6px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: .95rem;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.swp-field__input:focus { outline: none; border-color: var(--sw-sup-navy); }
+.swp-field__input.is-invalid { border-color: #ef4444; }
+.swp-field__label {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: .9rem;
+  pointer-events: none;
+  transition: all .15s;
+  background: transparent;
+  padding: 0 4px;
+}
+.swp-field__input:focus + .swp-field__label,
+.swp-field__input:not(:placeholder-shown) + .swp-field__label {
+  top: 8px;
+  transform: none;
+  font-size: .72rem;
+  color: var(--sw-sup-navy);
+  font-weight: 600;
+}
+.swp-field__error { display: block; color: #ef4444; font-size: .75rem; margin-top: 4px; }
+.swp-submit {
+  width: 100%;
+  padding: 13px;
+  background: var(--sw-sup-navy);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s;
+}
+.swp-submit:hover { background: var(--sw-sup-navy-dark); }
+.swp-submit:disabled { opacity: .7; cursor: not-allowed; }
+.swp-note { text-align: center; font-size: .72rem; color: #94a3b8; margin: 10px 0 0; }
+
+/* نمای چت */
+.swp-chat-view {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  background: #f4f6f9;
+}
+.swp-chat-view.is-active { display: flex; }
+.swp-chat-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.swp-c-msg { display: flex; }
+.swp-c-msg--guest { justify-content: flex-end; }
+.swp-c-msg--admin, .swp-c-msg--ai { justify-content: flex-start; }
+.swp-c-msg__bubble {
+  max-width: 78%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: .9rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+.swp-c-msg--guest .swp-c-msg__bubble {
+  background: var(--sw-sup-yellow-light);
+  color: var(--sw-sup-navy);
+  border-radius: 14px 14px 0 14px;
+}
+.swp-c-msg--admin .swp-c-msg__bubble,
+.swp-c-msg--ai .swp-c-msg__bubble {
+  background: #fff;
+  color: #1e293b;
+  border-radius: 14px 14px 14px 0;
+}
+.swp-c-msg__sender { display: block; font-size: .7rem; color: var(--sw-sup-navy); font-weight: 700; margin-bottom: 2px; }
+.swp-c-msg__time { display: block; font-size: .65rem; color: #94a3b8; margin-top: 4px; text-align: left; }
+.swp-c-msg--guest .swp-c-msg__time { text-align: left; }
+
+.swp-composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #fff;
+  border-top: 1px solid #eef0f3;
+}
+.swp-composer__input {
+  flex: 1;
+  resize: none;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 10px 14px;
+  font-size: .9rem;
+  font-family: inherit;
+  max-height: 100px;
+  line-height: 1.4;
+}
+.swp-composer__input:focus { outline: none; border-color: var(--sw-sup-navy); }
+.swp-composer__send {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--sw-sup-navy);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.swp-composer__send:hover { background: var(--sw-sup-navy-dark); }
+.swp-composer__send:disabled { opacity: .5; }
+
+@media (max-width: 600px) {
+  .swp-modal { max-height: 92vh; border-radius: 16px; }
+  .swp-support-fab__btn { width: 54px; height: 54px; font-size: 1.3rem; bottom: 16px; left: 16px; }
+  .swp-support-btn { padding: 10px 18px; font-size: .88rem; }
+}
+</style>
+
+<!-- دکمه‌های پشتیبانی درون صفحه -->
+<div class="swp-support-btns" id="swp-support-buttons">
+  <button type="button" class="swp-support-btn swp-support-btn--primary" data-swp-open>
+    <i class="bi bi-headset"></i> پشتیبانی سواَپین
+  </button>
+  <button type="button" class="swp-support-btn swp-support-btn--accent" data-swp-open>
+    <i class="bi bi-chat-dots"></i> چت با پشتیبانی
+  </button>
+</div>
+
+<!-- دکمه شناور -->
+<div class="swp-support-fab">
+  <button type="button" class="swp-support-fab__btn" data-swp-open aria-label="پشتیبانی سواپین">
+    <i class="bi bi-headset"></i>
+    <span class="swp-support-fab__badge">!</span>
+  </button>
+</div>
+
+<!-- مودال پشتیبانی -->
+<div class="swp-modal-overlay" id="swp-modal">
+  <div class="swp-modal" role="dialog" aria-modal="true" aria-label="پشتیبانی سواپین">
+    <div class="swp-modal__header">
+      <button type="button" class="swp-modal__close" id="swp-modal-close" aria-label="بستن">
+        <i class="bi bi-x-lg"></i>
+      </button>
+      <div class="swp-modal__head-info">
+        <h3>پشتیبانی سواپین</h3>
+        <p id="swp-modal-subtitle">پاسخگوی سوالات شما هستیم</p>
+      </div>
+      <div class="swp-modal__head-avatars">
+        <div class="swp-modal__head-avatar"><i class="bi bi-headset"></i></div>
+        <div class="swp-modal__head-avatar"><i class="bi bi-person-badge"></i></div>
+      </div>
+    </div>
+    <div class="swp-modal__body">
+
+      <!-- نمای فرم -->
+      <div class="swp-form-view" id="swp-form-view">
+        <div class="swp-msg">
+          <div class="swp-msg__avatar"><i class="bi bi-headset"></i></div>
+          <div class="swp-msg__bubble">
+            <p>چگونه می‌توانیم کمکتان کنیم؟</p>
+            <div class="swp-qbuttons" id="swp-qbuttons">
+              <?php foreach ($supQuestions as $q): ?>
+                <button type="button" class="swp-qbtn" data-topic="<?= h($q) ?>"><?= h($q) ?></button>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </div>
+
+        <div class="swp-form-card">
+          <h4 class="swp-form-card__title">برای شروع گفتگو فرم زیر را تکمیل کنید</h4>
+          <form id="swp-form" novalidate>
+            <input type="hidden" name="topic" id="swp-topic" value="">
+            <div class="swp-field">
+              <input type="text" id="swp-name" name="name" class="swp-field__input" placeholder=" " autocomplete="name" required>
+              <label class="swp-field__label" for="swp-name">نام و نام خانوادگی</label>
+            </div>
+            <div class="swp-field">
+              <input type="tel" id="swp-phone" name="phone" class="swp-field__input" placeholder=" " autocomplete="tel" maxlength="11" required>
+              <label class="swp-field__label" for="swp-phone">تلفن همراه</label>
+            </div>
+            <button type="submit" class="swp-submit" id="swp-submit">شروع گفتگو</button>
+          </form>
+          <p class="swp-note">با شروع گفتگو، شرایط پشتیبانی سواپین را می‌پذیرید.</p>
+        </div>
+      </div>
+
+      <!-- نمای چت -->
+      <div class="swp-chat-view" id="swp-chat-view">
+        <div class="swp-chat-thread" id="swp-chat-thread"></div>
+        <form class="swp-composer" id="swp-composer">
+          <textarea class="swp-composer__input" id="swp-chat-input" rows="1" placeholder="پیام خود را بنویسید…" autocomplete="off"></textarea>
+          <button type="submit" class="swp-composer__send" id="swp-chat-send" aria-label="ارسال">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const APP_URL = <?= json_encode(APP_URL) ?>;
+  const apiUrl  = APP_URL + '/api/live_chat.php';
+  const modal   = document.getElementById('swp-modal');
+  const formView = document.getElementById('swp-form-view');
+  const chatView = document.getElementById('swp-chat-view');
+  const thread  = document.getElementById('swp-chat-thread');
+  const form    = document.getElementById('swp-form');
+  const topicInp = document.getElementById('swp-topic');
+  const qBtns   = document.querySelectorAll('.swp-qbtn');
+  const composer = document.getElementById('swp-composer');
+  const chatInp = document.getElementById('swp-chat-input');
+  const chatSend = document.getElementById('swp-chat-send');
+  const subtitle = document.getElementById('swp-modal-subtitle');
+
+  let chatToken = '';
+  let lastMsgId = 0;
+  let pollTimer = null;
+
+  function getCsrf() {
+    const inp = document.querySelector('input[name="_csrf"]');
+    if (inp && inp.value) return inp.value;
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+  }
+
+  function openModal() {
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('[data-swp-open]').forEach(el => {
+    el.addEventListener('click', openModal);
+  });
+  document.getElementById('swp-modal-close').addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+  });
+
+  // انتخاب سوال
+  qBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      qBtns.forEach(b => b.classList.remove('is-selected'));
+      btn.classList.add('is-selected');
+      topicInp.value = btn.getAttribute('data-topic') || '';
+    });
+  });
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.swp-field__error').forEach(e => e.remove());
+    document.querySelectorAll('.swp-field__input').forEach(i => i.classList.remove('is-invalid'));
+  }
+  function addError(fieldId, msg) {
+    const inp = document.getElementById(fieldId);
+    inp.classList.add('is-invalid');
+    const span = document.createElement('span');
+    span.className = 'swp-field__error';
+    span.textContent = msg;
+    inp.parentElement.appendChild(span);
+  }
+
+  // ارسال فرم
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+    const name = document.getElementById('swp-name').value.trim();
+    const phone = document.getElementById('swp-phone').value.trim();
+    const topic = topicInp.value.trim();
+    let ok = true;
+    if (name.length < 2) { addError('swp-name', 'نام را وارد کنید.'); ok = false; }
+    if (!/^09\d{9}$/.test(phone)) { addError('swp-phone', 'شماره موبایل معتبر وارد کنید.'); ok = false; }
+    if (!ok) return;
+
+    const btn = document.getElementById('swp-submit');
+    btn.disabled = true;
+    btn.textContent = 'در حال اتصال…';
+
+    try {
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrf() },
+        body: JSON.stringify({ action: 'start', name, phone, transcript: [] })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        if (data.errors) {
+          if (data.errors.name) addError('swp-name', data.errors.name);
+          if (data.errors.phone) addError('swp-phone', data.errors.phone);
+        } else {
+          alert(data.error || 'خطا در شروع گفتگو');
+        }
+        btn.disabled = false;
+        btn.textContent = 'شروع گفتگو';
+        return;
+      }
+
+      chatToken = data.token;
+      // اگر سوالی انتخاب شده بود، به‌عنوان اولین پیام بفرست
+      if (topic) {
+        try {
+          await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'send', token: chatToken, body: topic })
+          });
+        } catch {}
+      }
+      // نمایش چت
+      startChat();
+    } catch {
+      alert('خطا در برقراری ارتباط');
+      btn.disabled = false;
+      btn.textContent = 'شروع گفتگو';
+    }
+  });
+
+  function startChat() {
+    formView.style.display = 'none';
+    chatView.classList.add('is-active');
+    subtitle.textContent = 'آنلاین · در حال گفتگو';
+    thread.innerHTML = '';
+    appendMsg({ sender_type: 'ai', body: 'سلام! 👋 به‌زودی یکی از همکاران ما پاسخگوی شما خواهد بود.', created_at: new Date().toISOString() });
+    lastMsgId = 0;
+    loadMessages();
+    pollTimer = setInterval(loadMessages, 3000);
+    chatInp.focus();
+  }
+
+  async function loadMessages() {
+    if (!chatToken) return;
+    try {
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'messages', token: chatToken, after_id: lastMsgId })
+      });
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.messages)) {
+        for (const m of data.messages) {
+          appendMsg(m);
+          lastMsgId = Math.max(lastMsgId, parseInt(m.id, 10));
+        }
+      }
+    } catch {}
+  }
+
+  function appendMsg(m) {
+    const wrap = document.createElement('div');
+    wrap.className = 'swp-c-msg swp-c-msg--' + (m.sender_type || 'guest');
+    const senderLabel = m.sender_type === 'admin' ? 'پشتیبانی' : (m.sender_type === 'ai' ? 'دستیار' : '');
+    const senderHtml = senderLabel ? '<span class="swp-c-msg__sender">' + esc(senderLabel) + '</span>' : '';
+    let time;
+    try { time = new Date(m.created_at.replace(' ', 'T')).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }); }
+    catch { time = ''; }
+    wrap.innerHTML = '<div class="swp-c-msg__bubble">' + senderHtml +
+      '<div>' + esc(m.body).replace(/\n/g, '<br>') + '</div>' +
+      '<span class="swp-c-msg__time">' + esc(time) + '</span></div>';
+    thread.appendChild(wrap);
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  // ارسال پیام چت
+  composer.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = chatInp.value.trim();
+    if (!body) return;
+    chatInp.value = '';
+    chatSend.disabled = true;
+    appendMsg({ sender_type: 'guest', body, created_at: new Date().toISOString() });
+    try {
+      await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', token: chatToken, body })
+      });
+    } catch {}
+    chatSend.disabled = false;
+    chatInp.focus();
+  });
+
+  chatInp.addEventListener('input', () => {
+    chatInp.style.height = 'auto';
+    chatInp.style.height = Math.min(chatInp.scrollHeight, 100) + 'px';
+  });
+  chatInp.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); composer.requestSubmit(); }
+  });
+})();
+</script>
+
 <?php render_footer(); ?>
