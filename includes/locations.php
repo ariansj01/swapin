@@ -81,28 +81,28 @@ function swaapin_location_slug(string $name, string $level): string {
                 'ایلام' => 'ilam-province',
                 'بوشهر' => 'bushehr-province',
                 'تهران' => 'tehran-province',
-                'چهارمحال و بختیاری' => 'chaharmahal-and-bakhtiari-province',
+                'چهارمحال و بختیاری' => 'chaharmahal-bakhtiari-province',
                 'خراسان جنوبی' => 'south-khorasan-province',
-                'خراسان رضوی' => 'razavi-khorasan-province',
+                'خراسان رضوی' => 'khorasan-razavi-province',
                 'خراسان شمالی' => 'north-khorasan-province',
                 'خوزستان' => 'khuzestan-province',
                 'زنجان' => 'zanjan-province',
                 'سمنان' => 'semnan-province',
-                'سیستان و بلوچستان' => 'sistan-and-baluchestan-province',
+                'سیستان و بلوچستان' => 'sistan-baluchestan-province',
                 'فارس' => 'fars-province',
                 'قزوین' => 'qazvin-province',
                 'قم' => 'qom-province',
                 'کردستان' => 'kurdistan-province',
                 'کرمان' => 'kerman-province',
                 'کرمانشاه' => 'kermanshah-province',
-                'کهگیلویه و بویراحمد' => 'kohgiluyeh-and-boyer-ahmad-province',
+                'کهگیلویه و بویراحمد' => 'kohgiluyeh-boyerahmad-province',
                 'گلستان' => 'golestan-province',
                 'گیلان' => 'gilan-province',
                 'لرستان' => 'lorestan-province',
                 'مازندران' => 'mazandaran-province',
                 'مرکزی' => 'markazi-province',
                 'هرمزگان' => 'hormozgan-province',
-                'همدان' => 'hamadan-province',
+                'همدان' => 'hamedan-province',
                 'یزد' => 'yazd-province',
             ],
             'region' => [
@@ -113,9 +113,9 @@ function swaapin_location_slug(string $name, string $level): string {
                 'اصفهان' => 'isfahan', 'شیراز' => 'shiraz', 'تبریز' => 'tabriz', 'اهواز' => 'ahvaz',
                 'قم' => 'qom', 'کرمانشاه' => 'kermanshah', 'ارومیه' => 'urmia', 'زاهدان' => 'zahedan',
                 'کرمان' => 'kerman', 'یزد' => 'yazd', 'اردبیل' => 'ardabil', 'اراک' => 'arak',
-                'همدان' => 'hamadan', 'زنجان' => 'zanjan', 'ساری' => 'sari', 'بابل' => 'babol',
+                'همدان' => 'hamedan', 'زنجان' => 'zanjan', 'ساری' => 'sari', 'بابل' => 'babol',
                 'آمل' => 'amol', 'گرگان' => 'gorgan', 'قزوین' => 'qazvin', 'سنندج' => 'sanandaj',
-                'خرم‌آباد' => 'khorramabad', 'بوشهر' => 'bushehr', 'بیرجند' => 'birjand', 'بجنورد' => 'bojnord',
+                'خرم‌آباد' => 'khorramabad', 'بوشهر' => 'bushehr', 'بیرجند' => 'birjand', 'بجنورد' => 'bojnurd',
                 'شهرکرد' => 'shahrekord', 'یاسوج' => 'yasuj', 'ایلام' => 'ilam', 'سمنان' => 'semnan',
                 'بندرعباس' => 'bandar-abbas', 'بندر انزلی' => 'bandar-anzali', 'لاهیجان' => 'lahijan',
                 'چالوس' => 'chalus', 'نوشهر' => 'nowshahr', 'تنکابن' => 'tonekabon', 'رامسر' => 'ramsar',
@@ -131,10 +131,12 @@ function swaapin_location_slug(string $name, string $level): string {
                 'قشم' => 'qeshm', 'کیش' => 'kish', 'میناب' => 'minab', 'برازجان' => 'borazjan',
                 'گنبدکاووس' => 'gonbad-e-kavous', 'بندرترکمن' => 'bandar-torkaman',
                 'علی‌آباد کتول' => 'aliabad-e-katoul', 'اسلام‌شهر' => 'eslamshahr',
-                'نسیم‌شهر' => 'nasimshahr', 'قائم‌شهر' => 'qaem-shahr', 'نجف‌آباد' => 'najafabad',
+                'نسیم‌شهر' => 'nasimshahr', 'قائم‌شهر' => 'ghaemshahr', 'نجف‌آباد' => 'najafabad',
                 'خمینی‌شهر' => 'khomeyni-shahr', 'شهرضا' => 'shahreza', 'رباط‌کریم' => 'robat-karim',
                 'فردیس' => 'fardis', 'بهارستان' => 'baharestan', 'نظرآباد' => 'nazarabad',
                 'پردیس' => 'pardis', 'شمشک' => 'shemeshak', 'بومهن' => 'boumehen', 'ری' => 'rey',
+                'لواسان' => 'lavasan', 'دماوند' => 'damavand', 'بابلسر' => 'babolsar', 'لنگرود' => 'langarud',
+                'فومن' => 'fuman', 'رضوانشهر' => 'rezvanshahr', 'صومعه‌سرا' => 'someh-sara', 'کنارک' => 'konarak',
             ],
             'neighborhood' => [
                 'ونک' => 'vanak', 'میدان ونک' => 'vanak-square', 'جردن' => 'jordan',
@@ -303,21 +305,9 @@ function swaapin_ensure_location_tree(): int {
             }
         }
 
-        // شهرهای فهرست عمومی که زیر هیچ استانی ثبت نشده‌اند → زیر کشور
-        foreach (iran_cities() as $city) {
-            $city = (string) $city;
-            if ($city === '') {
-                continue;
-            }
-            $exists = null;
-            try {
-                $exists = DB::fetch('SELECT id FROM locations WHERE level = ? AND name = ? LIMIT 1', ['city', $city]);
-            } catch (Throwable $e) {
-            }
-            if (!$exists) {
-                $insert('city', $city, $countryId, ++$sort);
-            }
-        }
+        // توجه: هیچ شهری مستقیماً زیر «کشور» ثبت نمی‌شود. هر شهر باید والدِ استان داشته باشد؛
+        // فهرست تخت iran_cities() (که چند محله/شهر اشتباه هم داشت) دیگر مبنای seed نیست
+        // و مرجع درست، iran_cities_by_province() است.
 
         $cachedCount = (int) (DB::fetch('SELECT COUNT(*) AS c FROM locations')['c'] ?? 0);
         swapin_debug_log('locations_seeded', ['count' => $cachedCount]);

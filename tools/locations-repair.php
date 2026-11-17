@@ -400,6 +400,27 @@ foreach (swaapin_location_regions() as $region) {
     }
 }
 
+// ── هم‌راستاسازی اسلاگ با شیت «جدول مکان» ─────────────────────────────────────
+// اسلاگ کانونیکال هر مکان (= کلید URL) باید دقیقاً همان اسلاگ شیت مرجع باشد.
+$slugPathRows = r_all($pdo, "SELECT id, level, name, slug FROM locations WHERE level IN ('country','region','province','city')");
+$slugOwner = [];
+foreach (r_all($pdo, 'SELECT id, slug FROM locations') as $r) {
+    $slugOwner[strtolower((string)$r['slug'])] = (int)$r['id'];
+}
+$slugFixes = [];
+foreach ($slugPathRows as $r) {
+    $rid     = (int)$r['id'];
+    $desired = trim(strtolower(swaapin_location_slug((string)$r['name'], (string)$r['level'])), '-');
+    if ($desired === '' || $desired === strtolower((string)$r['slug'])) {
+        continue;
+    }
+    $owner = $slugOwner[$desired] ?? 0;
+    if ($owner > 0 && $owner !== $rid) {
+        continue; // اسلاگ مقصد در اختیار ردیف دیگری است؛ برای جلوگیری از تضاد نادیده گرفته می‌شود
+    }
+    $slugFixes[] = ['id' => $rid, 'level' => (string)$r['level'], 'name' => (string)$r['name'], 'from' => (string)$r['slug'], 'to' => $desired];
+}
+
 // ── نام‌های غلط قدیمی (کپی اشتباه seed قدیمی) ────────────────────────────────
 // اگر ردیفِ نام‌درست موجود باشد ادغام می‌شود، وگرنه ردیف غلط تغییر نام می‌دهد.
 $legacyRenames = [
@@ -478,6 +499,11 @@ foreach ($regionMoves as $m) {
     printf("  #%d %s -> region#%d\n", $m['id'], $m['name'], $m['to_id']);
 }
 
+echo "\n=== planned slug alignments (sheet «جدول مکان») : " . count($slugFixes) . " ===\n";
+foreach ($slugFixes as $m) {
+    printf("  #%d %-9s %-16s %s -> %s\n", $m['id'], $m['level'], $m['name'], $m['from'], $m['to']);
+}
+
 echo "\n=== planned legacy renames / merges : " . (count($mergeInto) + count($renameRows)) . " ===\n";
 foreach ($mergeInto as $m) {
     printf("  merge  #%d %-12s -> #%d %s\n", $m['from'], $m['fromName'], $m['to'], $m['toName']);
@@ -528,6 +554,12 @@ try {
     }
     foreach ($regionMoves as $m) {
         $upParent->execute([$m['to_id'], $m['id']]);
+    }
+
+    // هم‌راستاسازی اسلاگ مطابق شیت «جدول مکان»
+    $upSlug = $pdo->prepare('UPDATE locations SET slug = ? WHERE id = ?');
+    foreach ($slugFixes as $m) {
+        $upSlug->execute([$m['to'], $m['id']]);
     }
 
     // نام‌های غلط: تغییر نام (با حفظ اسلاگ در صورت اشغال بودن مقصد)
