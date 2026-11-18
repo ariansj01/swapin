@@ -93,8 +93,8 @@ function swaapin_swap_template_defaults(): array {
         'title_category' => 'معاوضه و تهاتر {category} در {location}',
         'title_model'    => 'معاوضه {brand} {model} در {location}',
         'title_xy'       => 'معاوضه {x} با {y} در {location}',
-        'h1_location'    => 'معاوضه و تهاتر کالا در {location}',
-        'h1_category'    => 'معاوضه و تهاتر {category} در {location}',
+        'h1_location'    => 'معاوضه در {location}',
+        'h1_category'    => 'معاوضه {category} در {location}',
         'h1_model'       => 'معاوضه {brand} {model} در {location}',
         'h1_xy'          => 'معاوضه {x} با {y} در {location}',
     ];
