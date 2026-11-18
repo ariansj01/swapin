@@ -468,7 +468,8 @@ $robotsMeta = ($hasOtherFilters || $pageIndexable === false) ? 'noindex, follow'
 // بخش ۱۰: آگهی‌های جایگزین در صفحات کم‌آگهی (رندر سمت سرور؛ بدون تغییر URL/Title/H1)
 $fallbackTitle    = '';
 $fallbackListings = [];
-if ($page === 1 && !$hasOtherFilters && $total < SWAAPIN_MIN_LISTINGS_DISPLAY
+// فقط زمانی نمایش داده می‌شود که صفحه آگهی نداشته باشد یا کمتر از ۳ آگهی فعال داشته باشد
+if ($page === 1 && !$hasOtherFilters && $total < 3
     && function_exists('swaapin_fallback_listings')) {
     $shownIds = array_map(static fn($l) => (int) $l['id'], $listings);
     // پر کردن بقیه صفحه: یک سطح مکان بالاتر، سپس یک سطح دسته بالاتر (بدون تکرار)
@@ -559,7 +560,7 @@ render_navbar($user);
                 'sort'           => $sort !== 'new' ? $sort : null,
                 'time_ago'       => $timeAgo !== '' ? $timeAgo : null,
             ]));
-            return APP_URL . '/iran?' . $qs;
+            return APP_URL . '/iran' . ($qs !== '' ? '?' . $qs : '');
         };
 
         if ($category):
@@ -629,7 +630,7 @@ render_navbar($user);
                     'sort' => $sort !== 'new' ? $sort : null,
                     'time_ago' => $timeAgo !== '' ? $timeAgo : null,
                 ]));
-                return APP_URL . '/iran?' . $qs;
+                return APP_URL . '/iran' . ($qs !== '' ? '?' . $qs : '');
             }
             return $baseCatUrl;
         };
@@ -885,7 +886,8 @@ render_navbar($user);
             }
             $qs['page'] = $p;
             unset($qs['slug_path']);
-            return APP_URL . '/iran?' . http_build_query($qs);
+            $qsStr = http_build_query($qs);
+            return APP_URL . '/iran' . ($qsStr !== '' ? '?' . $qsStr : '');
         };
 
         $isFirst = $currentPage === 1;

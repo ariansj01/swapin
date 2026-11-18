@@ -155,6 +155,10 @@ Options -MultiViews -Indexes
   RewriteRule ^search/ai/?$ search/ai.php [L,NC,QSA]
   RewriteRule ^search/saved/?$ search/saved.php [L,NC,QSA]
 
+  # فروشگاه تستی حذف‌شده (Q05) → ۴۱۰ Gone مستقیم، بدون ریدایرکت میانی به /shop/{slug}
+  RewriteRule ^shop/(?:online|physical|both)/(?:test|myket-test-store)/?$ - [G,L,NC]
+  RewriteRule ^shop/(?:test|myket-test-store)/?$ - [G,L,NC]
+
   # 301: آدرس‌های قدیمی /shop/<type>/<slug> → آدرس کانونیکال /shop/<slug>
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
