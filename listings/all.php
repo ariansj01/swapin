@@ -318,6 +318,10 @@ foreach ($catalogChain as $node) {
 // هیچ تایتلی با «…» بریده نمی‌شود.
 $isGlobalLoc   = ($locRow && (string) ($locRow['level'] ?? '') === 'country');
 $locTitleName  = $locRow ? (string) $locRow['name'] : '';
+// صفحه‌ی استان باید از صفحه‌ی شهرِ هم‌نامش جدا شود: «در استان تهران» در برابر «در تهران» (کارت A03.1)
+if ($locRow && (string) ($locRow['level'] ?? '') === 'province' && $locTitleName !== '') {
+    $locTitleName = 'استان ' . $locTitleName;
+}
 $cityTitleName = '';
 if ($city !== '') {
     $cityLoc = swaapin_location_by_name($city, 'city')

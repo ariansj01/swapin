@@ -435,6 +435,29 @@ $slugOwner = [];
 foreach (r_all($pdo, 'SELECT id, slug FROM locations') as $r) {
     $slugOwner[strtolower((string)$r['slug'])] = (int)$r['id'];
 }
+
+// ── شهرهای جاافتاده ──────────────────────────────────────────────────────────
+// هر شهر فهرست معتبر (iran_cities_by_province) که در جدول locations ردیف «شهر» ندارد
+// باید ساخته شود تا هر استان همه‌ی شهرهایش را داشته باشد (کامنت ۲۲ آبان: هر استان فقط
+// ۳ تا ۱۰ شهر داشت). نامی که از قبل هست (هرچند زیر استان اشتباه) دوباره ساخته نمی‌شود؛
+// جای درست آن با «انتقال والد» تأمین می‌شود.
+$existingCityName = [];
+foreach ($cities as $c) {
+    $existingCityName[(string)$c['name']] = true;
+}
+$missingCities = [];
+foreach ($desired as $cityName => $prov) {
+    $cityName = (string)$cityName;
+    if (isset($existingCityName[$cityName])) {
+        continue;
+    }
+    $pid = $provinceId[(string)$prov] ?? 0;
+    if ($pid <= 0) {
+        continue;
+    }
+    $missingCities[] = ['name' => $cityName, 'prov' => (string)$prov, 'prov_id' => $pid];
+}
+
 $slugFixes = [];
 foreach ($slugPathRows as $r) {
     $rid     = (int)$r['id'];
@@ -489,6 +512,24 @@ foreach ($moves as $m) {
     $moveIds[$m['id']] = true;
 }
 $counts = r_listing_counts($pdo);
+
+// ── نام‌های غلط/نامشخص و شهرستان‌هایی که نباید سطح «شهر» باشند ───────────────
+// (فهرست کامنت ۲۲ آبان: «ساوهقزوین»، «یرند»، «مردهک»، «کریم‌آباد»، «مغان»، «دلفان»)
+// این نام‌ها از فهرست معتبر (iran_cities_by_province) حذف شده‌اند؛ ردیفشان اگر آگهی فعال
+// ندارد غیرفعال می‌شود و اگر دارد برای نگاشت دستی علامت می‌خورد.
+$badCityNames = ['ساوهقزوین', 'یرند', 'مردهک', 'کریم‌آباد', 'مغان', 'دلفان'];
+$badDeact = [];
+$badKeep  = [];
+foreach ($badCityNames as $badName) {
+    foreach ($byName[$badName] ?? [] as $row) {
+        $n = (int)($counts['city'][(string)$badName] ?? 0);
+        if ($n > 0) {
+            $badKeep[] = ['id' => (int)$row['id'], 'name' => (string)$badName, 'n' => $n];
+        } else {
+            $badDeact[] = ['id' => (int)$row['id'], 'name' => (string)$badName];
+        }
+    }
+}
 
 $orphanDeact = [];
 $orphanKeep  = [];
@@ -546,6 +587,25 @@ foreach ($mergeInto as $m) {
 }
 foreach ($renameRows as $m) {
     printf("  rename #%d %-12s -> %s (slug: %s)\n", $m['id'], $m['fromName'], $m['toName'], $m['slug']);
+}
+
+echo "\n=== planned missing cities (add to fill each province) : " . count($missingCities) . " ===\n";
+foreach (array_slice($missingCities, 0, 40) as $m) {
+    printf("  += %-16s (%s)\n", $m['name'], $m['prov']);
+}
+if (count($missingCities) > 40) {
+    printf("  ... و %d مورد دیگر\n", count($missingCities) - 40);
+}
+
+echo "\n=== planned bad-name city deactivations : " . count($badDeact) . " ===\n";
+foreach ($badDeact as $b) {
+    printf("  #%d %s\n", $b['id'], $b['name']);
+}
+if ($badKeep) {
+    echo "\n=== bad-named cities WITH listings (left active — need manual mapping) : " . count($badKeep) . " ===\n";
+    foreach ($badKeep as $b) {
+        printf("  #%d %-16s %d\n", $b['id'], $b['name'], $b['n']);
+    }
 }
 
 echo "\n=== planned orphan city deactivations (unmapped, no listings) : " . count($orphanDeact) . " ===\n";
@@ -632,6 +692,34 @@ try {
     foreach ($orphanDeact as $o) {
         $upChildActive->execute([$o['id']]);
         $upActive->execute([$o['id']]);
+    }
+
+    // ساخت شهرهای جاافتاده (هر شهر فهرست معتبر که در جدول ردیف ندارد)
+    if ($missingCities) {
+        $usedSlug = [];
+        foreach (r_all($pdo, 'SELECT slug FROM locations') as $r) {
+            $usedSlug[strtolower((string)$r['slug'])] = true;
+        }
+        $insCity = $pdo->prepare("INSERT INTO locations (parent_id, level, name, slug, sort_order, is_active) VALUES (?, 'city', ?, ?, 0, 1)");
+        foreach ($missingCities as $m) {
+            $base = swaapin_location_slug((string)$m['name'], 'city');
+            if ($base === '') {
+                $base = 'loc';
+            }
+            $slug = $base;
+            $i = 2;
+            while (isset($usedSlug[$slug])) {
+                $slug = $base . '-' . $i;
+                $i++;
+            }
+            $usedSlug[$slug] = true;
+            $insCity->execute([(int)$m['prov_id'], (string)$m['name'], $slug]);
+        }
+    }
+
+    // غیرفعال‌سازی ردیف‌های نامِ غلط/شهرستان (بدون آگهی فعال)
+    foreach ($badDeact as $b) {
+        $upActive->execute([$b['id']]);
     }
 
     $pdo->commit();

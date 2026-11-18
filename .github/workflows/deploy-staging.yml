@@ -46,13 +46,13 @@ jobs:
           echo "SWAAPIN STAGING DEPLOY"
           echo "========================================"
 
-          echo "[1/4] Fetching staging..."
+          echo "[1/6] Fetching staging..."
           sudo -n -H git -c safe.directory="$APP_DIR" -C "$APP_DIR" fetch origin staging
 
-          echo "[2/4] Syncing staging..."
+          echo "[2/6] Syncing staging..."
           sudo -n -H git -c safe.directory="$APP_DIR" -C "$APP_DIR" reset --hard origin/staging
 
-          echo "[3/5] Installing staging-only robots policy..."
+          echo "[3/6] Installing staging-only robots policy..."
           sudo install -o deploy -g www-data -m 644 \
             "$APP_DIR/ops/robots-staging.txt" "$APP_DIR/robots.txt"
           if ! grep -Fxq "Disallow: /" "$APP_DIR/robots.txt"; then
@@ -60,10 +60,21 @@ jobs:
             exit 1
           fi
 
-          echo "[4/5] Restoring ownership..."
+          echo "[4/6] Restoring ownership..."
           sudo chown -R deploy:www-data "$APP_DIR"
 
-          echo "[5/5] Installing dependencies..."
+          echo "[5/6] Installing version-controlled Nginx config..."
+          NGINX_SOURCE="$APP_DIR/ops/nginx/staging.swaapin.ir.conf"
+          NGINX_TARGET="/etc/nginx/sites-available/staging.swaapin.ir"
+          if [ ! -f "$NGINX_SOURCE" ]; then
+            echo "ERROR: Nginx source config not found: $NGINX_SOURCE"
+            exit 1
+          fi
+          sudo -n cp "$NGINX_SOURCE" "$NGINX_TARGET"
+          sudo -n nginx -t
+          sudo -n systemctl reload nginx
+
+          echo "[6/6] Installing dependencies..."
           cd "$APP_DIR"
 
           if [ -f composer.json ]; then
