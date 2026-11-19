@@ -45,7 +45,7 @@ $vals = [
     'latitude'        => '',
     'longitude'       => '',
     'neighborhood'    => '',
-    'want_categories' => [],
+    'want_category_id' => 0,
     'want_description' => '',
     'custom_value'    => 0,
     'estimated_value' => 0,
@@ -273,6 +273,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 render_head('ثبت آگهی جدید');
 render_navbar($user);
+
+// تعیین هدف آگهی برای نمایش اولیه (فروشگاه‌ها همیشه «فروش یا معاوضه»)
+$dealType = in_array(($vals['deal_type'] ?? 'swap'), ['swap', 'sell', 'both'], true) ? $vals['deal_type'] : 'swap';
+if ($isStoreSeller) {
+    $dealType = 'both';
+}
 ?>
 
 <div class="wizard-page">
@@ -283,15 +289,12 @@ render_navbar($user);
         <div class="stepper-progress" id="stepper-progress"></div>
         <?php 
         $stepLabels = [
-          1 => 'عنوان و توضیحات',
-          2 => 'تصاویر',
-          3 => 'جزئیات',
-          4 => 'چی می‌خوای؟',
-          5 => 'توضیح دقیق‌تر',
-          6 => 'قیمت تخمینی',
-          7 => 'بررسی نهایی'
+          1 => 'هدف آگهی',
+          2 => 'اطلاعات آگهی',
+          3 => 'جزئیات معامله',
+          4 => 'بررسی نهایی',
         ];
-        for ($i = 1; $i <= 7; $i++): ?>
+        for ($i = 1; $i <= 4; $i++): ?>
           <div class="stepper-step" data-step="<?= $i ?>" id="step-<?= $i ?>-indicator">
             <div class="stepper-circle">
               <i class="bi bi-check-lg" style="display: none;"></i>
@@ -308,6 +311,10 @@ render_navbar($user);
     <div class="wizard-alert wizard-alert--error">
       <i class="bi bi-exclamation-circle"></i> <?= h($errors['images']) ?>
     </div>
+    <?php elseif (!empty($errors)): ?>
+    <div class="wizard-alert wizard-alert--error">
+      <i class="bi bi-exclamation-circle"></i> لطفاً خطاهای مشخص‌شده را برطرف کنید.
+    </div>
     <?php endif; ?>
 
     <!-- Step Content Card -->
@@ -316,53 +323,87 @@ render_navbar($user);
         <?= csrf_field() ?>
 
         <!-- File input always in form root (not inside hidden steps) -->
-        <input type="file" id="step2-images" name="images[]" multiple accept="image/jpeg,image/png,image/webp"
+        <input type="file" id="wz-images" name="images[]" multiple accept="image/jpeg,image/png,image/webp"
                class="wizard-file-input" tabindex="-1" aria-hidden="true">
-        
-        <!-- Step 1: Title & Description -->
+
+        <!-- Step 1: هدف آگهی -->
         <div class="wizard-step" data-step="1" id="step-1">
-          <h2 class="wizard-step-title">عنوان و توضیحات</h2>
-          <p class="wizard-step-subtitle">نام کالا و توضیحات کامل را وارد کنید.</p>
+          <h2 class="wizard-step-title">می‌خوای با کالای خودت چه کاری انجام بدی؟</h2>
+          <p class="wizard-step-subtitle">
+            <?= $isStoreSeller ? 'فروشگاه‌ها همیشه هم برای معاوضه و هم برای فروش نقدی آگهی ثبت می‌کنند.' : 'با انتخاب هدف آگهی، مراحل بعدی بر اساس انتخاب شما تنظیم می‌شود.' ?>
+          </p>
+
+          <div class="listing-mode-switch">
+            <?php if (!$isStoreSeller): ?>
+            <label class="listing-mode-option">
+              <input type="radio" name="deal_type" value="sell" id="deal-type-sell" <?= $dealType === 'sell' ? 'checked' : '' ?>>
+              <span class="listing-mode-option__inner">
+                <i class="bi bi-cash-coin"></i>
+                <strong>فروش</strong>
+                <small>دریافت پول در ازای کالا</small>
+              </span>
+            </label>
+            <label class="listing-mode-option">
+              <input type="radio" name="deal_type" value="swap" id="deal-type-swap" <?= $dealType === 'swap' ? 'checked' : '' ?>>
+              <span class="listing-mode-option__inner">
+                <i class="bi bi-arrow-left-right"></i>
+                <strong>معاوضه</strong>
+                <small>دریافت کالای دیگر</small>
+              </span>
+            </label>
+            <?php endif; ?>
+            <label class="listing-mode-option">
+              <input type="radio" name="deal_type" value="both" id="deal-type-both" <?= $dealType === 'both' ? 'checked' : '' ?>>
+              <span class="listing-mode-option__inner">
+                <i class="bi bi-arrow-repeat"></i>
+                <strong>فروش یا معاوضه</strong>
+                <small>هر دو پیشنهاد قابل قبول است</small>
+              </span>
+            </label>
+          </div>
+          <input type="hidden" name="listing_mode" id="wz-listing-mode" value="<?= h($dealType) ?>">
+          <?php if (isset($errors['deal_type']) || isset($errors['listing_mode'])): ?>
+          <div class="invalid-feedback" style="display:block;margin-top:var(--wizard-gap)"><?= h($errors['deal_type'] ?? $errors['listing_mode']) ?></div>
+          <?php endif; ?>
+        </div>
+
+        <!-- Step 2: اطلاعات اصلی آگهی -->
+        <div class="wizard-step" data-step="2" id="step-2" style="display:none">
+          <h2 class="wizard-step-title">اطلاعات اصلی آگهی</h2>
+          <p class="wizard-step-subtitle">عنوان، توضیحات، تصاویر و جزئیات کالا را وارد کنید.</p>
 
           <div class="wizard-form-group">
             <label class="wizard-form-label">عنوان آگهی *</label>
-            <input type="text" name="title" id="step1-title" class="wizard-form-input" 
+            <input type="text" name="title" id="wz-title" class="wizard-form-input" 
                    placeholder="مثلا آیفون ۱۳ پرو مکس ۲۵۶ گیگ" maxlength="200" value="<?= h($vals['title']) ?>">
-            <div class="char-count"><span id="step1-title-count"><?= mb_strlen((string)$vals['title']) ?></span>/200 کاراکتر</div>
+            <div class="char-count"><span id="wz-title-count"><?= mb_strlen((string)$vals['title']) ?></span>/200 کاراکتر</div>
           </div>
 
           <div class="wizard-form-group">
             <label class="wizard-form-label">توضیحات *</label>
-            <textarea name="description" id="step1-description" class="wizard-form-textarea" rows="4"
+            <textarea name="description" id="wz-desc" class="wizard-form-textarea" rows="4"
                       placeholder="کالا را با جزئیات توضیح دهید — سن، برند، مشخصات، ایرادات…"><?= h($vals['description']) ?></textarea>
-            <div class="char-count"><span id="step1-desc-count"><?= mb_strlen((string)$vals['description']) ?></span> کاراکتر</div>
+            <div class="char-count"><span id="wz-desc-count"><?= mb_strlen((string)$vals['description']) ?></span> کاراکتر</div>
           </div>
-        </div>
 
-        <!-- Step 2: Images -->
-        <div class="wizard-step" data-step="2" id="step-2" style="display:none">
-          <h2 class="wizard-step-title">تصاویر</h2>
-          <p class="wizard-step-subtitle">تصاویر واضح از کالا اضافه کنید.</p>
-
-          <div class="upload-zone" id="step2-upload-zone">
-            <div class="upload-zone-icon">
-              <i class="bi bi-cloud-arrow-up"></i>
+          <div class="wizard-form-group">
+            <label class="wizard-form-label">تصاویر *</label>
+            <div class="upload-zone" id="wz-upload-zone">
+              <div class="upload-zone-icon">
+                <i class="bi bi-cloud-arrow-up"></i>
+              </div>
+              <p class="upload-zone-text">تصاویر را اینجا رها کنید یا برای آپلود کلیک کنید</p>
+              <p class="upload-zone-subtext">JPG، PNG یا WEBP — حداکثر ۵ مگابایت — تا <?= MAX_IMAGES ?> تصویر</p>
             </div>
-            <p class="upload-zone-text">تصاویر را اینجا رها کنید یا برای آپلود کلیک کنید</p>
-            <p class="upload-zone-subtext">JPG، PNG یا WEBP — حداکثر ۵ مگابایت — تا <?= MAX_IMAGES ?> تصویر</p>
+            <div class="image-previews" id="wz-preview-grid"></div>
           </div>
-          
-          <div class="image-previews" id="step2-preview-grid"></div>
-        </div>
-
-        <!-- Step 3: Category, Condition, City -->
-        <div class="wizard-step" data-step="3" id="step-3" style="display:none">
-          <h2 class="wizard-step-title">دسته‌بندی، وضعیت و شهر</h2>
-          <p class="wizard-step-subtitle">جزئیات بیشتر را وارد کنید.</p>
 
           <div class="wizard-form-group">
             <label class="wizard-form-label">دسته‌بندی *</label>
             <?= render_wizard_category_picker((int)$vals['category_id'], true) ?>
+            <?php if (isset($errors['category_id'])): ?>
+            <div class="invalid-feedback" style="display:block"><?= h($errors['category_id']) ?></div>
+            <?php endif; ?>
           </div>
 
           <!-- برند / مدل / تیپ از فهرست (سند معماری سئو — بخش ۱ و ۲) -->
@@ -385,18 +426,18 @@ render_navbar($user);
 
           <div class="wizard-form-group">
             <label class="wizard-form-label">وضعیت کالا *</label>
-            <select name="condition" id="step3-condition" class="wizard-form-select">
-              <option value="new">نو</option>
-              <option value="like_new">مثل نو</option>
-              <option value="good" selected>خوب</option>
-              <option value="fair">متوسط</option>
-              <option value="poor">خورده</option>
+            <select name="condition" id="wz-condition" class="wizard-form-select">
+              <option value="new" <?= $vals['condition'] === 'new' ? 'selected' : '' ?>>نو</option>
+              <option value="like_new" <?= $vals['condition'] === 'like_new' ? 'selected' : '' ?>>مثل نو</option>
+              <option value="good" <?= $vals['condition'] === 'good' ? 'selected' : '' ?>>خوب</option>
+              <option value="fair" <?= $vals['condition'] === 'fair' ? 'selected' : '' ?>>متوسط</option>
+              <option value="poor" <?= $vals['condition'] === 'poor' ? 'selected' : '' ?>>خورده</option>
             </select>
           </div>
 
           <div class="wizard-form-group">
-            <label class="wizard-form-label" for="step3-city">شهر *</label>
-            <select name="city" id="step3-city" class="wizard-form-select <?= isset($errors['city']) ? 'is-invalid' : '' ?>">
+            <label class="wizard-form-label" for="wz-city">شهر *</label>
+            <select name="city" id="wz-city" class="wizard-form-select <?= isset($errors['city']) ? 'is-invalid' : '' ?>">
               <option value="">انتخاب شهر</option>
               <?= render_city_options($vals['city']) ?>
             </select>
@@ -407,13 +448,13 @@ render_navbar($user);
 
           <?php
           $picker = [
-              'prefix'    => 'step3',
+              'prefix'    => 'wz',
               'city'      => $vals['city'],
               'latitude'  => $vals['latitude'],
               'longitude' => $vals['longitude'],
               'neighborhood' => $vals['neighborhood'],
               'errors'    => $errors,
-              'city_select_id' => 'step3-city',
+              'city_select_id' => 'wz-city',
           ];
           include __DIR__ . '/../includes/listing_location_picker.php';
           ?>
@@ -421,199 +462,165 @@ render_navbar($user);
           <?= render_listing_type_fields($listingProviderType, listing_attrs_from_input($listingProviderType, $_POST ?? []), 'wizard', ['brand', 'model']) ?>
         </div>
 
-        <!-- Step 4: What do you want in exchange? -->
-        <div class="wizard-step" data-step="4" id="step-4" style="display:none">
-          <h2 class="wizard-step-title">به دنبال چه چیزی هستید؟</h2>
-          <p class="wizard-step-subtitle">دسته کالایی که قصد معاوضه با آن را دارید انتخاب کنید.</p>
+        <!-- Step 3: جزئیات معامله (داینامیک بر اساس هدف آگهی) -->
+        <div class="wizard-step" data-step="3" id="step-3" style="display:none">
 
-          <div class="wizard-form-group">
-            <label class="wizard-form-label">دسته‌بندی درخواستی <span style="color:var(--danger)">*</span></label>
-            <?= render_wizard_category_picker((int)($vals['want_category_id'] ?? 0), false, 'want_category_id', 'want-cat-pick') ?>
-            <p class="form-hint" style="margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
-              انتخاب دقیق دسته‌بندی به ما کمک می‌کند آگهی شما را به افراد مناسب‌تری نشان دهیم.
-            </p>
-          </div>
-        </div>
+          <!-- مسیر فروش: فقط قیمت فروش -->
+          <div id="wz-sell-block" style="display:none">
+            <h2 class="wizard-step-title">قیمت فروش</h2>
+            <p class="wizard-step-subtitle">قیمت نقدی کالای خود را مشخص کنید.</p>
 
-        <!-- Step 5: Describe what you want -->
-        <div class="wizard-step" data-step="5" id="step-5" style="display:none">
-          <h2 class="wizard-step-title">توضیح دقیق‌تر</h2>
-          <p class="wizard-step-subtitle">دقیق بنویسید که به چه چیزی نیاز دارید.</p>
+            <div class="price-estimate-card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--wizard-gap)">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:rgba(8,27,69,.08);color:var(--primary);font-weight:800;font-size:.8125rem">۱</span>
+                <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">تخمین قیمت با دستیار هوشمند</h3>
+              </div>
+              <p class="price-estimate-note" style="margin:0 0 var(--wizard-gap) 0">دستیار هوشمند سواپین بر اساس مشخصات کالا یک قیمت پیشنهادی بازار ارائه می‌دهد؛ می‌توانید آن را بپذیرید یا تغییر دهید.</p>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="wz-sell-suggested-price" class="wizard-form-input"
+                       value="<?= h(number_format($suggestedValue)) ?>" readonly style="flex:1">
+                <button type="button" id="wz-use-suggested" class="wizard-btn wizard-btn-secondary" style="white-space:nowrap">استفاده</button>
+              </div>
+            </div>
 
-          <div class="wizard-form-group">
-            <textarea name="want_description" id="step5-description" class="wizard-form-textarea" rows="4"
-                      placeholder="مثلا فقط آیفون ۱۵ پرو تمیز با سلامت باتری بالای ۹۰ درصد…"></textarea>
-          </div>
-        </div>
-
-        <!-- Step 6: Pricing -->
-        <div class="wizard-step" data-step="6" id="step-6" style="display:none">
-          <h2 class="wizard-step-title">تعریف قیمت‌ها</h2>
-          <p class="wizard-step-subtitle">
-            <?= $isStoreSeller ? 'قیمت معاوضه و قیمت خرید نقدی را وارد کنید.' : 'مشخص کنید کالا را معاوضه می‌کنید یا می‌فروشید.' ?>
-          </p>
-
-          <?php if (!$isStoreSeller): ?>
-          <!-- انتخاب نوع معامله: معاوضه / فروش / معاوضه یا فروش -->
-          <div class="wizard-form-group">
-            <label class="wizard-form-label">نوع معامله <span style="color:var(--danger)">*</span></label>
-            <div class="listing-mode-switch">
-              <label class="listing-mode-option">
-                <input type="radio" name="deal_type" value="swap" <?= $vals['deal_type'] === 'swap' ? 'checked' : '' ?> onchange="document.getElementsByName('listing_mode')[0].value='swap'">
-                <span class="listing-mode-option__inner">
-                  <i class="bi bi-arrow-left-right"></i>
-                  <strong>معاوضه</strong>
-                  <small>کالای خود را با کالای دیگران تبادل کنید</small>
-                </span>
+            <div class="wizard-form-group" style="margin-top:var(--wizard-gap)">
+              <label class="wizard-form-label" for="wz-sell-price">
+                قیمت فروش نقدی (تومان) <span style="color:var(--danger)">*</span>
               </label>
-              <label class="listing-mode-option">
-                <input type="radio" name="deal_type" value="sell" <?= $vals['deal_type'] === 'sell' ? 'checked' : '' ?> onchange="document.getElementsByName('listing_mode')[0].value='sell'">
-                <span class="listing-mode-option__inner">
-                  <i class="bi bi-cash-coin"></i>
-                  <strong>فروش</strong>
-                  <small>کالا را با قیمت نقدی بفروشید</small>
-                </span>
-              </label>
-              <label class="listing-mode-option">
-                <input type="radio" name="deal_type" value="both" <?= $vals['deal_type'] === 'both' ? 'checked' : '' ?> onchange="document.getElementsByName('listing_mode')[0].value='both'">
-                <span class="listing-mode-option__inner">
-                  <i class="bi bi-arrow-repeat"></i>
-                  <strong>معاوضه یا فروش</strong>
-                  <small>هم معاوضه می‌کنید و هم برای فروش نقدی می‌گذارید</small>
-                </span>
-              </label>
-            </div>
-            <input type="hidden" name="listing_mode" value="<?= h($vals['listing_mode'] ?: 'swap') ?>">
-            <?php if (isset($errors['deal_type'])): ?>
-            <div class="invalid-feedback" style="display:block;margin-top:var(--wizard-gap)"><?= h($errors['deal_type']) ?></div>
-            <?php endif; ?>
-          </div>
-          <?php else: ?>
-          <input type="hidden" name="listing_mode" value="both">
-          <?php endif; ?>
-
-          <!-- ۱. قیمت تخمینی برای معاوضه (همه کاربران) -->
-          <div id="step6-swap-price-block">
-          <div class="price-estimate-card">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--wizard-gap)">
-              <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:rgba(8,27,69,.08);color:var(--primary);font-weight:800;font-size:.8125rem">۱</span>
-              <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">قیمت معاوضه (تخمین ارزش کالا)</h3>
-            </div>
-            <p class="price-estimate-note" style="margin:0 0 var(--wizard-gap) 0">این قیمت برای پیشنهاد معاوضه، محاسبه «اختلاف قیمت» و امتیازدهی هوشمند استفاده می‌شود.</p>
-            <p class="price-estimate-label"> قیمت پیشنهاد سیستم(تومان) </p>
-            <div class="wizard-form-group" style="margin-top: var(--wizard-gap)">
-              <input type="text" id="step6-suggested-price-input" class="wizard-form-input"
-                     value="<?= h(number_format($suggestedValue)) ?>"
-                     readonly>
-              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">این مبلغ از بازار سواَپین پیشنهاد می‌شود؛ در صورت خالی گذاشتن فیلد پایین، همین مقدار ثبت می‌شود.</p>
-            </div>
-          </div>
-
-          <div class="wizard-form-group" style="margin-top: var(--wizard-gap)">
-            <label class="wizard-form-label" for="step6-custom-price-input">
-              قیمت دلخواه شما برای معاوضه (اختیاری)
-            </label>
-            <input type="text" id="step6-custom-price-input" class="wizard-form-input"
-                   placeholder="مثلاً ۲۵٬۰۰۰٬۰۰۰ تومان — اگر خالی بگذارید قیمت پیشنهادی سیستم ثبت می‌شود"
-                   value="<?= $vals['custom_value'] > 0 ? h(number_format($vals['custom_value'])) : '' ?>">
-            <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">
-              <i class="bi bi-info-circle" style="color:var(--primary)"></i>
-              این قیمت صرفاً برای محاسبه ارزش معاوضه و اختلاف قیمت شما با طرف مقابل است؛ «قیمت خرید نقدی» نیست.
-            </p>
-          </div>
-          </div><!-- /#step6-swap-price-block -->
-
-          <!-- ۲. قیمت فروش نقدی -->
-          <div class="wizard-form-group" id="step6-sell-price-block"
-               style="margin-top: calc(var(--wizard-gap) * 2);padding:var(--wizard-gap);border:1.5px dashed var(--accent);border-radius:var(--wizard-radius);background:var(--st-accent-light,#FFF8E1);<?= $isStoreSeller ? '' : 'display:none' ?>">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--wizard-gap)">
-              <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--accent);color:var(--primary);font-weight:800;font-size:.8125rem">۲</span>
-              <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">
-                <?= $isStoreSeller ? 'قیمت فروش نقدی (فقط برای فروشگاه)' : 'قیمت فروش نقدی' ?>
-              </h3>
-            </div>
-            <p class="price-estimate-note" style="margin:0 0 var(--wizard-gap) 0;color:#856404">
-              <i class="bi bi-shop"></i>
-              <?php if ($isStoreSeller): ?>
-              این مبلغ، <strong>قیمت خرید نقدی</strong> کالاست تا کاربران عادی بتوانند آن را مستقیماً (بدون معاوضه) از فروشگاه شما خریداری کنند.
-              <?php else: ?>
-              این مبلغ، <strong>قیمت فروش نقدی</strong> کالای شماست؛ کاربران با این قیمت دکمه «خرید» را می‌بینند و آنلاین پرداخت می‌کنند.
+              <input type="number" id="wz-sell-price" name="sell_price" class="wizard-form-input"
+                     placeholder="مثلاً ۳۲٬۰۰۰٬۰۰۰ — این مبلغ به‌صورت نقدی قابل خرید خواهد بود" min="0" step="1000"
+                     value="<?= $vals['sell_price'] > 0 ? h((string)$vals['sell_price']) : '' ?>">
+              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">
+                <i class="bi bi-bag-check"></i>
+                کاربران در صفحه آگهی دکمه «خرید» را می‌بینند و با این مبلغ نقدی خرید می‌کنند.
+              </p>
+              <?php if (isset($errors['sell_price'])): ?>
+              <div class="invalid-feedback" style="display:block"><?= h($errors['sell_price']) ?></div>
               <?php endif; ?>
-            </p>
-            <label class="wizard-form-label" for="step6-sell-price-input">
-              قیمت نقدی کالا (تومان) <span style="color:var(--danger)">*</span>
-            </label>
-            <input type="number" id="step6-sell-price-input" name="sell_price" class="wizard-form-input"
-                   placeholder="مثلاً ۳۲٬۰۰۰٬۰۰۰ — این مبلغ به‌صورت نقدی قابل خرید خواهد بود" min="0" step="1000"
-                   value="<?= h((string)$vals['sell_price']) ?>">
-            <p class="price-estimate-note" style="margin-top: var(--wizard-gap);color:var(--accent-dark,#856404)">
-              <i class="bi bi-bag-check"></i>
-              کاربران در صفحه آگهی دکمه «خرید» را می‌بینند و با این مبلغ نقدی خرید می‌کنند.
-            </p>
-            <?php if (isset($errors['sell_price'])): ?>
-            <div class="invalid-feedback" style="display:block;margin-top:var(--wizard-gap)"><?= h($errors['sell_price']) ?></div>
-            <?php endif; ?>
+            </div>
           </div>
 
-          <input type="hidden" id="step6-suggested-value" name="suggested_value" value="<?= h($suggestedValue) ?>">
-          <input type="hidden" id="step6-custom-value" name="custom_value" value="<?= h($vals['custom_value']) ?>">
-          <input type="hidden" id="step6-estimated-value" name="estimated_value" value="<?= h($vals['estimated_value'] ?: $suggestedValue) ?>">
+          <!-- مسیر معاوضه / فروش یا معاوضه -->
+          <div id="wz-swap-block" style="display:none">
+            <h2 class="wizard-step-title">به دنبال چه چیزی هستید؟</h2>
+            <p class="wizard-step-subtitle">دسته کالایی که قصد دریافت آن را دارید انتخاب کنید.</p>
+
+            <div class="wizard-form-group">
+              <label class="wizard-form-label">دسته‌بندی کالای موردنظر <span style="color:var(--danger)">*</span></label>
+              <?= render_wizard_category_picker((int)($vals['want_category_id'] ?? 0), false, 'want_category_id', 'want-cat-pick') ?>
+              <p class="form-hint" style="margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
+                انتخاب دقیق دسته‌بندی به ما کمک می‌کند آگهی شما را به افراد مناسب‌تری نشان دهیم.
+              </p>
+              <?php if (isset($errors['want_category_id'])): ?>
+              <div class="invalid-feedback" style="display:block"><?= h($errors['want_category_id']) ?></div>
+              <?php endif; ?>
+            </div>
+
+            <div class="wizard-form-group">
+              <label class="wizard-form-label" for="wz-want-desc">توضیحات کالای درخواستی</label>
+              <textarea name="want_description" id="wz-want-desc" class="wizard-form-textarea" rows="4"
+                        placeholder="مثلا فقط آیفون ۱۵ پرو تمیز با سلامت باتری بالای ۹۰ درصد…"><?= h($vals['want_description']) ?></textarea>
+            </div>
+
+            <div class="price-estimate-card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--wizard-gap)">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:rgba(8,27,69,.08);color:var(--primary);font-weight:800;font-size:.8125rem">۱</span>
+                <h3 style="font-size:1rem;font-weight:800;margin:0;color:var(--primary)">قیمت معاوضه (تخمین ارزش کالا)</h3>
+              </div>
+              <p class="price-estimate-note" style="margin:0 0 var(--wizard-gap) 0">این قیمت برای پیشنهاد معاوضه، محاسبه «اختلاف قیمت» و امتیازدهی هوشمند استفاده می‌شود.</p>
+              <p class="price-estimate-label">قیمت پیشنهاد سیستم (تومان)</p>
+              <input type="text" id="wz-swap-suggested-price" class="wizard-form-input"
+                     value="<?= h(number_format($suggestedValue)) ?>" readonly>
+            </div>
+
+            <div class="wizard-form-group" style="margin-top:var(--wizard-gap)">
+              <label class="wizard-form-label" for="wz-custom-price">
+                قیمت دلخواه شما برای معاوضه (اختیاری)
+              </label>
+              <input type="text" id="wz-custom-price" class="wizard-form-input"
+                     placeholder="مثلاً ۲۵٬۰۰۰٬۰۰۰ تومان — اگر خالی بگذارید قیمت پیشنهادی سیستم ثبت می‌شود"
+                     value="<?= $vals['custom_value'] > 0 ? h(number_format($vals['custom_value'])) : '' ?>">
+              <p class="price-estimate-note" style="margin-top: var(--wizard-gap)">
+                <i class="bi bi-info-circle" style="color:var(--primary)"></i>
+                این قیمت صرفاً برای محاسبه ارزش معاوضه و اختلاف قیمت شما با طرف مقابل است؛ «قیمت خرید نقدی» نیست.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- Step 7: Review -->
-        <div class="wizard-step" data-step="7" id="step-7" style="display:none">
+        <input type="hidden" id="wz-suggested-value" name="suggested_value" value="<?= h($suggestedValue) ?>">
+        <input type="hidden" id="wz-custom-value" name="custom_value" value="<?= h($vals['custom_value']) ?>">
+        <input type="hidden" id="wz-estimated-value" name="estimated_value" value="<?= h($vals['estimated_value'] ?: $suggestedValue) ?>">
+
+        <!-- Step 4: Review -->
+        <div class="wizard-step" data-step="4" id="step-4" style="display:none">
           <div class="review-header">
             <h2 class="wizard-step-title" style="margin:0">بررسی نهایی</h2>
-            <button type="button" class="edit-btn" onclick="goToStep(1)">
-              <i class="bi bi-pencil"></i> ویرایش اطلاعات
-            </button>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="edit-btn" onclick="goToStep(2)">
+                <i class="bi bi-pencil"></i> ویرایش اطلاعات
+              </button>
+              <button type="button" class="edit-btn" id="wz-edit-deal-btn" onclick="goToStep(3)">
+                <i class="bi bi-pencil"></i> ویرایش جزئیات معامله
+              </button>
+            </div>
           </div>
           <p class="wizard-step-subtitle">تمام اطلاعات را بررسی کنید.</p>
 
           <div class="review-section">
             <p class="review-label">تصاویر</p>
-            <div class="review-images" id="step7-images"></div>
+            <div class="review-images" id="wz-review-images"></div>
           </div>
-          
+
+          <div class="review-section">
+            <p class="review-label">هدف آگهی</p>
+            <p class="review-value" id="wz-review-goal"></p>
+          </div>
+
           <div class="review-section">
             <p class="review-label">عنوان</p>
-            <p class="review-value" id="step7-title"></p>
+            <p class="review-value" id="wz-review-title"></p>
           </div>
-          
+
           <div class="review-section">
             <p class="review-label">توضیحات</p>
-            <p class="review-value" id="step7-description"></p>
+            <p class="review-value" id="wz-review-desc"></p>
           </div>
-          
+
           <div class="review-section">
             <p class="review-label">دسته‌بندی</p>
-            <p class="review-value" id="step7-category"></p>
+            <p class="review-value" id="wz-review-category"></p>
           </div>
-          
+
           <div class="review-section">
             <p class="review-label">وضعیت کالا</p>
-            <p class="review-value" id="step7-condition"></p>
+            <p class="review-value" id="wz-review-condition"></p>
           </div>
-          
+
           <div class="review-section">
             <p class="review-label">شهر و موقعیت</p>
-            <p class="review-value" id="step7-city"></p>
-            <p class="review-value fs-sm" id="step7-neighborhood" style="color:var(--text-muted)"></p>
+            <p class="review-value" id="wz-review-city"></p>
+            <p class="review-value fs-sm" id="wz-review-neighborhood" style="color:var(--text-muted)"></p>
           </div>
-          
-          <div class="review-section">
-            <p class="review-label">دسته‌بندی‌های مورد علاقه برای معاوضه</p>
-            <p class="review-value" id="step7-want-cats"></p>
+
+          <div class="review-section" id="wz-review-sell-section">
+            <p class="review-label">قیمت فروش</p>
+            <p class="review-value" id="wz-review-sell-price"></p>
           </div>
-          
-          <div class="review-section">
-            <p class="review-label">توضیح آنچه می‌خواهید</p>
-            <p class="review-value" id="step7-want-desc"></p>
+
+          <div class="review-section" id="wz-review-wantcat-section">
+            <p class="review-label">دسته‌بندی کالای موردنظر</p>
+            <p class="review-value" id="wz-review-want-cat"></p>
           </div>
-          
-          <div class="review-section">
-            <p class="review-label" id="step7-price-label">قیمت تخمینی</p>
-            <p class="review-value" id="step7-price"></p>
+
+          <div class="review-section" id="wz-review-wantdesc-section">
+            <p class="review-label">توضیحات کالای درخواستی</p>
+            <p class="review-value" id="wz-review-want-desc"></p>
+          </div>
+
+          <div class="review-section" id="wz-review-swap-section">
+            <p class="review-label">قیمت تخمینی معاوضه</p>
+            <p class="review-value" id="wz-review-swap-price"></p>
           </div>
         </div>
 
@@ -691,7 +698,7 @@ render_navbar($user);
 .cat-pick-menu .dropdown-submenu:focus-within > .dropdown-menu--sub,
 .cat-pick-menu .dropdown-submenu.cat-pick-sub-open > .dropdown-menu--sub { display: block; }
 
-#step7-category, #review-category { padding-right: 0; }
+#wz-review-category { padding-right: 0; }
 .wizard-form-group.is-invalid .cat-pick-trigger { border-color: var(--danger,#ef4444) !important; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
 
 /* نوع آگهی: معاوضه / فروش */
@@ -721,13 +728,13 @@ render_navbar($user);
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="<?= APP_URL ?>/src/js/listing-location.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-location.js') ?>"></script>
 <script>
+const IS_STORE_SELLER = <?= $isStoreSeller ? 'true' : 'false' ?>;
 let currentStep = 1;
-const totalSteps = 7;
-let exchangeCategories = new Set();
+const totalSteps = 4;
 let uploadedFiles = [];
 
 function syncUploadedFilesInput() {
-  const input = document.getElementById('step2-images');
+  const input = document.getElementById('wz-images');
   if (!input) return 0;
   const dt = new DataTransfer();
   uploadedFiles.filter(Boolean).forEach(f => dt.items.add(f));
@@ -735,20 +742,43 @@ function syncUploadedFilesInput() {
   return dt.files.length;
 }
 
+// ── هدف آگهی: معاوضه / فروش / فروش یا معاوضه ─────────────────────────────
+function getDealType() {
+  return document.querySelector('input[name="deal_type"]:checked')?.value || '';
+}
+
+function applyDealType() {
+  const mode = IS_STORE_SELLER ? 'both' : getDealType();
+  const hidden = document.getElementById('wz-listing-mode');
+  if (hidden && mode) hidden.value = mode;
+
+  const sellBlock = document.getElementById('wz-sell-block');
+  const swapBlock = document.getElementById('wz-swap-block');
+  if (sellBlock) sellBlock.style.display = (mode === 'sell' || mode === 'both') ? '' : 'none';
+  if (swapBlock) swapBlock.style.display = (mode === 'swap' || mode === 'both') ? '' : 'none';
+
+  updateButtons();
+}
+
 // Initialize everything
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[name="deal_type"]').forEach((el) => {
+    el.addEventListener('change', applyDealType);
+  });
   updateStepper();
-  initStep1Counters();
-  initStep2Upload();
-  initStep3Fields();
+  initStep2Counters();
+  initUpload();
+  initInfoFields();
   initCatalogPicker();
   initWizardCategoryPicker('cat-pick');
   initWizardCategoryPicker('want-cat-pick');
-  initStep6Price();
+  initPriceInputs();
   initWizardSubmit();
+  applyDealType();
 });
 
-function initWizardCategoryPicker(prefix = 'cat-pick') {
+function initWizardCategoryPicker(prefix) {
+  prefix = prefix || 'cat-pick';
   const trigger = document.getElementById(prefix + '-trigger');
   const menu = document.getElementById(prefix + '-menu');
   const labelEl = document.getElementById(prefix + '-label');
@@ -837,42 +867,56 @@ function initWizardCategoryPicker(prefix = 'cat-pick') {
   });
 }
 
-function initStep6Price() {
-  const customInput = document.getElementById('step6-custom-price-input');
-  const customHiddenInput = document.getElementById('step6-custom-value');
-  const selectedHiddenInput = document.getElementById('step6-estimated-value');
-  const suggestedHiddenInput = document.getElementById('step6-suggested-value');
-  
-  if (!customInput || !customHiddenInput || !selectedHiddenInput || !suggestedHiddenInput) return;
-  
-  function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+// ── قیمت‌ها ────────────────────────────────────────────────────────────────
+function initPriceInputs() {
+  const customInput = document.getElementById('wz-custom-price');
+  const customHiddenInput = document.getElementById('wz-custom-value');
+  const selectedHiddenInput = document.getElementById('wz-estimated-value');
+  const suggestedHiddenInput = document.getElementById('wz-suggested-value');
+  const sellInput = document.getElementById('wz-sell-price');
+  const useSuggestedBtn = document.getElementById('wz-use-suggested');
+
+  if (customInput && customHiddenInput && selectedHiddenInput && suggestedHiddenInput) {
+    const syncPriceValue = () => {
+      const rawValue = customInput.value.replace(/[^\d]/g, '');
+      customInput.value = rawValue ? Number(rawValue).toLocaleString('en-US') : '';
+      customHiddenInput.value = rawValue;
+      selectedHiddenInput.value = rawValue || suggestedHiddenInput.value;
+    };
+    customInput.addEventListener('input', syncPriceValue);
+    customInput.addEventListener('input', updateButtons);
+    syncPriceValue();
   }
 
-  function syncPriceValue() {
-    const rawValue = customInput.value.replace(/[^\d]/g, '');
-    customInput.value = rawValue ? formatNumber(parseInt(rawValue, 10)) : '';
-    customHiddenInput.value = rawValue;
-    selectedHiddenInput.value = rawValue || suggestedHiddenInput.value;
+  if (sellInput) {
+    sellInput.addEventListener('input', updateButtons);
   }
 
-  customInput.addEventListener('input', syncPriceValue);
-  syncPriceValue();
+  if (useSuggestedBtn && suggestedHiddenInput) {
+    useSuggestedBtn.addEventListener('click', () => {
+      const value = suggestedHiddenInput.value;
+      if (value && sellInput) {
+        sellInput.value = value;
+        updateButtons();
+      }
+    });
+  }
 }
 
-let step6AiKey = '';
-let step6AiBusy = false;
+let aiPricingKey = '';
+let aiPricingBusy = false;
 
-function runStep6AiPricing() {
-  const titleEl = document.getElementById('step1-title');
-  const descEl = document.getElementById('step1-description');
-  const catEl = document.getElementById('step3-category-hidden');
-  const condEl = document.getElementById('step3-condition');
-  const suggestedInput = document.getElementById('step6-suggested-price-input');
-  const suggestedHiddenInput = document.getElementById('step6-suggested-value');
-  const selectedHiddenInput = document.getElementById('step6-estimated-value');
-  const customHiddenInput = document.getElementById('step6-custom-value');
-  if (!titleEl || !descEl || !catEl || !condEl || !suggestedInput || !suggestedHiddenInput) return;
+function runWizardAiPricing() {
+  const titleEl = document.getElementById('wz-title');
+  const descEl = document.getElementById('wz-desc');
+  const catEl = document.getElementById('cat-pick-hidden');
+  const condEl = document.getElementById('wz-condition');
+  const sellSuggestedInput = document.getElementById('wz-sell-suggested-price');
+  const swapSuggestedInput = document.getElementById('wz-swap-suggested-price');
+  const suggestedHiddenInput = document.getElementById('wz-suggested-value');
+  const selectedHiddenInput = document.getElementById('wz-estimated-value');
+  const customHiddenInput = document.getElementById('wz-custom-value');
+  if (!titleEl || !descEl || !catEl || !condEl || !suggestedHiddenInput) return;
   if (typeof swaapinAiValuateFromBrowser !== 'function') return;
 
   const title = titleEl.value.trim();
@@ -880,7 +924,7 @@ function runStep6AiPricing() {
   const catId = catEl.value;
   const cond = condEl.value;
   const key = title + '|' + desc + '|' + catId + '|' + cond;
-  if (key === step6AiKey || step6AiBusy) return;
+  if (key === aiPricingKey || aiPricingBusy) return;
   if (title.length < 5 || desc.length < 20 || !(Number(catId) > 0)) return;
 
   const appUrl = document.querySelector('meta[name="app-url"]')?.content || '';
@@ -891,38 +935,48 @@ function runStep6AiPricing() {
   fd.append('category_id', catId);
   if (typeof appendCsrf === 'function') appendCsrf(fd);
 
-  step6AiBusy = true;
-  suggestedInput.value = 'در حال استعلام قیمت بازار…';
+  aiPricingBusy = true;
+  if (sellSuggestedInput) sellSuggestedInput.value = 'در حال استعلام قیمت بازار…';
+  if (swapSuggestedInput) swapSuggestedInput.value = 'در حال استعلام قیمت بازار…';
 
   swaapinAiValuateFromBrowser(appUrl, fd).then(data => {
     const value = Math.round(Number(data && data.value) || 0);
     if (value <= 0) return;
-    step6AiKey = key;
-    const formatted = value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    suggestedInput.value = formatted;
+    aiPricingKey = key;
+    const formatted = Number(value).toLocaleString('en-US');
+    if (sellSuggestedInput) sellSuggestedInput.value = formatted;
+    if (swapSuggestedInput) swapSuggestedInput.value = formatted;
     suggestedHiddenInput.value = String(value);
     if (!customHiddenInput || !String(customHiddenInput.value || '').replace(/[^\d]/g, '')) {
       selectedHiddenInput.value = String(value);
     }
+    // پیش‌پر کردن قیمت فروش در صورت خالی بودن
+    const sellInput = document.getElementById('wz-sell-price');
+    if (sellInput && !String(sellInput.value || '').trim()) {
+      sellInput.value = String(value);
+      updateButtons();
+    }
   }).catch(() => {
-    suggestedInput.value = suggestedHiddenInput.value
-      ? Number(suggestedHiddenInput.value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    const fallback = suggestedHiddenInput.value
+      ? Number(suggestedHiddenInput.value).toLocaleString('en-US')
       : '';
+    if (sellSuggestedInput) sellSuggestedInput.value = fallback;
+    if (swapSuggestedInput) swapSuggestedInput.value = fallback;
   }).finally(() => {
-    step6AiBusy = false;
+    aiPricingBusy = false;
   });
 }
 
-function initStep3Fields() {
-  const catHidden = document.getElementById('step3-category-hidden');
-  const condSelect = document.getElementById('step3-condition');
-  const cityInput = document.getElementById('step3-city');
+function initInfoFields() {
+  const catHidden = document.getElementById('cat-pick-hidden');
+  const condSelect = document.getElementById('wz-condition');
+  const cityInput = document.getElementById('wz-city');
   const locationPicker = document.querySelector('.listing-location-picker');
   if (catHidden && typeof MutationObserver !== 'undefined') {
     const obs = new MutationObserver(() => updateButtons());
     obs.observe(catHidden, { attributes: true, attributeFilter: ['value'] });
-    document.addEventListener('change', () => updateButtons());
   }
+  document.addEventListener('change', () => updateButtons());
   if (condSelect) condSelect.addEventListener('change', updateButtons);
   if (cityInput) cityInput.addEventListener('change', updateButtons);
   locationPicker?.addEventListener('listing-location-change', updateButtons);
@@ -930,7 +984,7 @@ function initStep3Fields() {
 
 // ── برند / مدل / تیپ از فهرست (سند معماری سئو — بخش ۱ و ۲) ─────────────────
 function initCatalogPicker() {
-  const catHidden = document.getElementById('step3-category-hidden');
+  const catHidden = document.getElementById('cat-pick-hidden');
   const wrap = document.getElementById('catalog-picker');
   const brandSel = document.getElementById('catalog-brand');
   const modelSel = document.getElementById('catalog-model');
@@ -1055,24 +1109,25 @@ function initCatalogPicker() {
   }
 }
 
-function initStep1Counters() {
-  const titleInput = document.getElementById('step1-title');
-  const descInput = document.getElementById('step1-description');
+function initStep2Counters() {
+  const titleInput = document.getElementById('wz-title');
+  const descInput = document.getElementById('wz-desc');
 
   titleInput.addEventListener('input', () => {
-    document.getElementById('step1-title-count').textContent = titleInput.value.length;
+    document.getElementById('wz-title-count').textContent = titleInput.value.length;
     updateButtons();
   });
   descInput.addEventListener('input', () => {
-    document.getElementById('step1-desc-count').textContent = descInput.value.length;
+    document.getElementById('wz-desc-count').textContent = descInput.value.length;
     updateButtons();
   });
 }
 
-function initStep2Upload() {
-  const zone = document.getElementById('step2-upload-zone');
-  const input = document.getElementById('step2-images');
-  const grid = document.getElementById('step2-preview-grid');
+function initUpload() {
+  const zone = document.getElementById('wz-upload-zone');
+  const input = document.getElementById('wz-images');
+  const grid = document.getElementById('wz-preview-grid');
+  if (!zone || !input || !grid) return;
 
   zone.addEventListener('click', () => input.click());
 
@@ -1108,7 +1163,7 @@ function initStep2Upload() {
   function renderPreview(src, idx) {
     const wrap = document.createElement('div');
     wrap.className = 'image-preview';
-    wrap.id = 'step2-preview-' + idx;
+    wrap.id = 'wz-preview-' + idx;
     wrap.innerHTML = `<img src="${src}"><button type="button" class="image-preview-remove" onclick="removeImg(${idx})"><i class="bi bi-x-lg"></i></button>`;
     if (idx === 0) {
       wrap.style.borderColor = 'var(--wizard-primary)';
@@ -1118,7 +1173,7 @@ function initStep2Upload() {
 
   window.removeImg = function(idx) {
     uploadedFiles[idx] = null;
-    const el = document.getElementById('step2-preview-' + idx);
+    const el = document.getElementById('wz-preview-' + idx);
     if (el) el.remove();
     syncUploadedFilesInput();
     updateButtons();
@@ -1156,13 +1211,10 @@ function showWizardError(msg) {
 
 function validateCurrentStepWithMessage() {
   const stepMessages = {
-    1: 'عنوان و توضیحات باید حداقل ۵ و ۲۰ کاراکتر داشته باشند.',
-    2: 'حداقل یک تصویر برای آگهی باید انتخاب شود.',
-    3: 'دسته‌بندی، برند، مدل، شهر و موقعیت جغرافیایی را کامل کنید.',
-    4: 'حداقل یکی از دسته‌بندی‌های مورد علاقه را انتخاب کنید.',
-    5: 'توضیح دقیق‌تر را وارد کنید.',
-    6: 'نوع معامله و اطلاعات قیمت را تکمیل کنید.',
-    7: 'قبل از انتشار آگهی، اطلاعات را بررسی کنید.'
+    1: 'هدف آگهی را انتخاب کنید.',
+    2: 'عنوان و توضیحات، تصاویر، دسته‌بندی، وضعیت، شهر و موقعیت جغرافیایی را کامل کنید.',
+    3: 'اطلاعات معامله (قیمت یا کالای موردنظر) را کامل کنید.',
+    4: 'قبل از انتشار آگهی، اطلاعات را بررسی کنید.'
   };
 
   if (!validateCurrentStep()) {
@@ -1173,60 +1225,42 @@ function validateCurrentStepWithMessage() {
   return true;
 }
 
-window.toggleExchangeCategory = function(el, cat) {
-  if (exchangeCategories.has(cat)) {
-    exchangeCategories.delete(cat);
-    el.classList.remove('selected');
-  } else {
-    exchangeCategories.add(cat);
-    el.classList.add('selected');
-  }
-  document.getElementById('step4-want-cats').value = JSON.stringify([...exchangeCategories]);
-  updateButtons();
-}
-
 function validateCurrentStep() {
   switch (currentStep) {
     case 1:
-      const title = document.getElementById('step1-title').value.trim();
-      const desc = document.getElementById('step1-description').value.trim();
-      return title.length >= 5 && desc.length >= 20;
+      return IS_STORE_SELLER || !!getDealType();
 
-    case 2:
-      return uploadedFiles.filter(Boolean).length > 0;
-
-    case 3: {
-      const catId = document.getElementById('step3-category-hidden').value;
-      const city = document.getElementById('step3-city').value.trim();
-      const lat = document.getElementById('step3-latitude').value.trim();
-      const lng = document.getElementById('step3-longitude').value.trim();
-      const neighborhood = document.getElementById('step3-neighborhood-hidden')?.value.trim()
-        || document.getElementById('step3-neighborhood')?.value.trim()
-        || document.getElementById('step3-neighborhood-text')?.value.trim();
-      return !!catId && !!city && !!lat && !!lng && !!neighborhood
+    case 2: {
+      const title = document.getElementById('wz-title').value.trim();
+      const desc = document.getElementById('wz-desc').value.trim();
+      const hasImage = uploadedFiles.filter(Boolean).length > 0;
+      const catId = document.getElementById('cat-pick-hidden')?.value || '';
+      const city = document.getElementById('wz-city').value.trim();
+      const lat = document.getElementById('wz-latitude').value.trim();
+      const lng = document.getElementById('wz-longitude').value.trim();
+      const neighborhood = document.getElementById('wz-neighborhood-hidden')?.value.trim()
+        || document.getElementById('wz-neighborhood')?.value.trim()
+        || document.getElementById('wz-neighborhood-text')?.value.trim();
+      return title.length >= 5 && desc.length >= 20 && hasImage && !!catId && !!city && !!lat && !!lng && !!neighborhood
         && (typeof window.swaapinCatalogValid !== 'function' || window.swaapinCatalogValid());
     }
 
-    case 4:
-      const wantCatId = document.getElementById('want-cat-pick-hidden').value;
-      return !!wantCatId;
-
-    case 5:
-      return true;
-
-    case 6: {
-      const modeRadios = document.querySelectorAll('input[name="listing_mode"]');
-      if (!modeRadios.length) return true; // فروشگاه: اعتبارسنجی سمت سرور
-      const mode = document.querySelector('input[name="listing_mode"]:checked')?.value || '';
-      if (!mode) return false; // نوع معامله اجباری است
-      if (mode === 'sell' || mode === 'both') {
-        const sp = parseFloat(document.getElementById('step6-sell-price-input')?.value || '0');
-        return sp > 0;
+    case 3: {
+      const mode = IS_STORE_SELLER ? 'both' : getDealType();
+      const needSell = (mode === 'sell' || mode === 'both');
+      const needSwap = (mode === 'swap' || mode === 'both');
+      if (needSell) {
+        const sp = parseFloat(document.getElementById('wz-sell-price')?.value || '0');
+        if (!(sp > 0)) return false;
+      }
+      if (needSwap) {
+        const wantCatId = document.getElementById('want-cat-pick-hidden')?.value || '';
+        if (!wantCatId) return false;
       }
       return true;
     }
 
-    case 7:
+    case 4:
       return true;
 
     default:
@@ -1237,7 +1271,7 @@ function validateCurrentStep() {
 function goToStep(step) {
   if (step < 1 || step > totalSteps) return;
 
-  if (step === 3) {
+  if (step === 2) {
     setTimeout(() => {
       document.querySelectorAll('.listing-location-picker .listing-location-picker__map')
         .forEach(() => window.dispatchEvent(new Event('resize')));
@@ -1254,11 +1288,12 @@ function goToStep(step) {
   updateStepper();
   updateButtons();
   
-  if (step === 6) {
-    runStep6AiPricing();
+  if (step === 3) {
+    applyDealType();
+    runWizardAiPricing();
   }
 
-  if (step === 7) {
+  if (step === 4) {
     populateReview();
   }
 }
@@ -1314,64 +1349,82 @@ function updateButtons() {
 }
 
 function populateReview() {
-  // Step 1
-  document.getElementById('step7-title').textContent = document.getElementById('step1-title').value;
-  document.getElementById('step7-description').textContent = document.getElementById('step1-description').value;
+  const mode = IS_STORE_SELLER ? 'both' : getDealType();
+  const needSell = (mode === 'sell' || mode === 'both');
+  const needSwap = (mode === 'swap' || mode === 'both');
 
-  // Step 3
+  const goalLabels = { swap: 'معاوضه', sell: 'فروش', both: 'فروش یا معاوضه' };
+  document.getElementById('wz-review-goal').textContent = goalLabels[mode] || 'نامشخص';
+
+  // اطلاعات اصلی
+  document.getElementById('wz-review-title').textContent = document.getElementById('wz-title').value;
+  document.getElementById('wz-review-desc').textContent = document.getElementById('wz-desc').value;
+
   const catLabel = document.getElementById('cat-pick-label');
-  const catHidden = document.getElementById('step3-category-hidden');
-  document.getElementById('step7-category').textContent =
+  const catHidden = document.getElementById('cat-pick-hidden');
+  document.getElementById('wz-review-category').textContent =
     (catHidden?.value && catLabel?.textContent && catLabel.textContent !== 'انتخاب دسته‌بندی…')
       ? catLabel.textContent
       : 'انتخاب نشده';
-  
-  const condSelect = document.getElementById('step3-condition');
+
+  const condSelect = document.getElementById('wz-condition');
   const condLabels = { 'new' : 'نو', 'like_new' : 'مثل نو', 'good' : 'خوب', 'fair' : 'متوسط', 'poor' : 'خورده'};
-  document.getElementById('step7-condition').textContent = condLabels[condSelect.value];
-  
-  const cityVal = document.getElementById('step3-city').value;
-  document.getElementById('step7-city').textContent = cityVal || 'نامشخص';
-  const neighborhoodVal = document.getElementById('step3-neighborhood-hidden')?.value
-    || document.getElementById('step3-neighborhood')?.value
-    || document.getElementById('step3-neighborhood-text')?.value
+  document.getElementById('wz-review-condition').textContent = condLabels[condSelect.value];
+
+  const cityVal = document.getElementById('wz-city').value;
+  document.getElementById('wz-review-city').textContent = cityVal || 'نامشخص';
+  const neighborhoodVal = document.getElementById('wz-neighborhood-hidden')?.value
+    || document.getElementById('wz-neighborhood')?.value
+    || document.getElementById('wz-neighborhood-text')?.value
     || '';
-  const latVal = document.getElementById('step3-latitude')?.value || '';
-  const lngVal = document.getElementById('step3-longitude')?.value || '';
-  document.getElementById('step7-neighborhood').textContent = neighborhoodVal
+  const latVal = document.getElementById('wz-latitude')?.value || '';
+  const lngVal = document.getElementById('wz-longitude')?.value || '';
+  document.getElementById('wz-review-neighborhood').textContent = neighborhoodVal
     ? `محله ${neighborhoodVal}${latVal && lngVal ? ` — ${latVal}, ${lngVal}` : ''}`
     : 'موقعیت روی نقشه انتخاب نشده';
 
-  // Step 4 & 5
-  const wantCatLabel = document.getElementById('want-cat-pick-label');
-  const wantCatHidden = document.getElementById('want-cat-pick-hidden');
-  document.getElementById('step7-want-cats').textContent = 
-    (wantCatHidden?.value && wantCatLabel?.textContent && wantCatLabel.textContent !== 'انتخاب دسته‌بندی…')
-      ? wantCatLabel.textContent
-      : 'انتخاب نشده';
-  document.getElementById('step7-want-desc').textContent = document.getElementById('step5-description').value || 'نوشته نشده';
-
-  // Step 6
-  const modeRadios = document.querySelectorAll('input[name="listing_mode"]');
-  const mode = modeRadios.length
-    ? (document.querySelector('input[name="listing_mode"]:checked')?.value || 'swap')
-    : 'both';
-  const priceLabel = document.getElementById('step7-price-label');
-  if (mode === 'sell' || mode === 'both') {
-    const sellVal = document.getElementById('step6-sell-price-input')?.value || '0';
-    if (priceLabel) priceLabel.textContent = 'قیمت فروش';
-    document.getElementById('step7-price').textContent = new Intl.NumberFormat('fa-IR').format(parseInt(sellVal || '0', 10)) + ' تومان';
-  } else {
-    const finalPrice = document.getElementById('step6-estimated-value').value;
-    if (priceLabel) priceLabel.textContent = 'قیمت تخمینی';
-    document.getElementById('step7-price').textContent = new Intl.NumberFormat('fa-IR').format(parseInt(finalPrice || '0', 10)) + ' تومان';
+  // قیمت فروش
+  const sellSection = document.getElementById('wz-review-sell-section');
+  sellSection.style.display = needSell ? '' : 'none';
+  if (needSell) {
+    const sellVal = document.getElementById('wz-sell-price')?.value || '0';
+    document.getElementById('wz-review-sell-price').textContent =
+      new Intl.NumberFormat('fa-IR').format(parseInt(sellVal || '0', 10)) + ' تومان';
   }
 
-  // Step 2 images
-  const imgGrid = document.getElementById('step7-images');
+  // کالای موردنظر
+  const wantCatLabel = document.getElementById('want-cat-pick-label');
+  const wantCatHidden = document.getElementById('want-cat-pick-hidden');
+  const wantCatSection = document.getElementById('wz-review-wantcat-section');
+  const wantDescSection = document.getElementById('wz-review-wantdesc-section');
+  const wantDesc = document.getElementById('wz-want-desc')?.value || '';
+  wantCatSection.style.display = needSwap ? '' : 'none';
+  wantDescSection.style.display = needSwap ? '' : 'none';
+  if (needSwap) {
+    document.getElementById('wz-review-want-cat').textContent =
+      (wantCatHidden?.value && wantCatLabel?.textContent
+        && !wantCatLabel.textContent.includes('انتخاب دسته‌بندی'))
+        ? wantCatLabel.textContent
+        : 'انتخاب نشده';
+    const wantDescEl = document.getElementById('wz-review-want-desc');
+    if (wantDescEl) wantDescEl.textContent = wantDesc || 'نوشته نشده';
+  }
+
+  // قیمت تخمینی معاوضه
+  const swapSection = document.getElementById('wz-review-swap-section');
+  swapSection.style.display = needSwap ? '' : 'none';
+  if (needSwap) {
+    const customRaw = (document.getElementById('wz-custom-value')?.value || '').replace(/[^\d]/g, '');
+    const finalPrice = customRaw || document.getElementById('wz-estimated-value')?.value || '0';
+    document.getElementById('wz-review-swap-price').textContent =
+      new Intl.NumberFormat('fa-IR').format(parseInt(finalPrice || '0', 10)) + ' تومان';
+  }
+
+  // تصاویر
+  const imgGrid = document.getElementById('wz-review-images');
   imgGrid.innerHTML = '';
   uploadedFiles.filter(Boolean).forEach((_, idx) => {
-    const preview = document.getElementById('step2-preview-' + idx);
+    const preview = document.getElementById('wz-preview-' + idx);
     if (preview) {
       const img = preview.querySelector('img');
       if (img) {
@@ -1399,23 +1452,6 @@ document.getElementById('wizard-next-btn').addEventListener('click', () => {
     goToStep(currentStep + 1);
   }
 });
-
-// ── نوع معامله: معاوضه / فروش / معاوضه یا فروش ─────────────────────────────
-function syncListingModeUi() {
-  const radios = document.querySelectorAll('input[name="listing_mode"]');
-  if (!radios.length) return; // فروشگاه: هر دو بخش نمایش داده می‌شوند
-  const mode = document.querySelector('input[name="listing_mode"]:checked')?.value || '';
-  const swapBlock = document.getElementById('step6-swap-price-block');
-  const sellBlock = document.getElementById('step6-sell-price-block');
-  if (swapBlock) swapBlock.style.display = mode === 'sell' ? 'none' : '';
-  if (sellBlock) sellBlock.style.display = (mode === 'sell' || mode === 'both') ? '' : 'none';
-  updateButtons();
-}
-document.querySelectorAll('input[name="listing_mode"]').forEach((el) => {
-  el.addEventListener('change', syncListingModeUi);
-});
-syncListingModeUi();
-
 </script>
 
 <?php render_footer(); ?>
