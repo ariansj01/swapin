@@ -157,6 +157,13 @@
   border: 0; cursor: pointer; font-family: inherit;
 }
 
+.clubs-all { margin-top: 4px; }
+.clubs-all__head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px;
+}
+.clubs-all__head h1 { font-size: 18px; font-weight: 800; color: #111827; margin: 0; }
+.clubs-all__head p { font-size: 12.5px; color: #6b7280; margin: 0; }
+
 .clm[hidden] { display: none !important; }
 .clm {
   position: fixed; inset: 0; z-index: 80;

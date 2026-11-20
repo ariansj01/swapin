@@ -108,6 +108,16 @@ if (!$isOwner && !$isAdmin) {
     }
 }
 
+// زمینه رفتار (فاز ۱): ثبت بازدید آگهی از سمت کلاینت با ابعاد ساختاریافته
+$GLOBALS['swaapin_behavior_context'] = [
+    'page_type'     => 'listing',
+    'default_event' => 'view_listing',
+    'listing_id'    => (int)$listing['id'],
+    'category_id'   => (int)($listing['category_id'] ?? 0),
+    'brand_id'      => (int)($listing['brand_id'] ?? 0),
+    'model_id'      => (int)($listing['model_id'] ?? 0),
+];
+
 // Increment views
 DB::query('UPDATE listings SET views = views + 1 WHERE id = ?', [$id]);
 

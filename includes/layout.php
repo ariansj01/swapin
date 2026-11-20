@@ -58,8 +58,13 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/content_manager.php';
 require_once __DIR__ . '/seo.php';
 require_once __DIR__ . '/dashboard_layout.php';
+require_once __DIR__ . '/behavior.php';
 
 function render_head(string $title = '', string $desc = '', array $seo = []): void {
+    // ثبت شناسه ناشناس بازدیدکننده پیش از ارسال هدرها (برای پیوند رفتار مهمان به کاربر پس از ورود)
+    if (function_exists('behavior_anon_id') && function_exists('behavior_is_bot') && !behavior_is_bot()) {
+        behavior_anon_id();
+    }
     // سئو: تایتل طبق الگوی هر صفحه ساخته می‌شود و نام برند در انتهای آن نمی‌آید
     // (شیت «قالب تایتل و H1»). بریدن خودکار تایتل با «…» هم انجام نمی‌شود.
     $t         = $title !== '' ? h($title) : APP_NAME . ' — بازار تعویض هوشمند';
@@ -765,9 +770,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 </script>
-</body>
-</html>
 HTML;
+    behavior_render_client();
+    echo "</body>\n</html>\n";
 }
 
 function render_listing_simple_footer(): void {
@@ -845,9 +850,9 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
-</body>
-</html>
 HTML;
+    behavior_render_client();
+    echo "</body>\n</html>\n";
 }
 
 function render_full_page_modal(string $title, string $message, string $buttonText, string $buttonUrl, string $icon): void {

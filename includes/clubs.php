@@ -460,7 +460,8 @@ function clubs_approved_list(int $limit = 24): array {
         return [];
     }
     return DB::fetchAll(
-        'SELECT cl.*, c.name AS category_name, c.icon AS category_icon, c.slug AS category_slug
+        'SELECT cl.*, c.name AS category_name, c.icon AS category_icon, c.slug AS category_slug,
+                (SELECT COUNT(*) FROM club_members m WHERE m.club_id = cl.id AND m.status = "active") AS member_count
          FROM clubs cl
          LEFT JOIN categories c ON c.id = cl.category_id
          WHERE cl.status = "approved"

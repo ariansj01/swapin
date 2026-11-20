@@ -12,6 +12,8 @@ require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/dashboard_layout.php';
 require_once __DIR__ . '/includes/iso.php';
 require_once __DIR__ . '/includes/asset_valuation.php';
+require_once __DIR__ . '/includes/recommend.php';
+require_once __DIR__ . '/includes/nudge.php';
 error_log('[swapin-dashboard] layout.php loaded successfully');
 
 swapin_debug_log('dashboard-started', ['step' => 'init', 'uri' => $_SERVER['REQUEST_URI'] ?? '']);
@@ -218,6 +220,8 @@ render_navbar($user);
         <i class="bi bi-plus-lg"></i> آگهی جدید
       </a>
     </div>
+
+    <?php if (!$dashboardNeedsMigration) { nudge_render((int)$uid); } ?>
 
     <!-- Stats -->
     <div class="dash-stat-grid" style="grid-template-columns: repeat(4, 1fr);">
@@ -538,6 +542,9 @@ render_navbar($user);
         </div>
       </div>
     </div>
+
+    <!-- ── Recommendations (Phase 3 smart engine) ─────────────────────── -->
+    <?php if (!$dashboardNeedsMigration) { recommend_render_section($user, 'dashboard', 6); } ?>
 
     <!-- ISO Reverse Match Hub — users looking for items I own -->
     <?php if (!empty($isoReverseMatchesDashboard)): ?>

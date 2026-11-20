@@ -87,7 +87,7 @@ $cardLayout = isset($cardLayout) ? $cardLayout : 'vertical';
 $isHorizontal = $cardLayout === 'horizontal';
 $isPremiumHorizontal = $cardLayout === 'premium-horizontal';
 ?>
-<article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= $isPremiumHorizontal ? 'listing-card--premium-horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
+<article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= $isPremiumHorizontal ? 'listing-card--premium-horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>" data-listing-id="<?= (int)$l['id'] ?>" data-category-id="<?= (int)($l['category_id'] ?? 0) ?>">
 
   <!-- ========== IMAGE SECTION (TOP) ========== -->
   <div class="lc-media-wrapper">

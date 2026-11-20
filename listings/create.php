@@ -283,7 +283,7 @@ if ($storeMode) {
 }
 ?>
 
-<div class="wizard-page">
+<div class="wizard-page listing-create-page" data-current-step="1">
   <!-- Stepper Header -->
   <div class="wizard-header">
     <div class="wizard-container" style="padding: var(--wizard-gap) var(--wizard-gap);">
@@ -340,26 +340,35 @@ if ($storeMode) {
             <label class="listing-mode-option">
               <input type="radio" name="deal_type" value="sell" id="deal-type-sell" <?= $dealType === 'sell' ? 'checked' : '' ?>>
               <span class="listing-mode-option__inner">
-                <i class="bi bi-cash-coin"></i>
-                <strong>فروش</strong>
-                <small>دریافت پول در ازای کالا</small>
+                <i class="bi bi-tag-fill"></i>
+                <span class="listing-mode-option__copy">
+                  <strong>فروش</strong>
+                  <small>دریافت پول در ازای کالا</small>
+                </span>
+                <span class="listing-mode-option__radio" aria-hidden="true"></span>
               </span>
             </label>
             <label class="listing-mode-option">
               <input type="radio" name="deal_type" value="swap" id="deal-type-swap" <?= $dealType === 'swap' ? 'checked' : '' ?>>
               <span class="listing-mode-option__inner">
                 <i class="bi bi-arrow-left-right"></i>
-                <strong>معاوضه</strong>
-                <small>دریافت کالای دیگر</small>
+                <span class="listing-mode-option__copy">
+                  <strong>معاوضه</strong>
+                  <small>دریافت کالای دیگر</small>
+                </span>
+                <span class="listing-mode-option__radio" aria-hidden="true"></span>
               </span>
             </label>
             <?php endif; ?>
             <label class="listing-mode-option">
               <input type="radio" name="deal_type" value="both" id="deal-type-both" <?= $dealType === 'both' ? 'checked' : '' ?>>
               <span class="listing-mode-option__inner">
-                <i class="bi bi-arrow-repeat"></i>
-                <strong>فروش یا معاوضه</strong>
-                <small>هر دو پیشنهاد قابل قبول است</small>
+                <i class="bi bi-tags-fill"></i>
+                <span class="listing-mode-option__copy">
+                  <strong>فروش یا معاوضه</strong>
+                  <small>هر دو پیشنهاد قابل قبول است</small>
+                </span>
+                <span class="listing-mode-option__radio" aria-hidden="true"></span>
               </span>
             </label>
           </div>
@@ -635,7 +644,7 @@ if ($storeMode) {
           </div>
           <div class="wizard-footer-right">
             <button type="button" id="wizard-next-btn" class="wizard-btn wizard-btn-primary">
-              ادامه
+              <i class="bi bi-chevron-right" aria-hidden="true"></i> ادامه
             </button>
             <button type="submit" id="wizard-submit-btn" class="wizard-btn wizard-btn-primary" style="display:none">
               انتشار آگهی
@@ -648,7 +657,7 @@ if ($storeMode) {
 </div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-wizard.css">
+<link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-wizard.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-wizard.css') ?>">
 <style>
 .wizard-category-picker { position: relative; width: 100%; }
 .cat-pick-trigger {
@@ -703,28 +712,6 @@ if ($storeMode) {
 #wz-review-category { padding-right: 0; }
 .wizard-form-group.is-invalid .cat-pick-trigger { border-color: var(--danger,#ef4444) !important; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
 
-/* نوع آگهی: معاوضه / فروش */
-.listing-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-.listing-mode-option { position: relative; cursor: pointer; }
-.listing-mode-option input { position: absolute; opacity: 0; pointer-events: none; }
-.listing-mode-option__inner {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  padding: 8px 8px; text-align: center;
-  border: 1.5px solid #e5e7eb; border-radius: 10px; background: #fff;
-  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
-}
-.listing-mode-option__inner i { font-size: 1rem; color: var(--primary,#071A33); }
-.listing-mode-option__inner strong { font-size: .8125rem; font-weight: 800; color: var(--primary,#071A33); }
-.listing-mode-option__inner small { font-size: .6875rem; color: #6b7280; line-height: 1.4; }
-.listing-mode-option input:checked + .listing-mode-option__inner {
-  border-color: var(--primary,#071A33);
-  background: rgba(7,26,51,.04);
-  box-shadow: 0 0 0 2px rgba(7,26,51,.06);
-}
-.listing-mode-option input:checked + .listing-mode-option__inner i { color: var(--orange,#FF6600); }
-@media (max-width: 480px) {
-  .listing-mode-switch { grid-template-columns: 1fr; }
-}
 </style>
 <link rel="stylesheet" href="<?= APP_URL ?>/src/css/listing-location.css?v=<?= filemtime(__DIR__ . '/../src/css/listing-location.css') ?>">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -1286,6 +1273,7 @@ function goToStep(step) {
   // Show target
   document.getElementById('step-' + step).style.display = 'block';
   currentStep = step;
+  document.querySelector('.listing-create-page')?.setAttribute('data-current-step', String(step));
   
   updateStepper();
   updateButtons();

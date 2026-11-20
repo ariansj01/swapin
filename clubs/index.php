@@ -29,6 +29,7 @@ if ($catSlug !== '') {
 }
 
 $club = $activeCat ? clubs_featured_in_root((int)$activeCat['id']) : null;
+$approvedClubs = $activeCat ? [] : clubs_approved_list(48);
 $adBanner = clubs_banner_active();
 $hubUrl = clubs_hub_url((string)($activeCat['slug'] ?? ''));
 
@@ -144,10 +145,51 @@ render_navbar($user);
   </div>
 
   <?php if (!$activeCat): ?>
-  <div class="clubs-empty">
-    <h1>کلاب‌های سواپین</h1>
-    <p>دسته‌بندی خودتو انتخاب کن</p>
-  </div>
+    <?php if (!$approvedClubs): ?>
+    <div class="clubs-empty">
+      <h1>کلاب‌های سواپین</h1>
+      <p>هیچ کلاب فعالی وجود ندارد. اولین کلاب را بساز!</p>
+      <a class="clubs-banner__cta" href="<?= APP_URL ?>/clubs/create">+ ساخت کلاب</a>
+    </div>
+    <?php else: ?>
+    <section class="clubs-all">
+      <div class="clubs-all__head">
+        <h1>کلاب‌های سواپین</h1>
+        <p><?= fmt_num(count($approvedClubs)) ?> کلاب فعال</p>
+      </div>
+      <div class="clubs-cards">
+        <?php foreach ($approvedClubs as $ac):
+          $acAvatar = clubs_image_url($ac['avatar_image'] ?? '');
+          $acCover = clubs_image_url($ac['cover_image'] ?? '');
+        ?>
+        <article class="club-item">
+          <div class="club-item__media">
+            <?php if ($acCover): ?><img src="<?= h($acCover) ?>" alt=""><?php endif; ?>
+          </div>
+          <div class="club-item__body">
+            <div class="club-item__head">
+              <div class="club-item__logo">
+                <?php if ($acAvatar): ?>
+                <img src="<?= h($acAvatar) ?>" alt="">
+                <?php else: ?>
+                <i class="<?= h(clubs_category_icon($ac['category_icon'] ?? '', (string)($ac['category_name'] ?? ''))) ?>"></i>
+                <?php endif; ?>
+              </div>
+              <div class="club-item__copy">
+                <h3 class="club-item__title"><?= h($ac['name']) ?></h3>
+                <p class="club-item__sub"><?= h($ac['category_name'] ?? 'دسته‌بندی') ?></p>
+              </div>
+            </div>
+            <div class="club-item__stats">
+              <span><i class="bi bi-people"></i> <?= clubs_fmt_compact((int)($ac['member_count'] ?? 0)) ?> عضو</span>
+            </div>
+            <a class="club-item__cta" href="<?= h(clubs_url($ac)) ?>">مشاهده کلاب <i class="bi bi-arrow-left"></i></a>
+          </div>
+        </article>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
   <?php else: ?>
 
   <div class="clubs-hub__grid">
