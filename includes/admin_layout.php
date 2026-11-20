@@ -104,6 +104,7 @@ function render_admin_shell(array $admin, string $active, string $content): void
     echo '</nav>';
     echo '<div class="admin-sidebar__foot">';
     echo "<div class=\"admin-sidebar__user\"><i class=\"bi bi-person-circle\"></i> {$name}</div>";
+    echo "<a href=\"{$url}/admin/profile.php\" class=\"admin-nav__link\"><i class=\"bi bi-person-gear\"></i> پروفایل من</a>";
     echo "<a href=\"{$url}/\" class=\"admin-nav__link\"><i class=\"bi bi-house\"></i> سایت</a>";
     $logoutCsrf = csrf_field();
     echo "<form method=\"POST\" action=\"{$url}/admin/logout.php\" style=\"margin:0\">{$logoutCsrf}";

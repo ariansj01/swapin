@@ -479,13 +479,22 @@ function initNavbarHoverDropdowns() {
     let closeTimer = null;
     dd.addEventListener('mouseenter', () => {
       if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+      // کلاس open باید روی خودِ .dropdown بماند تا قاعدهٔ
+      // «.navbar-nav .dropdown.open > .dropdown-menu» فعال شود.
+      // اگر فقط روی منو گذاشته شود، قاعدهٔ «.navbar-nav .dropdown > .dropdown-menu
+      // { display:none }» با تخصیص بالاتر آن را بی‌اثر می‌کند و منو در فاصلهٔ
+      // ۴ پیکسلی بین دکمه و منو ناپدید می‌شود (باگ «سریع بسته می‌شود»).
+      dd.classList.add('open');
       menu.classList.add('open');
     });
     dd.addEventListener('mouseleave', () => {
       if (closeTimer) clearTimeout(closeTimer);
       closeTimer = setTimeout(() => {
         closeTimer = null;
-        if (!dd.matches(':hover')) menu.classList.remove('open');
+        if (!dd.matches(':hover')) {
+          dd.classList.remove('open');
+          menu.classList.remove('open');
+        }
       }, TOP_CLOSE_DELAY);
     });
   });
