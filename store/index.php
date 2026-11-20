@@ -419,7 +419,7 @@ render_navbar($user);
           <i class="bi bi-box-arrow-up-right"></i> مشاهده صفحه فروشگاه
         </a>
         <?php endif; ?>
-        <a href="<?= APP_URL ?>/listings/create" class="store-btn store-btn--gradient">
+        <a href="<?= APP_URL ?>/listings/create?as=store" class="store-btn store-btn--gradient">
           <i class="bi bi-plus-lg"></i> <?= h($panelCopy['add_item']) ?>
         </a>
       </div>

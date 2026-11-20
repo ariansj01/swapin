@@ -7,6 +7,8 @@ require_once __DIR__ . '/../includes/ai_moderation.php';
 
 $user = require_auth();
 $isStoreSeller = is_store_seller($user);
+// حالت فروشگاهی فقط از پنل فروشگاه (/store) فعال می‌شود؛ ورود مستقیم به /listings/create = آگهی شخصی
+$storeMode = $isStoreSeller && (($_GET['as'] ?? '') === 'store');
 $listingProviderType = $isStoreSeller ? user_provider_type($user) : 'normal_store';
 
 if ($listingErr = kyc_check_listing_action($user)) {
@@ -136,10 +138,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals['estimated_value'] = $vals['custom_value'] > 0 ? $vals['custom_value'] : $suggestedValue;
     $vals['estimated_value'] = max(0, min((float)$vals['estimated_value'], 999999999999.99));
 
-    if ($isStoreSeller) {
+    if ($storeMode) {
         $vals['listing_mode'] = 'both';
     }
-    if (!$isStoreSeller && !in_array($vals['listing_mode'], ['sell', 'both'], true)) {
+    if (!$storeMode && !in_array($vals['listing_mode'], ['sell', 'both'], true)) {
         $vals['sell_price'] = 0;
     }
 
@@ -153,15 +155,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['want_category_id'] = 'لطفاً دسته‌بندی درخواستی را انتخاب کنید';
     }
     if (mb_strlen($vals['description']) < 20) $errors['description'] = 'توضیحات باید حداقل ۲۰ کاراکتر باشد';
-    if (!$isStoreSeller && !in_array($vals['listing_mode'], ['swap', 'sell', 'both'], true)) {
+    if (!$storeMode && !in_array($vals['listing_mode'], ['swap', 'sell', 'both'], true)) {
         $errors['listing_mode'] = 'نوع معامله را انتخاب کنید';
     }
     if (empty($vals['deal_type']) || !in_array($vals['deal_type'], ['swap', 'sell', 'both'], true)) {
         $errors['deal_type'] = 'انتخاب نوع معامله (deal_type) الزامی است';
     }
-    if ($isStoreSeller && $vals['sell_price'] <= 0)
+    if ($storeMode && $vals['sell_price'] <= 0)
         $errors['sell_price'] = 'قیمت فروش برای فروشگاه‌ها الزامی است.';
-    if (!$isStoreSeller && in_array($vals['listing_mode'], ['sell', 'both'], true) && $vals['sell_price'] <= 0)
+    if (!$storeMode && in_array($vals['listing_mode'], ['sell', 'both'], true) && $vals['sell_price'] <= 0)
         $errors['sell_price'] = 'برای آگهی فروش، وارد کردن قیمت فروش الزامی است.';
 
     $location = listing_location_from_request($vals);
@@ -274,9 +276,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 render_head('ثبت آگهی جدید');
 render_navbar($user);
 
-// تعیین هدف آگهی برای نمایش اولیه (فروشگاه‌ها همیشه «فروش یا معاوضه»)
+// تعیین هدف آگهی برای نمایش اولیه (فروشگاه‌ها در پنل خود همیشه «فروش یا معاوضه»)
 $dealType = in_array(($vals['deal_type'] ?? 'swap'), ['swap', 'sell', 'both'], true) ? $vals['deal_type'] : 'swap';
-if ($isStoreSeller) {
+if ($storeMode) {
     $dealType = 'both';
 }
 ?>
@@ -330,11 +332,11 @@ if ($isStoreSeller) {
         <div class="wizard-step" data-step="1" id="step-1">
           <h2 class="wizard-step-title">می‌خوای با کالای خودت چه کاری انجام بدی؟</h2>
           <p class="wizard-step-subtitle">
-            <?= $isStoreSeller ? 'فروشگاه‌ها همیشه هم برای معاوضه و هم برای فروش نقدی آگهی ثبت می‌کنند.' : 'با انتخاب هدف آگهی، مراحل بعدی بر اساس انتخاب شما تنظیم می‌شود.' ?>
+            <?= $storeMode ? 'فروشگاه‌ها همیشه هم برای معاوضه و هم برای فروش نقدی آگهی ثبت می‌کنند.' : 'با انتخاب هدف آگهی، مراحل بعدی بر اساس انتخاب شما تنظیم می‌شود.' ?>
           </p>
 
           <div class="listing-mode-switch">
-            <?php if (!$isStoreSeller): ?>
+            <?php if (!$storeMode): ?>
             <label class="listing-mode-option">
               <input type="radio" name="deal_type" value="sell" id="deal-type-sell" <?= $dealType === 'sell' ? 'checked' : '' ?>>
               <span class="listing-mode-option__inner">
@@ -507,7 +509,7 @@ if ($isStoreSeller) {
 
             <div class="wizard-form-group">
               <label class="wizard-form-label">دسته‌بندی کالای موردنظر <span style="color:var(--danger)">*</span></label>
-              <?= render_wizard_category_picker((int)($vals['want_category_id'] ?? 0), false, 'want_category_id', 'want-cat-pick') ?>
+              <?= render_wizard_category_picker((int)($vals['want_category_id'] ?? 0), true, 'want_category_id', 'want-cat-pick') ?>
               <p class="form-hint" style="margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
                 انتخاب دقیق دسته‌بندی به ما کمک می‌کند آگهی شما را به افراد مناسب‌تری نشان دهیم.
               </p>
@@ -728,7 +730,7 @@ if ($isStoreSeller) {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="<?= APP_URL ?>/src/js/listing-location.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-location.js') ?>"></script>
 <script>
-const IS_STORE_SELLER = <?= $isStoreSeller ? 'true' : 'false' ?>;
+const STORE_MODE = <?= $storeMode ? 'true' : 'false' ?>;
 let currentStep = 1;
 const totalSteps = 4;
 let uploadedFiles = [];
@@ -748,7 +750,7 @@ function getDealType() {
 }
 
 function applyDealType() {
-  const mode = IS_STORE_SELLER ? 'both' : getDealType();
+  const mode = STORE_MODE ? 'both' : getDealType();
   const hidden = document.getElementById('wz-listing-mode');
   if (hidden && mode) hidden.value = mode;
 
@@ -1228,7 +1230,7 @@ function validateCurrentStepWithMessage() {
 function validateCurrentStep() {
   switch (currentStep) {
     case 1:
-      return IS_STORE_SELLER || !!getDealType();
+      return STORE_MODE || !!getDealType();
 
     case 2: {
       const title = document.getElementById('wz-title').value.trim();
@@ -1246,7 +1248,7 @@ function validateCurrentStep() {
     }
 
     case 3: {
-      const mode = IS_STORE_SELLER ? 'both' : getDealType();
+      const mode = STORE_MODE ? 'both' : getDealType();
       const needSell = (mode === 'sell' || mode === 'both');
       const needSwap = (mode === 'swap' || mode === 'both');
       if (needSell) {
@@ -1349,7 +1351,7 @@ function updateButtons() {
 }
 
 function populateReview() {
-  const mode = IS_STORE_SELLER ? 'both' : getDealType();
+  const mode = STORE_MODE ? 'both' : getDealType();
   const needSell = (mode === 'sell' || mode === 'both');
   const needSwap = (mode === 'swap' || mode === 'both');
 
