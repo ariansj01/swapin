@@ -3685,8 +3685,8 @@ html body .categories-dropdown {
     margin-bottom: 20px;
   }
   .newest-home-section-heading{
-    margin-right: -26% !important;
-    width: 155%;
+    /* margin-right: -26% !important;
+    width: 155%; */
   }
   .newest-listing-item{
     width: 135% !important;
