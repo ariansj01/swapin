@@ -19,6 +19,7 @@ if (db_has_column('users', 'seller_type')) {
     $where[] = '(store_name IS NOT NULL AND store_name != "")';
 }
 $where[] = 'store_slug IS NOT NULL AND store_slug != ""';
+$where[] = store_not_blocked_sql('store_slug');
 
 try {
     $rows = DB::fetchAll('SELECT id, store_slug FROM users WHERE ' . implode(' AND ', $where));
@@ -44,7 +45,7 @@ try {
 swaapin_sitemap_open();
 foreach ($rows as $r) {
     $slug = normalize_shop_slug((string) ($r['store_slug'] ?? ''));
-    if ($slug === '') {
+    if ($slug === '' || store_is_blocked_slug($slug)) {
         continue;
     }
     $path  = '/shop/' . $slug;

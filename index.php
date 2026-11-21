@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 require_once __DIR__ . '/includes/content_manager.php';
@@ -244,6 +244,7 @@ if (!$search && !$catSlug && $page === 1) {
     $storePredicate[] = '(store_name IS NOT NULL AND store_name != "")';
     $storePredicate[] = '(store_slug IS NOT NULL AND store_slug != "")';
     $hWhereParts[] = '(' . implode(' OR ', $storePredicate) . ')';
+    $hWhereParts[] = store_not_blocked_sql('store_slug');
 
     $hWhere = 'WHERE ' . implode(' AND ', $hWhereParts);
     $featuredStores = DB::fetchAll(
@@ -267,7 +268,7 @@ if (!$search && !$catSlug && $page === 1) {
             "SELECT {$fallbackCols},
                     (SELECT COUNT(*) FROM listings WHERE user_id = users.id AND status = 'active' AND review_status = 'approved') AS listings_count
              FROM users
-             WHERE is_active = 1
+             WHERE is_active = 1 AND " . store_not_blocked_sql('store_slug') . "
              ORDER BY created_at DESC, id DESC
              LIMIT 6"
         );

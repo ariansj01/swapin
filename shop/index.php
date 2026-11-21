@@ -14,9 +14,8 @@ if ($slug === '') {
 }
 
 // ۴۱۰ Gone — فروشگاه تستی (نقشهٔ ۳۰۱ / Q05)
-if (in_array($slug, ['myket-test-store', 'test'], true)) {
-    http_response_code(410);
-    header('X-Robots-Tag: noindex, nofollow');
+if (store_is_blocked_slug($slug)) {
+    require __DIR__ . '/../410.php';
     exit;
 }
 

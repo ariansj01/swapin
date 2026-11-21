@@ -41,6 +41,7 @@ if ($hasStoreType && $type !== '') {
 }
 
 $whereParts[] = 'store_slug IS NOT NULL AND store_slug != ""';
+$whereParts[] = store_not_blocked_sql('store_slug');
 $where = 'WHERE ' . implode(' AND ', $whereParts);
 
 $total = (int)(DB::fetch("SELECT COUNT(*) AS c FROM users {$where}", $params)['c'] ?? 0);

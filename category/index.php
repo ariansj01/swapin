@@ -152,7 +152,7 @@ if ($_reqPath !== '') {
                         $parentId = (int) $node['id'];
                     }
                     if ($_segCount > 5 || !$resolved) {
-                        http_response_code(404);
+                        require __DIR__ . '/../404.php';
                         exit;
                     }
                     foreach ($found as $k => $v) {
@@ -172,7 +172,7 @@ if ($_reqPath !== '') {
                     header('Location: ' . rtrim(APP_URL, '/') . '/' . $_firstSeg . '/' . $alias, true, 301);
                     exit;
                 }
-                http_response_code(404);
+                require __DIR__ . '/../404.php';
                 exit;
             }
         }
@@ -258,7 +258,7 @@ if (!$category && isset($_GET['slug'])) {
 }
 
 if (!$category) {
-    http_response_code(404);
+    require __DIR__ . '/../404.php';
     exit;
 }
 

@@ -228,4 +228,5 @@ DirectoryIndex index.php index.html
 
 # Custom error documents
 ErrorDocument 404 /404.php
+ErrorDocument 410 /410.php
 ErrorDocument 500 /500.php

@@ -96,6 +96,9 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
             $blocks = [$blocks];
         }
         foreach ($blocks as $block) {
+            if (!is_array($block) || $block === []) {
+                continue;
+            }
             $jsonLd .= '<script type="application/ld+json">'
                 . json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
                 . "</script>\n";

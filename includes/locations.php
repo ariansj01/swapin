@@ -420,6 +420,40 @@ function swaapin_location_url(array $location): string {
     return $slug === '' ? APP_URL . '/' : APP_URL . '/' . $slug;
 }
 
+/**
+ * آدرس نهاییِ مکان-محور برای لینک جستجو/فیلتر: /{location}[/{category}]?{qs}
+ * جایگزین لینک‌های پارامتری «/iran?city=…» که یک ریدایرکت ۳۰۱ اضافه ایجاد می‌کردند.
+ * اگر مکان قابل شناسایی نباشد null برمی‌گرداند تا فراخوان به مسیر قدیمی برگردد.
+ */
+function swaapin_location_search_url(string $locationName, string $catSlug = '', array $params = []): ?string {
+    $locationName = trim($locationName);
+    if ($locationName === '') {
+        return null;
+    }
+    $loc = swaapin_location_by_name($locationName, 'city')
+        ?? swaapin_location_by_name($locationName, 'province');
+    if (!$loc) {
+        return null;
+    }
+    $url = rtrim(swaapin_location_url($loc), '/');
+    $catSlug = trim($catSlug);
+    if ($catSlug !== '') {
+        try {
+            $catRow = DB::fetch('SELECT slug FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1', [strtolower($catSlug)]);
+        } catch (Throwable $e) {
+            $catRow = null;
+        }
+        if ($catRow) {
+            $url .= '/' . rawurlencode((string) $catRow['slug']);
+        }
+    }
+    $params = array_filter($params, static function ($v): bool {
+        return $v !== null && $v !== '' && $v !== '0' && $v !== 0;
+    });
+    $qs = http_build_query($params);
+    return $qs !== '' ? $url . '?' . $qs : $url;
+}
+
 /** تعداد آگهی‌های فعال به تفکیک شهر و محله (کش‌شده در طول درخواست). */
 function swaapin_location_listing_counts(): array {
     static $cache = null;

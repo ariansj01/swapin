@@ -114,6 +114,7 @@ function swaapin_sitemap_store_lastmod(): ?string
         $row = DB::fetch(
             'SELECT MAX(' . $col . ') AS m FROM users
              WHERE is_active = 1 AND store_slug IS NOT NULL AND store_slug != ""'
+            . (function_exists('store_not_blocked_sql') ? ' AND ' . store_not_blocked_sql('store_slug') : '')
         );
         return swaapin_sitemap_fmt_date($row['m'] ?? null);
     } catch (Throwable $e) {

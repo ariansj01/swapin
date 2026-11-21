@@ -5,14 +5,13 @@ require_once __DIR__ . '/../includes/layout.php';
 $slug = trim($_GET['slug'] ?? '');
 
 if (!$slug) {
-    http_response_code(404);
+    require __DIR__ . '/../404.php';
     exit;
 }
 
 // صفحات تستی طبق معماری سئو → 410 Gone
 if (in_array(strtolower($slug), ['test', 'test-final', 'about-gol', 'seo-test-page'], true)) {
-    http_response_code(410);
-    header('X-Robots-Tag: noindex, nofollow');
+    require __DIR__ . '/../410.php';
     exit;
 }
 
@@ -28,7 +27,7 @@ $page = DB::fetch(
 );
 
 if (!$page) {
-    http_response_code(404);
+    require __DIR__ . '/../404.php';
     exit;
 }
 
@@ -36,8 +35,7 @@ $indexStatus = (string)($page['index_status'] ?? 'index');
 
 // 410 Gone — صفحه‌های تستی/حذف‌شده؛ خروج سریع از ایندکس گوگل
 if ($indexStatus === 'gone') {
-    http_response_code(410);
-    header('X-Robots-Tag: noindex, nofollow');
+    require __DIR__ . '/../410.php';
     exit;
 }
 

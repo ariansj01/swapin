@@ -117,8 +117,34 @@ function seo_json_ld_organization(): array {
     ];
 }
 
-function seo_json_ld_product(array $listing, ?string $imageUrl, string $pageUrl): array {
+/**
+ * داده ساختاریافته Product آگهی.
+ *
+ * گوگل «Product» بدون یکی از offers/review/aggregateRating را در گزارش Product snippets
+ * خطا محسوب می‌کند؛ بنابراین:
+ *  - آگهی فروش/هر دو با قیمت واقعی → Product + offers (priceCurrency=IRR، مبلغ ریالی،
+ *    availability، itemCondition).
+ *  - آگهی معاوضه (یا بدون قیمت واقعی) → هیچ Productی منتشر نمی‌شود (فقط BreadcrumbList می‌ماند).
+ *
+ * @return array|null null یعنی نباید بلوک Product منتشر شود.
+ */
+function seo_json_ld_product(array $listing, ?string $imageUrl, string $pageUrl): ?array {
     $mode = (string) ($listing['listing_mode'] ?? 'swap');
+
+    // فقط آگهی فروش/هر دو Offer معتبر می‌گیرد؛ معاوضهٔ خالص Product نمی‌گیرد.
+    if ($mode !== 'sell' && $mode !== 'both') {
+        return null;
+    }
+
+    // قیمت واقعی اعلام‌شده (تومان)؛ اگر فروش/هر دو قیمت فروش نداشت، «قیمت» نمایش‌داده‌شدهٔ
+    // آگهی (ارزش اعلام‌شده) مبنا قرار می‌گیرد تا با قیمت قابل‌مشاهده در صفحه هم‌خوان بماند.
+    $priceToman = (float) ($listing['sell_price'] ?? 0);
+    if ($priceToman <= 0) {
+        $priceToman = (float) ($listing['estimated_value'] ?? 0);
+    }
+    if ($priceToman <= 0) {
+        return null;
+    }
 
     $schema = [
         '@context'    => 'https://schema.org',
@@ -127,24 +153,18 @@ function seo_json_ld_product(array $listing, ?string $imageUrl, string $pageUrl)
         'description' => mb_strimwidth(strip_tags($listing['description'] ?? ''), 0, 300),
         'url'         => $pageUrl,
         'category'    => $listing['cat_name'] ?? '',
-        'itemCondition' => 'https://schema.org/UsedCondition',
+        'offers'      => [
+            '@type'         => 'Offer',
+            'priceCurrency' => 'IRR',
+            'price'         => (int) round($priceToman * 10), // تومان → ریال
+            'availability'  => 'https://schema.org/InStock',
+            'itemCondition' => 'https://schema.org/UsedCondition',
+            'url'           => $pageUrl,
+        ],
     ];
 
     if ($imageUrl) {
         $schema['image'] = $imageUrl;
-    }
-
-    // آگهی معاوضه Offer نمی‌گیرد تا گوگل آن را Merchant listing در نظر نگیرد.
-    // فقط آگهی فروش/هر دو با قیمت واقعی اعلام‌شده، Offer با مبلغ ریالی (IRR) می‌گیرد.
-    $sellPriceToman = (float) ($listing['sell_price'] ?? 0);
-    if ($mode !== 'swap' && $sellPriceToman > 0) {
-        $schema['offers'] = [
-            '@type'         => 'Offer',
-            'priceCurrency' => 'IRR',
-            'price'         => (int) round($sellPriceToman * 10), // تومان → ریال
-            'availability'  => 'https://schema.org/InStock',
-            'url'           => $pageUrl,
-        ];
     }
 
     // برند فقط در صورت وجود برند واقعی کالا؛ جدول listings فیلد برند ندارد، پس حذف می‌شود.

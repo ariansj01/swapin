@@ -35,6 +35,8 @@ $pmin      = (int)($_GET['price_min']  ?? 0);
 $pmax      = (int)($_GET['price_max']  ?? 0);
 $sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
 $page      = max(1, (int)($_GET['page'] ?? 1));
+// مقدار خام page برای اعتبارسنجی (page=abc / page=0 / page=-1 / page[]=x → ۴۰۴)
+$pageRaw   = array_key_exists('page', $_GET) ? (is_scalar($_GET['page']) ? (string) $_GET['page'] : '') : null;
 $timeAgo   = in_array($_GET['time_ago'] ?? '', ['3h','12h','1d','3d','1w']) ? $_GET['time_ago'] : '';
 // دکمهٔ «فقط معاوضه» (کارت A16.2 — بند ۴): فیلتر پارامتری ?deal=swap برای لندینگ ثبت‌نشده
 $dealSwap  = (clean($_GET['deal'] ?? '') === 'swap');
@@ -271,6 +273,18 @@ $totalRow = DB::fetch(
 $total = (int)($totalRow['c'] ?? 0);
 $perPage = 25;
 $pag = paginate($total, $perPage, $page);
+
+// گارد صفحه‌بندی (کارت A10): صفحهٔ نامعتبر (page=0 / page=-1 / page=abc) یا صفحهٔ بعد از
+// صفحهٔ آخر باید ۴۰۴ بدهد تا نسخهٔ تکراری با canonical سلف ساخته نشود. صفحهٔ ۲ فقط وقتی
+// معتبر است که آگهی کافی برایش باشد.
+if ($pageRaw !== null) {
+    $pageInt   = (int) $pageRaw;
+    $validPage = ($pageRaw !== '' && ctype_digit($pageRaw) && $pageInt >= 1);
+    if (!$validPage || $pageInt > max(1, $pag['pages'])) {
+        require __DIR__ . '/../404.php';
+        exit;
+    }
+}
 
 $listings = DB::fetchAll(
     "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
@@ -551,12 +565,10 @@ render_navbar($user);
         </div>
 
         <?php
-        // لینک‌ساز جستجو با حفظ فیلترهای فعلی
+        // لینک‌ساز جستجو با حفظ فیلترهای فعلی — مستقیم به آدرس نهایی مکان (بدون ریدایرکت ?city=)
         $buildSearchLink = function (string $kw) use ($catSlug, $city, $locMode, $nearbyCitiesRaw, $wantType, $condition, $pmin, $pmax, $sort, $timeAgo): string {
-            $qs = http_build_query(array_filter([
+            $params = array_filter([
                 'q'              => $kw,
-                'cat'            => $catSlug !== '' ? $catSlug : null,
-                'city'           => $city !== '' ? $city : null,
                 'loc'            => $locMode === 'nearby' ? 'nearby' : null,
                 'nearby_cities'  => $locMode === 'nearby' && $nearbyCitiesRaw !== '' ? $nearbyCitiesRaw : null,
                 'want'           => $wantType !== '' ? $wantType : null,
@@ -565,7 +577,16 @@ render_navbar($user);
                 'price_max'      => $pmax > 0 ? $pmax : null,
                 'sort'           => $sort !== 'new' ? $sort : null,
                 'time_ago'       => $timeAgo !== '' ? $timeAgo : null,
-            ]));
+            ]);
+            $direct = swaapin_location_search_url($city, $catSlug, $params);
+            if ($direct !== null) {
+                return $direct;
+            }
+            // fallback: مسیر پارامتری قدیمی (اگر جدول مکان در دسترس نباشد)
+            $qs = http_build_query(array_filter(array_merge($params, [
+                'cat'  => $catSlug !== '' ? $catSlug : null,
+                'city' => $city !== '' ? $city : null,
+            ])));
             return APP_URL . '/iran' . ($qs !== '' ? '?' . $qs : '');
         };
 
@@ -595,7 +616,7 @@ render_navbar($user);
           <h3 class="all-listings-sidebar__subtitle" style="margin-top:0"><i class="bi bi-search-heart"></i> جستجوهای مرتبط</h3>
           <div class="related-searches__chips">
             <?php foreach ($relatedKeywords as $kw): ?>
-            <a href="<?= h($buildSearchLink($kw)) ?>" class="filter-chip"><?= h($kw) ?></a>
+            <a href="<?= h($buildSearchLink($kw)) ?>" class="filter-chip" rel="nofollow"><?= h($kw) ?></a>
             <?php endforeach; ?>
           </div>
         </div>
@@ -623,10 +644,8 @@ render_navbar($user);
             $baseCatUrl = category_url($slug);
             $hasOtherFilters = $search || $cityFilter !== '' || $locMode === 'nearby' || $wantType || $condition || $pmin > 0 || $pmax > 0 || $sort !== 'new' || $timeAgo !== '';
             if ($hasOtherFilters) {
-                $qs = http_build_query(array_filter([
-                    'cat' => $slug,
+                $params = array_filter([
                     'q' => $search !== '' ? $search : null,
-                    'city' => $city !== '' ? $city : null,
                     'loc' => $locMode === 'nearby' ? 'nearby' : null,
                     'nearby_cities' => $locMode === 'nearby' && $nearbyCitiesRaw !== '' ? $nearbyCitiesRaw : null,
                     'want' => $wantType !== '' ? $wantType : null,
@@ -635,6 +654,15 @@ render_navbar($user);
                     'price_max' => $pmax > 0 ? $pmax : null,
                     'sort' => $sort !== 'new' ? $sort : null,
                     'time_ago' => $timeAgo !== '' ? $timeAgo : null,
+                ]);
+                // مستقیم به آدرس نهایی مکان (بدون ریدایرکت ?city=)
+                $direct = swaapin_location_search_url($city, $slug, $params);
+                if ($direct !== null) {
+                    return $direct;
+                }
+                $qs = http_build_query(array_merge($params, [
+                    'cat' => $slug,
+                    'city' => $city !== '' ? $city : null,
                 ]));
                 return APP_URL . '/iran' . ($qs !== '' ? '?' . $qs : '');
             }

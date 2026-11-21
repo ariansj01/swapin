@@ -61,22 +61,13 @@ if (!$isOwner && !$isAdmin) {
 
     // آگهی رد‌شده یا حذف‌شده → 410 Gone (حذف سریع از ایندکس گوگل؛ هم‌راستا با Q17).
     if ($reviewStatus === 'rejected' || $listing['status'] === 'deleted') {
-        http_response_code(410);
-        header('X-Robots-Tag: noindex, nofollow');
-        render_head('آگهی حذف شده', '', ['robots' => 'noindex, nofollow']);
-        render_navbar($user);
-        echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-slash-circle"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی رد یا حذف شده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
-        render_footer();
+        require __DIR__ . '/../410.php';
         exit;
     }
 
     // آگهی در انتظار تأیید → 404 (هنوز منتشر نشده است).
     if ($reviewStatus !== 'approved') {
-        http_response_code(404);
-        render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
-        render_navbar($user);
-        echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-hourglass-split"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی هنوز تأیید نشده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
-        render_footer();
+        require __DIR__ . '/../404.php';
         exit;
     }
 
@@ -419,14 +410,14 @@ render_head($seoTitle, $metaDesc, [
     'og_image'  => $ogImage,
     'og_title'  => $seoTitle,
     'keywords'  => implode(', ', array_filter([$listing['cat_name'], $listing['city'], 'معاوضه', 'مبادله کالا', APP_NAME])),
-    'json_ld'   => [
+    'json_ld'   => array_values(array_filter([
         seo_json_ld_product($listing, $ogImage, $listingUrl),
         seo_json_ld_breadcrumbs(array_merge(
             [['name' => 'خانه', 'url' => APP_URL . '/']],
             array_map(function ($c) { return ['name' => $c['name'], 'url' => $c['url']]; }, $_catChain),
             [['name' => $listing['title']]]
         )),
-    ],
+    ])),
 ]);
 render_navbar($user);
 ?>
@@ -565,7 +556,7 @@ render_navbar($user);
     <div class="lv-seller">
       <?= avatar_html($listing['seller_avatar'] ?? null, $listing['seller_name'], 'md') ?>
       <div class="lv-seller__info">
-        <?php if (!empty($listing['store_name']) && !empty($listing['store_slug'])): ?>
+        <?php if (!empty($listing['store_name']) && !empty($listing['store_slug']) && !store_is_blocked_slug($listing['store_slug'])): ?>
         <a href="<?= APP_URL ?>/shop/<?= h($listing['store_slug']) ?>" class="badge badge-primary lv-store-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-weight:600;margin-bottom:4px;"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></a>
         <?php endif; ?>
         <div class="lv-seller__name"><a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-seller-name-link"><?= h($listing['seller_name']) ?></a></div>
@@ -900,7 +891,7 @@ render_navbar($user);
 
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.875rem;color:var(--text-muted);">
             <span>فروشنده:</span>
-            <?php if (!empty($listing['store_name']) && !empty($listing['store_slug'])): ?>
+            <?php if (!empty($listing['store_name']) && !empty($listing['store_slug']) && !store_is_blocked_slug($listing['store_slug'])): ?>
             <div style="display:flex;flex-direction:column;gap:2px;">
               <a href="<?= APP_URL ?>/shop/<?= h($listing['store_slug']) ?>" class="badge badge-primary" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-weight:600;"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></a>
               <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" style="color:var(--dash-navy);text-decoration:none;font-weight:bold;font-size:.8125rem;"><?= h($listing['seller_name']) ?></a>
