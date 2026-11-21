@@ -10,12 +10,12 @@ $joinCreateUrl = $joinCreateUrl ?? (APP_URL . '/listings/create');
         <button type="button" class="clm__close" data-join-close aria-label="بستن"><i class="bi bi-x-lg"></i></button>
       </div>
       <h2 class="clm__title" id="club-join-title">انتخاب آگهی برای پیوستن</h2>
-      <p class="clubs-profile__about">برای عضویت در کلاب باید یکی از آگهی‌های فعال خود را انتخاب کنید. مدیر کلاب این آگهی را همراه درخواست شما می‌بیند.</p>
+      <p class="clubs-profile__about">ورود به کلاب بدون آگهی ممکن نیست. حتماً یکی از آگهی‌های فعال خود را انتخاب کنید تا در کلاب نمایش داده شود.</p>
       <?php if (!$myListings): ?>
-      <div class="clubs-empty">هنوز آگهی فعالی ندارید.</div>
+      <div class="clubs-empty">برای عضویت باید حداقل یک آگهی فعال داشته باشید.</div>
       <a class="clm__join" href="<?= h($joinCreateUrl) ?>">ثبت آگهی جدید</a>
       <?php else: ?>
-      <form method="POST" class="club-join-pick">
+      <form method="POST" class="club-join-pick" id="club-join-form">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="join">
         <input type="hidden" name="club_id" id="club-join-club-id" value="0">
@@ -32,8 +32,22 @@ $joinCreateUrl = $joinCreateUrl ?? (APP_URL . '/listings/create');
           </label>
           <?php endforeach; ?>
         </div>
+        <p class="club-join-err" id="club-join-err" hidden>برای ورود به کلاب باید آگهی خود را انتخاب کنید.</p>
         <button class="clm__join" type="submit">ارسال درخواست عضویت</button>
       </form>
+      <script>
+      (function () {
+        const form = document.getElementById('club-join-form');
+        const err = document.getElementById('club-join-err');
+        if (!form) return;
+        form.addEventListener('submit', function (e) {
+          if (!form.querySelector('input[name="listing_id"]:checked')) {
+            e.preventDefault();
+            if (err) err.hidden = false;
+          }
+        });
+      })();
+      </script>
       <?php endif; ?>
     </div>
   </div>

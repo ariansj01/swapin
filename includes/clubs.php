@@ -208,6 +208,7 @@ function clubs_form_defaults(): array {
         'privacy'           => 'public',
         'require_approval'  => 1,
         'accept_terms'      => 0,
+        'listing_id'        => 0,
     ];
 }
 
@@ -224,6 +225,7 @@ function clubs_fields_from_input(array $input): array {
         'privacy'          => $privacy,
         'require_approval' => isset($input['require_approval']) ? 1 : 0,
         'accept_terms'     => isset($input['accept_terms']) ? 1 : 0,
+        'listing_id'       => (int)($input['listing_id'] ?? 0),
     ];
 }
 
@@ -315,6 +317,11 @@ function clubs_create(int $ownerId, array $fields, array $files): array {
     $categoryId = (int)($fields['category_id'] ?? 0);
     $privacy = ($fields['privacy'] ?? 'public') === 'private' ? 'private' : 'public';
     $requireApproval = !empty($fields['require_approval']) ? 1 : 0;
+    $ownerListingId = (int)($fields['listing_id'] ?? 0);
+    if ($ownerListingId > 0 && !clubs_owned_listing($ownerListingId, $ownerId)) {
+        $errors['listing_id'] = 'آگهی انتخاب‌شده متعلق به شما نیست یا فعال نیست.';
+        $ownerListingId = 0;
+    }
 
     if ($name === '') {
         $errors['name'] = 'نام کلاب را وارد کنید.';
@@ -377,12 +384,16 @@ function clubs_create(int $ownerId, array $fields, array $files): array {
             'require_approval'  => $requireApproval,
             'status'            => 'pending',
         ]);
-        DB::insert('club_members', [
+        $ownerMember = [
             'club_id' => $id,
             'user_id' => $ownerId,
             'role'    => 'owner',
             'status'  => 'active',
-        ]);
+        ];
+        if (db_has_column('club_members', 'listing_id') && $ownerListingId > 0) {
+            $ownerMember['listing_id'] = $ownerListingId;
+        }
+        DB::insert('club_members', $ownerMember);
         DB::pdo()->commit();
     } catch (Throwable $e) {
         if (DB::pdo()->inTransaction()) {
@@ -663,7 +674,12 @@ function clubs_featured_in_root(int $rootId): ?array {
 }
 
 function clubs_listings_in_root(int $rootId, string $mode, string $q, int $limit = 12, int $offset = 0): array {
-    return clubs_listings(['category_id' => $rootId], $mode, $q, $limit, $offset);
+    $clubs = clubs_by_root_category($rootId);
+    $clubIds = [];
+    foreach ($clubs as $c) {
+        $clubIds[] = (int)($c['id'] ?? 0);
+    }
+    return clubs_fetch_member_listings($clubIds, $mode, $q, $limit, $offset, 'newest');
 }
 
 function clubs_listing_images_map(array $listingIds): array {
@@ -735,18 +751,19 @@ function clubs_resolve_for_listing(array $listing, array $clubs): ?array {
     if (!$clubs) {
         return null;
     }
-    $listingCat = (int)($listing['category_id'] ?? 0);
-    $best = null;
-    foreach ($clubs as $c) {
-        $ids = clubs_category_ids($c);
-        if ($listingCat > 0 && in_array($listingCat, $ids, true)) {
-            if ((int)($c['category_id'] ?? 0) === $listingCat) {
+    $attached = (int)($listing['attached_club_id'] ?? 0);
+    if ($attached > 0) {
+        foreach ($clubs as $c) {
+            if ((int)($c['id'] ?? 0) === $attached) {
                 return $c;
             }
-            $best = $best ?? $c;
+        }
+        $found = clubs_get($attached);
+        if ($found) {
+            return $found;
         }
     }
-    return $best ?: $clubs[0];
+    return $clubs[0] ?? null;
 }
 
 function clubs_banner_active(): ?array {
@@ -1207,45 +1224,41 @@ function clubs_follow_toggle(int $clubId, int $userId): bool {
 }
 
 function clubs_member_listing_ids(int $clubId): array {
-    if ($clubId <= 0 || !db_has_column('club_members', 'listing_id')) {
+    return clubs_member_listing_ids_for_clubs([$clubId]);
+}
+
+function clubs_member_listing_ids_for_clubs(array $clubIds): array {
+    $clubIds = array_values(array_filter(array_map('intval', $clubIds)));
+    if (!$clubIds || !db_has_column('club_members', 'listing_id')) {
         return [];
     }
+    $ph = implode(',', array_fill(0, count($clubIds), '?'));
     try {
         $rows = DB::fetchAll(
             "SELECT DISTINCT listing_id FROM club_members
-             WHERE club_id = ? AND status = 'active' AND listing_id IS NOT NULL AND listing_id > 0",
-            [$clubId]
+             WHERE club_id IN ($ph) AND status = 'active' AND listing_id IS NOT NULL AND listing_id > 0",
+            $clubIds
         );
     } catch (Throwable) {
         return [];
     }
     $ids = [];
     foreach ($rows as $r) {
-        $ids[] = (int)$r['listing_id'];
+        $id = (int)($r['listing_id'] ?? 0);
+        if ($id > 0) {
+            $ids[] = $id;
+        }
     }
     return $ids;
 }
 
-function clubs_listings(array $club, string $mode, string $q, int $limit = 12, int $offset = 0, string $sort = 'newest'): array {
-    $catIds = clubs_category_ids($club);
-    $memberListingIds = clubs_member_listing_ids((int)($club['id'] ?? 0));
-    if (!$catIds && !$memberListingIds) {
+function clubs_fetch_member_listings(array $clubIds, string $mode, string $q, int $limit = 12, int $offset = 0, string $sort = 'newest'): array {
+    $clubIds = array_values(array_filter(array_map('intval', $clubIds)));
+    if (!$clubIds || !db_has_column('club_members', 'listing_id')) {
         return [];
     }
-    $where = [];
-    $params = [];
-    if ($catIds) {
-        $where[] = 'l.category_id IN (' . implode(',', array_fill(0, count($catIds), '?')) . ')';
-        foreach ($catIds as $cid) {
-            $params[] = $cid;
-        }
-    }
-    if ($memberListingIds) {
-        $where[] = 'l.id IN (' . implode(',', array_fill(0, count($memberListingIds), '?')) . ')';
-        foreach ($memberListingIds as $lid) {
-            $params[] = $lid;
-        }
-    }
+    $ph = implode(',', array_fill(0, count($clubIds), '?'));
+    $params = $clubIds;
     $extraUser = '';
     if (db_has_column('users', 'rating')) {
         $extraUser .= ', u.rating AS seller_rating';
@@ -1258,11 +1271,18 @@ function clubs_listings(array $club, string $mode, string $q, int $limit = 12, i
     }
     $sql = "SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar {$extraUser},
                    c.name AS cat_name,
+                   m.club_id AS attached_club_id,
                    (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
             FROM listings l
+            JOIN (
+                SELECT listing_id, MIN(club_id) AS club_id
+                FROM club_members
+                WHERE club_id IN ($ph) AND status = 'active' AND listing_id IS NOT NULL AND listing_id > 0
+                GROUP BY listing_id
+            ) m ON m.listing_id = l.id
             JOIN users u ON u.id = l.user_id
             JOIN categories c ON c.id = l.category_id
-            WHERE (" . implode(' OR ', $where) . ") AND l.status = 'active' AND l.review_status = 'approved'";
+            WHERE l.status = 'active' AND l.review_status = 'approved'";
     if (db_has_column('listings', 'listing_mode')) {
         if ($mode === 'buy') {
             $sql .= " AND l.listing_mode IN ('sell','both')";
@@ -1286,6 +1306,10 @@ function clubs_listings(array $club, string $mode, string $q, int $limit = 12, i
     } catch (Throwable) {
         return [];
     }
+}
+
+function clubs_listings(array $club, string $mode, string $q, int $limit = 12, int $offset = 0, string $sort = 'newest'): array {
+    return clubs_fetch_member_listings([(int)($club['id'] ?? 0)], $mode, $q, $limit, $offset, $sort);
 }
 
 function clubs_members_list(int $clubId, int $limit = 24): array {

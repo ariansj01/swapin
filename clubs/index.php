@@ -362,7 +362,7 @@ render_navbar($user);
         </div>
       <?php else: ?>
         <?php if (!$listings): ?>
-          <div class="clubs-empty">آگهی‌ای در این دسته‌بندی پیدا نشد.</div>
+          <div class="clubs-empty">هنوز آگهی‌ای از اعضای کلاب‌های این دسته ثبت نشده است.</div>
         <?php else: ?>
           <div class="clubs-cards">
             <?php

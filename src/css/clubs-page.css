@@ -292,6 +292,16 @@ body.clm-open { overflow: hidden; }
   display: flex; align-items: center; justify-content: center;
 }
 .clm__dialog--join { grid-template-columns: 1fr; max-width: 520px; }
+.club-join-err {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.8;
+}
 
 .clubs-rules { background: #fff; border-radius: 16px; padding: 20px 22px; line-height: 2; color: #374151; }
 .clubs-rules h2 { font-size: 1.05rem; margin: 0 0 12px; }

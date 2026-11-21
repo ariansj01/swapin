@@ -46,6 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $categoryOptions = render_wizard_category_options([], (int)$vals['category_id']);
+$myListings = clubs_user_listings((int)$user['id']);
+$joinCreateUrl = APP_URL . '/listings/create';
 $formToken = h((string)$_SESSION['club_form_token']);
 $cssVer = @filemtime(__DIR__ . '/../src/css/clubs-create.css') ?: time();
 
@@ -204,6 +206,41 @@ render_navbar($user);
           <input type="checkbox" name="require_approval" value="1"<?= !empty($vals['require_approval']) ? ' checked' : '' ?>>
           <span></span>
         </label>
+      </div>
+
+      <div class="club-owner-listing">
+        <div class="club-owner-listing__head">
+          <h3>آگهی خودت را در کلاب بگذار (اختیاری)</h3>
+          <p>اگر بخواهی، یکی از آگهی‌های فعال‌ات از همان ابتدا در کلاب دیده می‌شود. ورود بقیه اعضا حتماً با انتخاب آگهی است.</p>
+        </div>
+        <?php if (!$myListings): ?>
+        <div class="club-owner-listing__empty">
+          هنوز آگهی فعالی نداری. می‌توانی بعداً آگهی بسازی، یا الان کلاب را بدون آگهی بسازی.
+          <a href="<?= h($joinCreateUrl) ?>">ثبت آگهی جدید</a>
+        </div>
+        <?php else: ?>
+        <div class="club-join-pick__list">
+          <label class="club-join-pick__item<?= (int)$vals['listing_id'] === 0 ? ' is-on' : '' ?>">
+            <input type="radio" name="listing_id" value="0"<?= (int)$vals['listing_id'] === 0 ? ' checked' : '' ?>>
+            <span class="club-join-pick__ph"><i class="bi bi-dash-lg"></i></span>
+            <span>فعلاً آگهی نمی‌گذارم</span>
+          </label>
+          <?php foreach ($myListings as $ml): ?>
+          <label class="club-join-pick__item">
+            <input type="radio" name="listing_id" value="<?= (int)$ml['id'] ?>"<?= (int)$vals['listing_id'] === (int)$ml['id'] ? ' checked' : '' ?>>
+            <?php if (!empty($ml['thumb'])): ?>
+            <img src="<?= h(UPLOAD_URL . $ml['thumb']) ?>" alt="">
+            <?php else: ?>
+            <span class="club-join-pick__ph"><i class="bi bi-image"></i></span>
+            <?php endif; ?>
+            <span><?= h($ml['title']) ?></span>
+          </label>
+          <?php endforeach; ?>
+        </div>
+        <?php if (!empty($errors['listing_id'])): ?>
+        <div class="invalid-feedback"><?= h($errors['listing_id']) ?></div>
+        <?php endif; ?>
+        <?php endif; ?>
       </div>
 
       <label class="club-terms<?= !empty($vals['accept_terms']) ? ' is-on' : '' ?>" id="club-terms">
