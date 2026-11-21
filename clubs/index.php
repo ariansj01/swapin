@@ -27,9 +27,12 @@ if ($catSlug !== '') {
         }
     }
 }
+if (!$activeCat && $mainCats) {
+    $activeCat = $mainCats[0];
+}
 
 $club = $activeCat ? clubs_featured_in_root((int)$activeCat['id']) : null;
-$approvedClubs = $activeCat ? [] : clubs_approved_list(48);
+$approvedClubs = [];
 $adBanner = clubs_banner_active();
 $hubUrl = clubs_hub_url((string)($activeCat['slug'] ?? ''));
 
