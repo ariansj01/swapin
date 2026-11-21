@@ -30,6 +30,10 @@ if (PHP_SAPI !== 'cli') {
     exit("This tool must be run from CLI.\n");
 }
 
+// نمایش کامل خطاها (خطاهای CLI معمولاً به STDERR می‌روند و دیده نمی‌شوند)
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
 // ───────────────────────────── ابزارهای خروجی ─────────────────────────────
 
 $GLOBALS['e2e_pass'] = 0;
@@ -62,6 +66,33 @@ function e2e_info(string $s): void { e2e_out('  · ' . $s); }
 function e2e_ms(float $startedAt): string {
     return number_format((microtime(true) - $startedAt) * 1000, 1) . 'ms';
 }
+
+/**
+ * اجرای یک فاز با گرفتن خطا؛ اگر فاز خطا داد، بقیه تست متوقف نمی‌شود.
+ */
+function e2e_try(string $label, callable $fn): void {
+    try {
+        $fn();
+    } catch (Throwable $e) {
+        e2e_check($label . ' (خطای اجرا)', false,
+            get_class($e) . ': ' . $e->getMessage() . ' @ ' . basename((string)$e->getFile()) . ':' . $e->getLine());
+    }
+}
+
+set_exception_handler(static function (Throwable $e): void {
+    e2e_out();
+    e2e_out('[FATAL] ' . get_class($e) . ': ' . $e->getMessage());
+    e2e_out('  @ ' . $e->getFile() . ':' . $e->getLine());
+});
+
+// چاپ خطاهای مرگبار PHP (که قابل catch نیستند) در پایان اجرا
+register_shutdown_function(static function (): void {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        e2e_out();
+        e2e_out('[FATAL-PHP] ' . $err['message'] . ' @ ' . basename((string)$err['file']) . ':' . $err['line']);
+    }
+});
 
 // ───────────────────────────── ورودی‌ها ─────────────────────────────
 
@@ -323,181 +354,194 @@ e2e_head('۱) ردیابی رفتار (user_events)');
 $anon = bin2hex(random_bytes(16));
 $tmpAnonIds[] = $anon;
 
-// رخدادهای ناشناس (قبل از ورود) — سپس اتصال به حساب
-$anonEvents = [
-    ['event_type' => 'view_page'],
-    ['event_type' => 'view_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid],
-    ['event_type' => 'view_category', 'category_id' => $sampleCid],
-    ['event_type' => 'search', 'keywords' => $sampleCat],
-];
-$nAnon = behavior_log_events($anonEvents, null, $anon);
-e2e_check('ثبت رخداد ناشناس', $nAnon === count($anonEvents), "ثبت‌شده: {$nAnon}");
+e2e_try('فاز ۱: ردیابی', function () use ($uid, $anon, $sampleLid, $sampleCid, $sampleBid, $sampleMid, $sampleCat) {
+    // رخدادهای ناشناس (قبل از ورود) — سپس اتصال به حساب
+    $anonEvents = [
+        ['event_type' => 'view_page'],
+        ['event_type' => 'view_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid],
+        ['event_type' => 'view_category', 'category_id' => $sampleCid],
+        ['event_type' => 'search', 'keywords' => $sampleCat ?? ''],
+    ];
+    $nAnon = behavior_log_events($anonEvents, null, $anon);
+    e2e_check('ثبت رخداد ناشناس', $nAnon === count($anonEvents), "ثبت‌شده: {$nAnon}");
 
-$linked = behavior_link_anon($anon, $uid);
-$stillAnon = (int)(DB::fetch(
-    'SELECT COUNT(*) AS c FROM user_events WHERE anon_id = ? AND user_id IS NULL',
-    [$anon]
-)['c'] ?? 0);
-e2e_check('اتصال مهمان به حساب پس از ورود', $stillAnon === 0, "به‌روزشده: {$linked} | باقی‌مانده ناشناس: {$stillAnon}");
+    $linked = behavior_link_anon($anon, $uid);
+    $stillAnon = (int)(DB::fetch(
+        'SELECT COUNT(*) AS c FROM user_events WHERE anon_id = ? AND user_id IS NULL',
+        [$anon]
+    )['c'] ?? 0);
+    e2e_check('اتصال مهمان به حساب پس از ورود', $stillAnon === 0, "به‌روزشده: {$linked} | باقی‌مانده ناشناس: {$stillAnon}");
 
-// رخدادهای کاربر لاگین‌شده (شامل ذخیره و کلیک)
-$userEvents = [
-    ['event_type' => 'click_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid],
-    ['event_type' => 'view_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid, 'brand_id' => $sampleBid, 'model_id' => $sampleMid],
-    ['event_type' => 'save_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid, 'brand_id' => $sampleBid],
-    ['event_type' => 'view_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid],
-];
-$nUser = behavior_log_events($userEvents, $uid, $anon);
-e2e_check('ثبت رخداد کاربر لاگین‌شده', $nUser === count($userEvents), "ثبت‌شده: {$nUser}");
+    // رخدادهای کاربر لاگین‌شده (شامل ذخیره و کلیک)
+    $userEvents = [
+        ['event_type' => 'click_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid],
+        ['event_type' => 'view_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid, 'brand_id' => $sampleBid, 'model_id' => $sampleMid],
+        ['event_type' => 'save_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid, 'brand_id' => $sampleBid],
+        ['event_type' => 'view_listing', 'object_type' => 'listing', 'object_id' => $sampleLid, 'category_id' => $sampleCid],
+    ];
+    $nUser = behavior_log_events($userEvents, $uid, $anon);
+    e2e_check('ثبت رخداد کاربر لاگین‌شده', $nUser === count($userEvents), "ثبت‌شده: {$nUser}");
 
-$totalEvents = (int)(DB::fetch('SELECT COUNT(*) AS c FROM user_events WHERE user_id = ?', [$uid])['c'] ?? 0);
-e2e_check('جمع رخدادهای کاربر آزمایشی', $totalEvents >= count($anonEvents) + count($userEvents),
-    "کل: {$totalEvents} (انتظار ≥" . (count($anonEvents) + count($userEvents)) . ')');
+    $totalEvents = (int)(DB::fetch('SELECT COUNT(*) AS c FROM user_events WHERE user_id = ?', [$uid])['c'] ?? 0);
+    e2e_check('جمع رخدادهای کاربر آزمایشی', $totalEvents >= count($anonEvents) + count($userEvents),
+        "کل: {$totalEvents} (انتظار ≥" . (count($anonEvents) + count($userEvents)) . ')');
 
-// اعتبارسنجی: رخداد نامعتبر نباید ثبت شود
-$bad = behavior_log_events([['event_type' => 'not_a_real_event']], $uid, $anon);
-e2e_check('رد رخداد نامعتبر', $bad === 0, "ثبت‌شده: {$bad}");
+    // اعتبارسنجی: رخداد نامعتبر نباید ثبت شود
+    $bad = behavior_log_events([['event_type' => 'not_a_real_event']], $uid, $anon);
+    e2e_check('رد رخداد نامعتبر', $bad === 0, "ثبت‌شده: {$bad}");
+});
 
 // ───────────────────────────── بخش ۲: پروفایل ─────────────────────────────
 
 e2e_head('۲) ساخت پروفایل علایق (user_interest_weights)');
 
-$t = microtime(true);
-$build = profile_build_user($uid);
-$dur  = e2e_ms($t);
-e2e_check('اجرای profile_build_user', !empty($build['ok']), "وزن‌ها={$build['weights']} نیازها={$build['needs']} ({$dur})");
+e2e_try('فاز ۲: ساخت پروفایل', function () use ($uid, $sampleCid) {
+    $t = microtime(true);
+    $build = profile_build_user($uid);
+    $dur  = e2e_ms($t);
+    e2e_check('اجرای profile_build_user', !empty($build['ok']), "وزن‌ها={$build['weights']} نیازها={$build['needs']} ({$dur})");
 
-$topCat = DB::fetch(
-    'SELECT dimension, ref_id, ref_key, weight, confidence, signals FROM user_interest_weights
-     WHERE user_id = ? AND dimension = "category" ORDER BY weight DESC LIMIT 1',
-    [$uid]
-);
-$topCatOk = $topCat && (int)$topCat['ref_id'] === $sampleCid;
-e2e_check('دسته برتر مطابق رفتار شبیه‌سازی‌شده', (bool)$topCatOk,
-    $topCat ? "برتر=#{$topCat['ref_id']} (انتظار #{$sampleCid}) weight={$topCat['weight']} conf={$topCat['confidence']}" : 'هیچ وزنی ثبت نشد');
+    $topCat = DB::fetch(
+        'SELECT dimension, ref_id, ref_key, weight, confidence, signals FROM user_interest_weights
+         WHERE user_id = ? AND dimension = "category" ORDER BY weight DESC LIMIT 1',
+        [$uid]
+    );
+    $topCatOk = $topCat && (int)$topCat['ref_id'] === $sampleCid;
+    e2e_check('دسته برتر مطابق رفتار شبیه‌سازی‌شده', (bool)$topCatOk,
+        $topCat ? "برتر=#{$topCat['ref_id']} (انتظار #{$sampleCid}) weight={$topCat['weight']} conf={$topCat['confidence']}" : 'هیچ وزنی ثبت نشد');
 
-$wCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM user_interest_weights WHERE user_id = ?', [$uid])['c'] ?? 0);
-e2e_check('وجود وزن‌های علاقه', $wCount > 0, "تعداد ردیف وزن: {$wCount}");
+    $wCount = (int)(DB::fetch('SELECT COUNT(*) AS c FROM user_interest_weights WHERE user_id = ?', [$uid])['c'] ?? 0);
+    e2e_check('وجود وزن‌های علاقه', $wCount > 0, "تعداد ردیف وزن: {$wCount}");
+});
 
 // ───────────────────────────── بخش ۳: توصیه ─────────────────────────────
 
 e2e_head('۳) موتور توصیه (recommend)');
 
-$t = microtime(true);
-$recs = recommend_for_user($uid, 6);
-$dur  = e2e_ms($t);
-e2e_check('توصیه برای کاربر گرم', count($recs) > 0, count($recs) . " آیتم ({$dur})");
-
-if ($recs) {
-    $allScored = true;
-    $allReason = true;
-    foreach ($recs as $r) {
-        if (!isset($r['recommend_score']) || !is_numeric($r['recommend_score'])) $allScored = false;
-        if (empty($r['recommend_reason'])) $allReason = false;
-    }
-    e2e_check('همه آیتم‌ها امتیاز دارند', $allScored);
-    e2e_check('همه آیتم‌ها دلیل دارند', $allReason, 'نمونه: ' . (string)($recs[0]['recommend_reason'] ?? '—'));
-
-    $sortedOk = true;
-    for ($i = 1; $i < count($recs); $i++) {
-        if ((float)$recs[$i - 1]['recommend_score'] < (float)$recs[$i]['recommend_score']) { $sortedOk = false; break; }
-    }
-    e2e_check('مرتب‌سازی نزولی بر اساس امتیاز', $sortedOk);
-
-    $containsSeen = false;
-    foreach ($recs as $r) {
-        if ($sampleLid > 0 && (int)$r['id'] === $sampleLid) { $containsSeen = true; break; }
-    }
-    e2e_check('حذف آگهی‌های اخیراً دیده‌شده از توصیه', $sampleLid > 0 ? !$containsSeen : true,
-        $sampleLid > 0 ? 'آگهی #' . $sampleLid . ' نباید در توصیه باشد' : 'آگهی نمونه موجود نیست', true);
-}
-
-if ($coldUid > 0) {
+$recs = [];
+e2e_try('فاز ۳: توصیه', function () use ($uid, $coldUid, $sampleLid, &$recs) {
     $t = microtime(true);
-    $coldRecs = recommend_for_user($coldUid, 6);
-    e2e_check('cold-start: عقب‌نشینی به آگهی‌های تازه', count($coldRecs) > 0,
-        count($coldRecs) . ' آیتم برای کاربر بدون رفتار (' . e2e_ms($t) . ')');
-}
+    $recs = recommend_for_user($uid, 6);
+    $dur  = e2e_ms($t);
+    e2e_check('توصیه برای کاربر گرم', count($recs) > 0, count($recs) . " آیتم ({$dur})");
+
+    if ($recs) {
+        $allScored = true;
+        $allReason = true;
+        foreach ($recs as $r) {
+            if (!isset($r['recommend_score']) || !is_numeric($r['recommend_score'])) $allScored = false;
+            if (empty($r['recommend_reason'])) $allReason = false;
+        }
+        e2e_check('همه آیتم‌ها امتیاز دارند', $allScored);
+        e2e_check('همه آیتم‌ها دلیل دارند', $allReason, 'نمونه: ' . (string)($recs[0]['recommend_reason'] ?? '—'));
+
+        $sortedOk = true;
+        for ($i = 1; $i < count($recs); $i++) {
+            if ((float)$recs[$i - 1]['recommend_score'] < (float)$recs[$i]['recommend_score']) { $sortedOk = false; break; }
+        }
+        e2e_check('مرتب‌سازی نزولی بر اساس امتیاز', $sortedOk);
+
+        $containsSeen = false;
+        foreach ($recs as $r) {
+            if ($sampleLid > 0 && (int)$r['id'] === $sampleLid) { $containsSeen = true; break; }
+        }
+        e2e_check('حذف آگهی‌های اخیراً دیده‌شده از توصیه', $sampleLid > 0 ? !$containsSeen : true,
+            $sampleLid > 0 ? 'آگهی #' . $sampleLid . ' نباید در توصیه باشد' : 'آگهی نمونه موجود نیست', true);
+    }
+
+    if ($coldUid > 0) {
+        $t = microtime(true);
+        $coldRecs = recommend_for_user($coldUid, 6);
+        e2e_check('cold-start: عقب‌نشینی به آگهی‌های تازه', count($coldRecs) > 0,
+            count($coldRecs) . ' آیتم برای کاربر بدون رفتار (' . e2e_ms($t) . ')');
+    }
+});
 
 // ───────────────────────────── بخش ۴: ترغیب ─────────────────────────────
 
 e2e_head('۴) ترغیب هوشمند (nudge)');
 
-$nudge = nudge_analyze_user($uid);
-$nudgeOk = !empty($nudge['show']) && ($nudge['kind'] ?? '') === 'start_listing';
-e2e_check('تشخیص کاوشگر منفعل (بدون آگهی، دارای رفتار)', $nudgeOk,
-    $nudgeOk ? "kind={$nudge['kind']} | پیام: " . mb_substr((string)$nudge['message'], 0, 50) . '…'
-             : 'نمایش: ' . (!empty($nudge['show']) ? $nudge['kind'] : 'خیر'));
+e2e_try('فاز ۴: ترغیب', function () use ($uid) {
+    $nudge = nudge_analyze_user($uid);
+    $nudgeOk = !empty($nudge['show']) && ($nudge['kind'] ?? '') === 'start_listing';
+    e2e_check('تشخیص کاوشگر منفعل (بدون آگهی، دارای رفتار)', $nudgeOk,
+        $nudgeOk ? "kind={$nudge['kind']} | پیام: " . mb_substr((string)$nudge['message'], 0, 50) . '…'
+                 : 'نمایش: ' . (!empty($nudge['show']) ? $nudge['kind'] : 'خیر'));
+});
 
 // ───────────────────────────── بخش ۵: کشف نیاز ─────────────────────────────
 
 e2e_head('۵) کشف نیاز از زبان طبیعی (need discovery)');
 
-$needText = 'دنبال لپ‌تاپ گیمینگ دست‌دوم در تهران تا ۳۰ میلیون';
-$t = microtime(true);
-$disc = need_discovery_discover($uid, $needText, null, false);
-$dur  = e2e_ms($t);
-e2e_check('کشف نیاز', !empty($disc['ok']) && (int)$disc['need_id'] > 0,
-    "need_id={$disc['need_id']} منبع=" . ($disc['source'] ?? '?') . " نتایج={$disc['total']} ({$dur})");
-if (!empty($disc['filters'])) {
-    e2e_info('فیلترهای استخراج‌شده: ' . json_encode($disc['filters'], JSON_UNESCAPED_UNICODE));
-}
+e2e_try('فاز ۵: کشف نیاز', function () use ($uid) {
+    $needText = 'دنبال لپ‌تاپ گیمینگ دست‌دوم در تهران تا ۳۰ میلیون';
+    $t = microtime(true);
+    $disc = need_discovery_discover($uid, $needText, null, false);
+    $dur  = e2e_ms($t);
+    e2e_check('کشف نیاز', !empty($disc['ok']) && (int)$disc['need_id'] > 0,
+        "need_id={$disc['need_id']} منبع=" . ($disc['source'] ?? '?') . " نتایج={$disc['total']} ({$dur})");
+    if (!empty($disc['filters'])) {
+        e2e_info('فیلترهای استخراج‌شده: ' . json_encode($disc['filters'], JSON_UNESCAPED_UNICODE));
+    }
 
-// ضدتکرار: ثبت مجدد همان متن در همان روز باید همان شناسه را برگرداند
-$dupId = need_discovery_record($uid, $disc['filters'] ?? [], $needText, 'chat');
-e2e_check('ضدتکرار نیاز در ۲۴ ساعت', (int)$dupId === (int)$disc['need_id'],
-    "need_id اول={$disc['need_id']} دوم={$dupId}");
+    // ضدتکرار: ثبت مجدد همان متن در همان روز باید همان شناسه را برگرداند
+    $dupId = need_discovery_record($uid, $disc['filters'] ?? [], $needText, 'chat');
+    e2e_check('ضدتکرار نیاز در ۲۴ ساعت', (int)$dupId === (int)$disc['need_id'],
+        "need_id اول={$disc['need_id']} دوم={$dupId}");
 
-$recentNeeds = need_discovery_recent($uid, 5);
-e2e_check('نمایش نیازهای فعال کاربر', count($recentNeeds) > 0, count($recentNeeds) . ' نیاز فعال');
+    $recentNeeds = need_discovery_recent($uid, 5);
+    e2e_check('نمایش نیازهای فعال کاربر', count($recentNeeds) > 0, count($recentNeeds) . ' نیاز فعال');
+});
 
 // ───────────────────────────── بخش ۶: یادگیری مستمر ─────────────────────────────
 
 e2e_head('۶) یادگیری مستمر (learning)');
 
-// ثبت نمایش توصیه‌ها و سپس کلیک روی یکی از آن‌ها
-$logged = recommend_log_impressions($uid, $recs, 'e2e-audit');
-e2e_check('ثبت نمایش توصیه‌ها (recommendation_log)', $logged > 0, "{$logged} ردیف");
+e2e_try('فاز ۶: یادگیری', function () use ($uid, $anon, $recs) {
+    // ثبت نمایش توصیه‌ها و سپس کلیک روی یکی از آن‌ها
+    $logged = recommend_log_impressions($uid, $recs, 'e2e-audit');
+    e2e_check('ثبت نمایش توصیه‌ها (recommendation_log)', $logged > 0, "{$logged} ردیف");
 
-if ($recs) {
-    $clickedListing = (int)$recs[0]['id'];
-    behavior_log_events([[
-        'event_type'  => 'click_listing',
-        'object_type' => 'listing',
-        'object_id'   => $clickedListing,
-        'category_id' => (int)($recs[0]['category_id'] ?? 0),
-    ]], $uid, $anon);
+    if ($recs) {
+        $clickedListing = (int)$recs[0]['id'];
+        behavior_log_events([[
+            'event_type'  => 'click_listing',
+            'object_type' => 'listing',
+            'object_id'   => $clickedListing,
+            'category_id' => (int)($recs[0]['category_id'] ?? 0),
+        ]], $uid, $anon);
 
-    $marked = learning_mark_recommendation_clicks(14);
-    e2e_check('علامت‌گذاری کلیک روی توصیه', $marked >= 1, "به‌روزشده: {$marked}");
+        $marked = learning_mark_recommendation_clicks(14);
+        e2e_check('علامت‌گذاری کلیک روی توصیه', $marked >= 1, "به‌روزشده: {$marked}");
 
-    $clickedRow = DB::fetch(
-        'SELECT clicked FROM recommendation_log WHERE user_id = ? AND listing_id = ? ORDER BY id DESC LIMIT 1',
-        [$uid, $clickedListing]
-    );
-    e2e_check('ثبت بازخورد مثبت روی آگهی کلیک‌شده', (int)($clickedRow['clicked'] ?? 0) === 1,
-        'آگهی #' . $clickedListing);
+        $clickedRow = DB::fetch(
+            'SELECT clicked FROM recommendation_log WHERE user_id = ? AND listing_id = ? ORDER BY id DESC LIMIT 1',
+            [$uid, $clickedListing]
+        );
+        e2e_check('ثبت بازخورد مثبت روی آگهی کلیک‌شده', (int)($clickedRow['clicked'] ?? 0) === 1,
+            'آگهی #' . $clickedListing);
 
-    $sig = learning_recommendation_signals($uid);
-    e2e_check('بازگشت سیگنال یادگیری به علایق',
-        (bool)($sig['category'] || $sig['brand'] || $sig['model']),
-        'دسته=' . count($sig['category']) . ' برند=' . count($sig['brand']) . ' مدل=' . count($sig['model']));
-}
+        $sig = learning_recommendation_signals($uid);
+        e2e_check('بازگشت سیگنال یادگیری به علایق',
+            (bool)($sig['category'] || $sig['brand'] || $sig['model']),
+            'دسته=' . count($sig['category']) . ' برند=' . count($sig['brand']) . ' مدل=' . count($sig['model']));
+    }
 
-// کهنه‌سازی نیاز قدیمی
-$oldNeedId = (int)DB::insert('user_needs', [
-    'user_id'    => $uid,
-    'source'     => 'event',
-    'need_text'  => 'E2E stale need',
-    'confidence' => 10,
-    'status'     => 'active',
-    'created_at' => date('Y-m-d H:i:s', time() - 100 * 86400),
-    'updated_at' => date('Y-m-d H:i:s', time() - 100 * 86400),
-]);
-$stale = learning_mark_stale_needs(90);
-$staleRow = DB::fetch('SELECT status FROM user_needs WHERE id = ? LIMIT 1', [$oldNeedId]);
-e2e_check('کهنه‌سازی نیازهای قدیمی', ($staleRow['status'] ?? '') === 'stale',
-    "تغییر‌یافته: {$stale} | وضعیت نیاز آزمایشی: " . ($staleRow['status'] ?? '?'));
+    // کهنه‌سازی نیاز قدیمی
+    $oldNeedId = (int)DB::insert('user_needs', [
+        'user_id'    => $uid,
+        'source'     => 'event',
+        'need_text'  => 'E2E stale need',
+        'confidence' => 10,
+        'status'     => 'active',
+        'created_at' => date('Y-m-d H:i:s', time() - 100 * 86400),
+        'updated_at' => date('Y-m-d H:i:s', time() - 100 * 86400),
+    ]);
+    $stale = learning_mark_stale_needs(90);
+    $staleRow = DB::fetch('SELECT status FROM user_needs WHERE id = ? LIMIT 1', [$oldNeedId]);
+    e2e_check('کهنه‌سازی نیازهای قدیمی', ($staleRow['status'] ?? '') === 'stale',
+        "تغییر‌یافته: {$stale} | وضعیت نیاز آزمایشی: " . ($staleRow['status'] ?? '?'));
+});
 
 // ───────────────────────────── عملکرد (EXPLAIN) ─────────────────────────────
 
