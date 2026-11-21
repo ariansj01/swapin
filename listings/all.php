@@ -479,6 +479,12 @@ if ($page === 1 && !$hasOtherFilters && $total < 3
     $fallbackTitle    = $fb['title'];
 }
 
+// سپر Soft 404 (کارت A16.2): لندینگ معاوضه‌ای که نه آگهی دارد و نه محتوای جایگزین، ۴۰۴ می‌شود.
+if ($swapLanding && $total === 0 && empty($fallbackListings)) {
+    require __DIR__ . '/../404.php';
+    exit;
+}
+
 // BreadcrumbList — تقویت درک گوگل از ساختار دسته‌بندی (کمک به Sitelinks)
 $jsonLd = [];
 if ($category && !$hasOtherFilters && !empty($catChainCrumbs)) {
@@ -787,7 +793,10 @@ render_navbar($user);
       // لینک متقابل (کارت A16.2 — بند ۵): صفحهٔ لندینگ به صفحهٔ دستهٔ همان مکان لینک می‌دهد
       $crossLink = null;
       if ($swapInfo && $category && empty($catalogChain)) {
-          $crossLink = ['url' => $crossBase . '/' . $category['slug'], 'label' => 'مشاهده همه آگهی‌های ' . ($catDisplayName ?: $category['name'])];
+          // متن لینک باید نام دستهٔ همان لندینگ و مکانش را داشته باشد (کارت A16.2 — بند ۵)
+          $crossCatName = $catTitleName !== '' ? $catTitleName : (string) $category['name'];
+          $crossLabel   = 'مشاهده همه آگهی‌های ' . $crossCatName . ($locName !== '' ? ' در ' . $locName : '');
+          $crossLink    = ['url' => $crossBase . '/' . $category['slug'], 'label' => $crossLabel];
       }
       // دکمهٔ «فقط معاوضه» (کارت A16.2 — بند ۴)
       $swapDeal = null;

@@ -1,6 +1,6 @@
 <?php
 /**
- * سواپین — دادهٔ اولیهٔ ۴۷ لندینگ معاوضهٔ تأییدشده (اولویت P1 و P2)
+ * سواپین — دادهٔ اولیهٔ ۴۴ لندینگ معاوضهٔ تأییدشده (اولویت P1 و P2)
  *
  * منبع: شیت «سواپین — صفحات هدف کیوردها» — فقط ردیف‌های تأییدشدهٔ P1/P2.
  * طبق سند معماری سئو (بخش ۴ و ۵-۲) لندینگ معاوضه فقط از «لیست کیورد تأییدشده»
@@ -12,14 +12,15 @@
  *   مدل     →  /{location}/list/swap-car-pride
  *   X با Y  →  /{location}/list/swap-{x}-with-{y}
  *
- * تفکیک نوع (۴۸ ردیف شیت):
- *   ۲۵ لندینگ دسته + ۱۹ لندینگ X با Y + ۲ لندینگ مکان + ۱ لندینگ مدل = ۴۷
+ * تفکیک نوع: ۲۴ لندینگ دسته + ۱۷ لندینگ X با Y + ۲ لندینگ مکان + ۱ لندینگ مدل = ۴۴
  *
  * دو اسلاگ غیرمعتبر طبق تصمیم:
- *   - «تهاتر ملک با طلا» → gold اسلاگ معتبر ندارد؛ طبق سند «طلا دسته‌ی جدا نیست»،
+ *   - «تهاتر ملک با طلا» → gold اسلاگ معتبر ندارد؛ طبق سند «طلا دستهٔ جدا نیست»،
  *     به اسلاگ معتبر `jewellery` نگاشت شد → swap-real-estate-with-jewellery
  *   - «تهاتر ملک با کالا» → goods اسلاگ معتبر ندارد و نگاشت معنایی درستی هم ندارد؛
  *     ساخته نمی‌شود (۲۷۶ لندینگ کاندید فقط با شرط ایندکس ساخته می‌شوند).
+ *   - سه لندینگ «مصالح ساختمانی» حذف شد: دستهٔ building-materials آگهی ندارد و
+ *     صفحهٔ خالی/Soft 404 می‌ساخت؛ پس از پرشدن دسته دوباره به فهرست برگردد.
  *
  * ترتیب ساخت طبق کارت: اول لندینگ‌های مکان و دسته (به «می‌خواهم» نیاز ندارند)،
  * بعد لندینگ‌های X با Y.
@@ -28,10 +29,14 @@
  * مقادیر دستیِ پنل در اجرای مجدد دست‌نخورده می‌مانند.
  *
  * پیش‌فرض «dry-run» است و چیزی تغییر نمی‌کند. برای اعمال واقعی «--apply».
+ * با «--prune» ردیف‌های خارج از این فهرست تأییدشده (مثل لندینگ‌های ساخته‌شده با
+ * ترکیب خودکار مکان×دسته) از جدول حذف می‌شوند تا از سایت‌مپ بیرون بروند؛
+ * بدون «--apply» فقط فهرست موارد قابل‌حذف نمایش داده می‌شود.
  *
  * اجرا روی سرور (از ریشهٔ پروژه):
  *   php tools/swap-landings-seed-p1p2.php
  *   php tools/swap-landings-seed-p1p2.php --apply
+ *   php tools/swap-landings-seed-p1p2.php --apply --prune
  *
  * عمداً «includes/config.php» لود نمی‌شود تا مایگریشن‌های خودکار CLI اجرا نشوند؛
  * فقط «.env» خوانده می‌شود و اتصال با PDO مستقیم انجام می‌شود.
@@ -49,6 +54,7 @@ load_env(__DIR__ . '/../.env');
 
 $args  = array_slice($argv, 1);
 $apply = in_array('--apply', $args, true);
+$prune = in_array('--prune', $args, true);
 
 $dbHost = getenv('SWAPIN_DB_HOST');
 $dbName = getenv('SWAPIN_DB_NAME');
@@ -106,7 +112,7 @@ function seed_swap_ensure_table(PDO $pdo): void
 seed_swap_ensure_table($pdo);
 
 /**
- * فهرست ثابت ۴۷ لندینگ تأییدشده (P1/P2).
+ * فهرست ثابت ۴۴ لندینگ تأییدشده (P1/P2).
  * هر ردیف: [location_slug, token, type, category_slug, model_slug, target_kind, target_slug]
  * ترتیب: ابتدا مکان‌ها، سپس دسته‌ها، سپس مدل، و در پایان X با Y.
  */
@@ -115,10 +121,9 @@ $landings = [
     ['karaj',  'swap', 'location', '', '', '', ''],
     ['tehran', 'swap', 'location', '', '', '', ''],
 
-    // ── لندینگ دسته (۲۵) ──────────────────────────────────────────────────
+    // ── لندینگ دسته (۲۴) ─────────────────────────────────────────────────
     ['iran',    'swap-car',              'category', 'car',              '', '', ''],
     ['iran',    'swap-real-estate',      'category', 'real-estate',      '', '', ''],
-    ['iran',    'swap-building-materials', 'category', 'building-materials', '', '', ''],
     ['tehran',  'swap-apartment',        'category', 'apartment',        '', '', ''],
     ['iran',    'swap-mobile-phones',    'category', 'mobile-phones',    '', '', ''],
     ['iran',    'swap-apartment',        'category', 'apartment',        '', '', ''],
@@ -145,21 +150,19 @@ $landings = [
     // ── لندینگ مدل (۱): پراید — برند سایپا، دستهٔ خودرو ──────────────────────
     ['iran', 'swap-car-pride', 'model', 'car', 'pride', '', ''],
 
-    // ── لندینگ X با Y (۱۹) ────────────────────────────────────────────────
+    // ── لندینگ X با Y (۱۷) ───────────────────────────────────────────────
     ['iran',   'swap-car-with-real-estate',                  'xy', 'car',              '', 'category', 'real-estate'],
     ['iran',   'swap-real-estate-with-real-estate',          'xy', 'real-estate',      '', 'category', 'real-estate'],
     ['iran',   'swap-real-estate-with-car',                  'xy', 'real-estate',      '', 'category', 'car'],
     ['iran',   'swap-car-with-car',                          'xy', 'car',              '', 'category', 'car'],
     ['iran',   'swap-land-with-apartment',                   'xy', 'land',             '', 'category', 'apartment'],
-    ['iran',   'swap-villa-with-apartment',                  'xy', 'villa',            '', 'category', 'apartment'],
-    ['iran',   'swap-real-estate-with-building-materials',   'xy', 'real-estate',      '', 'category', 'building-materials'],
+    ['iran',   'swap-villa-with-apartment',                 'xy', 'villa',            '', 'category', 'apartment'],
     ['iran',   'swap-car-with-land',                         'xy', 'car',              '', 'category', 'land'],
     ['iran',   'swap-game-consoles-with-game-consoles',      'xy', 'game-consoles',    '', 'category', 'game-consoles'],
     ['iran',   'swap-apartment-with-villa',                  'xy', 'apartment',        '', 'category', 'villa'],
     ['karaj',  'swap-apartment-with-villa',                  'xy', 'apartment',        '', 'category', 'villa'],
     ['shomal', 'swap-land-with-apartment',                   'xy', 'land',             '', 'category', 'apartment'],
     ['shomal', 'swap-apartment-with-villa',                  'xy', 'apartment',        '', 'category', 'villa'],
-    ['iran',   'swap-building-materials-with-real-estate',   'xy', 'building-materials', '', 'category', 'real-estate'],
     ['iran',   'swap-real-estate-with-jewellery',            'xy', 'real-estate',      '', 'category', 'jewellery'],
     ['iran',   'swap-land-with-car',                         'xy', 'land',             '', 'category', 'car'],
     ['iran',   'swap-apartment-with-apartment',              'xy', 'apartment',        '', 'category', 'apartment'],
@@ -215,13 +218,52 @@ echo 'نتیجه: insert=' . $totals['insert']
     . '  update=' . $totals['update']
     . '  بدون‌تغییر=' . $totals['unchanged'] . "\n";
 
+// ── حذف لندینگ‌های خارج از فهرست تأییدشده (--prune) ──────────────────────────
+// جلوگیری از باقی‌ماندن لندینگ‌های ساخته‌شده با ترکیب خودکار مکان×دسته و خروج آن‌ها
+// از سایت‌مپ؛ فقط ردیف‌هایی که در فهرست ثابت بالا نیستند حذف می‌شوند.
+if ($prune) {
+    $approved = [];
+    foreach ($landings as $row) {
+        $approved[$row[0] . '|' . $row[1]] = true;
+    }
+    $extra = [];
+    foreach ($pdo->query('SELECT id, location_slug, token FROM swap_landings')->fetchAll() as $r) {
+        if (!isset($approved[(string) $r['location_slug'] . '|' . (string) $r['token']])) {
+            $extra[] = $r;
+        }
+    }
+    echo "\nلندینگ خارج از فهرست تأییدشده: " . count($extra) . "\n";
+    if ($extra && !$apply) {
+        echo "(توجه: هر لندینگی که در فهرست ثابت بالا نباشد — از جمله موارد افزوده‌شده از پنل — حذف می‌شود.)\n";
+    }
+    if ($apply && $extra) {
+        $del = $pdo->prepare('DELETE FROM swap_landings WHERE id = ?');
+        foreach ($extra as $r) {
+            $del->execute([(int) $r['id']]);
+        }
+        echo 'حذف‌شده: ' . count($extra) . "\n";
+    } elseif ($extra) {
+        foreach (array_slice($extra, 0, 60) as $r) {
+            echo '  - /' . $r['location_slug'] . '/list/' . $r['token'] . "\n";
+        }
+        if (count($extra) > 60) {
+            echo '  ... و ' . (count($extra) - 60) . " مورد دیگر\n";
+        }
+    }
+}
+
 if (!$apply) {
     echo "\nاین فقط پیش‌نمایش است؛ برای درج واقعی «--apply» را اضافه کنید.\n";
     exit(0);
 }
 
-echo "\nپس از اعمال، برای راستی‌آزمایی (همه باید ۲۰۰ بدهند، نه ۳۰۱):\n";
+echo "\nپس از اعمال، برای راستی‌آزمایی:\n";
+echo "  # لندینگ‌های تأییدشده باید ۲۰۰ بدهند (نه ۳۰۱):\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-car\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-car-pride\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-car-with-real-estate\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/karaj/list/swap\n";
+echo "  # لندینگ‌های خارج از فهرست باید ۳۰۱ (یا ۴۰۴) بدهند و در سایت‌مپ نباشند:\n";
+echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-jobs-services\n";
+echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-building-materials\n";
+echo "  curl -s https://<host>/sitemap-swap.xml | grep -c '<loc>'\n";
