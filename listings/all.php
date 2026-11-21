@@ -81,7 +81,7 @@ if ($catId > 0) {
 
 // لندینگ معاوضه — strict routing (کارت A16.2 — بند ۳): فقط توکن ثبت‌شده در جدول
 // `swap_landings` سرو می‌شود؛ لندینگ فقط از لیست کیورد تأییدشده ساخته می‌شود،
-// نه از ترکیب خودکار فیلترها. توکن ثبت‌نشده/نامعتبر → ۳۰۱ به صفحهٔ دسته/مکان.
+// نه از ترکیب خودکار فیلترها. توکن ثبت‌نشده/نامعتبر → ۴۰۴ (لندینگ وجود ندارد).
 $swapLanding = null;
 if ($swapToken !== '') {
     $swapRowLoc  = $locRow ? (string) $locRow['slug'] : 'iran';
@@ -89,11 +89,7 @@ if ($swapToken !== '') {
         ? swaapin_swap_landing_find($swapRowLoc, $swapToken)
         : null;
     if ($swapLanding === null) {
-        $swapRedir = $locRow ? rtrim(swaapin_location_url($locRow), '/') : APP_URL;
-        if ($category) {
-            $swapRedir .= '/' . $category['slug'];
-        }
-        header('Location: ' . $swapRedir, true, 301);
+        require __DIR__ . '/../404.php';
         exit;
     }
 }

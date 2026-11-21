@@ -258,12 +258,12 @@ if (!$apply) {
 }
 
 echo "\nپس از اعمال، برای راستی‌آزمایی:\n";
-echo "  # لندینگ‌های تأییدشده باید ۲۰۰ بدهند (نه ۳۰۱):\n";
+echo "  # لندینگ‌های تأییدشده باید ۲۰۰ بدهند:\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-car\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-car-pride\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-car-with-real-estate\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/karaj/list/swap\n";
-echo "  # لندینگ‌های خارج از فهرست باید ۳۰۱ (یا ۴۰۴) بدهند و در سایت‌مپ نباشند:\n";
+echo "  # لندینگ‌های خارج از فهرست باید ۴۰۴ بدهند و در سایت‌مپ نباشند:\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-jobs-services\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-building-materials\n";
 echo "  curl -s https://<host>/sitemap-swap.xml | grep -c '<loc>'\n";
