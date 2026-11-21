@@ -255,8 +255,8 @@ if (!function_exists('profile_build_user')) {
             if ($cid > 0) { $catW[$cid] = ($catW[$cid] ?? 0) + 1; }
         }
 
-        // محاسبه اطمینان هر ابعاد
-        $confOf = static function (array $sig, int $key, int $sources) {
+        // محاسبه اطمینان هر ابعاد (کلید می‌تواند عددی (id) یا رشته‌ای (کلیدواژه) باشد)
+        $confOf = static function (array $sig, $key, int $sources) {
             return profile_confidence((int)($sig[$key] ?? 1), $sources);
         };
 
