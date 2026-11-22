@@ -16,7 +16,7 @@ $listing = $listingId ? DB::fetch(
 ) : null;
 
 if (!$listing || !listing_is_store_swappable($listing)) {
-    header('Location: ' . ($listing ? listing_url($listing) : APP_URL . '/listings'));
+    header('Location: ' . ($listing ? listing_url($listing) : APP_URL . '/iran'));
     exit;
 }
 

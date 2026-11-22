@@ -35,7 +35,7 @@ if ($action === 'start') {
         $transcript = [];
     }
 
-    $result = live_chat_start($input['name'] ?? '', $input['phone'] ?? '', $transcript);
+    $result = live_chat_start($input['name'] ?? '', $transcript, $input['phone'] ?? '');
     if (isset($result['errors'])) {
         http_response_code(422);
         echo json_encode(['ok' => false, 'errors' => $result['errors']]);
@@ -111,15 +111,6 @@ if ($action === 'faq') {
 }
 
 if ($action === 'send') {
-    rate_limit_ip_or_fail('live_chat_send', 30, 60, true);
-
-    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($input['_csrf'] ?? '');
-    if ($csrf === '' || !hash_equals(csrf_token(), $csrf)) {
-        http_response_code(403);
-        echo json_encode(['ok' => false, 'error' => 'csrf_invalid']);
-        exit;
-    }
-
     $token = (string)($input['token'] ?? '');
     if ($token === '') {
         http_response_code(400);
@@ -132,16 +123,7 @@ if ($action === 'send') {
         echo json_encode(['ok' => false, 'error' => $result['error']]);
         exit;
     }
-
-    // تولید پاسخ خودکار (FAQ یا هوش مصنوعی) و ذخیره در دیتابیس
-    $chat = DB::fetch('SELECT id FROM live_chats WHERE session_token = ?', [$token]);
-    $autoReply = '';
-    if ($chat) {
-        $ar = live_chat_auto_reply((int)$chat['id'], (string)($input['body'] ?? ''));
-        $autoReply = (string)($ar['reply'] ?? '');
-    }
-
-    echo json_encode(['ok' => true, 'reply' => $autoReply]);
+    echo json_encode(['ok' => true]);
     exit;
 }
 

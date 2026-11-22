@@ -235,8 +235,12 @@ function listing_attrs_db_payload(array $attrs): array {
     return ['listing_attrs' => empty($attrs) ? null : json_encode($attrs, JSON_UNESCAPED_UNICODE)];
 }
 
-function render_listing_type_fields(string $providerType, array $values = [], string $cssPrefix = 'store'): string {
+/** @param string[] $excludeKeys فیلدهایی که باید نادیده گرفته شوند (مثلاً برند/مدل انتخاب‌شده از فهرست) */
+function render_listing_type_fields(string $providerType, array $values = [], string $cssPrefix = 'store', array $excludeKeys = []): string {
     $defs = listing_type_field_defs($providerType);
+    foreach ($excludeKeys as $key) {
+        unset($defs[$key]);
+    }
     if (empty($defs)) {
         return '';
     }
@@ -795,10 +799,31 @@ function normalize_shop_slug(string $slug): string {
     return trim($slug);
 }
 
+/**
+ * اسلاگ فروشگاه‌های تستی/حذف‌شده (نقشهٔ ۳۰۱ — Q05) که صفحه‌شان ۴۱۰ است.
+ * این فروشگاه‌ها نباید در هیچ لیست، کارت، لینک داخلی یا سایت‌مپ ظاهر شوند.
+ */
+function store_blocked_slugs(): array {
+    return ['test', 'myket-test-store'];
+}
+
+/** آیا این اسلاگ مربوط به فروشگاه تستی/حذف‌شده است؟ */
+function store_is_blocked_slug(?string $slug): bool {
+    $slug = strtolower(normalize_shop_slug((string) $slug));
+    return $slug !== '' && in_array($slug, store_blocked_slugs(), true);
+}
+
+/** شرط SQL برای کنار گذاشتن فروشگاه‌های تستی از نتایج کوئری. */
+function store_not_blocked_sql(string $column = 'store_slug'): string {
+    $quoted = array_map(
+        static fn($s) => "'" . str_replace("'", "''", $s) . "'",
+        store_blocked_slugs()
+    );
+    return "(COALESCE({$column}, '') = '' OR LOWER({$column}) NOT IN (" . implode(', ', $quoted) . "))";
+}
+
 function shop_url(string $slug, string $storeType = 'both'): string {
-    $t = normalize_store_type($storeType);
-    $typeSegment = $t === 'both' ? 'both' : $t;
-    return APP_URL . '/shop/' . $typeSegment . '/' . $slug;
+    return APP_URL . '/shop/' . $slug;
 }
 
 /** @return array<int, array{month_key:string,views:int,requests:int}> */

@@ -7,6 +7,28 @@ require_once __DIR__ . '/../includes/ai_category_keywords.php';
 
 $user = auth_user();
 
+// نقشهٔ ۳۰۱ (سند — Q19): صفحهٔ نقشهٔ مستقل حذف شده است؛ آدرس آن در یک مرحله به
+// صفحهٔ دسته/مکان معادل ۳۰۱ می‌شود (به‌جای ۴۱۰ قبلی). q حفظ می‌شود.
+// نگاشت پارامتر cat: اسلاگ جاری، آخرین سگمنت مسیر، سپس alias قدیمی.
+$mvCatSlug = swaapin_resolve_category_slug((string)($_GET['cat'] ?? ''));
+
+$mvLocRow   = null;
+$mvCityName = trim((string)($_GET['city'] ?? ''));
+if ($mvCityName !== '' && function_exists('swaapin_location_by_name')) {
+    $mvLocRow = swaapin_location_by_name($mvCityName, 'city')
+        ?? swaapin_location_by_name($mvCityName, 'province');
+}
+
+$mvBase   = $mvLocRow ? rtrim(swaapin_location_url($mvLocRow), '/') : rtrim(APP_URL, '/') . '/iran';
+$mvTarget = $mvBase . ($mvCatSlug !== null ? '/' . rawurlencode($mvCatSlug) : '');
+$mvKeep   = [];
+$mvQ      = trim((string)($_GET['q'] ?? ''));
+if ($mvQ !== '') {
+    $mvKeep['q'] = $mvQ;
+}
+header('Location: ' . $mvTarget . ($mvKeep ? '?' . http_build_query($mvKeep) : ''), true, 301);
+exit;
+
 // فیلترها
 $search    = clean($_GET['q']          ?? '');
 $catSlug   = clean($_GET['cat']        ?? '');
@@ -44,8 +66,10 @@ if (!empty($catScopeIds)) {
     foreach ($catScopeIds as $cid) { $params[] = (int)$cid; }
 }
 if ($city) {
-    $provinces = iran_provinces();
-    if (in_array($city, $provinces, true)) {
+    $isProvince = in_array($city, iran_provinces(), true);
+    // اگر ورودی هم‌نام یک شهر باشد (مثل «تهران») اولویت به شهر داده می‌شود، نه کل استان
+    $isCityName = $isProvince ? (bool) swaapin_location_by_name($city, 'city') : false;
+    if ($isProvince && !$isCityName) {
         $provinceCities = iran_cities_by_province($city);
         if (!empty($provinceCities)) {
             $placeholders = implode(',', array_fill(0, count($provinceCities), '?'));
@@ -54,12 +78,12 @@ if ($city) {
                 $params[] = $pc;
             }
         } else {
-            $whereClauses[] = 'l.city LIKE ?';
-            $params[] = "%{$city}%";
+            $whereClauses[] = 'l.city = ?';
+            $params[] = $city;
         }
     } else {
-        $whereClauses[] = 'l.city LIKE ?';
-        $params[] = "%{$city}%";
+        $whereClauses[] = 'l.city = ?';
+        $params[] = $city;
     }
 }
 if ($wantType) {

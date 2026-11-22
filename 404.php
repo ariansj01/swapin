@@ -2,10 +2,21 @@
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/layout.php';
 
-http_response_code(404);
+// کد وضعیت پیش‌فرض ۴۰۴ است؛ فایل 410.php این متغیرها را برای حالت «حذف دائمی» بازنویسی می‌کند.
+// همان‌طور که در nginx/htaccess به‌عنوان بدنهٔ خطای ۴۰۴/۴۱۰ سرو می‌شود.
+$errorStatusCode = isset($errorStatusCode) ? (int) $errorStatusCode : 404;
+$errorTitle      = $errorTitle      ?? 'صفحه یافت نشد';
+$errorHeading    = $errorHeading    ?? 'صفحه مورد نظر پیدا نشد!';
+$errorMessage    = $errorMessage    ?? 'آدرسی که دنبالش هستید وجود ندارد یا منتقل شده است! لطفاً آدرس را چک کنید یا به صفحه اصلی برگردید.';
 
-render_head('صفحه یافت نشد');
+http_response_code($errorStatusCode);
+header('X-Robots-Tag: noindex, nofollow');
+
+render_head($errorTitle, '', ['robots' => 'noindex, nofollow']);
 render_navbar(auth_user());
+
+// لینک به دسته‌های اصلی برای بازگرداندن کاربر به مسیرهای معتبر
+$errorTopCategories = function_exists('swaapin_category_tree') ? swaapin_category_tree() : [];
 ?>
 
 <div style="min-height: calc(100vh - 130px); display: flex; align-items: center; justify-content: center; padding: var(--sp-8) 0;">
@@ -13,9 +24,9 @@ render_navbar(auth_user());
     <div style="position: relative; margin-bottom: var(--sp-8);">
       <!-- Animated 404 Text -->
       <div style="font-size: clamp(5rem, 20vw, 12rem); font-weight: 900; line-height: 1; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 60px rgba(59, 130, 246, 0.3); animation: float 3s ease-in-out infinite;">
-        404
+        <?= (int) $errorStatusCode ?>
       </div>
-      
+
       <!-- Floating Decorations -->
       <div style="position: absolute; top: -20px; right: 10%; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #fef3c7, #fcd34d); animation: bounce 2s ease-in-out infinite 0.2s;"></div>
       <div style="position: absolute; bottom: -10px; left: 10%; width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #dbeafe, #93c5fd); animation: bounce 2.5s ease-in-out infinite 0.5s;"></div>
@@ -23,12 +34,32 @@ render_navbar(auth_user());
     </div>
 
     <h1 style="font-size: clamp(1.5rem, 4vw, 2.5rem); margin-bottom: var(--sp-4); color: var(--text-primary);">
-      صفحه مورد نظر پیدا نشد!
+      <?= h($errorHeading) ?>
     </h1>
-    
-    <p style="font-size: 1.125rem; color: var(--text-muted); margin-bottom: var(--sp-8); max-width: 500px; margin-left: auto; margin-right: auto;">
-      آدرسی که دنبالش هستید وجود ندارد یا منتقل شده است! لطفاً آدرس را چک کنید یا به صفحه اصلی برگردید.
+
+    <p style="font-size: 1.125rem; color: var(--text-muted); margin-bottom: var(--sp-6); max-width: 500px; margin-left: auto; margin-right: auto;">
+      <?= h($errorMessage) ?>
     </p>
+
+    <!-- جستجو -->
+    <form action="<?= APP_URL ?>/" method="get" role="search" style="max-width: 520px; margin: 0 auto var(--sp-6);">
+      <div style="display: flex; gap: var(--sp-2);">
+        <input type="search" name="q" class="form-control" placeholder="دنبال چه کالایی می‌گردی؟" aria-label="جستجو" style="flex: 1;">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> جستجو</button>
+      </div>
+    </form>
+
+    <!-- دسته‌های اصلی -->
+    <?php if ($errorTopCategories): ?>
+    <div style="display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; margin-bottom: var(--sp-6);">
+      <?php foreach ($errorTopCategories as $catSlug => $catInfo): ?>
+        <a href="<?= h(category_url((string) $catSlug)) ?>" class="btn btn-ghost btn-sm">
+          <i class="<?= h((string) ($catInfo['icon'] ?? 'bi bi-grid')) ?>"></i>
+          <?= h((string) ($catInfo['name'] ?? $catSlug)) ?>
+        </a>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 
     <div style="display: flex; gap: var(--sp-4); justify-content: center; flex-wrap: wrap;">
       <a href="<?= APP_URL ?>/" class="btn btn-primary btn-lg">

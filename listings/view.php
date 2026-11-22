@@ -21,10 +21,12 @@ $listing = DB::fetch(
     'SELECT l.*, u.name AS seller_name, u.avatar AS seller_avatar, u.rating AS seller_rating, u.rating_count AS seller_rating_count,
             u.city AS seller_city, u.credit_balance AS seller_credits, u.verification_level,
             u.created_at AS seller_since, c.name AS cat_name, c.slug AS cat_slug,
+            wc.name AS want_cat_name,
             t.id AS trade_id, t.status AS trade_status, t.user_a_id, t.user_b_id' . $selectStoreCols . '
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
+     LEFT JOIN categories wc ON wc.id = l.want_category_id
      LEFT JOIN trades t ON (t.listing_a_id = l.id OR t.listing_b_id = l.id) AND t.status IN (\'in_progress\', \'user_a_confirmed\', \'user_b_confirmed\')
      WHERE l.id = ?',
     [$id]
@@ -51,28 +53,21 @@ if (!$listing) {
 
 $reviewStatus = $listing['review_status'] ?? 'approved';
 
-$listingPath = '/listings/view?id=' . $id;
+// آدرس کانونیکال آگهی: /{fa-slug}/{id} (بدون پیشوند /v/ طبق معماری سئو)
+$_listingSlug = listing_slug((string) ($listing['title'] ?? ''));
+$listingPath  = $_listingSlug !== '' ? '/' . $_listingSlug . '/' . $id : '/' . $id;
 
 if (!$isOwner && !$isAdmin) {
 
     // آگهی رد‌شده یا حذف‌شده → 410 Gone (حذف سریع از ایندکس گوگل؛ هم‌راستا با Q17).
     if ($reviewStatus === 'rejected' || $listing['status'] === 'deleted') {
-        http_response_code(410);
-        header('X-Robots-Tag: noindex, nofollow');
-        render_head('آگهی حذف شده', '', ['robots' => 'noindex, nofollow']);
-        render_navbar($user);
-        echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-slash-circle"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی رد یا حذف شده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
-        render_footer();
+        require __DIR__ . '/../410.php';
         exit;
     }
 
     // آگهی در انتظار تأیید → 404 (هنوز منتشر نشده است).
     if ($reviewStatus !== 'approved') {
-        http_response_code(404);
-        render_head('آگهی یافت نشد', '', ['robots' => 'noindex, nofollow']);
-        render_navbar($user);
-        echo '<main id="main-content" class="section"><div class="container"><div class="empty-state"><i class="bi bi-hourglass-split"></i><h1>آگهی در دسترس نیست</h1><p>این آگهی هنوز تأیید نشده است.</p><a href="' . APP_URL . '/" class="btn btn-primary">مرور آگهی‌ها</a></div></div></main>';
-        render_footer();
+        require __DIR__ . '/../404.php';
         exit;
     }
 
@@ -97,12 +92,22 @@ if (!$isOwner && !$isAdmin) {
         if ($similar) {
             header('Location: ' . listing_url($similar), true, 301);
         } else {
-            header('Location: ' . APP_URL . '/listings', true, 301);
+            header('Location: ' . APP_URL . '/iran', true, 301);
         }
 
         exit;
     }
 }
+
+// زمینه رفتار (فاز ۱): ثبت بازدید آگهی از سمت کلاینت با ابعاد ساختاریافته
+$GLOBALS['swaapin_behavior_context'] = [
+    'page_type'     => 'listing',
+    'default_event' => 'view_listing',
+    'listing_id'    => (int)$listing['id'],
+    'category_id'   => (int)($listing['category_id'] ?? 0),
+    'brand_id'      => (int)($listing['brand_id'] ?? 0),
+    'model_id'      => (int)($listing['model_id'] ?? 0),
+];
 
 // Increment views
 DB::query('UPDATE listings SET views = views + 1 WHERE id = ?', [$id]);
@@ -162,6 +167,24 @@ $related = DB::fetchAll(
      ORDER BY l.created_at DESC LIMIT 4',
     [$listing['category_id'], $id]
 );
+
+// تکمیل «آگهی‌های مشابه» با همان منطق پر کردن صفحه‌های لیستی (سند — ۶-۵ و Q17):
+// اگر آگهی کافی در دسته‌ی دقیق نبود، از سطوح بالاتر مکان و سپس دسته پر می‌شود.
+if (count($related) < 4 && function_exists('swaapin_fallback_listings')) {
+    $relLocRow = null;
+    if (!empty($listing['city']) && function_exists('swaapin_location_by_name')) {
+        $relLocRow = swaapin_location_by_name((string) $listing['city'], 'city')
+            ?? swaapin_location_by_name((string) $listing['city'], 'province')
+            ?? swaapin_location_by_name((string) $listing['city'], 'region')
+            ?? swaapin_location_by_name((string) $listing['city'], 'neighborhood');
+    }
+    $relCatRow  = DB::fetch('SELECT id, name, parent_id FROM categories WHERE id = ? LIMIT 1', [(int) $listing['category_id']]);
+    $relExclude = array_merge([(int) $listing['id']], array_map(static fn($r) => (int) $r['id'], $related));
+    $relFill    = swaapin_fallback_listings($relLocRow, $relCatRow, $relExclude, 4 - count($related));
+    foreach ($relFill['rows'] as $r) {
+        $related[] = $r;
+    }
+}
 
 // Handle offer submission
 $offerError   = '';
@@ -366,25 +389,35 @@ $swapCanOffer = $isOwner && listing_swap_offer_listing_swappable($listing);
 $swapSourceTitle = (string) ($listing['title'] ?? '');
 $listingIsReserved = ($listing['status'] ?? '') === 'reserved';
 
-$listingMode = (string) ($listing['listing_mode'] ?? 'swap');
-$listingJsonLd = [];
-// آگهی معاوضه نباید هیچ اسکیمای Product تولید کند تا گوگل آن را Merchant listing در نظر نگیرد.
-if ($listingMode !== 'swap') {
-    $listingJsonLd[] = seo_json_ld_product($listing, $ogImage, $listingUrl);
+// فاز ۱: هر آدرس غیرکانونیکال آگهی (مثل /listings/view?id= یا اسلاگ قدیمی) → 301 به /{fa-slug}/{id}
+$requestedPath = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
+$_appBasePath  = rtrim((string) parse_url(APP_URL, PHP_URL_PATH), '/');
+if ($_appBasePath !== '' && str_starts_with($requestedPath, $_appBasePath)) {
+    $requestedPath = substr($requestedPath, strlen($_appBasePath));
 }
-$listingJsonLd[] = seo_json_ld_breadcrumbs(array_merge(
-    [['name' => 'خانه', 'url' => APP_URL . '/']],
-    array_map(function ($c) { return ['name' => $c['name'], 'url' => $c['url']]; }, $_catChain),
-    [['name' => $listing['title']]]
-));
+if ($requestedPath !== '' && $requestedPath !== $listingPath) {
+    parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $_qs);
+    // پارامترهای داخلی مسیریابی نباید به آدرس مقصد منتقل شوند
+    unset($_qs['id'], $_qs['slug_path'], $_qs['redirect_slugs']);
+    // پارامترهای معنادار فیلتر (q, want, sort, page, ...) حفظ می‌شوند
+    header('Location: ' . APP_URL . $listingPath . ($_qs ? '?' . http_build_query($_qs) : ''), true, 301);
+    exit;
+}
 
 render_head($seoTitle, $metaDesc, [
     'canonical' => $listingUrl,
-    'og_type'   => $listingMode !== 'swap' ? 'product' : 'website',
+    'og_type'   => 'product',
     'og_image'  => $ogImage,
     'og_title'  => $seoTitle,
     'keywords'  => implode(', ', array_filter([$listing['cat_name'], $listing['city'], 'معاوضه', 'مبادله کالا', APP_NAME])),
-    'json_ld'   => $listingJsonLd,
+    'json_ld'   => array_values(array_filter([
+        seo_json_ld_product($listing, $ogImage, $listingUrl),
+        seo_json_ld_breadcrumbs(array_merge(
+            [['name' => 'خانه', 'url' => APP_URL . '/']],
+            array_map(function ($c) { return ['name' => $c['name'], 'url' => $c['url']]; }, $_catChain),
+            [['name' => $listing['title']]]
+        )),
+    ])),
 ]);
 render_navbar($user);
 ?>
@@ -523,7 +556,7 @@ render_navbar($user);
     <div class="lv-seller">
       <?= avatar_html($listing['seller_avatar'] ?? null, $listing['seller_name'], 'md') ?>
       <div class="lv-seller__info">
-        <?php if (!empty($listing['store_name']) && !empty($listing['store_slug'])): ?>
+        <?php if (!empty($listing['store_name']) && !empty($listing['store_slug']) && !store_is_blocked_slug($listing['store_slug'])): ?>
         <a href="<?= APP_URL ?>/shop/<?= h($listing['store_slug']) ?>" class="badge badge-primary lv-store-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-weight:600;margin-bottom:4px;"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></a>
         <?php endif; ?>
         <div class="lv-seller__name"><a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" class="lv-seller-name-link"><?= h($listing['seller_name']) ?></a></div>
@@ -578,17 +611,17 @@ render_navbar($user);
     </section>
 
     <!-- Wants -->
-    <?php if (!empty($listing['want_in_return'])): ?>
+    <?php 
+    $wantText = $listing['want_in_return'] ?? '';
+    if (!empty($listing['want_cat_name'])) {
+        $wantText = $listing['want_cat_name'] . (!empty($listing['want_in_return']) ? ' (' . $listing['want_in_return'] . ')' : '');
+    }
+    ?>
+    <?php if (!empty($wantText)): ?>
     <section class="lv-want-section">
       <h2 class="lv-section__title"><?= h($listing['seller_name']) ?> در ازای این کالا به دنبال چه چیزی هست؟</h2>
       <div class="lv-chips">
-        <?php if ($wantChips): ?>
-          <?php foreach ($wantChips as $chip): ?>
-          <span class="lv-chip lv-chip--gold"><?= h($chip) ?></span>
-          <?php endforeach; ?>
-        <?php else: ?>
-          <span class="lv-chip lv-chip--gold"><?= h($listing['want_in_return']) ?></span>
-        <?php endif; ?>
+          <span class="lv-chip lv-chip--gold"><?= h($wantText) ?></span>
       </div>
     </section>
     <?php endif; ?>
@@ -858,7 +891,7 @@ render_navbar($user);
 
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:.875rem;color:var(--text-muted);">
             <span>فروشنده:</span>
-            <?php if (!empty($listing['store_name']) && !empty($listing['store_slug'])): ?>
+            <?php if (!empty($listing['store_name']) && !empty($listing['store_slug']) && !store_is_blocked_slug($listing['store_slug'])): ?>
             <div style="display:flex;flex-direction:column;gap:2px;">
               <a href="<?= APP_URL ?>/shop/<?= h($listing['store_slug']) ?>" class="badge badge-primary" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-weight:600;"><i class="bi bi-shop"></i> <?= h($listing['store_name']) ?></a>
               <a href="<?= APP_URL ?>/profile?id=<?= $listing['user_id'] ?>" style="color:var(--dash-navy);text-decoration:none;font-weight:bold;font-size:.8125rem;"><?= h($listing['seller_name']) ?></a>
@@ -892,11 +925,17 @@ render_navbar($user);
           <h3 class="lv-section-title">توضیحات</h3>
           <div class="lv-description"><?= nl2br(h($listing['description'])) ?></div>
 
-          <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($listing['want_in_return'])): ?>
+          <?php 
+          $wantText = $listing['want_in_return'] ?? '';
+          if (!empty($listing['want_cat_name'])) {
+              $wantText = $listing['want_cat_name'] . (!empty($listing['want_in_return']) ? ' (' . $listing['want_in_return'] . ')' : '');
+          }
+          ?>
+          <?php if (($listing['listing_mode'] ?? 'swap') !== 'sell' && !empty($wantText)): ?>
           <div class="lv-divider"></div>
           <div class="lv-wants">
             <div class="lv-wants-label"><i class="bi bi-stars"></i> <?= h($listing['seller_name']) ?> در ازای این کالا به دنبال چه چیزی است؟</div>
-            <p class="lv-wants-text"><?= h($listing['want_in_return']) ?></p>
+            <p class="lv-wants-text"><?= h($wantText) ?></p>
           </div>
           <?php endif; ?>
         </section>

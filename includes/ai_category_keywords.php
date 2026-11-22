@@ -360,7 +360,23 @@ function aick_render_sidebar(array $category, string $baseUrl, array $baseParams
     $keep = static function ($v): bool {
         return $v !== null && $v !== '' && $v !== '0';
     };
-    $baseQuery = http_build_query(array_filter(array_merge($baseParams, ['cat' => $catSlug]), $keep));
+
+    // اگر پایه، مسیر جستجوی «/iran» است و مکان مشخص است، مستقیم به آدرس نهایی مکان
+    // لینک بده تا کلیک چیپ باعث ریدایرکت ۳۰۱ (?city= → /{location}) نشود.
+    $basePath     = rtrim((string) parse_url($baseUrl, PHP_URL_PATH), '/');
+    $cityName     = trim((string) ($baseParams['city'] ?? ''));
+    $filterParams = $baseParams;
+    unset($filterParams['city']);
+    $directPath = ($basePath === '/iran' && $cityName !== '')
+        ? swaapin_location_search_url($cityName, $catSlug, [])
+        : null;
+
+    if ($directPath !== null) {
+        $baseUrl   = $directPath;
+        $baseQuery = http_build_query(array_filter($filterParams, $keep));
+    } else {
+        $baseQuery = http_build_query(array_filter(array_merge($baseParams, ['cat' => $catSlug]), $keep));
+    }
 
     $buildSearchLink = static function (string $kw) use ($baseUrl, $baseQuery): string {
         $qs = $baseQuery !== '' ? $baseQuery . '&' : '';
@@ -380,7 +396,7 @@ function aick_render_sidebar(array $category, string $baseUrl, array $baseParams
       <div class="related-searches__chips" id="ai-cat-search-chips">
         <?php if ($keywords): ?>
           <?php foreach ($keywords as $kw): ?>
-          <a href="<?= h($buildSearchLink($kw)) ?>" class="filter-chip"><?= h($kw) ?></a>
+          <a href="<?= h($buildSearchLink($kw)) ?>" class="filter-chip" rel="nofollow"><?= h($kw) ?></a>
           <?php endforeach; ?>
         <?php else: ?>
           <span class="fs-xs text-muted"><i class="bi bi-arrow-repeat"></i> در حال آماده‌سازی کلیدواژه‌ها…</span>
@@ -421,6 +437,7 @@ function aick_render_sidebar(array $category, string $baseUrl, array $baseParams
             if (!kw) { return; }
             var a = document.createElement('a');
             a.className = 'filter-chip';
+            a.setAttribute('rel', 'nofollow');
             a.textContent = kw;
             a.setAttribute('href', keywordLink(kw));
             chips.appendChild(a);

@@ -492,7 +492,7 @@ function multi_trade_request_on_offer(int $offerId, int $userId): array
     $listingId = (int)$offer['listing_id'];
     $notifyUrl = ($otherId === $owner && $listingId > 0)
         ? APP_URL . '/listings/offers?id=' . $listingId
-        : ($listingId > 0 ? APP_URL . '/listings/view?id=' . $listingId : APP_URL . '/trades?tab=received');
+        : ($listingId > 0 ? listing_url($listingId) : APP_URL . '/trades?tab=received');
     multi_trade_notify(
         $otherId,
         'درخواست مبادله چندنفره',

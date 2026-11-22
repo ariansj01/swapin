@@ -37,11 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             iso_update_match_status($id, $lid, 'interested');
             $iso = iso_get_request($id);
             $sourceListingId = $iso ? (int)$iso['listing_id'] : 0;
-            $redirectParams = ['id' => $lid];
+            $redirectParams = [];
             if ($sourceListingId > 0) {
                 $redirectParams['iso_from'] = $sourceListingId;
             }
-            header('Location: ' . APP_URL . '/listings/view?' . http_build_query($redirectParams) . '#iso-offer-start');
+            header('Location: ' . listing_url($lid) . ($redirectParams ? '?' . http_build_query($redirectParams) : '') . '#iso-offer-start');
             exit;
         }
     }

@@ -472,20 +472,29 @@ function initNavbarHoverDropdowns() {
 
   // Top-level dropdowns: open on hover and stay open for a grace period after the mouse
   // leaves, so the menu does not vanish while the user is reaching for it.
-  const TOP_CLOSE_DELAY = 2000;
+  const TOP_CLOSE_DELAY = 1000;
   document.querySelectorAll('.navbar-nav > .dropdown').forEach(dd => {
     const menu = dd.querySelector(':scope > .dropdown-menu');
     if (!menu) return;
     let closeTimer = null;
     dd.addEventListener('mouseenter', () => {
       if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+      // کلاس open باید روی خودِ .dropdown بماند تا قاعدهٔ
+      // «.navbar-nav .dropdown.open > .dropdown-menu» فعال شود.
+      // اگر فقط روی منو گذاشته شود، قاعدهٔ «.navbar-nav .dropdown > .dropdown-menu
+      // { display:none }» با تخصیص بالاتر آن را بی‌اثر می‌کند و منو در فاصلهٔ
+      // ۴ پیکسلی بین دکمه و منو ناپدید می‌شود (باگ «سریع بسته می‌شود»).
+      dd.classList.add('open');
       menu.classList.add('open');
     });
     dd.addEventListener('mouseleave', () => {
       if (closeTimer) clearTimeout(closeTimer);
       closeTimer = setTimeout(() => {
         closeTimer = null;
-        if (!dd.matches(':hover')) menu.classList.remove('open');
+        if (!dd.matches(':hover')) {
+          dd.classList.remove('open');
+          menu.classList.remove('open');
+        }
       }, TOP_CLOSE_DELAY);
     });
   });
@@ -1691,19 +1700,20 @@ function initSupportWidget() {
   const chatBox = document.getElementById('support-chat');
   if (!widget || !toggle || !chatBox) return;
 
-  const closeBtn    = document.getElementById('support-chat-close');
-  const form        = document.getElementById('support-chat-form');
-  const nameStep    = document.getElementById('support-chat-name-step');
-  const nameInp     = document.getElementById('support-chat-name');
-  const phoneInp    = document.getElementById('support-chat-phone');
-  const nameGoBtn   = document.getElementById('support-chat-name-go');
-  const faqBox      = document.getElementById('support-chat-faq');
-  const chips       = document.getElementById('support-chat-chips');
-  const composer    = document.getElementById('support-chat-composer');
-  const msgInp      = document.getElementById('support-chat-msg');
-  const sendBtn     = document.getElementById('support-chat-send');
-  const messages    = document.getElementById('support-chat-messages');
-  const csrfInp     = chatBox.querySelector('input[name="_csrf"]');
+  const closeBtn  = document.getElementById('support-chat-close');
+  const formView  = document.getElementById('support-chat-form-view');
+  const startForm = document.getElementById('support-chat-start-form');
+  const nameInp   = document.getElementById('support-chat-name');
+  const phoneInp  = document.getElementById('support-chat-phone');
+  const topicInp  = document.getElementById('support-chat-topic');
+  const startBtn  = document.getElementById('support-chat-start-btn');
+  const composer  = document.getElementById('support-chat-composer');
+  const msgInp    = document.getElementById('support-chat-msg');
+  const sendBtn   = document.getElementById('support-chat-send');
+  const messages  = document.getElementById('support-chat-messages');
+  const chatForm  = document.getElementById('support-chat-form');
+  const csrfInp   = chatBox.querySelector('input[name="_csrf"]');
+  const qBtns     = chatBox.querySelectorAll('.support-chat__qbtn');
 
   const TOKEN_KEY = 'swaapin_live_chat_token';
   const NAME_KEY  = 'swaapin_live_chat_name';
@@ -1714,29 +1724,26 @@ function initSupportWidget() {
   let pollTimer = null;
   let lastMsgId = 0;
   let busy = false;
-  let faqItems = null;
-  let sessionStarted = false;
 
-  function storedName() {
-    if (accountName) return accountName;
-    try { return (localStorage.getItem(NAME_KEY) || '').trim(); } catch { return ''; }
-  }
+  try {
+    if (nameInp) nameInp.value = accountName || (localStorage.getItem(NAME_KEY) || '');
+    if (phoneInp) phoneInp.value = localStorage.getItem(PHONE_KEY) || '';
+  } catch {}
 
-  function storedPhone() {
-    try { return (localStorage.getItem(PHONE_KEY) || '').trim(); } catch { return ''; }
+  function api(action, data) {
+    return fetch(getAppUrl() + '/api/live_chat.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfInp?.value || '' },
+      body: JSON.stringify({ action, ...(data || {}) })
+    }).then(r => r.json());
   }
 
   function openChat() {
     chatBox.hidden = false;
     toggle.setAttribute('aria-expanded', 'true');
     toggle.classList.add('is-open');
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      sessionStarted = true;
-      beginConversation();
-    } else {
-      showFormStep();
-    }
+    if (localStorage.getItem(TOKEN_KEY)) beginConversation();
+    else showFormView();
   }
 
   function closeChat() {
@@ -1746,58 +1753,23 @@ function initSupportWidget() {
     stopPolling();
   }
 
-  function showFormStep() {
-    nameStep.hidden = false;
-    faqBox.hidden = true;
+  function showFormView() {
+    formView.hidden = false;
     messages.hidden = true;
-    form.hidden = true;
-    if (nameInp) {
-      nameInp.value = storedName();
-      setTimeout(() => nameInp.focus(), 100);
-    }
-    if (phoneInp) phoneInp.value = storedPhone();
+    chatForm.hidden = true;
   }
 
   function showConversation() {
-    nameStep.hidden = true;
+    formView.hidden = true;
     messages.hidden = false;
-    form.hidden = false;
+    chatForm.hidden = false;
     composer.hidden = false;
-    setTimeout(() => msgInp?.focus(), 100);
-  }
-
-  function renderFaq(items) {
-    if (!chips) return;
-    chips.innerHTML = '';
-    if (!items || !items.length) { faqBox.hidden = true; return; }
-    items.forEach((it) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'support-chat__chip';
-      btn.textContent = it.q;
-      btn.addEventListener('click', () => sendMessage(it.q));
-      chips.appendChild(btn);
-    });
-    faqBox.hidden = false;
-  }
-
-  async function loadFaq() {
-    if (faqItems) { renderFaq(faqItems); return; }
-    try {
-      const res = await api('faq', {});
-      if (res && res.ok && Array.isArray(res.questions)) {
-        faqItems = res.questions;
-        renderFaq(faqItems);
-      }
-    } catch {}
   }
 
   function appendMsg(text, sender) {
     if (!messages) return null;
     const div = document.createElement('div');
-    // پیام‌های ai و admin هر دو مانند پشتیبان نمایش داده می‌شوند تا مشخص نباشد هوش مصنوعی است.
-    const displaySender = (sender === 'ai') ? 'admin' : sender;
-    div.className = 'support-chat__msg support-chat__msg--' + displaySender;
+    div.className = 'support-chat__msg support-chat__msg--' + sender;
     div.innerHTML = (text || '').replace(/\n/g, '<br>');
     messages.appendChild(div);
     const body = document.getElementById('support-chat-body');
@@ -1811,17 +1783,14 @@ function initSupportWidget() {
     const err = document.createElement('div');
     err.className = 'support-chat__error';
     err.textContent = text;
+    if (formView.hidden) {
+      messages.appendChild(err);
+    } else {
+      formView.appendChild(err);
+    }
     const body = document.getElementById('support-chat-body');
-    (body || chatBox).appendChild(err);
+    if (body) body.scrollTop = body.scrollHeight;
     setTimeout(() => err.remove(), 4000);
-  }
-
-  function api(action, data) {
-    return fetch(getAppUrl() + '/api/live_chat.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfInp?.value || '' },
-      body: JSON.stringify({ action, ...(data || {}) })
-    }).then(r => r.json());
   }
 
   function stopPolling() {
@@ -1844,13 +1813,11 @@ function initSupportWidget() {
 
   function beginConversation() {
     showConversation();
-    faqBox.hidden = true;
     messages.innerHTML = '';
     lastMsgId = 0;
     stopPolling();
     fetchNewMessages();
-    pollTimer = setInterval(fetchNewMessages, 4000);
-    loadFaq();
+    pollTimer = setInterval(fetchNewMessages, 5000);
   }
 
   toggle.addEventListener('click', (e) => {
@@ -1867,79 +1834,88 @@ function initSupportWidget() {
     if (!document.getElementById('support-widget')?.contains(e.target)) closeChat();
   });
 
-  async function submitForm() {
-    if (busy) return;
-    const name  = (nameInp?.value  || '').trim();
-    const phone = (phoneInp?.value || '').trim();
-    if (name.length < 2) return showError('نام و نام خانوادگی را وارد کنید.');
-    if (phone && !/^09\d{9}$/.test(phone)) return showError('شماره موبایل معتبر نیست.');
+  qBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      qBtns.forEach(b => b.classList.remove('is-selected'));
+      btn.classList.add('is-selected');
+      if (topicInp) topicInp.value = btn.getAttribute('data-topic') || '';
+    });
+  });
 
-    busy = true;
-    if (nameGoBtn) nameGoBtn.disabled = true;
-    try {
-      const res = await api('start', { name, phone });
-      if (res && res.ok && res.token) {
-        try {
-          localStorage.setItem(TOKEN_KEY, res.token);
-          localStorage.setItem(NAME_KEY, name);
-          if (phone) localStorage.setItem(PHONE_KEY, phone);
-        } catch {}
-        sessionStarted = true;
-        lastMsgId = parseInt(res.last_id, 10) || 0;
-        appendMsg('سلام ' + name + '! خوش آمدید. چطور می‌توانم کمکتان کنم؟', 'admin');
-        beginConversation();
-      } else {
-        const errs = (res && res.errors) || {};
-        showError(errs.name || errs.phone || 'شروع گفتگو ناموفق بود.');
-      }
-    } catch {
-      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
-    } finally {
-      busy = false;
-      if (nameGoBtn) nameGoBtn.disabled = false;
-    }
+  function clearErrors() {
+    chatBox.querySelectorAll('.support-chat__error').forEach(e => e.remove());
+    [nameInp, phoneInp].forEach((i) => {
+      i?.classList.remove('is-invalid');
+      i?.parentElement?.querySelector('.support-chat__field-error')?.remove();
+    });
   }
 
-  nameGoBtn?.addEventListener('click', submitForm);
+  function addError(input, msg) {
+    if (!input) return;
+    input.classList.add('is-invalid');
+    const span = document.createElement('span');
+    span.className = 'support-chat__field-error';
+    span.textContent = msg;
+    input.parentElement?.appendChild(span);
+  }
 
-  nameInp?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); phoneInp?.focus(); }
+  startForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+    const name  = (nameInp?.value || '').trim();
+    const phone = (phoneInp?.value || '').trim();
+    const topic = (topicInp?.value || '').trim();
+    let bad = false;
+    if (name.length < 2) { addError(nameInp, 'نام را وارد کنید.'); bad = true; }
+    if (!/^09\d{9}$/.test(phone)) { addError(phoneInp, 'شماره موبایل معتبر وارد کنید.'); bad = true; }
+    if (bad) return;
+
+    startBtn.disabled = true;
+    const originalLabel = startBtn.textContent;
+    startBtn.textContent = '…';
+    try {
+      const transcript = topic ? [{ role: 'user', content: 'موضوع: ' + topic }] : [];
+      const res = await api('start', { name, phone, transcript });
+      if (!res || !res.ok) {
+        if (res && res.errors) {
+          if (res.errors.name) addError(nameInp, res.errors.name);
+          if (res.errors.phone) addError(phoneInp, res.errors.phone);
+        } else {
+          showError('خطا در شروع گفتگو');
+        }
+        startBtn.disabled = false;
+        startBtn.textContent = originalLabel;
+        return;
+      }
+      try {
+        localStorage.setItem(NAME_KEY, name);
+        localStorage.setItem(PHONE_KEY, phone);
+        localStorage.setItem(TOKEN_KEY, res.token);
+      } catch {}
+      if (topic) { try { await api('send', { token: res.token, body: topic }); } catch {} }
+      beginConversation();
+      appendMsg('سلام! 👋 پیام شما ثبت شد. یکی از همکاران ما به‌زودی پاسخگوی شما خواهد بود.', 'admin');
+    } catch {
+      showError('خطا در برقراری ارتباط');
+      startBtn.disabled = false;
+      startBtn.textContent = originalLabel;
+    }
   });
 
-  phoneInp?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); submitForm(); }
-  });
-
-  async function sendMessage(forcedText) {
+  async function sendMessage() {
     if (busy) return;
-    const text = (typeof forcedText === 'string' ? forcedText : (msgInp?.value || '')).trim();
+    const text = (msgInp?.value || '').trim();
     if (!text) return;
-
     const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) { showFormStep(); return; }
-
-    faqBox.hidden = true;
+    if (!token) { showError('ابتدا فرم شروع گفتگو را تکمیل کنید.'); return; }
     busy = true;
     if (sendBtn) sendBtn.disabled = true;
-    appendMsg(text, 'guest');
     msgInp.value = '';
-    const typing = appendMsg('…', 'admin');
-
     try {
-      const res = await api('send', { token, body: text });
-      typing?.remove();
-      if (res && res.ok) {
-        if (res.reply) {
-          appendMsg(res.reply, 'ai');
-        }
-        lastMsgId = Math.max(lastMsgId, parseInt(res.id, 10) || 0);
-        await fetchNewMessages();
-      } else {
-        showError((res && res.error) || 'ارسال پیام ناموفق بود.');
-      }
+      await api('send', { token, body: text });
+      await fetchNewMessages();
     } catch {
-      typing?.remove();
-      showError('خطای شبکه. لطفاً دوباره تلاش کنید.');
+      showError('ارسال پیام ناموفق بود.');
     } finally {
       busy = false;
       if (sendBtn) sendBtn.disabled = false;
@@ -1947,7 +1923,7 @@ function initSupportWidget() {
     }
   }
 
-  sendBtn?.addEventListener('click', () => sendMessage());
+  sendBtn?.addEventListener('click', sendMessage);
   msgInp?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
   });
@@ -2073,7 +2049,7 @@ function initListingsLocationFilter() {
     });
 
     const qs = params.toString();
-    return `${appUrl}/listings/${qs ? `?${qs}` : ''}`;
+    return `${appUrl}/iran${qs ? `?${qs}` : ''}`;
   }
 
   locSelect.addEventListener('change', () => {

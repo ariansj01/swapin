@@ -5,12 +5,17 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $user = auth_user();
 
-$type = normalize_store_type((string)($_GET['type'] ?? 'both'));
 $slug = normalize_shop_slug((string)($_GET['slug'] ?? ''));
 
 if ($slug === '') {
     http_response_code(404);
     include __DIR__ . '/../404.php';
+    exit;
+}
+
+// ۴۱۰ Gone — فروشگاه تستی (نقشهٔ ۳۰۱ / Q05)
+if (store_is_blocked_slug($slug)) {
+    require __DIR__ . '/../410.php';
     exit;
 }
 
@@ -26,17 +31,18 @@ $storeUser = DB::fetch(
     [$slug]
 );
 
-if ($storeUser && $hasStoreTypeCol && $type !== 'both') {
-    $actualType = normalize_store_type($storeUser['store_type'] ?? 'both');
-    if ($actualType !== 'both' && $actualType !== $type) {
-        $newType = $actualType;
-        $redirectUrl = APP_URL . '/shop/' . $newType . '/' . rawurlencode($slug);
-        header('Location: ' . $redirectUrl, true, 302);
+if (!$storeUser) {
+    // نگاشت نام فارسی قدیمی فروشگاه → slug کانونیکال (نقشهٔ ۳۰۱ — ۸ مورد ۴۰۴ در سرچ کنسول)
+    $byName = DB::fetch(
+        'SELECT store_slug FROM users
+         WHERE store_name = ? AND store_slug IS NOT NULL AND store_slug != ""
+         LIMIT 1',
+        [$slug]
+    );
+    if ($byName && (string)$byName['store_slug'] !== '') {
+        header('Location: ' . APP_URL . '/shop/' . rawurlencode((string)$byName['store_slug']), true, 301);
         exit;
     }
-}
-
-if (!$storeUser) {
     http_response_code(404);
     include __DIR__ . '/../404.php';
     exit;
@@ -54,11 +60,18 @@ $listings = DB::fetchAll(
     [(int)$storeUser['id']]
 );
 
-$_shopType = $hasStoreTypeCol ? normalize_store_type($storeUser['store_type'] ?? 'both') : 'both';
-$_shopTypeSeg = $_shopType === 'both' ? 'both' : $_shopType;
+$storeListingCount = count($listings);
+
 $title = h($storeUser['store_name'] ?? $storeUser['name']);
 $desc = trim($storeUser['store_description'] ?? '') ?: 'فروشگاه ' . $title . ' در سواَپین';
-$canonical = APP_URL . '/shop/' . $_shopTypeSeg . '/' . h($slug);
+$canonical = APP_URL . '/shop/' . $slug;
+
+// قانون A11: فروشگاه فقط با حداقل ۶ آگهی فعال ایندکس می‌شود؛ پس از اولین ایندکس
+// همیشه ایندکس می‌ماند (ثبت تاریخ اولین ایندکس در listing_index_status).
+$storeIndexable = function_exists('seo_list_page_indexable')
+    ? seo_list_page_indexable($canonical, $storeListingCount)
+    : ($storeListingCount >= SWAAPIN_MIN_LISTINGS_FOR_INDEX);
+$robotsMeta = $storeIndexable ? 'index, follow' : 'noindex, follow';
 
 $ogImage = LOGO_URL;
 if (!empty($storeUser['store_banner'])) {
@@ -70,6 +83,7 @@ if (!empty($storeUser['store_banner'])) {
 
 render_head($title, $desc, [
     'canonical' => $canonical,
+    'robots'    => $robotsMeta,
     'og_type'   => 'profile',
     'og_image'  => $ogImage,
     'json_ld'   => [

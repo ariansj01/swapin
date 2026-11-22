@@ -11,11 +11,11 @@ const CATEGORY_COMMISSION_MAP = [
     'vehicles'           => 0.0125,
     'electronics'        => 0.035,
     'home-kitchen'       => 0.030,
-    'services'           => 0.050,
     'personal-items'     => 0.030,
     'leisure-hobbies'    => 0.030,
-    'community'          => 0.025,
     'tools-equipment'    => 0.0275,
+    'jobs-services'      => 0.025,
+    'services'           => 0.050,
     'jobs'               => 0.025,
 ];
 
@@ -879,8 +879,35 @@ function request_expert_inspection(int $listingId, int $userId, ?int $tradeId = 
 function listing_mode_label(string $mode): string {
     return match ($mode) {
         'sell' => 'فروش',
-        'both' => 'تعویض + فروش',
-        default => 'تعویض',
+        'both' => 'معاوضه یا فروش',
+        default => 'معاوضه',
+    };
+}
+
+/** آیکون بوت‌استرپ مربوط به نوع معامله. */
+function listing_mode_icon(string $mode): string {
+    return match ($mode) {
+        'sell' => 'bi-cash-coin',
+        'both' => 'bi-arrow-left-right',
+        default => 'bi-arrow-left-right',
+    };
+}
+
+/** برچسب فارسی برای نوع معامله (deal_type) */
+function deal_type_label(?string $type): string {
+    return match ($type) {
+        'sell' => 'فروش',
+        'both' => 'معاوضه یا فروش',
+        default => 'معاوضه',
+    };
+}
+
+/** آیکون مربوط به نوع معامله (deal_type) */
+function deal_type_icon(?string $type): string {
+    return match ($type) {
+        'sell' => 'bi-cash-coin',
+        'both' => 'bi-arrow-repeat',
+        default => 'bi-arrow-left-right',
     };
 }
 

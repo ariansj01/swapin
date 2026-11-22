@@ -147,7 +147,7 @@ $servicePairs = [
             <h2 class="sv-title">دسته‌های اصلی خدمات</h2>
             <div class="sv-grid">
                 <?php foreach ($serviceCats as $cat): ?>
-                    <a href="<?= APP_URL ?>/listings/?cat=<?= urlencode($cat['slug']) ?>" class="sv-chip">
+                    <a href="<?= APP_URL ?>/iran?cat=<?= urlencode($cat['slug']) ?>" class="sv-chip">
                         <?= h($cat['name']) ?>
                     </a>
                 <?php endforeach; ?>
@@ -163,7 +163,7 @@ $servicePairs = [
                     <div class="sv-combined-label"><?= h($group) ?> در قبال...</div>
                     <div class="sv-scroll">
                         <?php foreach ($subs as $sub): ?>
-                            <a href="<?= APP_URL ?>/listings/?q=<?= urlencode($sub['q']) ?>&want=<?= urlencode($sub['w']) ?>" class="sv-sub-chip">
+                            <a href="<?= APP_URL ?>/iran?q=<?= urlencode($sub['q']) ?>&want=<?= urlencode($sub['w']) ?>" class="sv-sub-chip">
                                 <?= h($sub['label']) ?>
                             </a>
                         <?php endforeach; ?>

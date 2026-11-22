@@ -20,12 +20,58 @@ $user = auth_user();
 $search    = clean($_GET['q']         ?? '');
 $catSlug   = clean($_GET['cat']       ?? '');
 $city      = clean($_GET['city']      ?? '') ?: 'تهران';
-$wantType  = clean($_GET['want']      ?? '');
+$wantType = clean($_GET['want'] ?? '');
+$wantCatId = (int)($_GET['want_category_id'] ?? 0);
+$dealType = clean($_GET['deal_type'] ?? '');
 $sort      = in_array($_GET['sort'] ?? '', ['new','old','value']) ? $_GET['sort'] : 'new';
 $page      = max(1, (int)($_GET['page'] ?? 1));
 $timeAgo   = in_array($_GET['time_ago'] ?? '', ['3h','12h','1d','3d','1w']) ? $_GET['time_ago'] : '';
 $pmin      = isset($_GET['price_min']) ? (float)$_GET['price_min'] : 0;
 $pmax      = isset($_GET['price_max']) ? (float)$_GET['price_max'] : 0;
+
+// ─── نقشهٔ ۳۰۱ (بخش ۱۱): پارامترهای ?city= و ?cat= → آدرس تمیز /{location}[/{category}] ───
+// آدرس‌های پارامتری «خالی» صفحهٔ اصلی (که canonical آن‌ها را حذف می‌کرد و هرگز ایندکس نمی‌شدند)
+// در یک مرحله به مسیر کانونیکال ۳۰۱ می‌شوند. sort و time_ago طبق نقشه به مقصد منتقل نمی‌شوند.
+// توجه: اگر یکی از پارامترهای واقعی فیلتر (مثل sort/want/price) حاضر باشد، صفحهٔ اصلی
+// همان فیلتر زندهٔ خودش است و ریدایرکت نمی‌شود تا فرم فیلتر هوم خراب نشود. (فرم همیشه sort دارد.)
+$homeFilterParams = ['want', 'want_category_id', 'condition', 'deal_type', 'price_min', 'price_max', 'sort', 'time_ago', 'page'];
+$homeHasFilter = false;
+foreach ($homeFilterParams as $hk) {
+    $hv = $_GET[$hk] ?? '';
+    if ($hv !== '' && $hv !== null && $hv !== '0' && $hv !== 0) {
+        $homeHasFilter = true;
+        break;
+    }
+}
+if (!headers_sent() && !$homeHasFilter
+    && ((string)($_GET['city'] ?? '') !== '' || (string)($_GET['cat'] ?? '') !== '')) {
+    $homeCityName = trim((string)($_GET['city'] ?? ''));
+    $homeLocRow   = null;
+    if ($homeCityName !== '' && function_exists('swaapin_location_by_name')) {
+        $homeLocRow = swaapin_location_by_name($homeCityName, 'city')
+            ?? swaapin_location_by_name($homeCityName, 'province');
+    }
+
+    // نگاشت پارامتر cat طبق نقشه: اسلاگ جاری، آخرین سگمنت مسیر، سپس alias قدیمی
+    $homeCatSlug = swaapin_resolve_category_slug((string)($_GET['cat'] ?? ''));
+
+    if ($homeLocRow || $homeCatSlug !== null) {
+        $homeBase = $homeLocRow
+            ? rtrim(swaapin_location_url($homeLocRow), '/')
+            : rtrim(APP_URL, '/') . '/iran';
+        $homeTarget = $homeBase . ($homeCatSlug !== null ? '/' . rawurlencode($homeCatSlug) : '');
+
+        $homeKeep = [];
+        foreach (['q', 'want', 'want_category_id', 'condition', 'price_min', 'price_max', 'page'] as $hk) {
+            $hv = $_GET[$hk] ?? '';
+            if ($hv !== '' && $hv !== null && $hv !== '0' && $hv !== 0) {
+                $homeKeep[$hk] = $hv;
+            }
+        }
+        header('Location: ' . $homeTarget . ($homeKeep ? '?' . http_build_query($homeKeep) : ''), true, 301);
+        exit;
+    }
+}
 
 // resolve category
 $category = $catSlug ? DB::fetch('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [$catSlug]) : null;
@@ -51,8 +97,10 @@ if ($catId) {
     $params[] = $catId;
 }
 if ($city) {
-    $provinces = iran_provinces();
-    if (in_array($city, $provinces, true)) {
+    $isProvince = in_array($city, iran_provinces(), true);
+    // اگر ورودی هم‌نام یک شهر باشد (مثل «تهران») اولویت به شهر داده می‌شود، نه کل استان
+    $isCityName = $isProvince ? (bool) swaapin_location_by_name($city, 'city') : false;
+    if ($isProvince && !$isCityName) {
         $provinceCities = iran_cities_by_province($city);
         if (!empty($provinceCities)) {
             $placeholders = implode(',', array_fill(0, count($provinceCities), '?'));
@@ -61,17 +109,25 @@ if ($city) {
                 $params[] = $pc;
             }
         } else {
-            $whereClauses[] = 'l.city LIKE ?';
-            $params[] = "%{$city}%";
+            $whereClauses[] = 'l.city = ?';
+            $params[] = $city;
         }
     } else {
-        $whereClauses[] = 'l.city LIKE ?';
-        $params[] = "%{$city}%";
+        $whereClauses[] = 'l.city = ?';
+        $params[] = $city;
     }
 }
 if ($wantType) {
     $whereClauses[] = 'l.want_type = ?';
     $params[] = $wantType;
+}
+if ($wantCatId > 0) {
+    $whereClauses[] = 'l.want_category_id = ?';
+    $params[] = $wantCatId;
+}
+if ($dealType) {
+    $whereClauses[] = 'l.deal_type = ?';
+    $params[] = $dealType;
 }
 if ($timeAgo) {
     $intervalMap = [
@@ -124,10 +180,12 @@ $pag   = paginate($total, $displayLimit, $page);
 $listings = DB::fetchAll(
     "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
             c.name AS cat_name, c.slug AS cat_slug,
+            wc.name AS want_cat_name,
             (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
      FROM listings l
      JOIN users u ON u.id = l.user_id
      JOIN categories c ON c.id = l.category_id
+     LEFT JOIN categories wc ON wc.id = l.want_category_id
      {$where}
      ORDER BY {$orderBy}
      LIMIT ? OFFSET ?",
@@ -148,10 +206,12 @@ if (!$search && !$catSlug && $page === 1) {
     $premiumListings = DB::fetchAll(
         "SELECT l.*, u.name AS seller_name, u.rating AS seller_rating, u.city AS seller_city,
                 c.name AS cat_name, c.slug AS cat_slug,
+                wc.name AS want_cat_name,
                 (SELECT filename FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS thumb
          FROM listings l
          JOIN users u ON u.id = l.user_id
          JOIN categories c ON c.id = l.category_id
+         LEFT JOIN categories wc ON wc.id = l.want_category_id
          WHERE " . implode(' AND ', $premiumWhere) . "
          ORDER BY {$premiumOrderBy}
          LIMIT 20"
@@ -184,6 +244,7 @@ if (!$search && !$catSlug && $page === 1) {
     $storePredicate[] = '(store_name IS NOT NULL AND store_name != "")';
     $storePredicate[] = '(store_slug IS NOT NULL AND store_slug != "")';
     $hWhereParts[] = '(' . implode(' OR ', $storePredicate) . ')';
+    $hWhereParts[] = store_not_blocked_sql('store_slug');
 
     $hWhere = 'WHERE ' . implode(' AND ', $hWhereParts);
     $featuredStores = DB::fetchAll(
@@ -207,7 +268,7 @@ if (!$search && !$catSlug && $page === 1) {
             "SELECT {$fallbackCols},
                     (SELECT COUNT(*) FROM listings WHERE user_id = users.id AND status = 'active' AND review_status = 'approved') AS listings_count
              FROM users
-             WHERE is_active = 1
+             WHERE is_active = 1 AND " . store_not_blocked_sql('store_slug') . "
              ORDER BY created_at DESC, id DESC
              LIMIT 6"
         );
@@ -509,7 +570,7 @@ render_navbar($user);
         <section class="home-listings-section home-listings-section--newest" aria-label="آگهی‌های ویژه">
           <div class="home-section-heading newest-home-section-heading home-section-heading--large mb-5">
             <h2>آگهی‌های ویژه</h2>
-            <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
+            <a href="<?= APP_URL ?>/iran" class="home-section-heading__link">
               مشاهده همه
             </a>
           </div>
@@ -541,7 +602,7 @@ render_navbar($user);
         <section id="listings" class="home-listings-section home-listings-section--newest" aria-label="فهرست آگهی‌ها">
           <div class="home-section-heading newest-home-section-heading home-section-heading--large mb-5">
             <h2>جدیدترین آگهی‌ها</h2>
-            <a href="<?= APP_URL ?>/listings/" class="home-section-heading__link">
+            <a href="<?= APP_URL ?>/iran" class="home-section-heading__link">
               مشاهده همه
             </a>
           </div>
@@ -612,7 +673,7 @@ render_navbar($user);
                   $storeCity = $hStoresCityCol ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
                   $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
                   $storeTypeValue = $hStoresTypeCol ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
-                  $shopUrl = APP_URL . '/shop/' . ($storeTypeValue === 'both' ? 'both' : $storeTypeValue) . '/' . h($slug);
+                  $shopUrl = APP_URL . '/shop/' . h($slug);
                   $storeTypeLabels = store_type_labels();
                   $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
                   $storeTypeBadgeClass = match($storeTypeValue) {

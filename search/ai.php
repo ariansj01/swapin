@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/layout.php';
+require_once __DIR__ . '/../includes/need_discovery.php';
 
 $user = auth_user();
 $need  = trim(clean($_GET['need'] ?? $_POST['need'] ?? ''));
@@ -27,6 +28,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_search']) && $us
 
 if ($need && mb_strlen($need) >= 3) {
     $result = ai_search_listings_by_need($need, $city ?: null, 24);
+    // فاز ۵: ثبت نیاز کشف‌شده در user_needs برای یادگیری مستمر
+    // منبع chat انتخاب شد تا بازسازی پروفایل (که نیازهای iso/search را بازتولید می‌کند) آن را پاک نکند
+    if ($user && $result) {
+        try {
+            need_discovery_record((int)$user['id'], $result['filters'] ?? [], $need, 'chat');
+        } catch (Throwable $e) {
+            swapin_debug_log('need-discovery-search-failed', ['msg' => $e->getMessage()]);
+        }
+    }
 }
 
 render_head('جستجوی هوشمند AI | ' . APP_NAME, 'نیاز خود را بنویسید — AI بهترین آگهی‌های معاوضه را پیدا می‌کند', [

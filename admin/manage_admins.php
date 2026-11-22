@@ -82,6 +82,7 @@ $sections = [
     'ai_moderation'  => 'نظارت AI',
     'stores'         => 'فروشگاه‌ها',
     'store_requests' => 'درخواست فروشگاه',
+    'clubs'          => 'کلاب‌ها',
     'kyc'            => 'احراز هویت',
     'inspections'    => 'بازرسی',
     'disputes'       => 'اختلافات',

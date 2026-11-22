@@ -154,7 +154,7 @@ $combinedPairs = [
             <h2 class="ex-title">دسته‌های اصلی معاوضه</h2>
             <div class="ex-grid">
                 <?php foreach ($mainCats as $cat): ?>
-                    <a href="<?= APP_URL ?>/listings/?cat=<?= urlencode($cat['slug']) ?>" class="ex-chip">
+                    <a href="<?= APP_URL ?>/iran?cat=<?= urlencode($cat['slug']) ?>" class="ex-chip">
                         معاوضه <?= h($cat['name']) ?>
                     </a>
                 <?php endforeach; ?>
@@ -170,7 +170,7 @@ $combinedPairs = [
                     <div class="ex-combined-label"><?= h($group) ?> با...</div>
                     <div class="ex-scroll">
                         <?php foreach ($subs as $sub): ?>
-                            <a href="<?= APP_URL ?>/listings/?q=<?= urlencode($sub['q']) ?>&want=<?= urlencode($sub['w']) ?>" class="ex-sub-chip">
+                            <a href="<?= APP_URL ?>/iran?q=<?= urlencode($sub['q']) ?>&want=<?= urlencode($sub['w']) ?>" class="ex-sub-chip">
                                 <?= h($sub['label']) ?>
                             </a>
                         <?php endforeach; ?>

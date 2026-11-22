@@ -41,6 +41,7 @@ if ($hasStoreType && $type !== '') {
 }
 
 $whereParts[] = 'store_slug IS NOT NULL AND store_slug != ""';
+$whereParts[] = store_not_blocked_sql('store_slug');
 $where = 'WHERE ' . implode(' AND ', $whereParts);
 
 $total = (int)(DB::fetch("SELECT COUNT(*) AS c FROM users {$where}", $params)['c'] ?? 0);
@@ -164,7 +165,7 @@ render_navbar($user);
         $storeCity = $hasStoreCity ? ($store['store_city'] ?: $store['city']) : ($store['city'] ?? '');
         $bannerUrl = !empty($store['store_banner']) ? UPLOAD_URL . $store['store_banner'] : APP_URL . '/src/img/heropng.png';
         $storeTypeValue = $hasStoreType ? normalize_store_type($store['store_type'] ?? 'both') : 'both';
-        $shopUrl = APP_URL . '/shop/' . ($storeTypeValue === 'both' ? 'both' : $storeTypeValue) . '/' . h($slug);
+        $shopUrl = APP_URL . '/shop/' . h($slug);
         $storeTypeLabels = store_type_labels();
         $storeTypeLabel = $storeTypeLabels[$storeTypeValue] ?? '';
         $storeTypeBadgeClass = match($storeTypeValue) {

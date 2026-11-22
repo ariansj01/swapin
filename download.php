@@ -6,12 +6,11 @@ $user = auth_user();
 
 $directApkUrl = APP_URL . '/downloads/swaapin.apk';
 $bazaarUrl    = 'https://cafebazaar.ir/app/ir.swaapin.mobile';
-$pwaUrl       = APP_URL . '/pwa';
 
 render_head(
-    'دانلود اپلیکیشن سواَپین | ' . APP_NAME,
-    'دانلود اپلیکیشن اندروید سواَپین — دانلود مستقیم APK، دانلود از کافه‌بازار و نصب نسخه وب (PWA).',
-    ['canonical' => APP_URL . '/download']
+    'دانلود برنامه سواَپین | اپلیکیشن اندروید و نسخه وب',
+    'دانلود برنامه سواَپین — دانلود مستقیم APK، دانلود از کافه‌بازار و نصب نسخه وب (PWA). اپلیکیشن اندروید سواَپین برای معاوضه سریع‌تر کالا.',
+    ['canonical' => APP_URL . '/app']
 );
 render_navbar($user);
 ?>
@@ -64,9 +63,9 @@ render_navbar($user);
           <p style="color:var(--text-muted);font-size:.9rem;line-height:1.9;min-height:56px">
             بدون دانلود فایل، سواَپین را مثل یک اپلیکیشن روی صفحه‌خانه نصب کنید.
           </p>
-          <a href="<?= h($pwaUrl) ?>" class="btn btn-outline w-100">
+          <button type="button" class="btn btn-outline w-100" onclick="if(window.SwaapinPWA){SwaapinPWA.showInstallPrompt();}">
             <i class="bi bi-plus-square"></i> نصب نسخه وب
-          </a>
+          </button>
         </div>
       </div>
 

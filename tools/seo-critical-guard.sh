@@ -93,8 +93,8 @@ echo
 echo "[3] CATEGORY REDIRECT + CANONICAL"
 
 for pair in \
-    "$BASE/category/electronics|$BASE/electronics" \
-    "$BASE/category/home-kitchen|$BASE/home-kitchen"
+    "$BASE/category/electronics|$BASE/iran/electronics" \
+    "$BASE/category/home-kitchen|$BASE/iran/home-kitchen"
 do
     OLD_CAT="${pair%%|*}"
     NEW_CAT="${pair##*|}"
@@ -124,7 +124,10 @@ echo "[4] PUBLIC SITEMAP"
 SITEMAP="$(mktemp)"
 trap 'rm -f "$SITEMAP"' EXIT
 
-curl -fsSL "$BASE/sitemap.php" > "$SITEMAP"
+for sm in sitemap-locations.xml sitemap-categories.xml sitemap-brands.xml \
+          sitemap-swap.xml sitemap-ads.xml sitemap-shops.xml sitemap-pages.xml; do
+    curl -fsSL "$BASE/$sm" >> "$SITEMAP" || true
+done
 
 if grep -qE '<loc>https://swaapin\.ir/trades/?</loc>' "$SITEMAP"; then
     fail "/trades is still present in public sitemap"
@@ -133,18 +136,7 @@ else
 fi
 
 echo
-echo "[5] RETIRED PAGE SITEMAP"
-
-RETIRED_SITEMAP_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "$BASE/sitemap-pages.php" || true)"
-
-if [ "$RETIRED_SITEMAP_CODE" = "410" ]; then
-    pass "sitemap-pages.php returns HTTP 410"
-else
-    fail "sitemap-pages.php returned HTTP $RETIRED_SITEMAP_CODE instead of 410"
-fi
-
-echo
-echo "[6] ALL SITEMAP URL HTTP STATUS"
+echo "[5] ALL SITEMAP URL HTTP STATUS"
 
 while IFS= read -r url; do
     [ -z "$url" ] && continue
@@ -155,16 +147,17 @@ while IFS= read -r url; do
         fail "Sitemap URL not 200: $code $url"
     fi
 done < <(
-    {
-        curl -fsSL "$BASE/sitemap.php" || true
-    } \
+    for sm in sitemap-locations.xml sitemap-categories.xml sitemap-brands.xml \
+              sitemap-swap.xml sitemap-ads.xml sitemap-shops.xml sitemap-pages.xml; do
+        curl -fsSL "$BASE/$sm" || true
+    done \
       | sed -n 's:.*<loc>\(.*\)</loc>.*:\1:p' \
       | sed 's/&amp;/\&/g' \
       | sort -u
 )
 
 echo
-echo "[7] WORDPRESS PERMALINK"
+echo "[6] WORDPRESS PERMALINK"
 
 if command -v wp >/dev/null 2>&1 && [ -d "$BLOG" ]; then
     P="$(cd "$BLOG" && wp option get permalink_structure --allow-root 2>/dev/null || true)"

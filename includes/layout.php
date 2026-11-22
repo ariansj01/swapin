@@ -58,19 +58,16 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/content_manager.php';
 require_once __DIR__ . '/seo.php';
 require_once __DIR__ . '/dashboard_layout.php';
+require_once __DIR__ . '/behavior.php';
 
 function render_head(string $title = '', string $desc = '', array $seo = []): void {
-    if ($title) {
-        $safeTitle = h($title);
-
-        if (mb_strpos($title, APP_NAME) !== false) {
-            $t = $safeTitle;
-        } else {
-            $t = $safeTitle . ' — ' . APP_NAME;
-        }
-    } else {
-        $t = APP_NAME . ' — بازار تعویض هوشمند';
+    // ثبت شناسه ناشناس بازدیدکننده پیش از ارسال هدرها (برای پیوند رفتار مهمان به کاربر پس از ورود)
+    if (function_exists('behavior_anon_id') && function_exists('behavior_is_bot') && !behavior_is_bot()) {
+        behavior_anon_id();
     }
+    // سئو: تایتل طبق الگوی هر صفحه ساخته می‌شود و نام برند در انتهای آن نمی‌آید
+    // (شیت «قالب تایتل و H1»). بریدن خودکار تایتل با «…» هم انجام نمی‌شود.
+    $t         = $title !== '' ? h($title) : APP_NAME . ' — بازار تعویض هوشمند';
     $d         = $desc  ? h($desc)  : 'کالا و خدمات را مستقیم در سواَپین مبادله کنید — بازار تعویض هوشمند.';
     $url       = APP_URL;
     $canonical = h(seo_resolve_canonical($seo['canonical'] ?? null));
@@ -99,6 +96,9 @@ function render_head(string $title = '', string $desc = '', array $seo = []): vo
             $blocks = [$blocks];
         }
         foreach ($blocks as $block) {
+            if (!is_array($block) || $block === []) {
+                continue;
+            }
             $jsonLd .= '<script type="application/ld+json">'
                 . json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
                 . "</script>\n";
@@ -311,7 +311,10 @@ function render_navbar(?array $user = null): void {
     foreach ($cities_list as $c) {
         $cname = h($c);
         $active = ($city === $c) ? 'active' : '';
-        $cityOptionsHtml .= "<a href=\"{$url}/?city=" . urlencode($c) . "\" class=\"dropdown-item navbar-city-select__item {$active}\" data-city=\"{$cname}\">{$cname}</a>";
+        // آدرس تمیز مکان (/{location}) به‌جای پارامتر ?city= تا صفحه‌ی استانی قابل ایندکس باشد
+        $provSlug = function_exists('swaapin_location_slug') ? swaapin_location_slug($c, 'province') : '';
+        $href = $provSlug !== '' ? "{$url}/" . rawurlencode($provSlug) : "{$url}/?city=" . urlencode($c);
+        $cityOptionsHtml .= "<a href=\"{$href}\" class=\"dropdown-item navbar-city-select__item {$active}\" data-city=\"{$cname}\">{$cname}</a>";
     }
 
     $contentPageNavLinks = content_page_nav_links_html();
@@ -332,7 +335,7 @@ function render_navbar(?array $user = null): void {
             <i class="bi bi-chevron-down navbar-city-select__chev"></i>
           </button>
           <div class="dropdown-menu navbar-city-select__menu" id="city-select-menu">
-            <a href="{$url}/" class="dropdown-item navbar-city-select__item" data-city="">همه شهرها</a>
+            <a href="{$url}/iran" class="dropdown-item navbar-city-select__item" data-city="">همه شهرها</a>
             {$cityOptionsHtml}
           </div>
         </div>
@@ -340,7 +343,7 @@ function render_navbar(?array $user = null): void {
         <form class="navbar-searchbar-form" action="{$url}/" method="get">
           <i class="bi bi-search navbar-searchbar-form__icon"></i>
           <input type="search" class="navbar-searchbar-form__input"
-                 name="q" placeholder="دنبال چه کالایی می‌گردییییی؟"
+                 name="q" placeholder="دنبال چه کالایی می‌گردی؟"
                  value="{$search}">
           {$cityHiddenInput}
         </form>
@@ -421,7 +424,7 @@ HTML;
             <i class="bi bi-grid"></i> دسته‌بندی‌ها <i class="bi bi-chevron-down" style="font-size:.75rem"></i>
           </button>
           <div class="dropdown-menu categories-dropdown" id="categories-dropdown">
-            <a href="{$url}/listings/" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
+            <a href="{$url}/iran" class="dropdown-item"><i class="bi bi-grid"></i> همه</a>
 HTML;
     echo $_renderCatLevel($categories, 0, $_renderCatLevel);
     echo <<<HTML
@@ -438,6 +441,10 @@ HTML;
             <a href="{$url}/shops/online" class="dropdown-item"><i class="bi bi-globe2"></i> فروشگاه‌های آنلاین</a>
           </div>
         </div>
+
+        <a href="{$url}/clubs" class="navbar-nav__link">
+          <i class="bi bi-people"></i> کلاب‌
+        </a>
 
         <div class="dropdown">
           <button class="navbar-nav__link navbar-nav__link--ai" id="ai-dropdown-btn" style="border:none;background:none;cursor:pointer">
@@ -492,6 +499,7 @@ HTML;
     echo "<a href=\"{$url}/shops\" class=\"mobile-drawer__link\"><i class=\"bi bi-shop\"></i> فروشگاه‌ها</a>";
     echo "<a href=\"{$url}/shops/online\" class=\"mobile-drawer__link\"><i class=\"bi bi-globe2\"></i> فروشگاه‌های آنلاین</a>";
     echo "<a href=\"{$url}/shops/physical\" class=\"mobile-drawer__link\"><i class=\"bi bi-building-check\"></i> فروشگاه‌های حضوری</a>";
+    echo "<a href=\"{$url}/clubs\" class=\"mobile-drawer__link\"><i class=\"bi bi-people\"></i> کلاب‌ها</a>";
     echo "<div class=\"mobile-drawer__divider\"></div>";
     // echo "<a href=\"{$url}/#home-steps\" class=\"mobile-drawer__link\"><i class=\"bi bi-diagram-3\"></i> سواَپین چگونه کار می‌کند؟</a>";
     echo "<a href=\"{$url}/installment-swap\" class=\"mobile-drawer__link\"><i class=\"bi bi-calendar-check\"></i> مبادله قسطی</a>";
@@ -665,7 +673,7 @@ function render_footer(): void {
         <p>سواَپین بستری امن و آسان برای معاوضه‌ی کالاها و خدمات در سراسر ایران</p>
       </div>
       <div class="site-footer__compact-col site-footer__compact-col--links">
-        <a href="{$url}/download">دانلود اپلیکیشن</a>
+        <a href="{$url}/app">دانلود اپلیکیشن</a>
         <span>|</span>
         <a href="{$url}/fraud-prevention">راهنمای امنیت</a>
         <span>|</span>
@@ -765,9 +773,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 </script>
-</body>
-</html>
 HTML;
+    behavior_render_client();
+    echo "</body>\n</html>\n";
 }
 
 function render_listing_simple_footer(): void {
@@ -779,7 +787,7 @@ function render_listing_simple_footer(): void {
 
     $footerLinks = [
         [$url . '/',                   'صفحه اصلی',  'bi-house'],
-        [$url . '/listings/',          'آگهی‌ها',    'bi-grid'],
+        [$url . '/iran',               'آگهی‌ها',    'bi-grid'],
         [$url . '/shops',              'فروشگاه‌ها', 'bi-shop'],
         [$url . '/search/ai',          'دستیار AI',  'bi-stars'],
         [$url . '/trades',             'اتاق امن',   'bi-shield-lock'],
@@ -845,9 +853,9 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
-</body>
-</html>
 HTML;
+    behavior_render_client();
+    echo "</body>\n</html>\n";
 }
 
 function render_full_page_modal(string $title, string $message, string $buttonText, string $buttonUrl, string $icon): void {
@@ -874,6 +882,17 @@ function render_support_widget(?array $user = null): void {
     $csrf   = h(csrf_token());
     $name   = $user ? h(trim((string)($user['name'] ?? ''))) : '';
 
+    $supQuestions = [
+        'چطور در سواپین ثبت‌نام کنم؟',
+        'چطور کالایم را برای معاوضه ثبت کنم؟',
+        'معاوضه در سواپین چطور انجام می‌شود؟',
+    ];
+    $qHtml = '';
+    foreach ($supQuestions as $q) {
+        $qe = h($q);
+        $qHtml .= "<button type=\"button\" class=\"support-chat__qbtn\" data-topic=\"{$qe}\">{$qe}</button>";
+    }
+
     echo <<<HTML
 <div class="support-widget" id="support-widget" data-user-name="{$name}">
   <button type="button" class="support-widget__toggle" id="support-widget-toggle" aria-label="پشتیبانی" aria-expanded="false">
@@ -881,43 +900,61 @@ function render_support_widget(?array $user = null): void {
   </button>
   <div class="support-chat" id="support-chat" hidden>
     <div class="support-chat__header">
-      <div class="support-chat__title">
-        <i class="bi bi-headset"></i>
-        <span>پشتیبانی سواَپین</span>
-        <small class="support-chat__subtitle">پاسخگوی سوالات شما هستیم</small>
-      </div>
       <button type="button" class="support-chat__close" id="support-chat-close" aria-label="بستن">
         <i class="bi bi-x-lg"></i>
       </button>
+      <div class="support-chat__head-info">
+        <span class="support-chat__title">پشتیبانی سواَپین</span>
+        <span class="support-chat__subtitle">سلام! برای شروع، نام خود را وارد کنید</span>
+      </div>
+      <div class="support-chat__head-avatars">
+        <div class="support-chat__head-avatar"><i class="bi bi-headset"></i></div>
+        <div class="support-chat__head-avatar"><i class="bi bi-person-badge"></i></div>
+      </div>
     </div>
 
     <div class="support-chat__body" id="support-chat-body">
       <input type="hidden" name="_csrf" value="{$csrf}">
 
-      <div class="support-chat__name" id="support-chat-name-step" hidden>
-        <p class="support-chat__lead">برای شروع گفتگو، مشخصات خود را تکمیل کنید</p>
-        <div class="support-chat__form-fields">
-          <div class="support-chat__field">
-            <input type="text" class="support-chat__input" id="support-chat-name" placeholder="نام و نام خانوادگی" autocomplete="off">
+      <!-- نمای فرم (مشابه عکس) -->
+      <div class="support-chat__form-view" id="support-chat-form-view">
+        <div class="support-chat__msg support-chat__msg--ai">
+          <div class="support-chat__bubble">
+            <p class="support-chat__lead">چگونه می‌توانیم کمکتان کنیم؟</p>
+            <div class="support-chat__qbuttons">{$qHtml}</div>
           </div>
-          <div class="support-chat__field">
-            <input type="tel" class="support-chat__input" id="support-chat-phone" placeholder="تلفن همراه" autocomplete="off" inputmode="numeric" dir="ltr">
+        </div>
+
+        <div class="support-chat__msg support-chat__msg--ai">
+          <div class="support-chat__bubble">
+            <p>کاربر گرامی ؛ ساعت پاسخ دهی به سوالات و پیگیری مسائل شما در گفتگوی آنلاین از ساعت ۹ تا ۲۱ می‌باشد.</p>
           </div>
-          <button type="button" class="support-chat__start-btn" id="support-chat-name-go">شروع گفتگو</button>
+        </div>
+
+        <div class="support-chat__msg support-chat__msg--ai">
+          <div class="support-chat__bubble support-chat__bubble--form">
+            <p class="support-chat__lead">برای شروع گفتگو لطفا فرم زیر را تکمیل کنید</p>
+            <form id="support-chat-start-form" novalidate>
+              <input type="hidden" name="topic" id="support-chat-topic" value="">
+              <div class="support-chat__field">
+                <input type="text" id="support-chat-name" name="name" class="support-chat__line-input" placeholder="نام و نام خانوادگی" autocomplete="name" required>
+              </div>
+              <div class="support-chat__field">
+                <input type="tel" id="support-chat-phone" name="phone" class="support-chat__line-input" placeholder="تلفن همراه" autocomplete="tel" maxlength="11" required>
+              </div>
+              <button type="submit" class="support-chat__start-btn" id="support-chat-start-btn">شروع</button>
+            </form>
+          </div>
         </div>
       </div>
 
-      <div class="support-chat__faq" id="support-chat-faq" hidden>
-        <p class="support-chat__lead">چطور می‌توانم کمکتان کنم؟</p>
-        <div class="support-chat__chips" id="support-chat-chips"></div>
-      </div>
-
+      <!-- نمای گفتگو -->
       <div class="support-chat__messages" id="support-chat-messages" hidden></div>
     </div>
 
-    <div class="support-chat__form" id="support-chat-form">
-      <div class="support-chat__composer" id="support-chat-composer" hidden>
-        <input type="text" class="support-chat__input" id="support-chat-msg" placeholder="پیام خود را بنویسید…" autocomplete="off">
+    <div class="support-chat__form" id="support-chat-form" hidden>
+      <div class="support-chat__composer" id="support-chat-composer">
+        <input type="text" class="support-chat__input" id="support-chat-msg" placeholder="یا پیام خود را بنویسید…" autocomplete="off">
         <button type="button" class="support-chat__send" id="support-chat-send" aria-label="ارسال">
           <i class="bi bi-send-fill"></i>
         </button>
@@ -933,19 +970,17 @@ function render_categories_strip(?int $active = null): void {
     echo '<div class="category-strip">';
     $cls  = $active === null ? ' active' : '';
     $categoryImages = [
-        'electronics' => APP_URL . '/src/img/category/electronic-devices.png',
-        'clothing' => APP_URL . '/src/img/category/personal.png',
-        'home-garden' => APP_URL . '/src/img/category/home-kitchen.png',
-        'books-media' => APP_URL . '/src/img/category/leisure-hobbies.png',
-        'sports' => APP_URL . '/src/img/category/leisure-hobbies.png',
-        'toys-games' => APP_URL . '/src/img/category/leisure-hobbies.png',
+        'real-estate' => APP_URL . '/src/img/category/real-estate.png',
         'vehicles' => APP_URL . '/src/img/category/vehicles.png',
-        'services' => APP_URL . '/src/img/category/services.png',
-        'food-drink' => APP_URL . '/src/img/category/home-kitchen.png',
-        'other' => APP_URL . '/src/img/category/community.png',
+        'electronics' => APP_URL . '/src/img/category/electronic-devices.png',
+        'home-kitchen' => APP_URL . '/src/img/category/home-kitchen.png',
+        'personal-items' => APP_URL . '/src/img/category/personal.png',
+        'leisure-hobbies' => APP_URL . '/src/img/category/leisure-hobbies.png',
+        'tools-equipment' => APP_URL . '/src/img/category/tools-materials-equipment.png',
+        'jobs-services' => APP_URL . '/src/img/category/jobs.png',
     ];
 
-    echo "<a href='" . APP_URL . "/listings/' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
+    echo "<a href='" . APP_URL . "/iran' class='cat-pill{$cls}'><div class='cat-pill__icon'><i class='bi bi-grid'></i></div><span class='cat-pill__label'>همه</span></a>";
     foreach ($cats as $c) {
         $cls = $active == $c['id'] ? ' active' : '';
         $catUrl = category_url($c['slug']);
@@ -957,5 +992,5 @@ function render_categories_strip(?int $active = null): void {
         }
         echo "<a href='{$catUrl}' class='cat-pill{$cls}'><div class='cat-pill__icon'>{$imageHtml}</div><span class='cat-pill__label'>" . category_label($c['slug'], $c['name']) . "</span></a>";
     }
-    }
     echo '</div>';
+}

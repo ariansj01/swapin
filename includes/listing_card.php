@@ -56,6 +56,10 @@ $listingMode = trim((string)($l['listing_mode'] ?? ''));
 if ($listingMode === '') {
     $listingMode = 'swap';
 }
+$dealType = trim((string)($l['deal_type'] ?? $listingMode));
+if ($dealType === '') {
+    $dealType = 'swap';
+}
 $hasSwapCta = in_array($listingMode, ['swap', 'both'], true);
 $hasSellCta = $hasStore && in_array($listingMode, ['sell', 'both'], true);
 $isSaved  = isset($l['id']) && in_array((int)$l['id'], $_savedListingIds, true);
@@ -83,7 +87,7 @@ $cardLayout = isset($cardLayout) ? $cardLayout : 'vertical';
 $isHorizontal = $cardLayout === 'horizontal';
 $isPremiumHorizontal = $cardLayout === 'premium-horizontal';
 ?>
-<article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= $isPremiumHorizontal ? 'listing-card--premium-horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>">
+<article class="listing-card listing-card--v2 <?= $isHorizontal ? 'listing-card--horizontal' : '' ?> <?= $isPremiumHorizontal ? 'listing-card--premium-horizontal' : '' ?> <?= h($promotionClass) ?>" style="cursor: pointer;" data-navigate="<?= $cardHref ?>" data-listing-id="<?= (int)$l['id'] ?>" data-category-id="<?= (int)($l['category_id'] ?? 0) ?>">
 
   <!-- ========== IMAGE SECTION (TOP) ========== -->
   <div class="lc-media-wrapper">
@@ -98,6 +102,13 @@ $isPremiumHorizontal = $cardLayout === 'premium-horizontal';
     <!-- Badges Row on Image - Top Right -->
     <div class="lc-badges-row"
          style="display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+      <?php // بدج «نوع معامله» (معاوضه / فروش / معاوضه یا فروش) ?>
+      <span class="lc-badge lc-badge--deal lc-badge--deal-<?= h($dealType) ?>"
+            style="display:inline-flex !important; visibility:visible !important; opacity:1 !important;"
+            title="نوع معامله">
+        <i class="bi <?= h(deal_type_icon($dealType)) ?>"></i>
+        <?= h(deal_type_label($dealType)) ?>
+      </span>
       <?php if ($hasPromo): ?>
         <?php foreach ($allPromotions as $p): ?>
       <span class="lc-badge lc-badge--promo <?= $p['badge_class'] ?? '' ?>"
@@ -160,10 +171,16 @@ $isPremiumHorizontal = $cardLayout === 'premium-horizontal';
       <h3 class="lc-title"><?= h($l['title']) ?></h3>
       
       <!-- Want in Return Box -->
-      <?php if (!empty($l['want_in_return'])): ?>
+      <?php 
+      $wantText = $l['want_in_return'] ?? '';
+      if (!empty($l['want_cat_name'])) {
+          $wantText = $l['want_cat_name'] . (!empty($l['want_in_return']) ? ' (' . $l['want_in_return'] . ')' : '');
+      }
+      ?>
+      <?php if (!empty($wantText)): ?>
       <div class="lc-want-box">
         <span class="lc-want-arrow"><i class="bi bi-arrow-left-right"></i></span>
-        <span class="lc-want-text" style="text-align: start;">مبادله با <?= h($l['want_in_return']) ?></span>
+        <span class="lc-want-text" style="text-align: start;">مبادله با <?= h($wantText) ?></span>
       </div>
       <?php endif; ?>
 
@@ -240,10 +257,16 @@ $isPremiumHorizontal = $cardLayout === 'premium-horizontal';
     <?php endif; ?>
 
     <!-- Want in Return Box -->
-    <?php if (!empty($l['want_in_return'])): ?>
+    <?php 
+    $wantText = $l['want_in_return'] ?? '';
+    if (!empty($l['want_cat_name'])) {
+        $wantText = $l['want_cat_name'] . (!empty($l['want_in_return']) ? ' (' . $l['want_in_return'] . ')' : '');
+    }
+    ?>
+    <?php if (!empty($wantText)): ?>
     <div class="lc-want-box">
       <span class="lc-want-arrow"><i class="bi bi-arrow-left-right"></i></span>
-      <span class="lc-want-text" style="text-align: start;">مبادله با <?= h($l['want_in_return']) ?></span>
+      <span class="lc-want-text" style="text-align: start;">مبادله با <?= h($wantText) ?></span>
     </div>
     <?php endif; ?>
 
@@ -505,6 +528,32 @@ html body main .listing-card.listing-card--v2 .lc-media-wrapper .lc-badges-row .
   border: 1px solid rgba(7, 26, 51, 0.4);
 }
 .lc-badge--swap i { color: #FBBF24; }
+
+/* Deal Type Badge — نوع معامله (معاوضه / فروش / معاوضه یا فروش) */
+.lc-badge--deal {
+  background: rgba(255, 255, 255, 0.72);
+  color: #071A33;
+  border: 1px solid rgba(7, 26, 51, 0.15);
+  cursor: default;
+}
+.lc-badge--deal-swap {
+  background: rgba(7, 26, 51, 0.55);
+  color: #ffffff;
+  border: 1px solid rgba(7, 26, 51, 0.4);
+}
+.lc-badge--deal-swap i { color: #FBBF24; }
+.lc-badge--deal-sell {
+  background: linear-gradient(135deg, rgba(255, 102, 0, 0.62) 0%, rgba(234, 88, 12, 0.62) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(194, 65, 12, 0.5);
+}
+.lc-badge--deal-sell i { color: #ffffff; }
+.lc-badge--deal-both {
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.62) 0%, rgba(7, 26, 51, 0.62) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(0, 102, 255, 0.5);
+}
+.lc-badge--deal-both i { color: #FBBF24; }
 
 /* Multi-party swap Badge — blue/teal distinguishing entry point */
 .lc-badge--group {

@@ -25,14 +25,14 @@
     <nav class="home-sidebar-cats" aria-label="دسته‌بندی‌ها">
       <?php
       $sidebarCats = [
-          ['slug' => 'real-estate',     'name' => 'املاک',              'icon' => 'bi-house',          'img'  => 'real-estate.png'],
-          ['slug' => 'vehicles',        'name' => 'وسایل نقلیه',        'icon' => 'bi-car-front',      'img'  => 'vehicles.png'],
-          ['slug' => 'electronics',     'name' => 'کالای دیجیتال',      'icon' => 'bi-phone',          'img'  => 'electronic-devices.png'],
-          ['slug' => 'home-garden',     'name' => 'خانه و آشپزخانه',    'icon' => 'bi-chef-hat',       'img'  => 'home-kitchen.png'],
-          ['slug' => 'services',        'name' => 'خدمات',              'icon' => 'bi-cursor',         'img'  => 'services.png'],
-          ['slug' => 'clothing',        'name' => 'پوشاک',              'icon' => 'bi-t-shirt',        'img'  => 'personal.png'],
-          ['slug' => 'sports',          'name' => 'ورزش و سرگرمی',     'icon' => 'bi-soccer',         'img'  => 'leisure-hobbies.png'],
-          ['slug' => 'jobs',            'name' => 'استخدام و کاریابی',  'icon' => 'bi-briefcase',      'img'  => 'jobs.png'],
+          ['slug' => 'real-estate',     'name' => 'املاک',                  'icon' => 'bi-house',      'img'  => 'real-estate.png'],
+          ['slug' => 'vehicles',        'name' => 'وسایل نقلیه',            'icon' => 'bi-car-front',  'img'  => 'vehicles.png'],
+          ['slug' => 'electronics',     'name' => 'کالای دیجیتال',          'icon' => 'bi-phone',      'img'  => 'electronic-devices.png'],
+          ['slug' => 'home-kitchen',    'name' => 'لوازم خانه و آشپزخانه',  'icon' => 'bi-chef-hat',   'img'  => 'home-kitchen.png'],
+          ['slug' => 'personal-items',  'name' => 'وسایل شخصی',             'icon' => 'bi-t-shirt',    'img'  => 'personal.png'],
+          ['slug' => 'leisure-hobbies', 'name' => 'سرگرمی و فراغت',         'icon' => 'bi-soccer',     'img'  => 'leisure-hobbies.png'],
+          ['slug' => 'tools-equipment', 'name' => 'مصالح، ابزار و تجهیزات', 'icon' => 'bi-hammer',     'img'  => 'tools-materials-equipment.png'],
+          ['slug' => 'jobs-services',   'name' => 'استخدام و خدمات',        'icon' => 'bi-briefcase',  'img'  => 'jobs.png'],
       ];
       $catImgBase = APP_URL . '/src/img/category/';
       
@@ -190,7 +190,7 @@
       <a href="<?= APP_URL ?>/faq">سوالات متداول</a>
     </div>
     <div class="home-sidebar-menu">
-      <a href="<?= APP_URL ?>/pwa">نصب اپلیکیشن</a>
+      <a href="<?= APP_URL ?>/app">نصب اپلیکیشن</a>
       <span class="home-sidebar-menu__dot"></span>
       <a href="<?= APP_URL ?>/blog">بلاگ</a>
       <span class="home-sidebar-menu__dot"></span>
