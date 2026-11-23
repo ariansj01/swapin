@@ -384,14 +384,24 @@ if ($storeMode) {
           <p class="wizard-step-subtitle">عنوان، توضیحات، تصاویر و جزئیات کالا را وارد کنید.</p>
 
           <div class="wizard-form-group">
-            <label class="wizard-form-label">عنوان آگهی *</label>
+            <div class="wizard-label-row">
+              <label class="wizard-form-label" for="wz-title">عنوان آگهی *</label>
+              <button type="button" class="ai-improve-btn" data-ai-improve="title">
+                <i class="bi bi-stars"></i> بهبود با هوش مصنوعی
+              </button>
+            </div>
             <input type="text" name="title" id="wz-title" class="wizard-form-input" 
                    placeholder="مثلا آیفون ۱۳ پرو مکس ۲۵۶ گیگ" maxlength="200" value="<?= h($vals['title']) ?>">
             <div class="char-count"><span id="wz-title-count"><?= mb_strlen((string)$vals['title']) ?></span>/200 کاراکتر</div>
           </div>
 
           <div class="wizard-form-group">
-            <label class="wizard-form-label">توضیحات *</label>
+            <div class="wizard-label-row">
+              <label class="wizard-form-label" for="wz-desc">توضیحات *</label>
+              <button type="button" class="ai-improve-btn" data-ai-improve="description">
+                <i class="bi bi-stars"></i> بهبود با هوش مصنوعی
+              </button>
+            </div>
             <textarea name="description" id="wz-desc" class="wizard-form-textarea" rows="4"
                       placeholder="کالا را با جزئیات توضیح دهید — سن، برند، مشخصات، ایرادات…"><?= h($vals['description']) ?></textarea>
             <div class="char-count"><span id="wz-desc-count"><?= mb_strlen((string)$vals['description']) ?></span> کاراکتر</div>
@@ -409,12 +419,25 @@ if ($storeMode) {
             <div class="image-previews" id="wz-preview-grid"></div>
           </div>
 
-          <div class="wizard-form-group">
-            <label class="wizard-form-label">دسته‌بندی *</label>
-            <?= render_wizard_category_picker((int)$vals['category_id'], true) ?>
-            <?php if (isset($errors['category_id'])): ?>
-            <div class="invalid-feedback" style="display:block"><?= h($errors['category_id']) ?></div>
-            <?php endif; ?>
+          <div class="wizard-form-row">
+            <div class="wizard-form-group">
+              <label class="wizard-form-label">دسته‌بندی *</label>
+              <?= render_wizard_category_picker((int)$vals['category_id'], true) ?>
+              <?php if (isset($errors['category_id'])): ?>
+              <div class="invalid-feedback" style="display:block"><?= h($errors['category_id']) ?></div>
+              <?php endif; ?>
+            </div>
+
+            <div class="wizard-form-group">
+              <label class="wizard-form-label" for="wz-condition">وضعیت کالا *</label>
+              <select name="condition" id="wz-condition" class="wizard-form-select">
+                <option value="new" <?= $vals['condition'] === 'new' ? 'selected' : '' ?>>نو</option>
+                <option value="like_new" <?= $vals['condition'] === 'like_new' ? 'selected' : '' ?>>مثل نو</option>
+                <option value="good" <?= $vals['condition'] === 'good' ? 'selected' : '' ?>>خوب</option>
+                <option value="fair" <?= $vals['condition'] === 'fair' ? 'selected' : '' ?>>متوسط</option>
+                <option value="poor" <?= $vals['condition'] === 'poor' ? 'selected' : '' ?>>خورده</option>
+              </select>
+            </div>
           </div>
 
           <!-- برند / مدل / تیپ از فهرست (سند معماری سئو — بخش ۱ و ۲) -->
@@ -433,17 +456,6 @@ if ($storeMode) {
                 <option value="">انتخاب تیپ…</option>
               </select>
             </div>
-          </div>
-
-          <div class="wizard-form-group">
-            <label class="wizard-form-label">وضعیت کالا *</label>
-            <select name="condition" id="wz-condition" class="wizard-form-select">
-              <option value="new" <?= $vals['condition'] === 'new' ? 'selected' : '' ?>>نو</option>
-              <option value="like_new" <?= $vals['condition'] === 'like_new' ? 'selected' : '' ?>>مثل نو</option>
-              <option value="good" <?= $vals['condition'] === 'good' ? 'selected' : '' ?>>خوب</option>
-              <option value="fair" <?= $vals['condition'] === 'fair' ? 'selected' : '' ?>>متوسط</option>
-              <option value="poor" <?= $vals['condition'] === 'poor' ? 'selected' : '' ?>>خورده</option>
-            </select>
           </div>
 
           <div class="wizard-form-group">
@@ -578,60 +590,62 @@ if ($storeMode) {
           </div>
           <p class="wizard-step-subtitle">تمام اطلاعات را بررسی کنید.</p>
 
-          <div class="review-section">
-            <p class="review-label">تصاویر</p>
-            <div class="review-images" id="wz-review-images"></div>
-          </div>
+          <div class="review-grid">
+            <div class="review-section review-section--full">
+              <p class="review-label"><i class="bi bi-images"></i> تصاویر</p>
+              <div class="review-images" id="wz-review-images"></div>
+            </div>
 
-          <div class="review-section">
-            <p class="review-label">هدف آگهی</p>
-            <p class="review-value" id="wz-review-goal"></p>
-          </div>
+            <div class="review-section">
+              <p class="review-label"><i class="bi bi-bullseye"></i> هدف آگهی</p>
+              <p class="review-value" id="wz-review-goal"></p>
+            </div>
 
-          <div class="review-section">
-            <p class="review-label">عنوان</p>
-            <p class="review-value" id="wz-review-title"></p>
-          </div>
+            <div class="review-section">
+              <p class="review-label"><i class="bi bi-type"></i> عنوان</p>
+              <p class="review-value" id="wz-review-title"></p>
+            </div>
 
-          <div class="review-section">
-            <p class="review-label">توضیحات</p>
-            <p class="review-value" id="wz-review-desc"></p>
-          </div>
+            <div class="review-section review-section--full">
+              <p class="review-label"><i class="bi bi-text-paragraph"></i> توضیحات</p>
+              <p class="review-value" id="wz-review-desc"></p>
+            </div>
 
-          <div class="review-section">
-            <p class="review-label">دسته‌بندی</p>
-            <p class="review-value" id="wz-review-category"></p>
-          </div>
+            <div class="review-section">
+              <p class="review-label"><i class="bi bi-diagram-3"></i> دسته‌بندی</p>
+              <p class="review-value" id="wz-review-category"></p>
+            </div>
 
-          <div class="review-section">
-            <p class="review-label">وضعیت کالا</p>
-            <p class="review-value" id="wz-review-condition"></p>
-          </div>
+            <div class="review-section">
+              <p class="review-label"><i class="bi bi-patch-check"></i> وضعیت کالا</p>
+              <p class="review-value" id="wz-review-condition"></p>
+            </div>
 
-          <div class="review-section">
-            <p class="review-label">شهر و موقعیت</p>
-            <p class="review-value" id="wz-review-city"></p>
-            <p class="review-value fs-sm" id="wz-review-neighborhood" style="color:var(--text-muted)"></p>
-          </div>
+            <div class="review-section">
+              <p class="review-label"><i class="bi bi-geo-alt"></i> شهر و موقعیت</p>
+              <p class="review-value" id="wz-review-city"></p>
+              <p class="review-value fs-sm" id="wz-review-neighborhood" style="color:var(--text-muted)"></p>
+            </div>
 
-          <div class="review-section" id="wz-review-sell-section">
-            <p class="review-label">قیمت فروش</p>
-            <p class="review-value" id="wz-review-sell-price"></p>
-          </div>
+            <div class="review-section" id="wz-review-sell-section">
+              <p class="review-label"><i class="bi bi-cash-coin"></i> قیمت فروش</p>
+              <p class="review-value" id="wz-review-sell-price"></p>
+            </div>
 
-          <div class="review-section" id="wz-review-wantcat-section">
-            <p class="review-label">دسته‌بندی کالای موردنظر</p>
-            <p class="review-value" id="wz-review-want-cat"></p>
-          </div>
+            <div class="review-section" id="wz-review-wantcat-section">
+              <p class="review-label"><i class="bi bi-arrow-left-right"></i> دسته‌بندی کالای موردنظر</p>
+              <p class="review-value" id="wz-review-want-cat"></p>
+            </div>
 
-          <div class="review-section" id="wz-review-wantdesc-section">
-            <p class="review-label">توضیحات کالای درخواستی</p>
-            <p class="review-value" id="wz-review-want-desc"></p>
-          </div>
+            <div class="review-section review-section--full" id="wz-review-wantdesc-section">
+              <p class="review-label"><i class="bi bi-chat-left-text"></i> توضیحات کالای درخواستی</p>
+              <p class="review-value" id="wz-review-want-desc"></p>
+            </div>
 
-          <div class="review-section" id="wz-review-swap-section">
-            <p class="review-label">قیمت تخمینی معاوضه</p>
-            <p class="review-value" id="wz-review-swap-price"></p>
+            <div class="review-section" id="wz-review-swap-section">
+              <p class="review-label"><i class="bi bi-calculator"></i> قیمت تخمینی معاوضه</p>
+              <p class="review-value" id="wz-review-swap-price"></p>
+            </div>
           </div>
         </div>
 
@@ -684,6 +698,7 @@ if ($storeMode) {
   direction: rtl; columns: 2; column-gap: 2px;
 }
 .cat-pick-menu.show { display: block; }
+.wizard-form-row .cat-pick-menu { columns: 1; }
 @media (max-width: 640px) { .cat-pick-menu { columns: 1; } }
 
 .cat-pick-menu .dropdown-item {
@@ -756,6 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   updateStepper();
   initStep2Counters();
+  initAiImproveButtons();
   initUpload();
   initInfoFields();
   initCatalogPicker();
@@ -1109,6 +1125,61 @@ function initStep2Counters() {
   descInput.addEventListener('input', () => {
     document.getElementById('wz-desc-count').textContent = descInput.value.length;
     updateButtons();
+  });
+}
+
+function initAiImproveButtons() {
+  const buttons = document.querySelectorAll('[data-ai-improve]');
+  if (!buttons.length || typeof swaapinAiImproveTextFromBrowser !== 'function') return;
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const field = btn.getAttribute('data-ai-improve');
+      const isTitle = field === 'title';
+      const target = document.getElementById(isTitle ? 'wz-title' : 'wz-desc');
+      if (!target) return;
+
+      const value = target.value.trim();
+      if (value.length < 3) {
+        showToast(
+          isTitle
+            ? 'ابتدا یک عنوان کوتاه بنویسید، سپس آن را بهبود دهید.'
+            : 'ابتدا توضیح کوتاهی بنویسید، سپس آن را بهبود دهید.',
+          'info'
+        );
+        return;
+      }
+
+      const appUrl = document.querySelector('meta[name="app-url"]')?.content || '';
+      const fd = new FormData();
+      fd.append('field', field);
+      fd.append('text', value);
+      fd.append('title', document.getElementById('wz-title')?.value.trim() || '');
+      fd.append('condition', document.getElementById('wz-condition')?.value || 'good');
+      const catLabelEl = document.getElementById('cat-pick-label');
+      const catLabelText = catLabelEl ? (catLabelEl.textContent || '').trim() : '';
+      if (catLabelText && !catLabelText.includes('انتخاب دسته‌بندی')) {
+        fd.append('category_label', catLabelText);
+      }
+      if (typeof appendCsrf === 'function') appendCsrf(fd);
+
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+
+      swaapinAiImproveTextFromBrowser(appUrl, fd).then((improved) => {
+        if (!improved) throw new Error('دستیار نتوانست متن را بازنویسی کند.');
+        target.value = improved;
+        const counter = document.getElementById(isTitle ? 'wz-title-count' : 'wz-desc-count');
+        if (counter) counter.textContent = target.value.length;
+        updateButtons();
+        showToast('متن با هوش مصنوعی بازنویسی شد. می‌توانید آن را ویرایش کنید.', 'success');
+      }).catch((err) => {
+        showToast((err && err.message) ? err.message : 'بهبود متن ناموفق بود. دوباره تلاش کنید.', 'error');
+      }).finally(() => {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      });
+    });
   });
 }
 

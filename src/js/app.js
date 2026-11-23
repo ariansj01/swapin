@@ -353,6 +353,45 @@ async function swaapinAiChatFromBrowser(appUrl, message, history) {
   };
 }
 
+/**
+ * Prepare a listing text rewrite on the server, complete from the visitor IP.
+ * Returns the improved text string.
+ */
+async function swaapinAiImproveTextFromBrowser(appUrl, formData) {
+  appendCsrf(formData);
+  const res = await fetch(appUrl + '/api/ai_improve_text.php', {
+    method: 'POST',
+    body: formData,
+    credentials: 'same-origin',
+    headers: withCsrfHeaders(),
+  });
+  let prepare;
+  try { prepare = await res.json(); } catch { prepare = { ok: false }; }
+
+  if (prepare && prepare.error === 'rate_limited') {
+    throw new Error(prepare.message || 'سقف درخواست‌های هوش مصنوعی پر شده. کمی بعد دوباره تلاش کنید.');
+  }
+  if (prepare && prepare.error === 'login_required') {
+    throw new Error('برای استفاده از دستیار هوشمند باید وارد حساب کاربری شوید.');
+  }
+  if (!res.ok || !prepare || prepare.ok !== true) {
+    throw new Error((prepare && (prepare.message || prepare.error)) || 'خطا در آماده‌سازی دستیار هوشمند.');
+  }
+  if (prepare.type !== 'client_prepare') {
+    throw new Error('پاسخ دستیار هوشمند نامعتبر بود.');
+  }
+
+  const done = await swaapinBrowserCompleteChat(prepare);
+  if (!done || !done.content) {
+    throw new Error('دستیار هوشمند پاسخ نداد. کمی بعد دوباره تلاش کنید.');
+  }
+  const parsed = swaapinExtractJsonFromText(done.content);
+  const text = parsed && typeof parsed.text === 'string' ? parsed.text.trim() : '';
+  if (text) return text;
+  const raw = String(done.content).trim();
+  return raw.startsWith('{') ? '' : raw;
+}
+
 /* ── Toast notification system ─────────────────────────────────────────── */
 function showToast(msg, type = 'info', duration = 3500) {
   const container = document.getElementById('toast-container');

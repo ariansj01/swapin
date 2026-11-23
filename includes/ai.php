@@ -566,6 +566,50 @@ function ai_chat_build_messages(string $userMessage, array $history = [], ?array
     return $messages;
 }
 
+/**
+ * Messages for AI listing text polishing (title / description rewrite).
+ *
+ * @return list<array{role:string,content:string}>
+ */
+function ai_improve_text_build_messages(
+    string $field,
+    string $text,
+    string $contextTitle = '',
+    string $categoryLabel = '',
+    string $condition = 'good'
+): array {
+    $system = implode("\n", [
+        'You are a Persian copywriting assistant for Swapin (سواَپین), an Iranian barter marketplace.',
+        'Rewrite the user listing text to be clearer, more attractive and complete, keeping the exact same meaning and facts.',
+        'Rules:',
+        '- Output ONLY valid JSON, no markdown.',
+        '- Never invent specs, brands, numbers or condition details that are not present in the input.',
+        '- Keep it in Persian. For a title: one line, at most 70 characters, no emojis.',
+        '- For a description: 2 to 4 short, honest sentences, no exaggeration.',
+        '- Response schema: {"type":"rewrite","text":"..."}',
+    ]);
+
+    $payload = [
+        'mode'  => 'rewrite',
+        'field' => $field,
+        'text'  => $text,
+    ];
+    if ($contextTitle !== '') {
+        $payload['title_context'] = $contextTitle;
+    }
+    if ($categoryLabel !== '') {
+        $payload['category'] = $categoryLabel;
+    }
+    if ($condition !== '') {
+        $payload['condition'] = $condition;
+    }
+
+    return [
+        ['role' => 'system', 'content' => $system],
+        ['role' => 'user', 'content' => json_encode($payload, JSON_UNESCAPED_UNICODE)],
+    ];
+}
+
 function ai_chat_respond(string $userMessage, array $history = [], ?array $user = null): array {
     $messages = ai_chat_build_messages($userMessage, $history, $user);
 

@@ -324,6 +324,72 @@
   color: #D97706;
 }
 
+/* Two-column form row (condition + category) */
+.wizard-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wizard-form-row > .wizard-form-group {
+  min-width: 0;
+}
+
+/* Label row with inline AI action */
+.wizard-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.wizard-label-row .wizard-form-label {
+  margin-bottom: 0;
+}
+
+.ai-improve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(8, 27, 69, 0.14);
+  background: linear-gradient(135deg, var(--wizard-accent-light), #fff);
+  color: var(--wizard-primary);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  white-space: nowrap;
+}
+
+.ai-improve-btn i {
+  font-size: 0.8125rem;
+  color: var(--wizard-accent);
+}
+
+.ai-improve-btn:hover:not(:disabled) {
+  border-color: var(--wizard-accent);
+  box-shadow: 0 6px 14px -8px rgba(255, 193, 7, 0.7);
+  transform: translateY(-1px);
+}
+
+.ai-improve-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.ai-improve-btn.is-loading i {
+  animation: ai-improve-spin 0.9s linear infinite;
+}
+
+@keyframes ai-improve-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Upload Zone */
 .upload-zone {
   border: 2px dashed var(--wizard-border);
@@ -447,15 +513,59 @@
 .review-header .edit-btn {
   margin-top: 0;
 }
-  /* margin-bottom: 28px;
-  padding-bottom: 28px;
-  border-bottom: 1px solid var(--wizard-border); */
-/* } */
 
-.review-section:last-of-type {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
+/* Review grid + cards */
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: var(--wizard-gap, 16px);
+}
+
+.review-section {
+  background: var(--wizard-card-bg, #fff);
+  border: 1px solid var(--wizard-border, #e5e7eb);
+  border-radius: var(--wizard-radius, 12px);
+  padding: 14px 16px;
+  margin: 0;
+  min-width: 0;
+  box-shadow: 0 6px 18px -12px rgba(8, 27, 69, 0.25);
+}
+
+.review-section--full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .review-grid { grid-template-columns: 1fr; }
+}
+
+.review-section .review-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--wizard-text-muted);
+  margin: 0 0 8px;
+}
+
+.review-section .review-label i {
+  color: var(--wizard-primary);
+  font-size: 0.95rem;
+}
+
+.review-section .review-value {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.7;
+  margin: 0;
+  word-break: break-word;
+}
+
+.review-section .review-value.fs-sm {
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .review-label {
