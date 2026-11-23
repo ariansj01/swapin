@@ -331,6 +331,11 @@ async function swaapinAiChatFromBrowser(appUrl, message, history) {
   if (prepare && prepare.error === 'rate_limited') {
     throw new Error(prepare.message || 'سقف پیام‌های AI پر شده. کمی بعد دوباره تلاش کنید.');
   }
+  if (prepare && prepare.error === 'guest_limit_reached') {
+    const err = new Error(prepare.message || 'سقف گفتگوی مهمان تکمیل شد. برای ادامه وارد حساب کاربری شوید.');
+    err.code = 'guest_limit_reached';
+    throw err;
+  }
   if (!res.ok || !prepare || prepare.ok !== true) {
     throw new Error((prepare && (prepare.message || prepare.error)) || 'خطا');
   }
@@ -342,6 +347,8 @@ async function swaapinAiChatFromBrowser(appUrl, message, history) {
       content: '',
       provider: null,
       fallback: true,
+      is_guest: !!prepare.is_guest,
+      guest_remaining: prepare.guest_remaining,
     };
   }
   return {
@@ -350,6 +357,8 @@ async function swaapinAiChatFromBrowser(appUrl, message, history) {
     content: done.content,
     provider: done.provider,
     fallback: false,
+    is_guest: !!prepare.is_guest,
+    guest_remaining: prepare.guest_remaining,
   };
 }
 
@@ -1266,6 +1275,8 @@ function initAiChat() {
   const appUrl  = getAppUrl();
   const history = [];
   let sending   = false;
+  let guestBlocked = false;
+  const guestNote = document.querySelector('.ai-chat-guest-note span');
 
   function escHtml(str) {
     const d = document.createElement('div');
@@ -1297,9 +1308,30 @@ function initAiChat() {
     document.getElementById('ai-typing-indicator')?.remove();
   }
 
+  function appendGuestLimit() {
+    const url = appUrl + '/auth/login?redirect=' + encodeURIComponent('/ai/chat');
+    const wrap = document.createElement('div');
+    wrap.className = 'ai-msg ai-msg--bot';
+    wrap.innerHTML =
+      '<div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>' +
+      '<div class="ai-msg__bubble">سقف گفتگوی مهمان تکمیل شد. برای ادامه گفتگو وارد حساب کاربری شوید.<br>' +
+      '<a href="' + url + '" class="btn btn-accent" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px">' +
+      '<i class="bi bi-box-arrow-in-right"></i> ورود / ثبت‌نام</a></div>';
+    messages.appendChild(wrap);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function updateGuestRemaining(remaining) {
+    if (!guestNote || remaining == null) return;
+    const n = Number(remaining) || 0;
+    guestNote.innerHTML = n > 0
+      ? 'شما به‌عنوان مهمان وارد شده‌اید — تا <strong>' + n + ' پیام</strong> دیگر می‌توانید با دستیار گفتگو کنید. برای گفتگوی نامحدود وارد شوید.'
+      : 'شما به‌عنوان مهمان وارد شده‌اید — سقف پیام رایگان تکمیل شد. برای ادامه وارد شوید.';
+  }
+
   async function send(text) {
     const msg = text.trim();
-    if (!msg || sending) return;
+    if (!msg || sending || guestBlocked) return;
     sending = true;
     input.disabled = true;
 
@@ -1319,14 +1351,29 @@ function initAiChat() {
       appendMsg(data.message, 'bot');
       history.push({ role: 'assistant', content: data.message });
       if (history.length > 20) history.splice(0, history.length - 20);
+      if (data.is_guest) {
+        updateGuestRemaining(data.guest_remaining);
+        if (Number(data.guest_remaining) <= 0) {
+          appendGuestLimit();
+          guestBlocked = true;
+        }
+      }
     } catch (err) {
       removeTyping();
-      appendMsg(err.message || 'متأسفانه پاسخ AI دریافت نشد. لطفاً دوباره تلاش کنید.', 'bot');
+      if (err && err.code === 'guest_limit_reached') {
+        appendGuestLimit();
+        updateGuestRemaining(0);
+        guestBlocked = true;
+      } else {
+        appendMsg(err.message || 'متأسفانه پاسخ AI دریافت نشد. لطفاً دوباره تلاش کنید.', 'bot');
+      }
     }
 
     sending = false;
-    input.disabled = false;
-    input.focus();
+    if (!guestBlocked) {
+      input.disabled = false;
+      input.focus();
+    }
   }
 
   form.addEventListener('submit', e => {

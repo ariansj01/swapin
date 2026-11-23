@@ -610,7 +610,7 @@ function render_mobile_bottom_nav(?array $user = null): void {
     $user     = $user ?? ($GLOBALS['_nav_user'] ?? null);
     $profile  = $user ? $url . '/profile' : $url . '/auth/login';
     $trades   = $user ? $url . '/trades' : $url . '/auth/login';
-    $aiChat   = $user ? $url . '/ai/chat' : $url . '/auth/login?redirect=' . urlencode('/ai/chat');
+    $aiChat   = $url . '/ai/chat';
     echo <<<HTML
 <nav class="mobile-bottom-nav" aria-label="ناوبری موبایل">
   <a href="{$url}/" class="mobile-bottom-nav__item">

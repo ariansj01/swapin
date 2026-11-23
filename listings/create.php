@@ -5,13 +5,14 @@ require_once __DIR__ . '/../includes/geo.php';
 require_once __DIR__ . '/../includes/iso.php';
 require_once __DIR__ . '/../includes/ai_moderation.php';
 
-$user = require_auth();
-$isStoreSeller = is_store_seller($user);
+$user = auth_user();
+$isGuest = !$user;
+$isStoreSeller = $user ? is_store_seller($user) : false;
 // حالت فروشگاهی فقط از پنل فروشگاه (/store) فعال می‌شود؛ ورود مستقیم به /listings/create = آگهی شخصی
 $storeMode = $isStoreSeller && (($_GET['as'] ?? '') === 'store');
 $listingProviderType = $isStoreSeller ? user_provider_type($user) : 'normal_store';
 
-if ($listingErr = kyc_check_listing_action($user)) {
+if ($user && ($listingErr = kyc_check_listing_action($user))) {
     render_full_page_modal(
         'تکمیل پروفایل لازم است',
         $listingErr,
@@ -22,7 +23,7 @@ if ($listingErr = kyc_check_listing_action($user)) {
 }
 
 // سقف آگهی‌های فعال: کاربران رایگان تا ۲۰ آگهی و مشترکین تا سقف پلن
-if (!can_create_listing($user)) {
+if ($user && !can_create_listing($user)) {
     $limit     = get_listing_limit($user);
     $activeSub = get_active_subscription($user);
     $limitMsg  = $activeSub
@@ -116,6 +117,12 @@ foreach ($catTreeByPar[0] ?? [] as $topRow) {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify_or_fail();
+
+    // مهمان اجازه انتشار ندارد؛ پس از ورود دوباره تلاش می‌کند
+    if (!$user) {
+        header('Location: ' . APP_URL . '/auth/login?redirect=' . urlencode('/listings/create'));
+        exit;
+    }
     
     $vals = [
         'title'           => clean($_POST['title']           ?? ''),
@@ -733,6 +740,8 @@ if ($storeMode) {
 <script src="<?= APP_URL ?>/src/js/listing-location.js?v=<?= filemtime(__DIR__ . '/../src/js/listing-location.js') ?>"></script>
 <script>
 const STORE_MODE = <?= $storeMode ? 'true' : 'false' ?>;
+const IS_GUEST = <?= $isGuest ? 'true' : 'false' ?>;
+const GUEST_DRAFT_KEY = 'swaapin_listing_draft';
 let currentStep = 1;
 const totalSteps = 4;
 let uploadedFiles = [];
@@ -779,6 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWizardCategoryPicker('want-cat-pick');
   initPriceInputs();
   initWizardSubmit();
+  restoreGuestDraft();
   applyDealType();
 });
 
@@ -1240,12 +1250,92 @@ function initUpload() {
   }
 }
 
+function readWizardDraft() {
+  const form = document.getElementById('wizard-form');
+  if (!form) return null;
+  const data = {};
+  form.querySelectorAll('input, select, textarea').forEach(el => {
+    const name = el.name;
+    if (!name || name === '_csrf' || el.type === 'file' || el.type === 'submit' || el.type === 'button') return;
+    if (el.type === 'radio') {
+      if (el.checked) data[name] = el.value;
+      else if (!(name in data)) data[name] = '';
+    } else if (el.type === 'checkbox') {
+      data[name] = el.checked ? (el.value || '1') : '';
+    } else {
+      data[name] = el.value;
+    }
+  });
+  return data;
+}
+
+function saveGuestDraft() {
+  const data = readWizardDraft();
+  if (!data) return;
+  try { sessionStorage.setItem(GUEST_DRAFT_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function restoreGuestDraft() {
+  let raw = null;
+  try { raw = sessionStorage.getItem(GUEST_DRAFT_KEY); } catch (e) {}
+  if (!raw) return;
+  try { sessionStorage.removeItem(GUEST_DRAFT_KEY); } catch (e) {}
+  let data;
+  try { data = JSON.parse(raw); } catch (e) { return; }
+  if (!data || typeof data !== 'object') return;
+
+  const form = document.getElementById('wizard-form');
+  if (!form) return;
+
+  form.querySelectorAll('input, select, textarea').forEach(el => {
+    const name = el.name;
+    if (!name || name === '_csrf' || el.type === 'file') return;
+    if (!(name in data)) return;
+    if (el.type === 'radio') {
+      el.checked = (String(el.value) === String(data[name]));
+    } else if (el.type === 'checkbox') {
+      el.checked = !!data[name];
+    } else {
+      el.value = data[name];
+    }
+  });
+
+  // بازسازی برچسب دسته‌بندی‌های انتخاب‌شده
+  [['cat-pick', 'category_id'], ['want-cat-pick', 'want_category_id']].forEach(([prefix, field]) => {
+    const catId = String(data[field] || '').replace(/["\\]/g, '');
+    if (!catId) return;
+    const leaf = document.querySelector('#' + prefix + '-menu .cat-pick-leaf[data-cat-id="' + catId + '"]');
+    if (leaf) leaf.click();
+  });
+
+  ['wz-title', 'wz-desc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  updateButtons();
+  applyDealType();
+}
+
 function initWizardSubmit() {
   const form = document.getElementById('wizard-form');
   const submitBtn = document.getElementById('wizard-submit-btn');
   if (!form) return;
 
   form.addEventListener('submit', function(e) {
+    // مهمان: پیش از انتشار باید وارد حساب کاربری شود؛ داده‌های فرم حفظ می‌شود
+    if (IS_GUEST) {
+      e.preventDefault();
+      saveGuestDraft();
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span> انتقال به صفحه ورود…';
+      }
+      const appUrl = document.querySelector('meta[name="app-url"]')?.content || '';
+      window.location.href = appUrl + '/auth/login?redirect=' + encodeURIComponent('/listings/create');
+      return;
+    }
+
     const count = syncUploadedFilesInput();
     if (count === 0) {
       e.preventDefault();

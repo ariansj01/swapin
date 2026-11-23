@@ -22,58 +22,13 @@ render_navbar($user);
     </div>
 
     <?php if (!$user): ?>
-    <div class="ai-chat-guest">
-      <div class="ai-chat-guest__preview">
-        <div class="ai-chat-window ai-chat-window--blurred">
-          <div class="ai-chat-window__head">
-            <span class="ai-dot ai-dot--green"></span>
-            <strong>دستیار سواَپین</strong>
-          </div>
-          <div class="ai-chat-window__body">
-            <div class="ai-msg ai-msg--bot">
-              <div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>
-              <div class="ai-msg__bubble">سلام! من دستیار معاوضه سواَپین هستم. می‌توانم ارزش کالای شما را تخمین بزنم و بهترین پیشنهادهای معاوضه را پیشنهاد دهم.</div>
-            </div>
-            <div class="ai-msg ai-msg--user">
-              <div class="ai-msg__bubble">آیفون ۱۳ پرو ۲۵۶ گیگ — چه چیزی مناسب معاوضه است؟</div>
-            </div>
-            <div class="ai-msg ai-msg--bot">
-              <div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>
-              <div class="ai-msg__bubble">با توجه به ارزش تقریبی، لپ‌تاپ گیمینگ یا PS5 گزینه‌های نزدیک به شما هستند…</div>
-            </div>
-          </div>
-        </div>
-        <div class="ai-chat-guest__lock">
-          <i class="bi bi-lock-fill"></i>
-          <h3>برای گفتگو با دستیار هوشمند وارد شوید</h3>
-          <p>این قابلیت فقط برای اعضای سواَپین فعال است.</p>
-          <div class="ai-chat-guest__actions">
-            <a href="<?= $url ?>/auth/login?redirect=<?= urlencode('/ai/chat') ?>" class="btn btn-accent btn-lg">
-              <i class="bi bi-box-arrow-in-right"></i> ورود / ثبت‌نام
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div class="ai-features-grid">
-        <?php
-        $features = [
-            ['bi-calculator', 'ارزش‌گذاری هوشمند', 'بعد از ثبت کالا، AI ارزش تقریبی ' . CREDIT_UNIT . ' را پیشنهاد می‌دهد.'],
-            ['bi-arrow-left-right', 'پیشنهاد معاوضه', 'بر اساس نیاز شما، گزینه‌های مناسب معاوضه را پیشنهاد می‌کند.'],
-            ['bi-chat-heart', 'مشاوره معامله', 'سؤالات خود را درباره معاوضه امن بپرسید.'],
-        ];
-        foreach ($features as [$icon, $title, $desc]):
-        ?>
-        <article class="ai-feature-card">
-          <div class="ai-feature-card__icon"><i class="bi <?= $icon ?>"></i></div>
-          <h3><?= $title ?></h3>
-          <p><?= $desc ?></p>
-        </article>
-        <?php endforeach; ?>
-      </div>
+    <div class="ai-chat-guest-note">
+      <i class="bi bi-info-circle"></i>
+      <span>شما به‌عنوان مهمان وارد شده‌اید — تا <strong>۴ پیام رایگان</strong> می‌توانید با دستیار گفتگو کنید. برای گفتگوی نامحدود وارد شوید.</span>
+      <a href="<?= $url ?>/auth/login?redirect=<?= urlencode('/ai/chat') ?>" class="ai-chat-guest-note__btn">ورود / ثبت‌نام</a>
     </div>
+    <?php endif; ?>
 
-    <?php else: ?>
     <?php
     $categories = DB::fetchAll(
         'SELECT c.*, p.name AS parent_name FROM categories c
@@ -87,6 +42,7 @@ render_navbar($user);
         'fair'     => 'متوسط',
         'poor'     => 'خورده',
     ];
+    $greetName = $user ? explode(' ', (string)$user['name'])[0] : '';
     ?>
     <div class="ai-chat-layout" id="ai-chat-app">
 
@@ -103,7 +59,7 @@ render_navbar($user);
               <div class="ai-msg ai-msg--bot">
                 <div class="ai-msg__avatar"><i class="bi bi-robot"></i></div>
                 <div class="ai-msg__bubble">
-                  سلام <?= h(explode(' ', $user['name'])[0]) ?>! 👋<br>
+                  سلام<?= $greetName !== '' ? ' ' . h($greetName) : '' ?>! 👋<br>
                   من دستیار معاوضه سواَپین هستم. می‌توانید درباره ارزش کالا، پیشنهاد معاوضه یا نحوه معامله امن سؤال بپرسید.
                   <div class="ai-quick-chips">
                     <button type="button" class="ai-chip" data-prompt="چطور ارزش کالایم را تخمین بزنم؟" data-scroll-target="ai-valuation-section">ارزش‌گذاری کالا</button>
@@ -248,7 +204,6 @@ render_navbar($user);
         </a>
       </aside>
     </div>
-    <?php endif; ?>
 
   </div>
 </section>
