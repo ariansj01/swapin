@@ -2219,7 +2219,7 @@ function listing_url($listing, ?string $title = null): string {
 
     $slug = listing_slug((string) $title);
 
-    return $slug === '' ? APP_URL . '/' . $id : APP_URL . '/' . $slug . '/' . $id;
+    return $slug === '' ? APP_URL . '/' . $id : APP_URL . '/' . rawurlencode($slug) . '/' . $id;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

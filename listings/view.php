@@ -75,7 +75,7 @@ if (!$isOwner && !$isAdmin) {
     if ($listing['status'] !== 'active') {
 
         $similar = DB::fetch(
-            'SELECT id
+            'SELECT id, title
              FROM listings
              WHERE category_id = ?
              AND status = "active"
@@ -353,7 +353,7 @@ $hasBothBuySwap = $canBuy && $isStoreSwappable;
 $inspectionLabels = ['requested' => 'درخواست‌شده', 'pending' => 'در انتظار', 'approved' => 'تأیید‌شده', 'rejected' => 'رد شده'];
 $sellerSwapScore    = compute_swap_score((int)$listing['user_id']);
 
-$listingUrl = APP_URL . $listingPath;
+$listingUrl = listing_url($listing);
 $ogImage    = $images ? UPLOAD_URL . $images[0]['filename'] : LOGO_URL;
 $seoTitle   = seo_listing_title($listing);
 $metaDesc   = seo_listing_description($listing);
@@ -406,7 +406,7 @@ if ($normRequested !== $normCanonical) {
     // پارامترهای داخلی مسیریابی نباید به آدرس مقصد منتقل شوند
     unset($_qs['id'], $_qs['slug_path'], $_qs['redirect_slugs']);
     // پارامترهای معنادار فیلتر (q, want, sort, page, ...) حفظ می‌شوند
-    header('Location: ' . APP_URL . $listingPath . ($_qs ? '?' . http_build_query($_qs) : ''), true, 301);
+    header('Location: ' . $listingUrl . ($_qs ? '?' . http_build_query($_qs) : ''), true, 301);
     exit;
 }
 
