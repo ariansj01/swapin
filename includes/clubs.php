@@ -223,7 +223,6 @@ function clubs_fields_from_input(array $input): array {
         'description'      => clean($input['description'] ?? ''),
         'rules'            => clean($input['rules'] ?? ''),
         'privacy'          => $privacy,
-        'require_approval' => isset($input['require_approval']) ? 1 : 0,
         'accept_terms'     => isset($input['accept_terms']) ? 1 : 0,
         'listing_id'       => (int)($input['listing_id'] ?? 0),
     ];
@@ -316,7 +315,8 @@ function clubs_create(int $ownerId, array $fields, array $files): array {
     $rules = $fields['rules'] ?? '';
     $categoryId = (int)($fields['category_id'] ?? 0);
     $privacy = ($fields['privacy'] ?? 'public') === 'private' ? 'private' : 'public';
-    $requireApproval = !empty($fields['require_approval']) ? 1 : 0;
+    // عضویت: کلاب عمومی خودکار، کلاب خصوصی با تأیید مدیر
+    $requireApproval = ($privacy === 'private') ? 1 : 0;
     $ownerListingId = (int)($fields['listing_id'] ?? 0);
     if ($ownerListingId > 0 && !clubs_owned_listing($ownerListingId, $ownerId)) {
         $errors['listing_id'] = 'آگهی انتخاب‌شده متعلق به شما نیست یا فعال نیست.';
@@ -673,10 +673,17 @@ function clubs_featured_in_root(int $rootId): ?array {
     }
 }
 
-function clubs_listings_in_root(int $rootId, string $mode, string $q, int $limit = 12, int $offset = 0): array {
+function clubs_listings_in_root(int $rootId, string $mode, string $q, int $limit = 12, int $offset = 0, int $viewerId = 0, bool $viewerIsAdmin = false): array {
     $clubs = clubs_by_root_category($rootId);
     $clubIds = [];
     foreach ($clubs as $c) {
+        // آگهی کلاب خصوصی برای غیراعضا در هاب نمایش داده نمی‌شود
+        if (($c['privacy'] ?? 'public') === 'private' && !$viewerIsAdmin) {
+            $st = clubs_user_state(['id' => $viewerId], (int)$c['id']);
+            if (empty($st['member'])) {
+                continue;
+            }
+        }
         $clubIds[] = (int)($c['id'] ?? 0);
     }
     return clubs_fetch_member_listings($clubIds, $mode, $q, $limit, $offset, 'newest');
@@ -1026,6 +1033,42 @@ function clubs_join(int $clubId, int $userId, bool $requireApproval, int $listin
     }
     DB::insert('club_members', $row);
     return ['ok' => true, 'status' => $status];
+}
+
+/**
+ * اتصال آگهی تازه‌منتشرشده به کلاب.
+ * اگر کاربر عضو نباشد، مطابق سیاست کلاب (عمومی=خودکار، خصوصی=در انتظار تأیید) عضو می‌شود.
+ */
+function clubs_attach_listing(int $clubId, int $userId, int $listingId): bool {
+    clubs_ensure_tables();
+    if ($clubId <= 0 || $userId <= 0 || $listingId <= 0 || !db_has_column('club_members', 'listing_id')) {
+        return false;
+    }
+    $club = clubs_get($clubId);
+    if (!$club) {
+        return false;
+    }
+    $existing = DB::fetch('SELECT id, status FROM club_members WHERE club_id = ? AND user_id = ?', [$clubId, $userId]);
+    if ($existing) {
+        if ($existing['status'] === 'banned') {
+            return false;
+        }
+        DB::update('club_members', ['listing_id' => $listingId], 'id = ?', [(int)$existing['id']]);
+        return true;
+    }
+    try {
+        DB::insert('club_members', [
+            'club_id'    => $clubId,
+            'user_id'    => $userId,
+            'role'       => 'member',
+            'status'     => !empty($club['require_approval']) ? 'pending' : 'active',
+            'listing_id' => $listingId,
+        ]);
+    } catch (Throwable $e) {
+        swapin_debug_log('club-attach-listing-failed', ['msg' => $e->getMessage(), 'club' => $clubId, 'user' => $userId]);
+        return false;
+    }
+    return true;
 }
 
 function clubs_can_manage(array $state): bool {

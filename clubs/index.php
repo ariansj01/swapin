@@ -79,17 +79,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $stats = $club ? clubs_stats($club) : ['members' => 0, 'posts' => 0, 'trades' => 0, 'views' => 0];
 $state = $club ? clubs_user_state($user, (int)$club['id']) : ['member' => false, 'pending' => false, 'following' => false];
-$previewMembers = $club ? clubs_members_list((int)$club['id'], 6) : [];
+$viewerIsAdmin = function_exists('is_admin_user') && is_admin_user($user);
+// کلاب خصوصی: محتوای اعضا برای غیرعضو نمایش داده نمی‌شود
+$hubClubLocked = $club && (($club['privacy'] ?? 'public') === 'private') && empty($state['member']) && !$viewerIsAdmin;
+$previewMembers = ($club && !$hubClubLocked) ? clubs_members_list((int)$club['id'], 6) : [];
 $perPage = 6;
 $offset = ($page - 1) * $perPage;
 $categoryClubs = $activeCat ? clubs_by_root_category((int)$activeCat['id']) : [];
 $listMode = in_array($tab, ['buy', 'swap'], true) ? $tab : 'listings';
 $listings = ($activeCat && in_array($tab, ['listings', 'buy', 'swap'], true))
-    ? clubs_listings_in_root((int)$activeCat['id'], $listMode, $q, $perPage, $offset)
+    ? clubs_listings_in_root((int)$activeCat['id'], $listMode, $q, $perPage, $offset, (int)($user['id'] ?? 0), $viewerIsAdmin)
     : [];
 $listingImages = clubs_listing_images_map(array_map(static fn ($row) => (int)$row['id'], $listings));
-$members = ($club && $tab === 'members') ? clubs_members_list((int)$club['id']) : [];
-$messages = ($club && $tab === 'chat') ? array_reverse(clubs_messages((int)$club['id'])) : [];
+$members = ($club && $tab === 'members' && !$hubClubLocked) ? clubs_members_list((int)$club['id']) : [];
+$messages = ($club && $tab === 'chat' && !$hubClubLocked) ? array_reverse(clubs_messages((int)$club['id'])) : [];
 
 $coverUrl = $club ? clubs_image_url($club['cover_image'] ?? '') : '';
 $avatarUrl = $club ? clubs_image_url($club['avatar_image'] ?? '') : '';
@@ -100,7 +103,7 @@ $canonical = $hubUrl;
 $cssVer = @filemtime(__DIR__ . '/../src/css/clubs-page.css') ?: time();
 $loginUrl = APP_URL . '/auth/login?redirect=' . urlencode($_SERVER['REQUEST_URI'] ?? '/clubs');
 $myListings = $user ? clubs_user_listings((int)$user['id']) : [];
-$joinCreateUrl = APP_URL . '/listings/create';
+$joinCreateUrl = APP_URL . '/listings/create' . ($club ? ('?club=' . (int)$club['id']) : '');
 $bannerTitle = (string)($adBanner['title'] ?? '');
 $bannerSub = (string)($adBanner['subtitle'] ?? '');
 if ($bannerTitle === '') {

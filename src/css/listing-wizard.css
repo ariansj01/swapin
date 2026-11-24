@@ -253,6 +253,51 @@
   margin-top: var(--wizard-gap);
 }
 
+/* Draft restore notice */
+.wizard-draft-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 193, 7, 0.45);
+  background: var(--wizard-accent-light);
+  color: var(--wizard-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.wizard-draft-notice i {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.wizard-draft-notice span {
+  flex: 1;
+}
+
+.wizard-draft-notice__clear {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(8, 27, 69, 0.18);
+  background: white;
+  color: var(--wizard-primary);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .18s ease, background .18s ease;
+}
+
+.wizard-draft-notice__clear:hover {
+  border-color: var(--wizard-primary);
+  background: #fff;
+}
+
 .wizard-step-title {
   font-size: 1.125rem;
   font-weight: 900;

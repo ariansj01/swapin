@@ -59,6 +59,9 @@ $vals = [
 
 $suggestedValue = (int)($_POST['suggested_value'] ?? rand(10000000, 50000000));
 
+// کلاب مبدأ (ثبت آگهی از داخل کلاب): پس از انتشار، آگهی به کلاب متصل و بازگشت داده می‌شود
+$attachClub = (int)($_POST['attach_club'] ?? $_GET['club'] ?? 0);
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     if (isset($_GET['prefill_title'])) {
         $vals['title'] = clean($_GET['prefill_title']);
@@ -273,8 +276,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
 
+            // اتصال آگهی به کلاب مبدأ (ثبت آگهی از داخل کلاب)
+            if ($attachClub > 0) {
+                try {
+                    require_once __DIR__ . '/../includes/clubs.php';
+                    if (function_exists('clubs_attach_listing')) {
+                        clubs_attach_listing($attachClub, (int)$user['id'], (int)$listingId);
+                    }
+                } catch (Throwable $e) {
+                    swapin_debug_log('listing-attach-club-failed', ['msg' => $e->getMessage(), 'club' => $attachClub]);
+                }
+            }
+
             // Redirect to success page
-            header('Location: ' . APP_URL . '/listings/success?id=' . $listingId);
+            header('Location: ' . APP_URL . '/listings/success?id=' . $listingId . ($attachClub > 0 ? '&club=' . $attachClub : ''));
             exit;
         }
     }
@@ -328,8 +343,14 @@ if ($storeMode) {
 
     <!-- Step Content Card -->
     <div class="wizard-card">
+      <div class="wizard-draft-notice" id="wz-draft-notice" style="display:none">
+        <i class="bi bi-clock-history"></i>
+        <span>پیش‌نویس قبلی شما بازیابی شد. توجه: تصاویر ذخیره نمی‌شوند و باید دوباره انتخاب شوند.</span>
+        <button type="button" class="wizard-draft-notice__clear" id="wz-draft-clear">حذف پیش‌نویس</button>
+      </div>
       <form method="POST" id="wizard-form" enctype="multipart/form-data">
         <?= csrf_field() ?>
+        <input type="hidden" name="attach_club" value="<?= (int)$attachClub ?>">
 
         <!-- File input always in form root (not inside hidden steps) -->
         <input type="file" id="wz-images" name="images[]" multiple accept="image/jpeg,image/png,image/webp"
@@ -741,7 +762,8 @@ if ($storeMode) {
 <script>
 const STORE_MODE = <?= $storeMode ? 'true' : 'false' ?>;
 const IS_GUEST = <?= $isGuest ? 'true' : 'false' ?>;
-const GUEST_DRAFT_KEY = 'swaapin_listing_draft';
+const DRAFT_KEY = <?= json_encode('swaapin_listing_draft_' . ($user ? 'u' . (int)$user['id'] : 'guest')) ?>;
+const DRAFT_KEY_GUEST = 'swaapin_listing_draft_guest';
 let currentStep = 1;
 const totalSteps = 4;
 let uploadedFiles = [];
@@ -788,7 +810,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initWizardCategoryPicker('want-cat-pick');
   initPriceInputs();
   initWizardSubmit();
-  restoreGuestDraft();
+  restoreWizardDraft();
+  initWizardDraftAutosave();
   applyDealType();
 });
 
@@ -1269,20 +1292,44 @@ function readWizardDraft() {
   return data;
 }
 
-function saveGuestDraft() {
+function saveWizardDraft() {
   const data = readWizardDraft();
   if (!data) return;
-  try { sessionStorage.setItem(GUEST_DRAFT_KEY, JSON.stringify(data)); } catch (e) {}
+  try {
+    data._ts = Date.now();
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+  } catch (e) {}
 }
 
-function restoreGuestDraft() {
+function clearWizardDraft() {
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+    if (DRAFT_KEY !== DRAFT_KEY_GUEST) localStorage.removeItem(DRAFT_KEY_GUEST);
+  } catch (e) {}
+  const notice = document.getElementById('wz-draft-notice');
+  if (notice) notice.style.display = 'none';
+}
+
+function readStoredDraft() {
   let raw = null;
-  try { raw = sessionStorage.getItem(GUEST_DRAFT_KEY); } catch (e) {}
-  if (!raw) return;
-  try { sessionStorage.removeItem(GUEST_DRAFT_KEY); } catch (e) {}
-  let data;
-  try { data = JSON.parse(raw); } catch (e) { return; }
-  if (!data || typeof data !== 'object') return;
+  try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) {}
+  // کاربر مهمان که پس از ورود به همین صفحه بازگشته: پیش‌نویس مهمان را به حساب کاربر منتقل کن
+  if (!raw && DRAFT_KEY !== DRAFT_KEY_GUEST) {
+    try {
+      raw = localStorage.getItem(DRAFT_KEY_GUEST);
+      if (raw) localStorage.removeItem(DRAFT_KEY_GUEST);
+    } catch (e) {}
+  }
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw);
+    return (data && typeof data === 'object') ? data : null;
+  } catch (e) { return null; }
+}
+
+function restoreWizardDraft() {
+  const data = readStoredDraft();
+  if (!data) return;
 
   const form = document.getElementById('wizard-form');
   if (!form) return;
@@ -1315,6 +1362,27 @@ function restoreGuestDraft() {
 
   updateButtons();
   applyDealType();
+
+  const notice = document.getElementById('wz-draft-notice');
+  if (notice) notice.style.display = '';
+}
+
+function initWizardDraftAutosave() {
+  const form = document.getElementById('wizard-form');
+  if (!form) return;
+
+  let timer = null;
+  const schedule = () => {
+    clearTimeout(timer);
+    timer = setTimeout(saveWizardDraft, 800);
+  };
+  form.addEventListener('input', schedule, true);
+  form.addEventListener('change', schedule, true);
+
+  document.getElementById('wz-draft-clear')?.addEventListener('click', () => {
+    clearWizardDraft();
+    if (typeof showToast === 'function') showToast('پیش‌نویس حذف شد.', 'success');
+  });
 }
 
 function initWizardSubmit() {
@@ -1326,7 +1394,7 @@ function initWizardSubmit() {
     // مهمان: پیش از انتشار باید وارد حساب کاربری شود؛ داده‌های فرم حفظ می‌شود
     if (IS_GUEST) {
       e.preventDefault();
-      saveGuestDraft();
+      saveWizardDraft();
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span> انتقال به صفحه ورود…';

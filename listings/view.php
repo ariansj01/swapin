@@ -390,12 +390,18 @@ $swapSourceTitle = (string) ($listing['title'] ?? '');
 $listingIsReserved = ($listing['status'] ?? '') === 'reserved';
 
 // فاز ۱: هر آدرس غیرکانونیکال آگهی (مثل /listings/view?id= یا اسلاگ قدیمی) → 301 به /{fa-slug}/{id}
+// طبق سند معماری (A09.2)، شناسه (ID) منبع حقیقت است.
 $requestedPath = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
 $_appBasePath  = rtrim((string) parse_url(APP_URL, PHP_URL_PATH), '/');
 if ($_appBasePath !== '' && str_starts_with($requestedPath, $_appBasePath)) {
     $requestedPath = substr($requestedPath, strlen($_appBasePath));
 }
-if ($requestedPath !== '' && $requestedPath !== $listingPath) {
+
+// نرمال‌سازی برای مقایسه دقیق (حذف اسلش‌های طرفین و تبدیل به حروف کوچک)
+$normRequested = mb_strtolower(trim($requestedPath, '/'), 'UTF-8');
+$normCanonical = mb_strtolower(trim($listingPath, '/'), 'UTF-8');
+
+if ($normRequested !== $normCanonical) {
     parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $_qs);
     // پارامترهای داخلی مسیریابی نباید به آدرس مقصد منتقل شوند
     unset($_qs['id'], $_qs['slug_path'], $_qs['redirect_slugs']);

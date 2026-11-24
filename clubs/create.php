@@ -109,6 +109,33 @@ render_navbar($user);
         <i class="bi bi-pencil-square" style="color:#9ca3af"></i>
       </div>
 
+      <div class="club-create__grid2">
+        <div class="club-field">
+          <label for="club-name">نام کلاب <span class="club-req">*</span></label>
+          <input type="text" class="form-control<?= !empty($errors['name']) ? ' is-invalid' : '' ?>" id="club-name" name="name" maxlength="50" value="<?= h($vals['name']) ?>" placeholder="کلاب دوستداران تکنولوژی">
+          <div class="form-hint">یک نام کوتاه و مشخص، حداکثر ۵۰ کاراکتر</div>
+          <?php if (!empty($errors['name'])): ?><div class="invalid-feedback"><?= h($errors['name']) ?></div><?php endif; ?>
+        </div>
+        <div class="club-field">
+          <label for="club-category">دسته‌بندی <span class="club-req">*</span></label>
+          <select class="form-control<?= !empty($errors['category_id']) ? ' is-invalid' : '' ?>" id="club-category" name="category_id">
+            <?= $categoryOptions ?>
+          </select>
+          <?php if (!empty($errors['category_id'])): ?><div class="invalid-feedback"><?= h($errors['category_id']) ?></div><?php endif; ?>
+        </div>
+      </div>
+
+      <div class="club-field">
+        <label for="club-about">درباره کلاب <span class="club-req">*</span></label>
+        <textarea class="form-control<?= !empty($errors['description']) ? ' is-invalid' : '' ?>" id="club-about" name="description" maxlength="500" rows="4" placeholder="جایی برای خرید، فروش و معاوضه موبایل، لپ‌تاپ و گجت‌ها؛ تجربه‌هامون رو به اشتراک می‌گذاریم و با خیال راحت معامله می‌کنیم."><?= h($vals['description']) ?></textarea>
+        <div class="form-hint">کلابت را معرفی کن و بگو اعضا اینجا چه چیزی پیدا می‌کنند. حداکثر ۵۰۰ کاراکتر</div>
+        <?php if (!empty($errors['description'])): ?><div class="invalid-feedback"><?= h($errors['description']) ?></div><?php endif; ?>
+      </div>
+
+      <details class="club-optional">
+        <summary><i class="bi bi-sliders"></i> تکمیل اختیاری (تصویر کاور، تصویر پروفایل، قوانین)</summary>
+        <div class="club-optional__body">
+
       <label class="club-cover<?= !empty($errors['cover_image']) ? ' is-invalid' : '' ?>" id="club-cover-box">
         <input type="file" name="cover_image" id="club-cover-input" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden>
         <div class="club-cover__placeholder">
@@ -138,35 +165,15 @@ render_navbar($user);
         </div>
       </div>
 
-      <div class="club-create__grid2">
-        <div class="club-field">
-          <label for="club-name">نام کلاب <span class="club-req">*</span></label>
-          <input type="text" class="form-control<?= !empty($errors['name']) ? ' is-invalid' : '' ?>" id="club-name" name="name" maxlength="50" value="<?= h($vals['name']) ?>" placeholder="کلاب دوستداران تکنولوژی">
-          <div class="form-hint">یک نام کوتاه و مشخص، حداکثر ۵۰ کاراکتر</div>
-          <?php if (!empty($errors['name'])): ?><div class="invalid-feedback"><?= h($errors['name']) ?></div><?php endif; ?>
-        </div>
-        <div class="club-field">
-          <label for="club-category">دسته‌بندی <span class="club-req">*</span></label>
-          <select class="form-control<?= !empty($errors['category_id']) ? ' is-invalid' : '' ?>" id="club-category" name="category_id">
-            <?= $categoryOptions ?>
-          </select>
-          <?php if (!empty($errors['category_id'])): ?><div class="invalid-feedback"><?= h($errors['category_id']) ?></div><?php endif; ?>
-        </div>
-      </div>
-
-      <div class="club-field">
-        <label for="club-about">درباره کلاب <span class="club-req">*</span></label>
-        <textarea class="form-control<?= !empty($errors['description']) ? ' is-invalid' : '' ?>" id="club-about" name="description" maxlength="500" rows="4" placeholder="جایی برای خرید، فروش و معاوضه موبایل، لپ‌تاپ و گجت‌ها؛ تجربه‌هامون رو به اشتراک می‌گذاریم و با خیال راحت معامله می‌کنیم."><?= h($vals['description']) ?></textarea>
-        <div class="form-hint">کلابت را معرفی کن و بگو اعضا اینجا چه چیزی پیدا می‌کنند. حداکثر ۵۰۰ کاراکتر</div>
-        <?php if (!empty($errors['description'])): ?><div class="invalid-feedback"><?= h($errors['description']) ?></div><?php endif; ?>
-      </div>
-
       <div class="club-field">
         <label for="club-rules">قوانین کلاب</label>
         <textarea class="form-control<?= !empty($errors['rules']) ? ' is-invalid' : '' ?>" id="club-rules" name="rules" maxlength="2000" rows="4" placeholder="قوانین عضویت و معامله در کلاب را بنویس تا اعضا از ابتدا بدانند چه رفتاری انتظار می‌رود."><?= h($vals['rules']) ?></textarea>
         <div class="form-hint">قوانینی که سازنده کلاب مشخص می‌کند. حداکثر ۲۰۰۰ کاراکتر</div>
         <?php if (!empty($errors['rules'])): ?><div class="invalid-feedback"><?= h($errors['rules']) ?></div><?php endif; ?>
       </div>
+
+        </div>
+      </details>
 
       <div class="club-create__divider"></div>
 
@@ -184,7 +191,7 @@ render_navbar($user);
           <span class="club-privacy__radio"></span>
           <span class="club-privacy__body">
             <span class="club-privacy__title">کلاب عمومی <i class="bi bi-globe2"></i></span>
-            <span class="club-privacy__desc">همه می‌توانند کلاب و آگهی‌ها را ببینند.</span>
+            <span class="club-privacy__desc">همه می‌بینند و بدون تأیید عضو می‌شوند.</span>
           </span>
         </label>
         <label class="club-privacy<?= $vals['privacy'] === 'private' ? ' is-on' : '' ?>" data-privacy="private">
@@ -192,19 +199,8 @@ render_navbar($user);
           <span class="club-privacy__radio"></span>
           <span class="club-privacy__body">
             <span class="club-privacy__title">کلاب خصوصی <i class="bi bi-lock"></i></span>
-            <span class="club-privacy__desc">فقط اعضا به آگهی‌ها و کاتالوگ دسترسی دارند.</span>
+            <span class="club-privacy__desc">فقط اعضا محتوا را می‌بینند؛ عضویت با تأیید مدیر.</span>
           </span>
-        </label>
-      </div>
-
-      <div class="club-approve">
-        <div class="club-approve__text">
-          <h3>تأیید درخواست عضویت توسط مدیر</h3>
-          <p>اعضای جدید پس از تأیید شما به کلاب می‌پیوندند.</p>
-        </div>
-        <label class="club-switch">
-          <input type="checkbox" name="require_approval" value="1"<?= !empty($vals['require_approval']) ? ' checked' : '' ?>>
-          <span></span>
         </label>
       </div>
 

@@ -506,7 +506,7 @@ function swaapin_fallback_listings(?array $locationRow, ?array $categoryRow, arr
         $ladder[] = ['filter' => ['cities' => [], 'neighborhood' => ''], 'name' => ''];
     }
 
-    // نردبان دسته: دسته فعلی، سپس یک سطح بالاتر
+    // نردبان دسته: دسته فعلی، سپس یک سطح بالاتر، و در نهایت کل آگهی‌ها (سند — A12)
     $catRounds = [];
     if ($categoryRow) {
         $catRounds[] = ['id' => (int) $categoryRow['id'], 'name' => (string) ($categoryRow['name'] ?? '')];
@@ -517,6 +517,8 @@ function swaapin_fallback_listings(?array $locationRow, ?array $categoryRow, arr
                 $catRounds[] = ['id' => (int) $prow['id'], 'name' => (string) $prow['name']];
             }
         }
+        // لایه نهایی: اگر در دسته و والد آن آگهی نبود، از کل دسته‌ها پر کن
+        $catRounds[] = ['id' => 0, 'name' => ''];
     } else {
         $catRounds[] = ['id' => 0, 'name' => ''];
     }

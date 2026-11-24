@@ -12,15 +12,15 @@
  *   مدل     →  /{location}/list/swap-car-pride
  *   X با Y  →  /{location}/list/swap-{x}-with-{y}
  *
- * تفکیک نوع: ۲۴ لندینگ دسته + ۱۷ لندینگ X با Y + ۲ لندینگ مکان + ۱ لندینگ مدل = ۴۴
+ * تفکیک نوع: ۲۵ لندینگ دسته + ۱۸ لندینگ X با Y + ۲ لندینگ مکان + ۱ لندینگ مدل = ۴۶
  *
  * دو اسلاگ غیرمعتبر طبق تصمیم:
  *   - «تهاتر ملک با طلا» → gold اسلاگ معتبر ندارد؛ طبق سند «طلا دستهٔ جدا نیست»،
  *     به اسلاگ معتبر `jewellery` نگاشت شد → swap-real-estate-with-jewellery
  *   - «تهاتر ملک با کالا» → goods اسلاگ معتبر ندارد و نگاشت معنایی درستی هم ندارد؛
  *     ساخته نمی‌شود (۲۷۶ لندینگ کاندید فقط با شرط ایندکس ساخته می‌شوند).
- *   - سه لندینگ «مصالح ساختمانی» حذف شد: دستهٔ building-materials آگهی ندارد و
- *     صفحهٔ خالی/Soft 404 می‌ساخت؛ پس از پرشدن دسته دوباره به فهرست برگردد.
+ *   - سه لندینگ «مصالح ساختمانی» قبلاً حذف شده بود؛ اما با اصلاح سیستم Fallback (A12)
+ *     و درخواست کاربر، دوباره به فهرست اضافه شدند تا با «سایر آگهی‌ها» پر شوند.
  *
  * ترتیب ساخت طبق کارت: اول لندینگ‌های مکان و دسته (به «می‌خواهم» نیاز ندارند)،
  * بعد لندینگ‌های X با Y.
@@ -121,7 +121,7 @@ $landings = [
     ['karaj',  'swap', 'location', '', '', '', ''],
     ['tehran', 'swap', 'location', '', '', '', ''],
 
-    // ── لندینگ دسته (۲۴) ─────────────────────────────────────────────────
+    // ── لندینگ دسته (۲۵) ─────────────────────────────────────────────────
     ['iran',    'swap-car',              'category', 'car',              '', '', ''],
     ['iran',    'swap-real-estate',      'category', 'real-estate',      '', '', ''],
     ['tehran',  'swap-apartment',        'category', 'apartment',        '', '', ''],
@@ -146,11 +146,12 @@ $landings = [
     ['iran',    'swap-home-appliances',  'category', 'home-appliances',  '', '', ''],
     ['iran',    'swap-plants',           'category', 'plants',           '', '', ''],
     ['iran',    'swap-pets',             'category', 'pets',             '', '', ''],
+    ['iran',    'swap-building-materials', 'category', 'building-materials', '', '', ''],
 
     // ── لندینگ مدل (۱): پراید — برند سایپا، دستهٔ خودرو ──────────────────────
     ['iran', 'swap-car-pride', 'model', 'car', 'pride', '', ''],
 
-    // ── لندینگ X با Y (۱۷) ───────────────────────────────────────────────
+    // ── لندینگ X با Y (۱۸) ───────────────────────────────────────────────
     ['iran',   'swap-car-with-real-estate',                  'xy', 'car',              '', 'category', 'real-estate'],
     ['iran',   'swap-real-estate-with-real-estate',          'xy', 'real-estate',      '', 'category', 'real-estate'],
     ['iran',   'swap-real-estate-with-car',                  'xy', 'real-estate',      '', 'category', 'car'],
@@ -168,6 +169,7 @@ $landings = [
     ['iran',   'swap-apartment-with-apartment',              'xy', 'apartment',        '', 'category', 'apartment'],
     ['iran',   'swap-apartment-with-land',                   'xy', 'apartment',        '', 'category', 'land'],
     ['iran',   'swap-land-with-land',                        'xy', 'land',             '', 'category', 'land'],
+    ['iran',   'swap-building-materials-with-real-estate',   'xy', 'building-materials', '', 'category', 'real-estate'],
 ];
 
 echo $apply
@@ -263,7 +265,8 @@ echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-car-pride\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-car-with-real-estate\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/karaj/list/swap\n";
+echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-building-materials\n";
+echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-building-materials-with-real-estate\n";
 echo "  # لندینگ‌های خارج از فهرست باید ۴۰۴ بدهند و در سایت‌مپ نباشند:\n";
 echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-jobs-services\n";
-echo "  curl -s -o /dev/null -w '%{http_code}\\n' https://<host>/iran/list/swap-building-materials\n";
 echo "  curl -s https://<host>/sitemap-swap.xml | grep -c '<loc>'\n";

@@ -45,6 +45,9 @@ if (!$club) {
 
 $clubId = (int)$club['id'];
 $state = clubs_user_state($user, $clubId);
+// کلاب خصوصی: محتوا فقط برای اعضا (و ادمین) نمایش داده می‌شود
+$isClubAdmin = function_exists('is_admin_user') && is_admin_user($user);
+$isPrivateLocked = (($club['privacy'] ?? 'public') === 'private') && empty($state['member']) && !$isClubAdmin;
 $loginUrl = APP_URL . '/auth/login?redirect=' . urlencode($_SERVER['REQUEST_URI'] ?? '/clubs/' . $club['slug']);
 $flash = (string)($_SESSION['club_flash'] ?? '');
 unset($_SESSION['club_flash']);
@@ -95,15 +98,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $stats = clubs_stats($club);
 $coverUrl = clubs_image_url($club['cover_image'] ?? '');
 $avatarUrl = clubs_image_url($club['avatar_image'] ?? '');
-$listings = clubs_listings($club, $listMode, $q, 12, 0, $sort);
-$messages = array_reverse(clubs_messages($clubId, 30));
-$onlineCount = clubs_online_count($clubId);
-$members = $tab === 'members' ? clubs_members_list($clubId, 40) : [];
+$listings = $isPrivateLocked ? [] : clubs_listings($club, $listMode, $q, 12, 0, $sort);
+$messages = $isPrivateLocked ? [] : array_reverse(clubs_messages($clubId, 30));
+$onlineCount = $isPrivateLocked ? 0 : clubs_online_count($clubId);
+$members = ($tab === 'members' && !$isPrivateLocked) ? clubs_members_list($clubId, 40) : [];
 $pendingJoins = clubs_can_manage($state) ? clubs_pending_joins($clubId) : [];
 $myListings = $user ? clubs_user_listings((int)$user['id']) : [];
 $joinListing = ($state['member'] && (int)$state['listing_id'] > 0) ? clubs_owned_listing((int)$state['listing_id'], (int)$user['id']) : null;
 $joinLabel = $state['member'] ? 'عضو هستی' : ($state['pending'] ? 'در انتظار تأیید' : 'عضویت در کلاب');
-$createUrl = APP_URL . '/listings/create' . (!empty($club['category_id']) ? ('?prefill_cat=' . (int)$club['category_id']) : '');
+$createUrlParams = ['club' => $clubId];
+if (!empty($club['category_id'])) {
+    $createUrlParams['prefill_cat'] = (int)$club['category_id'];
+}
+$createUrl = APP_URL . '/listings/create?' . http_build_query($createUrlParams);
 $joinCreateUrl = $createUrl;
 $cssVer = @filemtime(__DIR__ . '/../src/css/clubs-club.css') ?: time();
 $mentionListings = array_slice($listings, 0, 20);
@@ -126,17 +133,17 @@ render_navbar($user);
 
   <div class="clubp-banner">
     <?php if ($coverUrl): ?><img src="<?= h($coverUrl) ?>" alt=""><?php endif; ?>
-    <!-- <div class="clubp-banner__inner">
-      <div class="clubp-banner__copy">
-        <h1><?= h($club['name']) ?></h1>
-        <p><?= h($club['description'] ?? '') ?></p>
-        <div class="clubp-banner__stats">
-          <div><strong><?= clubs_fmt_compact((int)$stats['members']) ?></strong><span>عضو</span></div>
-          <div><strong><?= clubs_fmt_compact((int)$stats['posts']) ?></strong><span>آگهی</span></div>
-          <div><strong><?= clubs_fmt_compact((int)$stats['trades']) ?></strong><span>معامله موفق</span></div>
+        <div class="clubp-banner__copy">
+          <h1>
+            <?= h($club['name']) ?>
+            <?php if (($club['privacy'] ?? 'public') === 'private'): ?>
+              <span class="badge badge-private" style="font-size: 0.5em; vertical-align: middle; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 6px; margin-right: 8px;">
+                <i class="bi bi-lock-fill"></i> خصوصی
+              </span>
+            <?php endif; ?>
+          </h1>
+          <p><?= h($club['description'] ?? '') ?></p>
         </div>
-      </div>
-    </div> -->
   </div>
 
   <nav class="clubp-mtabs">
@@ -178,6 +185,20 @@ render_navbar($user);
   </section>
   <?php endif; ?>
 
+  <?php if ($isPrivateLocked): ?>
+  <section class="clubp-locked">
+    <i class="bi bi-lock-fill"></i>
+    <h2>این کلاب خصوصی است</h2>
+    <p>برای دیدن آگهی‌ها، اعضا و گفت‌وگوی کلاب باید عضو شوید.<?= $state['pending'] ? ' درخواست عضویت شما در انتظار تأیید مدیر است.' : '' ?></p>
+    <?php if (!$state['pending']): ?>
+      <?php if ($user): ?>
+      <button type="button" class="clubs-btn-navy" data-open-join="<?= $clubId ?>">عضویت در کلاب</button>
+      <?php else: ?>
+      <a class="clubs-btn-navy" href="<?= h($loginUrl) ?>">ورود و عضویت</a>
+      <?php endif; ?>
+    <?php endif; ?>
+  </section>
+  <?php else: ?>
   <div class="clubp-toolbar">
     <form class="clubp-filters" method="get" action="<?= h(clubs_url($club)) ?>">
       <select name="sort" onchange="this.form.submit()">
@@ -201,7 +222,7 @@ render_navbar($user);
         </select>
       </label>
       <?php endif; ?>
-      <a class="clubp-new" href="<?= h($createUrl) ?>"><i class="bi bi-plus-lg"></i> ثبت آگهی جدید</a>
+      <a class="clubp-new" href="<?= h($createUrl) ?>"><i class="bi bi-plus-lg"></i> ثبت آگهی در کلاب</a>
     </div>
   </div>
 
@@ -327,6 +348,7 @@ render_navbar($user);
       <?php endif; ?>
     </aside>
   </div>
+  <?php endif; ?>
   <a class="clubp-fab" href="#club-chat" aria-label="گفتگوی کلاب"><i class="bi bi-send-fill"></i></a>
 </main>
 

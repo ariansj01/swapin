@@ -178,3 +178,48 @@
   .clubp-grid { grid-template-columns: 320px minmax(0,1fr); }
   .clubp-grid > aside { order: -1; }
 }
+
+/* Private club lock */
+.clubp-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 48px 24px;
+  margin: 16px 0;
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(17, 24, 39, 0.04);
+}
+
+.clubp-locked i {
+  font-size: 34px;
+  color: #071A33;
+}
+
+.clubp-locked h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #111827;
+}
+
+.clubp-locked p {
+  margin: 0;
+  max-width: 460px;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.clubp-locked .clubs-btn-navy {
+  margin-top: 8px;
+  width: auto;
+  padding: 0 22px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
