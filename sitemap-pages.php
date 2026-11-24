@@ -19,7 +19,6 @@ $pages = [
     ['/app',              '0.7', 'monthly'],
     ['/valuation',        '0.8', 'weekly'],
     ['/installment-swap', '0.8', 'weekly'],
-    ['/ai/chat',          '0.5', 'weekly'],
     ['/shops',            '0.8', 'daily'],
     ['/shops/online',     '0.8', 'daily'],
     ['/shops/physical',   '0.8', 'daily'],
