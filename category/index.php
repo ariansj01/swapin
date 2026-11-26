@@ -210,6 +210,24 @@ if ($slugPath !== '') {
         // بنابراین هر مسیر قدیمی/تودرتو (مثل /electronics/mobile-tablet/mobile-phones)
         // در یک مرحله به کانونیکال ۳۰۱ می‌شود، نه به والدِ اشتباه.
         $lastSeg      = strtolower((string) end($parts));
+
+        // اسلاگ سطح۱ قدیمی که همنام یک برگ جدید شده است (مثل home-appliances):
+        // مسیر تکبخشی قدیمی باید به دستهٔ سطح۱ جدید ۳۰۱ شود، نه به برگ همنام.
+        // بدون این، DB-lookup برگ همنام روی alias سایه می‌انداخت.
+        if (count($parts) === 1) {
+            $topAlias = swaapin_resolve_legacy_category_slug($lastSeg);
+            if ($topAlias !== null && $topAlias !== $lastSeg) {
+                $topAliasRow = DB::fetch(
+                    'SELECT slug FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1',
+                    [$topAlias]
+                );
+                if ($topAliasRow) {
+                    header('Location: ' . category_url((string) $topAliasRow['slug']), true, 301);
+                    exit;
+                }
+            }
+        }
+
         $resolvedSlug = null;
 
         $leafRow = DB::fetch(

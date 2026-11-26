@@ -32,9 +32,29 @@ function swaapin_sitemap_close(string $root = 'urlset'): void
     echo '</' . $root . '>';
 }
 
+/**
+ * آیا این آدرس مجاز به ورود به سایت‌مپ است؟
+ * فقط URLهای ۲۰۰/ایندکس‌پذیر/self-canonical/بدون پارامتر. مسیرهای دارای کاراکتر
+ * کاما (خواه خام «،» خواه انکودشدهٔ «%D8%8C» که به اشتباه به انتهای برخی مسیرها
+ * می‌چسبید) هرگز کانونیکال نیستند و از XML حذف می‌شوند.
+ */
+function swaapin_sitemap_url_allowed(string $loc): bool
+{
+    if (trim($loc) === '') {
+        return false;
+    }
+    if (str_contains($loc, '%D8%8C') || str_contains($loc, '،')) {
+        return false;
+    }
+    return true;
+}
+
 /** چاپ یک <url> با lastmod واقعی (اختیاری). */
 function swaapin_sitemap_url(string $loc, string $priority = '0.7', string $changefreq = 'daily', ?string $lastmod = null): void
 {
+    if (!swaapin_sitemap_url_allowed($loc)) {
+        return;
+    }
     echo "  <url>\n";
     echo '    <loc>' . htmlspecialchars($loc, ENT_XML1) . "</loc>\n";
     if ($lastmod !== null && $lastmod !== '') {
@@ -196,6 +216,34 @@ function swaapin_sitemap_sum_counts(array $cityCat, array $cities, array $catIds
         }
     }
     return $sum;
+}
+
+/**
+ * تعداد آگهی‌های فعال یک استان به تفکیک شهر برای مجموعه دسته‌ها (فقط شهرهای دارای آگهی).
+ * ورودی «cityCat» ساختار swaapin_sitemap_city_category_counts است؛ برای قاعدهٔ ضد-تکرار
+ * صفحهٔ استان+دسته (توابع seo_province_duplicate_blocked) استفاده می‌شود.
+ */
+function swaapin_sitemap_province_city_counts(array $cityCat, array $cities, array $catIds): array
+{
+    $byCity = $cityCat['city'] ?? [];
+    if ($cities === [] || $catIds === [] || $byCity === []) {
+        return [];
+    }
+    $scope = array_flip(array_map('intval', $catIds));
+    $counts = [];
+    foreach ($cities as $cityName) {
+        $byCat = $byCity[(string) $cityName] ?? [];
+        $sum = 0;
+        foreach ($byCat as $cid => $n) {
+            if (isset($scope[(int) $cid])) {
+                $sum += (int) $n;
+            }
+        }
+        if ($sum > 0) {
+            $counts[] = $sum;
+        }
+    }
+    return $counts;
 }
 
 /** نگاشت شناسهٔ دسته → مجموعهٔ شناسه‌های خود و زیردسته‌ها (برای شمارش تجمعی). */

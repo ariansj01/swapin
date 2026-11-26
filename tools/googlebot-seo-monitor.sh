@@ -2,12 +2,19 @@
 
 set -u
 
-LOG="/var/log/nginx/access.log"
+# مسیر لاگ: آرگومان اول، وگرنه از مسیرهای متعارف سرور پیدا می‌شود
+LOG="${1:-}"
+if [ -z "$LOG" ]; then
+    for cand in /var/log/nginx/swaapin.access.log /var/log/nginx/access.log; do
+        if [ -r "$cand" ]; then LOG="$cand"; break; fi
+    done
+fi
+ERROR_LOG="${ERROR_LOG:-$(dirname "$LOG")/$(basename "$LOG" | sed 's/access/error/')}"
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 
 if [ ! -r "$LOG" ]; then
-    echo "[ERROR] Cannot read $LOG"
+    echo "[ERROR] Cannot read log file (pass it as \$1). Tried: ${LOG:-<none>}"
     exit 2
 fi
 
@@ -147,6 +154,66 @@ END {
         print s, count[s]
 }
 ' | sort
+
+echo
+echo "========== VERIFIED GOOGLEBOT 5xx OUTAGE WINDOWS (PER MINUTE) =========="
+
+awk -F'"' '
+{
+    split($3, s, " ")
+    if (s[1] ~ /^5[0-9][0-9]$/) {
+        ts = $1
+        sub(/^.*\[/, "", ts)
+        split(ts, t, ":")
+        c[t[1] " " t[2] ":" t[3]]++
+    }
+}
+END {
+    if (length(c) == 0) { print "[PASS] No 5xx responses for Googlebot"; exit }
+    for (k in c) print c[k], k
+}
+' "$TMP" 2>/dev/null | sort -nr | head -20
+
+echo
+echo "========== BOT-BLOCK SIGNALS (403/429 for Googlebot) =========="
+
+awk -F'"' '
+/Googlebot/ {
+    split($3, s, " ")
+    if (s[1] == "403" || s[1] == "429") print s[1], $2
+}
+' "$TMP" 2>/dev/null | sort | uniq -c | sort -nr | head -20
+awk -F'"' '/Googlebot/ { split($3,s," "); if (s[1]=="403" || s[1]=="429") n++ } END { if (n==0) print "[PASS] No 403/429 (no bot throttling/blocking)" }' "$TMP"
+
+echo
+echo "========== NGINX ERROR-LOG SIGNALS =========="
+
+if [ -r "$ERROR_LOG" ]; then
+    echo "-- top signals --"
+    grep -Eio 'upstream timed out|connect\(\) failed|no live upstreams|worker_connections are not enough|too many open files|recv\(\) failed|upstream prematurely closed connection' "$ERROR_LOG" 2>/dev/null |
+        sort | uniq -c | sort -nr | head -20
+    echo "-- last 10 raw error lines --"
+    tail -n 10 "$ERROR_LOG"
+else
+    echo "[SKIP] $ERROR_LOG not readable"
+fi
+
+echo
+echo "========== FIREWALL / RATE-LIMIT AUDIT =========="
+
+if command -v ufw >/dev/null 2>&1; then
+    echo "-- ufw --"
+    ufw status verbose 2>/dev/null || echo "[SKIP] ufw needs root"
+fi
+
+if command -v fail2ban-client >/dev/null 2>&1; then
+    echo "-- fail2ban jails --"
+    fail2ban-client status 2>/dev/null || echo "[SKIP] fail2ban needs root"
+fi
+
+echo "-- nginx rules that could throttle/deny bots --"
+grep -RnE 'limit_req|limit_conn|deny[[:space:]]|return 429' /etc/nginx/ 2>/dev/null | grep -vE ':[[:space:]]*#' | head -20 || true
+echo "[NOTE] Googlebot must NOT be inside any limit_req/deny rule."
 
 echo
 echo "=============================================="

@@ -66,7 +66,16 @@ $reviews = DB::fetchAll(
 $swapScore = compute_swap_score($profileId);
 $kycPublic = kyc_public_info($profile);
 
-render_head(h($profile['name']) . ' — پروفایل');
+// پروفایل کاربران خصوصی است (ممیزی بعد از مهاجرت — P1):
+// ۱) noindex, follow — هیچ پروفایلی ایندکس نشود.
+// ۲) کنونیکال به خودِ URL پروفایل (نه به /profile که ۳۰۲ به خانه می‌رود).
+// پیش‌تر همهٔ پروفایل‌ها به «https://swaapin.ir/profile» کنونیکال می‌شدند که
+// یک URL ریدایرکت‌شونده است و سیگنال اشتباه به گوگل می‌داد.
+$profileUrl = APP_URL . '/profile?id=' . $profileId;
+render_head(h($profile['name']) . ' — پروفایل', '', [
+    'robots'    => 'noindex, follow',
+    'canonical' => $profileUrl,
+]);
 render_panel_styles();
 render_navbar($currentUser);
 ?>

@@ -5,6 +5,9 @@ require_once __DIR__ . '/includes/layout.php';
 $user = auth_user();
 
 $directApkUrl = APP_URL . '/downloads/swaapin.apk';
+// فایل APK در ریپو نگه‌داری نمی‌شود (به‌صورت دستی روی سرور آپلود می‌شود).
+// اگر فایل موجود نباشد، کارت «دانلود مستقیم» رندر نمی‌شود تا هیچ لینک مستقیمی به ۴۰۴ نرود.
+$apkAvailable = is_file(__DIR__ . '/downloads/swaapin.apk');
 $bazaarUrl    = 'https://cafebazaar.ir/app/ir.swaapin.mobile';
 
 render_head(
@@ -30,6 +33,7 @@ render_navbar($user);
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--sp-5)">
 
+      <?php if ($apkAvailable): ?>
       <div class="card" style="text-align:center">
         <div class="card-body" style="padding:var(--sp-6)">
           <div style="font-size:2.25rem;color:var(--primary);margin-bottom:var(--sp-3)"><i class="bi bi-download"></i></div>
@@ -42,6 +46,7 @@ render_navbar($user);
           </a>
         </div>
       </div>
+      <?php endif; ?>
 
       <div class="card" style="text-align:center">
         <div class="card-body" style="padding:var(--sp-6)">

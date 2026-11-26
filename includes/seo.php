@@ -290,8 +290,69 @@ function seo_mark_page_indexed(string $path, int $count): void {
 }
 
 /**
+ * آیا مسیر یک «مقصد تأییدشدهٔ» نقشهٔ ۳۰۱ است؟ (مثل /iran/building-materials)
+ * این صفحات طبق تصمیم سئو مستقل از آستانهٔ ۶ آگهی ایندکس‌پذیرند.
+ */
+function seo_is_legacy_destination_path(string $path): bool {
+    $path = seo_normalize_index_path($path);
+    if (!preg_match('#^/iran/([^/]+)$#', $path, $m)) {
+        return false;
+    }
+    if (!function_exists('swaapin_is_legacy_destination_slug')) {
+        return false;
+    }
+    return swaapin_is_legacy_destination_slug(rawurldecode($m[1]));
+}
+
+/**
+ * تعداد آگهی‌های فعال استان در یک دسته، به تفکیک شهر (فقط شهرهای دارای آگهی).
+ * برای «قاعدهٔ ضد-تکرار صفحهٔ استان+دسته» استفاده می‌شود.
+ */
+function seo_province_category_city_counts(array $provinceCities, array $catScopeIds): array {
+    $provinceCities = array_values(array_filter(array_map('strval', $provinceCities), static fn($c) => $c !== ''));
+    $catScopeIds    = array_values(array_filter(array_map('intval', $catScopeIds), static fn($c) => $c > 0));
+    if ($provinceCities === [] || $catScopeIds === []) {
+        return [];
+    }
+    $cityPh = implode(',', array_fill(0, count($provinceCities), '?'));
+    $catPh  = implode(',', array_fill(0, count($catScopeIds), '?'));
+    $params = array_merge($provinceCities, $catScopeIds);
+    try {
+        $rows = DB::fetchAll(
+            'SELECT l.city AS c, COUNT(*) AS n FROM listings l'
+            . ' WHERE ' . listing_public_sql('l') . " AND l.listing_mode != 'sell'"
+            . " AND l.city IN ({$cityPh}) AND l.category_id IN ({$catPh})"
+            . ' GROUP BY l.city',
+            $params
+        );
+    } catch (Throwable $e) {
+        return [];
+    }
+    $counts = [];
+    foreach ($rows as $r) {
+        $counts[] = (int) $r['n'];
+    }
+    return $counts;
+}
+
+/**
+ * قاعدهٔ ضد-تکرار صفحهٔ استان+دسته (سند — بخش ۳ و ۷):
+ * اگر همهٔ آگهی‌های فعال استان در یک دسته در یک شهر متمرکز باشند (فهرست یکسان با
+ * صفحهٔ آن شهر) یا سایر شهرهای استان مجموعاً کمتر از آستانه آگهی یکتا داشته باشند،
+ * صفحهٔ استان تکرارِ صفحهٔ آن شهر تلقی و noindex می‌ماند. ورودی: تعداد آگهی هر شهر.
+ */
+function seo_province_duplicate_blocked(array $perCityCounts): bool {
+    $counts = array_values(array_filter(array_map('intval', $perCityCounts)));
+    if ($counts === []) {
+        return true;
+    }
+    return (array_sum($counts) - max($counts)) < SWAAPIN_MIN_LISTINGS_FOR_INDEX;
+}
+
+/**
  * آیا صفحه لیستی با «count» آگهی مجاز به ایندکس است؟
- * اگر قبلاً ایندکس شده باشد همیشه true؛ در غیر این صورت با رسیدن به حداقل تعداد، ایندکس ثبت می‌شود.
+ * اگر قبلاً ایندکس شده باشد همیشه true؛ اگر مقصد تأییدشدهٔ نقشهٔ ۳۰۱ باشد
+ * (مستقل از آستانه) true؛ در غیر این صورت با رسیدن به حداقل تعداد، ایندکس ثبت می‌شود.
  */
 function seo_list_page_indexable(string $path, int $count, int $min = SWAAPIN_MIN_LISTINGS_FOR_INDEX): bool {
     $path = seo_normalize_index_path($path);
@@ -299,6 +360,12 @@ function seo_list_page_indexable(string $path, int $count, int $min = SWAAPIN_MI
         return false;
     }
     if (seo_page_indexed_at($path) !== null) {
+        return true;
+    }
+    // مقصد تأییدشدهٔ نقشهٔ ۳۰۱: حتی با موجودی زیر آستانه هم ایندکس‌پذیر است.
+    // (دستهٔ تازه‌ای که مقصد مهاجرت نبوده، همچنان تابع آستانه می‌ماند.)
+    if (seo_is_legacy_destination_path($path)) {
+        seo_mark_page_indexed($path, $count);
         return true;
     }
     if ($count >= $min) {

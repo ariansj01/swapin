@@ -485,6 +485,28 @@ if (has_table('locations')) {
     } else {
         check('A03.1', 'فیلتر استان قابل تست است', false, 'تابع swaapin_location_filter موجود نیست');
     }
+
+    // قاعدهٔ مستقل استان و شهر: استانِ هم‌نام با یک شهر باید از آن جدا بماند
+    // (تایتل «در استان {نام}» در برابر «در {نام}» و کانونیکال مجزا).
+    $dupProv = dbf("SELECT p.slug AS pslug, p.name AS pname, c.slug AS cslug
+                    FROM locations p
+                    JOIN locations c ON c.name = p.name AND c.level = 'city' AND c.is_active = 1
+                    WHERE p.level = 'province' AND p.is_active = 1 LIMIT 1");
+    if ($dupProv) {
+        $rp = req($BASE . '/' . $dupProv['pslug'], true);
+        $rc = req($BASE . '/' . $dupProv['cslug'], true);
+        $tp = html_title($rp['body']);
+        $tc = html_title($rc['body']);
+        $cp = norm_path(html_canonical($rp['body']));
+        $cc = norm_path(html_canonical($rc['body']));
+        $provOk = $rp['code'] === 200 && mb_strpos($tp, 'استان ') !== false && $cp === '/' . $dupProv['pslug'];
+        $cityOk = $rc['code'] === 200 && mb_strpos($tc, 'استان ') === false && $cc === '/' . $dupProv['cslug'];
+        check('A03.1', 'صفحهٔ استان هم‌نام مستقل از صفحهٔ شهر است (' . $dupProv['pslug'] . ' / ' . $dupProv['cslug'] . ')',
+            $provOk && $cityOk,
+            'استان «' . $tp . '» canonical=' . $cp . ' | شهر «' . $tc . '» canonical=' . $cc);
+    } else {
+        check('A03.1', 'استان هم‌نام با شهر برای تست استقلال', true, 'موردی یافت نشد (اختیاری)');
+    }
 } else {
     check('A03.1', 'جدول locations موجود است', false, 'جدول پیدا نشد');
     check('A03.2', 'سطح neighborhood وجود دارد', false, 'جدول locations نیست');
@@ -560,15 +582,34 @@ $leafCounts = dbq("SELECT c.slug AS slug, c.name AS name, COUNT(l.id) AS n
                    WHERE NOT EXISTS (SELECT 1 FROM categories ch WHERE ch.parent_id = c.id)
                    GROUP BY c.id ORDER BY n DESC");
 $catHigh = null; $catLow = null;
+$leafCountBySlug = [];
+foreach ($leafCounts as $r) {
+    $leafCountBySlug[(string)$r['slug']] = (int)$r['n'];
+}
 foreach ($leafCounts as $r) {
     if ($catHigh === null && (int)$r['n'] >= 6) { $catHigh = $r; }
     if ($catLow === null && (int)$r['n'] > 0 && (int)$r['n'] < 6) {
         // صفحه‌ای که قبلاً ایندکس شده طبق «قانون پایداری» همیشه index می‌ماند؛
         // برای تست صحیح «زیر آستانه» باید صفحه‌ای انتخاب شود که هرگز ایندکس نشده باشد.
         $already = function_exists('seo_page_indexed_at') && seo_page_indexed_at('/iran/' . $r['slug']) !== null;
-        if (!$already) { $catLow = $r; }
+        // «مقصد تأییدشدهٔ» نقشهٔ ۳۰۱ مستقل از آستانه index است؛ برای تست آستانه مناسب نیست.
+        $isLegacyDest = function_exists('swaapin_is_legacy_destination_slug')
+            && swaapin_is_legacy_destination_slug((string)$r['slug']);
+        if (!$already && !$isLegacyDest) { $catLow = $r; }
     }
     if ($catHigh && $catLow) { break; }
+}
+
+// نمونهٔ «مقصد تأییدشدهٔ» نقشهٔ ۳۰۱ با موجودی زیر ۶ آگهی (برای تست استثنای ایندکس)
+$legacyDestLow = null;
+if (function_exists('swaapin_legacy_destination_slugs')) {
+    foreach (swaapin_legacy_destination_slugs() as $destSlug) {
+        if (!isset($leafCountBySlug[$destSlug])) { continue; }
+        $dn = $leafCountBySlug[$destSlug];
+        if ($dn > 0 && $dn < 6 && $legacyDestLow === null) {
+            $legacyDestLow = ['slug' => $destSlug, 'n' => $dn];
+        }
+    }
 }
 
 // شهر نمونه
@@ -727,6 +768,79 @@ if (has_table('listing_index_status')) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// A11.1 — استثنای مقصد تأییدشدهٔ نقشهٔ ۳۰۱ (مستقل از آستانهٔ ۶)
+// ══════════════════════════════════════════════════════════════════════════
+// معیار: مقصد تأییدشدهٔ یک دستهٔ پیش از مهاجرت با موجودی زیر ۶ باید ۲۰۰،
+// self-canonical و بدون noindex ناشی از آستانه باشد؛ دستهٔ تازه با موجودی
+// مشابه همچنان تابع آستانه است (بند A11 بالا نمونهٔ $catLow را می‌سنجد).
+if (function_exists('swaapin_legacy_destination_slugs')) {
+    $legacyDestSlugs = swaapin_legacy_destination_slugs();
+    check('A11.1', 'نقشهٔ مقصدهای تأییدشدهٔ ۳۰۱ استخراج شد', count($legacyDestSlugs) > 0,
+        'تعداد مقصد یکتا: ' . count($legacyDestSlugs));
+    if (function_exists('seo_is_legacy_destination_path') && $legacyDestSlugs !== []) {
+        $destSample = '/iran/' . $legacyDestSlugs[0];
+        check('A11.1', 'منطق استثنای مقصد تأییدشده فعال است (' . $destSample . ')',
+            seo_is_legacy_destination_path($destSample), 'نمونه: ' . $destSample);
+    }
+    if ($legacyDestLow) {
+        $p = '/iran/' . $legacyDestLow['slug'];
+        $r = req($BASE . $p, true);
+        $canon = norm_path(html_canonical($r['body']));
+        $okIdx = effective_indexable($r, $p, (int)$legacyDestLow['n']);
+        check('A11.1', 'مقصد تأییدشدهٔ زیر آستانه ۲۰۰+self-canonical+index (' . $legacyDestLow['slug'] . ' n=' . $legacyDestLow['n'] . ')',
+            $r['code'] === 200 && $canon === $p && $okIdx,
+            'کد=' . $r['code'] . ' canonical=' . $canon . ' robots=' . html_robots($r['body']) . ($GLOBAL_NOINDEX ? ' [منطقی: index]' : ''));
+    } else {
+        check('A11.1', 'مقصد تأییدشدهٔ زیر آستانه نمونه پیدا شد', true,
+            'موردی با موجودی ۱..۵ یافت نشد؛ تست منطق استثنا در بند بالا انجام شد.');
+    }
+} else {
+    check('A11.1', 'نقشهٔ مقصدهای تأییدشدهٔ ۳۰۱ در دسترس است', false, 'تابع swaapin_legacy_destination_slugs موجود نیست');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// A11.2 — قاعدهٔ ضد-تکرار صفحهٔ استان+دسته (۶ آگهی یکتا خارج از بزرگ‌ترین شهر)
+// ══════════════════════════════════════════════════════════════════════════
+// معیار: فهرست یکسان استان/شهر و ۱..۵ آگهی خارج از شهر → noindex؛ با رسیدن به ۶
+// آگهی یکتا خارج از شهر، مانع برداشته می‌شود و سایر قواعد ایندکس اعمال می‌گردد.
+if (function_exists('seo_province_duplicate_blocked')) {
+    check('A11.2', 'فهرست یکسان استان/شهر → مانع فعال (noindex)',
+        seo_province_duplicate_blocked([9]) === true, 'perCity=[9]');
+    check('A11.2', '۱ تا ۵ آگهی خارج از شهر → مانع فعال (noindex)',
+        seo_province_duplicate_blocked([9, 4]) === true, 'perCity=[9,4]');
+    check('A11.2', '۶ آگهی یکتا خارج از شهر → مانع برداشته می‌شود',
+        seo_province_duplicate_blocked([9, 6]) === false, 'perCity=[9,6]');
+
+    // تأیید داده واقعی: صفحهٔ استان+دسته باید مطابق قاعده رفتار کند
+    $provRow = dbf("SELECT * FROM locations WHERE level='province' AND is_active=1 ORDER BY id LIMIT 1");
+    $leafCat = dbf("SELECT id, slug FROM categories WHERE is_active=1
+                    AND NOT EXISTS (SELECT 1 FROM categories ch WHERE ch.parent_id = categories.id)
+                    ORDER BY id LIMIT 1");
+    if ($provRow && $leafCat && function_exists('swaapin_location_filter') && function_exists('seo_province_category_city_counts')) {
+        $pcities  = (array) (swaapin_location_filter($provRow)['cities'] ?? []);
+        $pscope   = function_exists('swaapin_category_descendant_ids')
+            ? swaapin_category_descendant_ids((int) $leafCat['id'])
+            : [(int) $leafCat['id']];
+        $pcounts  = seo_province_category_city_counts($pcities, $pscope);
+        $pblocked = seo_province_duplicate_blocked($pcounts);
+        $ppath    = '/' . $provRow['slug'] . '/' . $leafCat['slug'];
+        $presp    = req($BASE . $ppath, true);
+        $pcanon   = norm_path(html_canonical($presp['body']));
+        $pnoindex = is_noindex($presp['body'], $presp['headers']);
+        $pAlready = function_exists('seo_page_indexed_at') && seo_page_indexed_at($BASE . $ppath) !== null;
+        $expectNoindex = ($pblocked && !$pAlready) || $GLOBAL_NOINDEX;
+        check('A11.2', 'صفحهٔ استان+دسته «' . $ppath . '» مطابق قاعدهٔ ضد-تکرار',
+            $presp['code'] === 200 && $pcanon === $ppath && ($pnoindex === $expectNoindex),
+            'blocked=' . ($pblocked ? '1' : '0') . ' noindex=' . ($pnoindex ? '1' : '0')
+            . ' canonical=' . $pcanon . ' perCity=' . json_encode($pcounts));
+    } else {
+        check('A11.2', 'نمونهٔ استان+دسته برای تست واقعی', true, 'موردی یافت نشد (اختیاری)');
+    }
+} else {
+    check('A11.2', 'تابع seo_province_duplicate_blocked موجود است', false, 'includes/seo.php لود نشد.');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // A12 — پر کردن صفحه‌های کم‌آگهی (fallback)
 // ══════════════════════════════════════════════════════════════════════════
 if ($catLow) {
@@ -795,6 +909,11 @@ foreach ($childSitemaps as $smUrl) {
         foreach ($urls as $u2) {
             if (str_contains($u2, '?')) {
                 $smIssues[] = $smUrl . ' → آدرس دارای پارامتر: ' . $u2;
+                continue;
+            }
+            // نسخهٔ انکودشدهٔ کامای فارسی که به اشتباه به مسیر چسبیده است
+            if (str_contains($u2, '%D8%8C') || str_contains($u2, '،')) {
+                $smIssues[] = $smUrl . ' → آدرس دارای کاما (%D8%8C): ' . $u2;
                 continue;
             }
             $rc = req($u2, true);

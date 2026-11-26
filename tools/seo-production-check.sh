@@ -312,6 +312,37 @@ check_legacy_redirect "$BASE/services/home-services/cleaning-services"      "$BA
 check_legacy_redirect "$BASE/services"             "$BASE/iran/services"
 check_legacy_redirect "$BASE/pwa"                  "$BASE/app"
 check_legacy_redirect "$BASE/exchange"             "$BASE/"
+# لینک کوتاه «/l» (در محتوای بلاگ) → صفحهٔ اصلی (نقشهٔ ۳۰۱)
+check_legacy_redirect "$BASE/l"                    "$BASE/"
+
+# ── معیار P1: /app نباید لینک مستقیم به یک منبع ۴۰۴ (فایل APK) بدهد.
+# اگر فایل موجود نباشد، دکمهٔ «دانلود مستقیم» باید از HTML حذف شده باشد.
+check_app_download_link() {
+    local page="$BASE/app"
+    local apk="$BASE/downloads/swaapin.apk"
+
+    local apk_code
+    apk_code=$(status_code "$apk")
+    local html
+    html=$(curl -sS "$page")
+
+    if echo "$html" | grep -Fq "downloads/swaapin.apk"; then
+        if [ "$apk_code" = "200" ]; then
+            pass "$page links to a live APK file (200)"
+        else
+            fail "$page links directly to a non-200 APK resource ($apk_code): $apk"
+        fi
+    else
+        if [ "$apk_code" = "200" ]; then
+            fail "$page has no link to the existing APK file: $apk"
+        else
+            pass "$page exposes no direct link to the missing APK ($apk_code)"
+        fi
+    fi
+}
+
+check_app_download_link
+
 check_legacy_redirect "$BASE/listings"             "$BASE/iran"
 check_legacy_redirect "$BASE/listings/"            "$BASE/iran"
 check_legacy_redirect "$BASE/listings/all"         "$BASE/iran"
@@ -368,6 +399,41 @@ check_legacy_redirect \
     "$BASE/blog/2026/07/21/%D9%85%D8%B9%D8%A7%D9%88%D8%B6%D9%87-%DA%A9%D8%A7%D9%84%D8%A7-%D8%A8%D8%A7-%DA%A9%D8%A7%D9%84%D8%A7/" \
     "$BASE/blog/%D9%85%D8%B9%D8%A7%D9%88%D8%B6%D9%87-%DA%A9%D8%A7%D9%84%D8%A7-%D8%A8%D8%A7-%DA%A9%D8%A7%D9%84%D8%A7/"
 
+# --------------------------------------------------
+# 5c. مقصدهای تأییدشدهٔ نقشهٔ ۳۰۱ — مستقل از آستانهٔ ۶ ایندکس‌پذیرند
+# معیار: پاسخ ۲۰۰، کنونیکال به خودش، و بدون noindex ناشی از آستانه.
+# --------------------------------------------------
+check_indexable_self_canonical() {
+    local url="$1"
+
+    code=$(status_code "$url")
+
+    if [ "$code" != "200" ]; then
+        fail "$url expected 200, got $code"
+        return
+    fi
+
+    canonical=$(canonical_of "$url")
+
+    if [ "$canonical" != "$url" ]; then
+        fail "$url canonical mismatch: $canonical"
+        return
+    fi
+
+    robots=$(robots_meta_of "$url")
+
+    if echo "$robots" | grep -qi 'noindex'; then
+        fail "$url is a 301-map approved destination but declares noindex: $robots"
+        return
+    fi
+
+    pass "$url is 200, self-canonical and indexable (approved destination)"
+}
+
+check_indexable_self_canonical "$BASE/iran/building-materials"
+check_indexable_self_canonical "$BASE/iran/shoes"
+check_indexable_self_canonical "$BASE/iran/jewellery"
+check_indexable_self_canonical "$BASE/iran/bicycles"
 
 # --------------------------------------------------
 # 6. Sitemap endpoints
@@ -437,6 +503,47 @@ if printf '%s\n' "${sitemap_urls[@]}" | grep -Fxq "$BASE/support"; then
 else
     pass "/support is excluded from sitemap"
 fi
+
+# --------------------------------------------------
+# 8b. Sitemap URLs must not carry comma-encoded junk (%D8%8C)
+# --------------------------------------------------
+bad_comma="$(printf '%s\n' "${sitemap_urls[@]}" | grep -Fi '%D8%8C' | head -n1 || true)"
+
+if [ -n "$bad_comma" ]; then
+    fail "sitemap contains a comma-encoded (%D8%8C) URL: $bad_comma"
+else
+    pass "sitemap contains no comma-encoded (%D8%8C) URLs"
+fi
+
+# --------------------------------------------------
+# 8c. Sitemap URLs must not be noindex (noindex URLs must be removed)
+# --------------------------------------------------
+noindex_in_sitemap=0
+for url in "${sitemap_urls[@]}"; do
+    [ -z "$url" ] && continue
+    robots=$(robots_meta_of "$url")
+    if echo "$robots" | grep -qi 'noindex'; then
+        fail "Sitemap URL declares noindex and must be removed: $url"
+        noindex_in_sitemap=$((noindex_in_sitemap + 1))
+    fi
+done
+
+if [ "$noindex_in_sitemap" -eq 0 ]; then
+    pass "no sitemap URL declares noindex"
+fi
+
+# --------------------------------------------------
+# 8d. مقصدهای تأییدشده باید در sitemap-categories.xml حاضر باشند
+# --------------------------------------------------
+cats_xml=$(curl -sS "$BASE/sitemap-categories.xml")
+
+for dest in building-materials shoes jewellery bicycles; do
+    if echo "$cats_xml" | grep -Fq "$BASE/iran/$dest"; then
+        pass "approved destination present in sitemap-categories.xml: /iran/$dest"
+    else
+        fail "approved destination missing from sitemap-categories.xml: /iran/$dest"
+    fi
+done
 
 # --------------------------------------------------
 # 10. Sitemap canonical integrity

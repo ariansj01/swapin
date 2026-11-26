@@ -212,6 +212,10 @@ function swaapin_legacy_category_aliases(): array {
         'cameras'                 => 'camera',
         'cctv'                    => 'camera',
         // ── خانه و آشپزخانه
+        // اسلاگ سطح۱ قدیمی که به home-kitchen تغییر نام یافت. مسیر خالی
+        // /home-appliances باید به دستهٔ سطح۱ جدید ۳۰۱ شود، نه به برگ همنام
+        // (نقشهٔ ۳۰۱ — گارد تولید).
+        'home-appliances'         => 'home-kitchen',
         'appliances'              => 'home-appliances',
         'kitchen-appliances'      => 'home-appliances',
         'laundry-appliances'      => 'home-appliances',
@@ -308,6 +312,25 @@ function swaapin_legacy_category_aliases(): array {
 function swaapin_resolve_legacy_category_slug(string $slug): ?string {
     $aliases = swaapin_legacy_category_aliases();
     return $aliases[$slug] ?? null;
+}
+
+/**
+ * «مقصدهای تأییدشدهٔ» نقشهٔ ۳۰۱ — برگ‌های کانونیکالی که دسته‌های پیش از مهاجرت
+ * با ۳۰۱ به آن‌ها منتقل شده‌اند (مقادیر یکتای نقشهٔ alias).
+ * طبق تصمیم سئو، این مقصدها مستقل از آستانهٔ ۶ آگهی ایندکس‌پذیرند.
+ */
+function swaapin_legacy_destination_slugs(): array {
+    static $cache = null;
+    if ($cache === null) {
+        $cache = array_values(array_unique(array_values(swaapin_legacy_category_aliases())));
+    }
+    return $cache;
+}
+
+/** آیا این اسلاگ یک «مقصد تأییدشدهٔ» نقشهٔ ۳۰۱ است؟ */
+function swaapin_is_legacy_destination_slug(string $slug): bool {
+    $slug = strtolower(trim($slug, '/'));
+    return $slug !== '' && in_array($slug, swaapin_legacy_destination_slugs(), true);
 }
 
 /**

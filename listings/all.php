@@ -462,6 +462,20 @@ if (!$hasOtherFilters && $page > 1) {
     // صفحه‌بندی Self-canonical: هر صفحه به خودش اشاره می‌کند، نه به صفحه اول
     $canonical = rtrim($baseCanonical, '/') . '?page=' . $page;
 }
+// قاعدهٔ ضد-تکرار صفحهٔ استان+دسته (سند — بخش ۳ و ۷):
+// اگر همهٔ آگهی‌های فعال استان در یک دسته در یک شهر متمرکز باشند و سایر شهرها
+// مجموعاً کمتر از ۶ آگهی یکتا داشته باشند، صفحهٔ استان تکرارِ صفحهٔ آن شهر است و
+// noindex می‌ماند؛ با رسیدن سایر شهرها به ≥۶ آگهی یکتا این مانع برداشته می‌شود.
+$provinceDuplicate = false;
+if (!$hasOtherFilters && !$swapModelName && $category && $locRow
+    && (string) ($locRow['level'] ?? '') === 'province'
+    && !empty($locCityNames) && !empty($catScopeIds)
+    && function_exists('seo_province_category_city_counts')
+    && function_exists('seo_province_duplicate_blocked')) {
+    $cityCounts = seo_province_category_city_counts($locCityNames, $catScopeIds);
+    $alreadyIndexed = function_exists('seo_page_indexed_at') && seo_page_indexed_at($baseCanonical) !== null;
+    $provinceDuplicate = seo_province_duplicate_blocked($cityCounts) && !$alreadyIndexed;
+}
 // قاعده حداقل ۶ آگهی فعال برای ایندکس صفحات مکان/دسته/برند/مدل (سند — بخش ۷)
 // لندینگ معاوضه: وضعیت ایندکس از ردیف پنل (index/noindex/auto) تعیین می‌شود.
 $pageIndexable = null;
@@ -470,10 +484,10 @@ if ($swapLanding && function_exists('swaapin_swap_landing_indexable')) {
     if ($pageIndexable && function_exists('swaapin_swap_landing_mark_indexed')) {
         swaapin_swap_landing_mark_indexed($swapLanding, $total);
     }
-} elseif (!$hasOtherFilters && !$swapModelName && ($locRow || $category) && function_exists('seo_list_page_indexable')) {
+} elseif (!$provinceDuplicate && !$hasOtherFilters && !$swapModelName && ($locRow || $category) && function_exists('seo_list_page_indexable')) {
     $pageIndexable = seo_list_page_indexable($baseCanonical, $total);
 }
-$robotsMeta = ($hasOtherFilters || $pageIndexable === false) ? 'noindex, follow' : null;
+$robotsMeta = ($hasOtherFilters || $provinceDuplicate || $pageIndexable === false) ? 'noindex, follow' : null;
 
 // بخش ۱۰: آگهی‌های جایگزین در صفحات کم‌آگهی (رندر سمت سرور؛ بدون تغییر URL/Title/H1)
 $fallbackTitle    = '';

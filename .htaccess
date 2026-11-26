@@ -25,7 +25,7 @@ Options -MultiViews -Indexes
   # هر آدرس با اسلش انتهایی با ۳۰۱ به نسخهٔ بدون اسلش می‌رود (پارامترها حفظ
   # می‌شوند). استثناها: صفحهٔ خانه، /blog و مسیرهای قدیمی که خودشان در همان
   # یک مرحله به مقصد کانونیکال ۳۰۱ می‌شوند (تا زنجیرهٔ ریدایرکت ساخته نشود).
-  RewriteCond %{REQUEST_URI} !^/(?:blog|meta|services|pwa|download|exchange|listings|shops|category|real-estate|vehicles|electronics|home-kitchen|personal-items|leisure-hobbies|tools-equipment|jobs|clothing)(?:/|$)
+  RewriteCond %{REQUEST_URI} !^/(?:blog|meta|services|pwa|download|exchange|listings|shops|category|real-estate|vehicles|electronics|home-kitchen|personal-items|leisure-hobbies|tools-equipment|jobs|clothing|l)(?:/|$)
   RewriteRule ^(.+?)/+$ /$1 [R=301,L,QSA]
 
   # Landing pages
@@ -70,6 +70,9 @@ Options -MultiViews -Indexes
   # دانلود اپلیکیشن — آدرس کانونیکال /app (طبق معماری سئو)
   RewriteRule ^app/?$ download.php [L,NC,QSA]
   RewriteRule ^download/?$ /app [R=301,L,NC]
+
+  # نقشهٔ ۳۰۱: لینک کوتاه «/l» (در محتوای بلاگ) → صفحهٔ اصلی.
+  RewriteRule ^l/?$ / [R=301,L,NC]
 
   # ── سایت‌مپ‌های تفکیک‌شده (سند معماری سئو — بخش ۷) ─────────────────────
   # .xml → مولد PHP متناظر؛ sitemap.php و sitemap-main.xml قدیمی → 301 به ایندکس.

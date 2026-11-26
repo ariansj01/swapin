@@ -47,8 +47,23 @@ foreach ($locs as $loc) {
         }
         $path  = '/' . $locSlug . '/' . $catSlug;
         $count = swaapin_sitemap_sum_counts($cityCat, $cities, $scopes[$catId] ?? [$catId]);
-        if ($count < SWAAPIN_MIN_LISTINGS_FOR_INDEX && !isset($indexed[$path])) {
+        // مقصد تأییدشدهٔ نقشهٔ ۳۰۱ در سطح سراسری (‎/iran/{leaf}) مستقل از آستانه ایندکس‌پذیر است.
+        $isLegacyDest = $locSlug === 'iran'
+            && function_exists('swaapin_is_legacy_destination_slug')
+            && swaapin_is_legacy_destination_slug($catSlug);
+        if ($count < SWAAPIN_MIN_LISTINGS_FOR_INDEX && !isset($indexed[$path]) && !$isLegacyDest) {
             continue;
+        }
+        // قاعدهٔ ضد-تکرار صفحهٔ استان+دسته: صفحهٔ استان تا رسیدن سایر شهرها به ≥۶ آگهی
+        // یکتا (خارج از بزرگ‌ترین شهر) noindex است و نباید در سایت‌مپ بیاید.
+        if ((string) ($loc['level'] ?? '') === 'province'
+            && !isset($indexed[$path])
+            && function_exists('swaapin_sitemap_province_city_counts')
+            && function_exists('seo_province_duplicate_blocked')) {
+            $perCity = swaapin_sitemap_province_city_counts($cityCat, $cities, $scopes[$catId] ?? [$catId]);
+            if (seo_province_duplicate_blocked($perCity)) {
+                continue;
+            }
         }
         swaapin_sitemap_url($base . $path, '0.7', 'daily', $lastmod);
         if (!isset($indexed[$path])) {

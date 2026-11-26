@@ -334,14 +334,38 @@ if (function_exists('seo_json_ld_product')) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// PROV — قاعدهٔ ضد-تکرار صفحهٔ استان+دسته (آستانهٔ ۶ آگهی خارج از بزرگ‌ترین شهر)
+// ══════════════════════════════════════════════════════════════════════════════
+if (function_exists('seo_province_duplicate_blocked')) {
+    // حالت ۱: فهرست یکسان (همهٔ آگهی‌های استان در یک شهر) → مانع فعال → noindex
+    check('PROV', 'فهرست یکسان استان و شهر → مانع فعال (noindex)',
+        seo_province_duplicate_blocked([10]) === true, 'perCity=[10]');
+    // حالت ۲: ۱ تا ۵ آگهی خارج از آن شهر → هنوز زیر آستانه → noindex
+    check('PROV', '۱ آگهی خارج از شهر → مانع فعال (noindex)',
+        seo_province_duplicate_blocked([10, 1]) === true, 'perCity=[10,1]');
+    check('PROV', '۵ آگهی خارج از شهر → مانع فعال (noindex)',
+        seo_province_duplicate_blocked([10, 5]) === true, 'perCity=[10,5]');
+    // حالت ۳: ۶ آگهی یکتا خارج از آن شهر → مانع برداشته می‌شود (سایر قواعد ایندکس اعمال می‌شوند)
+    check('PROV', '۶ آگهی خارج از شهر → مانع برداشته می‌شود',
+        seo_province_duplicate_blocked([10, 6]) === false, 'perCity=[10,6]');
+    check('PROV', '۶ آگهی پخش‌شده در چند شهر → مانع برداشته می‌شود',
+        seo_province_duplicate_blocked([10, 3, 3]) === false, 'perCity=[10,3,3]');
+    check('PROV', 'بدون هیچ آگهی → صفحه ایندکس نمی‌شود',
+        seo_province_duplicate_blocked([]) === true, 'perCity=[]');
+} else {
+    check('PROV', 'تابع seo_province_duplicate_blocked موجود است', false, 'includes/seo.php لود نشد.');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // خروجی
 // ══════════════════════════════════════════════════════════════════════════════
-$ORDER = ['PAG', 'LINK', 'CHIP', 'SCHEMA'];
+$ORDER = ['PAG', 'LINK', 'CHIP', 'SCHEMA', 'PROV'];
 $LABELS = [
     'PAG'    => 'صفحه‌بندی (گارد ۴۰۴ + کانونیکال تمیز)',
     'LINK'   => 'فروشگاه تستی (۳۱۰/۴۱۰ + حذف لینک داخلی)',
     'CHIP'   => 'چیپ‌های جستجو (لینک مستقیم مکان + nofollow)',
     'SCHEMA' => 'اسکیمای Product (فقط فروش/هر دو + offers معتبر)',
+    'PROV'   => 'ضد-تکرار صفحهٔ استان+دسته (۶ آگهی خارج از بزرگ‌ترین شهر)',
 ];
 $totalPass = 0; $totalFail = 0;
 foreach ($RESULTS as $items) {
