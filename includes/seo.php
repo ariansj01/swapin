@@ -295,13 +295,24 @@ function seo_mark_page_indexed(string $path, int $count): void {
  */
 function seo_is_legacy_destination_path(string $path): bool {
     $path = seo_normalize_index_path($path);
-    if (!preg_match('#^/iran/([^/]+)$#', $path, $m)) {
+    // تطابق با /{location}/{category} یا /{location}
+    // مقاصد نقشه ۳۰۱ (مثل /iran/laptop یا /tehran/car) مستقل از تعداد آگهی ایندکس می‌شوند.
+    if (!preg_match('#^/([^/]+)(?:/([^/]+))?$#', $path, $m)) {
         return false;
     }
+    $locSlug = $m[1];
+    $catSlug = $m[2] ?? '';
+
     if (!function_exists('swaapin_is_legacy_destination_slug')) {
         return false;
     }
-    return swaapin_is_legacy_destination_slug(rawurldecode($m[1]));
+
+    // اگر فقط مکان باشد (مثل /iran)، معمولاً ایندکس است اما برای اطمینان چک می‌کنیم
+    if ($catSlug === '') {
+        return $locSlug === 'iran';
+    }
+
+    return swaapin_is_legacy_destination_slug(rawurldecode($catSlug));
 }
 
 /**

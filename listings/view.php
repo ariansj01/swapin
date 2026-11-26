@@ -70,33 +70,6 @@ if (!$isOwner && !$isAdmin) {
         require __DIR__ . '/../404.php';
         exit;
     }
-
-    // آگهی غیرفعال به دلایل دیگر (فروخته/معامله‌شده) → 301 به آگهی مشابه.
-    if ($listing['status'] !== 'active') {
-
-        $similar = DB::fetch(
-            'SELECT id, title
-             FROM listings
-             WHERE category_id = ?
-             AND status = "active"
-             AND review_status = "approved"
-             AND id != ?
-             ORDER BY updated_at DESC
-             LIMIT 1',
-            [
-                $listing['category_id'],
-                $listing['id']
-            ]
-        );
-
-        if ($similar) {
-            header('Location: ' . listing_url($similar), true, 301);
-        } else {
-            header('Location: ' . APP_URL . '/iran', true, 301);
-        }
-
-        exit;
-    }
 }
 
 // زمینه رفتار (فاز ۱): ثبت بازدید آگهی از سمت کلاینت با ابعاد ساختاریافته

@@ -241,6 +241,17 @@ function swaapin_legacy_category_aliases(): array {
         'transport'               => 'services',
         'repair-fix'              => 'services',
         'tutoring'                => 'services',
+        // زیرخدمات لندینگ قدیمی «خدمات» (services/{x}) → خدمات
+        // (کارت ممیزی P1: /listings/?cat=services/{x} باید ۳۰۱ به /iran/services شود)
+        'cleaning'                => 'services',
+        'catering'                => 'services',
+        'counseling'              => 'services',
+        'design'                  => 'services',
+        'education'               => 'services',
+        'gardening'               => 'services',
+        'repairs'                 => 'services',
+        'it'                      => 'services',
+        'transportation'          => 'services',
         // ── وسایل شخصی
         'clothing'                => 'personal-items',
         'womens-clothing'         => 'women-clothing',
@@ -306,6 +317,25 @@ function swaapin_legacy_category_aliases(): array {
         'fridge'                  => 'home-appliances',
         'bicycle'                 => 'bicycles',
         'jewelry'                 => 'jewellery',
+        // ── مقاصد کانونیکال نقشه ۳۰۱ (اطمینان از ایندکس‌پذیری مستقل از آستانه)
+        'real-estate'             => 'real-estate',
+        'vehicles'                => 'vehicles',
+        'electronics'             => 'electronics',
+        'home-kitchen'            => 'home-kitchen',
+        'personal-items'          => 'personal-items',
+        'leisure-hobbies'         => 'leisure-hobbies',
+        'tools-equipment'         => 'tools-equipment',
+        'jobs-services'           => 'services',
+        'shoes'                   => 'shoes',
+        'books'                   => 'books',
+        'sports'                  => 'sports',
+        'pets'                    => 'pets',
+        'plants'                  => 'plants',
+        'furniture'               => 'furniture',
+        'building-materials'      => 'building-materials',
+        'industrial-equipment'    => 'industrial-equipment',
+        'art-collectibles'        => 'art-collectibles',
+        'musical-instruments'     => 'musical-instruments',
     ];
 }
 
